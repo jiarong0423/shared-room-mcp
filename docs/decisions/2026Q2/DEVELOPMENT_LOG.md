@@ -127,7 +127,8 @@
 - `ai-security-rules export-gate` passed with `0` blocking findings after adding the public export manifest.
 - `ai-security-rules history-scan` flagged historical dot-env sample filenames by policy. No actual secret pattern was found by the workspace Git-history secret scanner. Git history rewrite/force-push remains a separate manual approval item.
 - Resolved mutable-artifact risk: generated audit JSON is kept local but removed from tracked public export; public evidence stays in Markdown.
-- Official WebMCP Challenge submission alignment checked on 2026-09-01: source/license/WebMCP markers/English docs are ready; live URL, final public repo name, and YouTube demo URL remain pending.
+- Official WebMCP Challenge submission alignment checked on 2026-09-01: source/license/WebMCP markers/English docs/public repo URL are ready; live URL and YouTube demo URL remain pending.
+- Final project identity locked on 2026-09-01: `Shared Room MCP`, repository slug `shared-room-mcp`.
 - `git status --short` 最後為乾淨。
 
 ### 剩餘風險

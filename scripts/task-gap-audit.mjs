@@ -10,11 +10,11 @@ const sourceFiles = {
   license: path.join(projectRoot, 'LICENSE'),
   readme: path.join(projectRoot, 'README.md'),
   submission: path.join(projectRoot, 'docs', 'submission', 'WEBMCP_SUBMISSION.md'),
-  mermaid: path.join(projectRoot, 'docs', 'ai-generated', '2026Q3', 'group_room_mermaid_module_design_20260831.md')
+  mermaid: path.join(projectRoot, 'docs', 'ai-generated', '2026Q3', 'shared_room_mermaid_module_design_20260831.md')
 };
 
 const reportDir = path.join(projectRoot, 'docs', 'ai-generated', '2026Q3');
-const reportBaseName = 'group_room_task_gap_decoupling_audit_20260831';
+const reportBaseName = 'shared_room_task_gap_decoupling_audit_20260831';
 
 function publicPath(filePath) {
   return path.relative(projectRoot, filePath).replaceAll(path.sep, '/');

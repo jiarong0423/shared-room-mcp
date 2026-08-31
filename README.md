@@ -1,6 +1,6 @@
-# Group Room Split MCP
+# Shared Room MCP
 
-Group Room Split MCP is a WebMCP-powered social group split room for group buys, drink orders, restaurant bills, KTV rooms, sports venues, ticket activities, rentals, and generic shared expenses.
+Shared Room MCP is a WebMCP-powered social coordination room for group buys, drink orders, restaurant bills, KTV rooms, sports venues, ticket activities, rentals, and generic shared expenses.
 
 The app is English-first for judging and demo review. A Chinese UI dictionary remains available for local use, but the default page language, initial HTML, README, and submission packet are English.
 
@@ -48,6 +48,8 @@ Adjacent adapter forks:
 - Nail, hair salon, clinic, or local service reservation draft: gather service type, preferred time, staff preference, notes, and prepare a click/form-fill proposal without submitting the appointment.
 
 The hackathon demo should focus on the group room state machine. Adjacent booking/service examples should be mentioned only as forkable adapter patterns. In every extension, the agent may inspect state and prepare proposal-only drafts. The human keeps control over submission, payment, legal commitment, account access, and final confirmation.
+
+Repository slug: `shared-room-mcp`.
 
 ## Commercial Extension Model
 

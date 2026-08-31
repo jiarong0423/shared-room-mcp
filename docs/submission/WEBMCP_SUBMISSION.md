@@ -1,10 +1,10 @@
 # WebMCP Hackathon Submission Packet
 
-Project name: Group Room Split MCP
+Project name: Shared Room MCP
 
 Live URL: pending deployment
 
-Public repository URL: pending final GitHub repository URL
+Public repository URL: https://github.com/jiarong0423/shared-room-mcp
 
 YouTube demo URL: TODO_YOUTUBE_DEMO_URL
 
@@ -12,7 +12,7 @@ License: MIT
 
 ## One-Line Pitch
 
-Group Room Split MCP is an open-source WebMCP template for pre-payment social coordination. It lets a browser-side agent inspect structured room state, task boundaries, formula rules, and claim audit gaps while humans retain control over claims, settlement, payment, and final confirmation.
+Shared Room MCP is an open-source WebMCP template for pre-payment social coordination. It lets a browser-side agent inspect structured room state, task boundaries, formula rules, and claim audit gaps while humans retain control over claims, settlement, payment, and final confirmation.
 
 ## WebMCP Fit
 
@@ -45,7 +45,7 @@ Checked against the WebMCP Challenge page on 2026-09-01.
 | Working live URL accessible in ChatGPT in-app browser or Chrome with WebMCP enabled | Pending final deployment name |
 | Text description explaining WebMCP fit and user experience | Ready in `README.md` and this packet |
 | Public YouTube demo under 3 minutes with audio | Pending `TODO_YOUTUBE_DEMO_URL` |
-| Public code repository | Pending final repository name |
+| Public code repository | Ready: https://github.com/jiarong0423/shared-room-mcp |
 | All necessary source code, assets, and instructions | Ready |
 | Open-source license visible at repository root | Ready: MIT `LICENSE` |
 | Repository contains `document.modelContext.registerTool(...)` | Ready: `public/index.html` |
@@ -149,7 +149,7 @@ Target length: under 3 minutes.
 
 ## Remaining Submission Checklist
 
-- Public repository URL remains pending until the final GitHub repository name is chosen.
+- Public repository URL is set to `https://github.com/jiarong0423/shared-room-mcp`.
 - Replace `TODO_YOUTUBE_DEMO_URL` after uploading the public demo video.
 - Set and verify the live Zeabur URL after the final deployment name is chosen.
 - Confirm Zeabur volume is mounted when `ROOM_STORE_PATH=/data/rooms.json` is configured.

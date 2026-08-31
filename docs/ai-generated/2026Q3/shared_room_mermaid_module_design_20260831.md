@@ -1,4 +1,4 @@
-# Group Room Mermaid Module Design
+# Shared Room Mermaid Module Design
 
 Generated at: 2026-09-01
 

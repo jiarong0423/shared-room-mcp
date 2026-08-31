@@ -1,5 +1,5 @@
 {
-  "name": "group-room-split-mcp",
+  "name": "shared-room-mcp",
   "version": "1.0.0",
   "description": "WebMCP-powered social group split room with local-first OCR, deterministic formulas, claim audit, and short-lived trust layer.",
   "license": "MIT",

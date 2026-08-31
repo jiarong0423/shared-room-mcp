@@ -20,8 +20,8 @@ This repository is intended to be public for the WebMCP Challenge. The public ex
 - `scripts/stress-menu-parser.mjs`
 - `docs/submission/WEBMCP_SUBMISSION.md`
 - `docs/security/`
-- `docs/ai-generated/2026Q3/group_room_mermaid_module_design_20260831.md`
-- `docs/ai-generated/2026Q3/group_room_task_gap_decoupling_audit_20260831.md`
+- `docs/ai-generated/2026Q3/shared_room_mermaid_module_design_20260831.md`
+- `docs/ai-generated/2026Q3/shared_room_task_gap_decoupling_audit_20260831.md`
 - `docs/decisions/2026Q2/DEVELOPMENT_LOG.md`
 
 ## Excluded From Public Export
