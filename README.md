@@ -14,12 +14,52 @@ WebMCP is a good fit because the agent can enter the same browser room, inspect 
 
 This is not a vendor ordering app and does not require store integration. It is a generalized group room where humans upload price evidence, confirm personal claims, and settle shared or personal costs.
 
-AI is optional and bounded:
+Provider adapters are optional and bounded:
 
 - Local OCR text and deterministic parsing run first.
-- Gemini or OpenAI can be used only as OCR/schema repair fallback.
+- Gemini or OpenAI support is only an example OCR/schema repair adapter.
+- The core WebMCP workflow must work without any paid API key.
 - AI cannot calculate money, assign claimants, change formulas, override task routing, settle disputes, or write payment data.
 - WebMCP is the primary agent integration; external model APIs are not required for the agent workflow.
+
+## Open Source Tool-Layer Positioning
+
+This repository is intended to be a clean, forkable WebMCP tool layer. The project does not sell API access, resell model credits, require vendor ordering integrations, or require a fixed OCR provider.
+
+Deployment owners can keep the default no-key manual/local-OCR workflow, remove the provider adapters, or replace them with their own OCR, vision, browser, commerce, spreadsheet, or private-community integrations. The stable part is the WebMCP contract surface and deterministic room state, not any paid API.
+
+## Future Extension Modules
+
+The group split room is the first reference module, not the only possible use case. The primary extension path should stay close to multi-person, pre-payment, or pre-commitment coordination where agent-readable state, audit, and human confirmation matter.
+
+Core extension examples:
+
+- Activity signup draft: collect attendee names, ticket classes, dietary notes, and prepare a registration proposal.
+- Community purchase comparison: summarize options, threshold rules, and member interest before anyone pays.
+- Maintenance or warranty request draft: organize receipt text, product model, photos, and contact fields for human review.
+- Private community task coordination: turn chat decisions into structured tasks, claim states, and confirmation gates.
+- Shared booking draft: collect time slots, member availability, room/court/package options, and prepare a proposal before anyone confirms.
+
+Adjacent adapter forks:
+
+- Auto repair appointment draft: collect car model, symptoms, preferred time, shop notes, and create a booking proposal for the owner to confirm.
+- Nail, hair salon, clinic, or local service reservation draft: gather service type, preferred time, staff preference, notes, and prepare a click/form-fill proposal without submitting the appointment.
+
+The hackathon demo should focus on the group room state machine. Adjacent booking/service examples should be mentioned only as forkable adapter patterns. In every extension, the agent may inspect state and prepare proposal-only drafts. The human keeps control over submission, payment, legal commitment, account access, and final confirmation.
+
+## Commercial Extension Model
+
+The open-source core is the WebMCP room template: task routing, structured room state, formula boundaries, audit gates, and agent-readable tools. Commercialization should happen through replaceable adapters, not through hard-coded platform lock-in.
+
+Potential adapter categories:
+
+- Booking adapters for auto repair shops, salons, clinics, local services, and venue reservations.
+- Commerce adapters for product catalogs, group-buy thresholds, inventory checks, discount rules, and checkout handoff.
+- Community adapters for LINE, Discord, Telegram, forums, and private membership spaces.
+- Trust adapters for whitelist checks, short-lived invite validation, audit logs, and organization policy gates.
+- Provider adapters for OCR, vision, translation, summarization, and schema repair.
+
+This keeps the template useful for developers and safer for users: the project can support future business workflows while leaving payment execution, final booking submission, credit-card handling, and regulated financial commitments to the appropriate partner systems and explicit human confirmation.
 
 ## WebMCP Tools
 
@@ -36,6 +76,8 @@ Implemented read-only tools:
 
 The `suggest_next_actions` tool is the main agent workflow entrypoint. It returns current blockers, human-review requirements, formula boundaries, and forbidden actions. It cannot mutate room state and cannot calculate new money values.
 
+Future modules can add proposal-only tools that let the agent prepare drafts for human review. Those tools should never change orders, claims, formulas, task routing, settlement, payment data, or Google Sheets without explicit human confirmation.
+
 ## Six Atomic One-Way Gates
 
 The UI and API intentionally expose six fixed module boundaries. Each module passes a contract forward. Downstream modules may mark review risk, but they cannot rewrite upstream module decisions. This prevents agent drift.
@@ -47,7 +89,7 @@ The UI and API intentionally expose six fixed module boundaries. Each module pas
 | Formula Engine | Runs deterministic local math through `formulaResults` | Sheets, external AI, Notion, and browser scraping cannot calculate money |
 | AI Repair Gate | Repairs OCR/schema only when local confidence is insufficient | AI cannot settle disputes, assign claims, or change formulas |
 | Claim Audit | Tracks shared candidates and extra personal claims | Agent cannot confirm claims on behalf of humans |
-| Agent Drift Guard | Exposes read-only WebMCP tools | Agent cannot mutate room state or write payment data |
+| Agent Drift Guard | Exposes read-only WebMCP tools and future proposal-only extension points | Agent cannot mutate room state, finalize claims, or write payment data |
 
 ## Task And Formula Matrix
 
@@ -82,6 +124,7 @@ flowchart TD
   C -. cannot be overwritten by AI .-> E
   G -. cannot calculate money .-> F
   I -. read-only WebMCP tools .-> M[Agent workflow]
+  M -. future proposal-only extensions .-> N[Human confirmation]
 ```
 
 ## Environment Variables
@@ -128,25 +171,25 @@ OPENAI_IMAGE_DETAIL=high
 
 Do not commit API keys. Set secrets only in Zeabur environment variables or the hosting provider secret manager.
 
-## Deployment Secret Replacement Guide
+## Deployment Configuration Guide
 
-The repository provides variable names only. Each project organizer replaces values in the deployment platform, not in source code.
+The repository provides configuration names only. Each project organizer changes values in the deployment platform, not in source code. Paid provider keys are optional adapters, not part of the required WebMCP demo path.
 
 | purpose | variable | where to replace | required |
 |---|---|---|---|
 | Server port | `PORT` | Zeabur service variables | yes |
 | Room JSON store | `ROOM_STORE_PATH` | Zeabur service variables, use `/data/rooms.json` with a mounted volume | yes for restart-safe demo |
 | Trust whitelist/audit sheet | `TRUST_LAYER_SPREADSHEET_ID` | Zeabur service variables | optional |
-| Gemini OCR repair | `GEMINI_API_KEY` or supported Google key alias | Zeabur service variables or provider secret manager | optional |
-| OpenAI OCR repair fallback | `OPENAI_API_KEY` | Zeabur service variables or provider secret manager | optional |
+| Example Gemini OCR repair adapter | `GEMINI_API_KEY` or supported Google key alias | Zeabur service variables or provider secret manager | optional |
+| Example OpenAI OCR repair adapter | `OPENAI_API_KEY` | Zeabur service variables or provider secret manager | optional |
 | Public rate limit | `API_RATE_LIMIT_MAX`, `ROOM_CREATE_RATE_LIMIT_MAX`, `MENU_PARSE_RATE_LIMIT_MAX` | Zeabur service variables | yes |
 
-Recommended replacement order:
+Recommended open-source deployment order:
 
 1. Copy `.env.example` variable names into Zeabur Variables.
 2. Mount a Zeabur volume and set `ROOM_STORE_PATH=/data/rooms.json`.
-3. Add only the AI provider key you actually want to use for OCR/schema repair.
-4. Leave AI keys empty if the demo uses manual input or local OCR text.
+3. Run the no-key flow first with manual input or local OCR text.
+4. Add a provider key only if the deployment owner wants optional OCR/schema repair.
 5. Restart the service and verify `/healthz` reports the expected provider and persistence flags without exposing secret values.
 
 ## Local Development
@@ -167,7 +210,7 @@ The app does not automatically load `.env`. If local AI image parsing is needed,
 1. Connect the public GitHub repository to Zeabur.
 2. Create a Node.js service.
 3. Set the required environment variables listed above.
-4. Add optional AI keys only if OCR/schema repair should call external models.
+4. Keep AI provider keys empty for a clean WebMCP tool-layer demo, or add optional adapter keys only if OCR/schema repair should call external models.
 5. Add a persistent volume and set `ROOM_STORE_PATH=/data/rooms.json` if rooms must survive service restarts.
 6. Keep the public demo on one service instance when using JSON persistence.
 7. Zeabur runs `npm install` and `npm start`.
@@ -212,6 +255,7 @@ Expected audit state:
 8. Ask the agent to call `suggest_next_actions`.
 9. Show that the agent can inspect contracts and blockers but cannot calculate money externally or write payment data.
 10. State that WebMCP tools are registered in the browser page with `document.modelContext.registerTool()`; the same-origin backend only supports the app data layer.
+11. Briefly mention future proposal-only extensions for reservations, repair appointments, salon bookings, and other form-draft workflows.
 
 ## Compliance Notes
 
