@@ -379,6 +379,10 @@
       display: grid;
     }
 
+    .sample-button {
+      width: min(100%, 320px);
+    }
+
     .loading-bar {
       display: none;
       margin-top: 12px;
@@ -1463,6 +1467,7 @@
                   </select>
                 </span>
                 <textarea class="ocr-field" id="localOcrTextInput" maxlength="12000" placeholder="Optional: paste text copied from the image. The room can start when enough items are found." data-i18n-placeholder="localOcrPlaceholder"></textarea>
+                <button class="button secondary sample-button" id="loadSampleButton" type="button" data-i18n="loadSampleRoom">Load Sample Room</button>
                 <span class="upload-actions" id="uploadActions">
                   <button class="button" id="confirmUploadButton" type="button" disabled data-i18n="confirmUpload">Use This Photo</button>
                   <button class="button secondary" id="cancelUploadButton" type="button" disabled data-i18n="cancelUpload">Cancel Upload</button>
@@ -1585,6 +1590,7 @@
       previewImage: document.getElementById('previewImage'),
       taskTypeSelect: document.getElementById('taskTypeSelect'),
       localOcrTextInput: document.getElementById('localOcrTextInput'),
+      loadSampleButton: document.getElementById('loadSampleButton'),
       uploadActions: document.getElementById('uploadActions'),
       confirmUploadButton: document.getElementById('confirmUploadButton'),
       cancelUploadButton: document.getElementById('cancelUploadButton'),
@@ -1666,6 +1672,7 @@
         taskRentalShare: '租借 / 押金',
         taskGenericSplit: '一般分帳',
         localOcrPlaceholder: '可選：貼上從圖片複製出的文字。只要找到足夠品項，就能先開房整理。',
+        loadSampleRoom: '載入示範房間',
         confirmUpload: '使用這張照片',
         cancelUpload: '取消上傳',
         aiParsing: '正在讀取價格照片，請保持頁面開啟。',
@@ -1719,6 +1726,7 @@
         localOcrMissing: '未貼上文字',
         auditPending: '還有人未確認',
         auditReady: '大家都確認了',
+        auditNoActiveCosts: '尚無待確認費用',
         suspicious: '需看一下',
         optionGroups: '可選項目',
         quickReview: '需確認',
@@ -1826,6 +1834,9 @@
         confirmEmptyError: '目前沒有費用項目，不能確認空明細。',
         confirmCostFailed: '個人費用確認失敗',
         uploadRoomLoadedError: '此房間已經有價格照片，請先清空房間再上傳新圖片。',
+        sampleRoomLoaded: '示範房間已載入，草稿等待發起者確認。',
+        sampleRoomLoadFailed: '載入示範房間失敗',
+        sampleRoomNeedsEmpty: '此房間已有資料，請建立新房間再載入示範。',
         parseImageFailed: '圖片解析失敗',
         newRoomConfirm: '建立新房間會產生新的隨機連結，原房間連結不會清空。確定建立嗎？',
         newRoomCreated: '已建立新的隨機房間連結。',
@@ -1873,6 +1884,7 @@
         taskRentalShare: 'Rental / Deposit',
         taskGenericSplit: 'Generic Split',
         localOcrPlaceholder: 'Optional: paste text copied from the image. The room can start when enough items are found.',
+        loadSampleRoom: 'Load Sample Room',
         confirmUpload: 'Use This Photo',
         cancelUpload: 'Cancel Upload',
         aiParsing: 'Reading the price photo. Keep this page open.',
@@ -1926,6 +1938,7 @@
         localOcrMissing: 'No text provided',
         auditPending: 'People still need to confirm',
         auditReady: 'Everyone confirmed',
+        auditNoActiveCosts: 'No pending costs',
         suspicious: 'review items',
         optionGroups: 'choices',
         quickReview: 'Review',
@@ -2032,6 +2045,9 @@
         confirmEmptyError: 'There are no cost items to confirm yet.',
         confirmCostFailed: 'Failed to confirm your cost',
         uploadRoomLoadedError: 'This room already has a price photo. Reset the room before uploading a new image.',
+        sampleRoomLoaded: 'Sample room loaded. The draft is waiting for host confirmation.',
+        sampleRoomLoadFailed: 'Failed to load sample room',
+        sampleRoomNeedsEmpty: 'This room already has data. Create a new room before loading the sample.',
         parseImageFailed: 'Failed to read the price photo',
         newRoomConfirm: 'Create a new random room link? The current room link will not be cleared.',
         newRoomCreated: 'New random room link created.',
@@ -2316,6 +2332,7 @@
       elements.loadingBar.style.display = uploading ? 'block' : 'none';
       elements.fileInput.disabled = uploading;
       elements.selectImageButton.disabled = uploading;
+      elements.loadSampleButton.disabled = uploading || Boolean(currentRoom?.menuLoaded);
       elements.confirmUploadButton.disabled = uploading || pendingMenuFiles.length === 0;
       elements.cancelUploadButton.disabled = uploading || pendingMenuFiles.length === 0;
     }
@@ -2972,7 +2989,9 @@
         : t('localOcrMissing');
       const taskText = getTaskRouterText(room);
       const audit = room.audit || {};
-      const auditText = Number(audit.unconfirmedParticipantCount || 0) > 0
+      const auditText = Number(audit.claimLedgerCount || 0) === 0
+        ? t('auditNoActiveCosts')
+        : Number(audit.unconfirmedParticipantCount || 0) > 0
         ? `${t('auditPending')}: ${Number(audit.unconfirmedParticipantCount || 0)} ${t('unconfirmed')}`
         : t('auditReady');
 
@@ -3709,6 +3728,57 @@
       }
     }
 
+    async function loadSampleRoom() {
+      if (isUploading) {
+        return;
+      }
+      if (!currentRoom?.id) {
+        setMessage(t('createRoomFailed'), 'error');
+        return;
+      }
+      if (currentRoom.menuLoaded || currentRoom.agentProposals?.length > 0) {
+        setMessage(t('sampleRoomNeedsEmpty'), 'warn');
+        return;
+      }
+
+      const currentInputName = String(elements.displayNameInput.value || '').trim();
+      if (!hasValidDisplayName(currentInputName)) {
+        displayName = 'Demo Host';
+        elements.displayNameInput.value = displayName;
+        localStorage.setItem(storageKeys.displayName, displayName);
+      } else {
+        displayName = currentInputName;
+        localStorage.setItem(storageKeys.displayName, displayName);
+      }
+
+      setUploading(true);
+      setMessage('', 'warn');
+      try {
+        const response = await fetch(`/api/rooms/${encodeURIComponent(currentRoom.id)}/sample`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            participantId,
+            displayName
+          })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || t('sampleRoomLoadFailed'));
+        }
+        clearPendingUpload(false);
+        renderRoom(data.room);
+        setMessage(t('sampleRoomLoaded'), 'info');
+        joinRoom();
+      } catch (error) {
+        setMessage(error.message || t('sampleRoomLoadFailed'), 'error');
+      } finally {
+        setUploading(false);
+      }
+    }
+
     function copyRoomLink() {
       const url = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(roomId)}`;
       navigator.clipboard.writeText(url)
@@ -4160,6 +4230,7 @@
     elements.printOrderButton.addEventListener('click', printOrderText);
     elements.downloadPdfButton.addEventListener('click', downloadPdf);
     elements.saveNameButton.addEventListener('click', saveDisplayName);
+    elements.loadSampleButton.addEventListener('click', loadSampleRoom);
     elements.displayNameInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         saveDisplayName();

@@ -1433,6 +1433,131 @@ function createRoom() {
   return room;
 }
 
+const sampleRoomOcrLines = Object.freeze([
+  'Restaurant lunch meal sample menu',
+  'Chicken rice bowl 18',
+  'Vegetarian noodle bowl 16',
+  'Seasonal fruit cup 12',
+  'Shared snack platter 24',
+  'Extra dessert cup 7',
+  'Shared table fee 6'
+]);
+
+function buildSampleRoomItems() {
+  return normalizeParsedItems([
+    {
+      name: 'Chicken rice bowl',
+      price: 18,
+      category: 'main',
+      sectionName: 'Lunch',
+      tags: ['single_serving'],
+      sourceImageIndex: 1
+    },
+    {
+      name: 'Vegetarian noodle bowl',
+      price: 16,
+      category: 'main',
+      sectionName: 'Lunch',
+      dietaryFlags: ['vegetarian'],
+      tags: ['single_serving'],
+      sourceImageIndex: 1
+    },
+    {
+      name: 'Seasonal fruit cup',
+      price: 12,
+      category: 'dessert',
+      sectionName: 'Lunch',
+      tags: ['single_serving'],
+      sourceImageIndex: 1
+    },
+    {
+      name: 'Shared snack platter',
+      price: 24,
+      category: 'snack',
+      sectionName: 'Shared items',
+      tags: ['shareable'],
+      sourceImageIndex: 1
+    },
+    {
+      name: 'Extra dessert cup',
+      price: 7,
+      category: 'dessert',
+      sectionName: 'Personal add-ons',
+      tags: ['single_serving'],
+      sourceImageIndex: 1
+    },
+    {
+      name: 'Shared table fee',
+      price: 6,
+      category: 'service',
+      sectionName: 'Shared review',
+      tags: ['shareable', 'manual_review'],
+      note: 'Host should confirm whether this shared fee should stay in the room.',
+      sourceImageIndex: 1
+    }
+  ], 1, null);
+}
+
+function loadSampleRoom(room, input = {}) {
+  const participant = ensureParticipant(room, input.participantId, input.displayName || 'Demo Host');
+  if (!room.ownerParticipantId) {
+    room.ownerParticipantId = participant.id;
+  }
+
+  const sampleText = sampleRoomOcrLines.join('\n');
+  const items = buildSampleRoomItems();
+  room.items = items;
+  room.menuType = normalizeMenuType('mixed', items);
+  room.menuMode = 'auto';
+  room.taskRouter = buildRoomTaskRouter({
+    taskType: 'restaurant_split',
+    localOcrText: sampleText,
+    items
+  });
+  room.warnings = [
+    'Sample room loaded for quick review. The assistant may draft suggestions, but the host keeps final approval.'
+  ];
+  room.parseQuality = evaluateMenuParseQuality({
+    items,
+    menuType: room.menuType,
+    taskRouter: room.taskRouter
+  });
+  room.localOcr = {
+    enabled: true,
+    lineCount: sampleRoomOcrLines.length,
+    candidateCount: items.length,
+    itemCount: items.length
+  };
+  room.menuImages = [];
+  room.menuImageBuffer = null;
+  room.menuImageMimeType = null;
+  room.menuImageWidth = null;
+  room.menuImageHeight = null;
+  room.itemImageCache = new Map();
+  room.menuLoaded = true;
+  room.settled = false;
+  room.settledAt = null;
+  room.settledBy = null;
+  room.parsedAt = nowIso();
+
+  const proposal = createAgentProposal(room, {
+    proposalType: 'evidence_review',
+    summary: 'Sample room is ready. Review the shared items, then ask members to claim their own costs.',
+    rationale: 'This draft shows the safe loop: the assistant prepares a review note, while the host keeps the final approval button.',
+    riskLevel: 'needs_human_review',
+    payload: {
+      demo: true,
+      source: 'load_sample_room',
+      nextHumanAction: 'Host reviews the sample items and confirms or rejects this draft.',
+      safeBoundary: 'No payment, booking, external form submission, formula change, or final settlement is performed by the assistant.'
+    }
+  });
+  return {
+    participant,
+    proposal
+  };
+}
+
 function getRoom(roomId) {
   if (!roomId || typeof roomId !== 'string') {
     return null;
@@ -3869,6 +3994,46 @@ app.post('/api/rooms/:roomId/agent-proposals', (req, res) => {
     proposalId: proposal.id,
     proposalType: proposal.proposalType,
     riskLevel: proposal.riskLevel
+  });
+  res.status(201).json({
+    ok: true,
+    proposal,
+    room: state
+  });
+});
+
+app.post('/api/rooms/:roomId/sample', createRateLimitMiddleware('room_sample', roomCreateRateLimitMax), (req, res) => {
+  const room = getRoom(req.params.roomId);
+  if (!room) {
+    res.status(404).json({ error: 'Room not found. Create a new shared room first.' });
+    return;
+  }
+
+  const requesterId = String(req.body?.participantId || '');
+  if (!requesterId || requesterId.length > 80) {
+    res.status(400).json({ error: 'A valid participant is required before loading the sample room.' });
+    return;
+  }
+  if (room.ownerParticipantId && room.ownerParticipantId !== requesterId) {
+    res.status(403).json({ error: 'Only the room owner can load the sample room.' });
+    return;
+  }
+  if (room.menuLoaded || room.items.length > 0 || room.agentProposals.length > 0) {
+    res.status(409).json({ error: 'This room already has data. Create a new room before loading the sample.' });
+    return;
+  }
+
+  const { proposal } = loadSampleRoom(room, {
+    participantId: requesterId,
+    displayName: req.body?.displayName || 'Demo Host'
+  });
+  const state = serializeRoom(room);
+  io.to(room.id).emit('roomState', state);
+  writeLog('info', 'sample_room_loaded', {
+    roomId: room.id,
+    proposalId: proposal.id,
+    itemCount: room.items.length,
+    taskType: room.taskRouter?.taskType || null
   });
   res.status(201).json({
     ok: true,

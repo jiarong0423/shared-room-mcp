@@ -2,7 +2,7 @@
 
 Project name: Shared Room MCP
 
-Live URL: pending deployment
+Live URL: https://shared-room-mcp.zeabur.app/
 
 Public repository URL: https://github.com/jiarong0423/shared-room-mcp
 
@@ -34,7 +34,7 @@ The broader idea is an open-source pattern for the agent-native web: tools that 
 
 The app exposes page-local tools through `document.modelContext.registerTool()` when WebMCP is available. Most tools are deliberately read-only: agents can inspect the room, task router, formula contract, claim audit, and trust-layer contract, but they cannot calculate money externally, assign claims, overwrite formulas, finalize settlement, or write payment data. One proposal-only tool can create a bounded JSON draft for host review without applying it.
 
-This is a tool-layer template, not a paid API wrapper. Manual input, sample data, local OCR text, and deterministic parsing are the default path. Cloud OCR, vision, model, spreadsheet, commerce, booking, CRM, or community integrations are optional adapters owned by the deployment owner.
+This is a tool-layer template, not a paid API wrapper. Manual input, `Load Sample Room`, local OCR text, and deterministic parsing are the default path. Cloud OCR, vision, model, spreadsheet, commerce, booking, CRM, or community integrations are optional adapters owned by the deployment owner.
 
 Implemented WebMCP tools:
 
@@ -58,7 +58,7 @@ Checked against the WebMCP Challenge page on 2026-09-01.
 
 | Requirement | Local status |
 |---|---|
-| Working live URL accessible in ChatGPT in-app browser or Chrome with WebMCP enabled | Pending final deployment name |
+| Working live URL accessible in ChatGPT in-app browser or Chrome with WebMCP enabled | Ready: https://shared-room-mcp.zeabur.app/ |
 | Text description explaining WebMCP fit and user experience | Ready in `README.md` and this packet |
 | Public YouTube demo under 3 minutes with audio | Pending `TODO_YOUTUBE_DEMO_URL` |
 | Public code repository | Ready: https://github.com/jiarong0423/shared-room-mcp |
@@ -66,7 +66,7 @@ Checked against the WebMCP Challenge page on 2026-09-01.
 | Open-source license visible at repository root | Ready: MIT `LICENSE` |
 | Repository contains `document.modelContext.registerTool(...)` | Ready: `public/index.html` |
 | WebMCP leverage beyond a trivial proof of concept | Ready: read-only tools plus `create_action_proposal` draft-only tool |
-| Complete coherent product experience | Ready for local smoke; live deployment pending |
+| Complete coherent product experience | Ready for local and live smoke |
 | Specific real-world audience/problem | Ready: social group coordination before payment or commitment |
 
 ## What Changed After August 25, 2026
@@ -80,6 +80,7 @@ This project existed earlier as a group menu ordering room. The WebMCP hackathon
 - Claim audit ledger for shared candidates and extra personal claims.
 - WebMCP read-only inspection tools, one proposal-only draft tool, and a hash-only Google Sheets trust-layer contract.
 - Open-source adapter positioning for future social, commerce, booking, OCR, spreadsheet, and private-community integrations.
+- No-key `Load Sample Room` entrypoint for fast judging and smoke testing.
 
 ## Environment Variables
 
@@ -144,11 +145,11 @@ Open `http://localhost:3000`, create a room, choose a task type, paste OCR text 
 
 Target length: under 3 minutes.
 
-0:00-0:15: Open the live room and Codex or ChatGPT side panel together. State the product in one sentence: "This is a shared room where people upload a price photo or paste copied text, pick items together, and keep the final confirmation human-controlled."
+0:00-0:15: Open the live room and Codex or ChatGPT side panel together. Click `Load Sample Room` so judges immediately see structured items and a pending host-reviewed draft. State the product in one sentence: "This is a shared room where people and agents prepare group decisions together, while final confirmation stays human-controlled."
 
-0:15-0:45: In the side panel, ask the agent to inspect the room through WebMCP. Show `inspect_room` and `suggest_next_actions` finding missing confirmations or a room-purpose mismatch without scraping the UI.
+0:15-0:45: In the side panel, ask the agent to inspect the room through WebMCP. Show `inspect_room` and `suggest_next_actions` reading the room state and next blockers without scraping the UI.
 
-0:45-1:10: Paste copied price text and open the room without any paid API key. Say: "The no-key path still works because local parsing runs first; external OCR or vision adapters are optional."
+0:45-1:10: Point out that the sample path needs no API key, upload, payment account, vendor integration, or external OCR. Say: "The no-key path still works because local room state and deterministic parsing come first; external OCR or vision adapters are optional."
 
 1:10-1:35: Add or show items, mark one personal add-on, and show the shared total separated from personal add-ons.
 

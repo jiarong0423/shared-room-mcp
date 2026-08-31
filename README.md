@@ -102,6 +102,8 @@ The UI and API intentionally expose six fixed module boundaries. Each module pas
 
 ## Task And Formula Matrix
 
+The matrix below describes supported room branches and their current safe calculation boundary. It is not a claim that every advanced commercial formula is fully automated. P1 rules such as hourly rates, deposits, shipping allocation, and tier discounts are intentionally held behind manual review until the deployment owner hardens those inputs.
+
 | task module | scenario | evidence | deterministic formula | AI repair trigger |
 |---|---|---|---|---|
 | `group_buy` | Community group buy, free-shipping threshold, bulk discount | Public post, price table, screenshot, local OCR | Same-item merge, participant subtotal, grand total, threshold remaining, extra personal claim | Missing item-price pairs, ambiguous tier rules, duplicated variants |
@@ -205,6 +207,18 @@ Recommended open-source deployment order:
 4. Add a provider key only if the deployment owner wants optional OCR/schema repair.
 5. Restart the service and verify `/healthz` reports the expected provider and persistence flags without exposing secret values.
 
+## Fast Review Sample
+
+For judging or a quick local smoke test, open a new empty room and click `Load Sample Room`. This creates a small structured sample with shared and personal items, then adds a draft-only proposal for the host to review.
+
+The sample path is intentionally no-key and no-upload:
+
+- It does not call Gemini, OpenAI, Google Sheets, payment, booking, commerce, or social APIs.
+- It does not overwrite a room that already has data.
+- It creates a `pending_host_confirmation` proposal only.
+- The host must still click the two-step review buttons before the draft status changes.
+- Accepting the draft does not settle the bill, submit an external form, write payment data, or change formula rules.
+
 ## Local Development
 
 ```bash
@@ -263,18 +277,16 @@ Expected audit state:
 
 1. Open the live URL.
 2. Confirm the UI defaults to English.
-3. Create a room and select a task module.
-4. Paste local OCR text or upload one price-evidence image.
-5. Point out the six atomic one-way gates: Task Router, Evidence / OCR, Formula Engine, AI Repair Gate, Claim Audit, and Agent Drift Guard.
-6. Add participants and claim items.
-7. Mark an item as an extra personal claim.
-8. Ask the agent to call `inspect_room`.
-9. Ask the agent to call `suggest_next_actions`.
-10. Ask the agent to call `create_action_proposal` and show the proposal stays in host review.
-11. Click `Approve Draft`, then show the inline second step `Confirm Human Approval`.
-12. Show that the agent can inspect contracts and blockers but cannot calculate money externally, finalize settlement, or write payment data.
-13. State that WebMCP tools are registered in the browser page with `document.modelContext.registerTool()`; the same-origin backend only supports the app data layer.
-14. Briefly mention future proposal-only extensions for reservations, repair appointments, salon bookings, and other form-draft workflows.
+3. Click `Load Sample Room` to create a no-key demo room with structured items and a draft waiting for host review.
+4. Ask the agent to call `inspect_room`.
+5. Ask the agent to call `suggest_next_actions`.
+6. Ask the agent to call `create_action_proposal` and show the proposal stays in host review.
+7. Click `Approve Draft`, then show the inline second step `Confirm Human Approval`.
+8. Add or claim one item manually to show human control.
+9. Point out the six plain-language safety steps in the UI.
+10. Show that the agent can inspect contracts and blockers but cannot calculate money externally, finalize settlement, or write payment data.
+11. State that WebMCP tools are registered in the browser page with `document.modelContext.registerTool()`; the same-origin backend only supports the app data layer.
+12. Briefly mention future proposal-only extensions for reservations, repair appointments, salon bookings, and other form-draft workflows.
 
 ## Compliance Notes
 
