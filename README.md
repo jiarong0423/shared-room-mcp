@@ -4,6 +4,8 @@ Shared Room MCP is a WebMCP-powered social coordination room for group buys, dri
 
 The app is English-first for judging and demo review. A Chinese UI dictionary remains available for local use, but the default page language, initial HTML, README, and submission packet are English.
 
+Core claim: we solved the agent overreach problem through strict architectural boundaries, not system prompts. AI contextually inspects and drafts; humans hold the final confirmation.
+
 ## Why This Fits WebMCP
 
 Most social group coordination happens in temporary chats on LINE, Discord, Instagram, Threads, Facebook groups, Reddit, or local community channels. These flows rarely have stable vendor APIs or structured menu data. The user usually has only a price-list photo, receipt, checkout screenshot, public post screenshot, or local OCR text.

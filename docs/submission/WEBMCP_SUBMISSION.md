@@ -14,6 +14,18 @@ License: MIT
 
 Shared Room MCP is an open-source WebMCP template for pre-payment social coordination. It lets a browser-side agent inspect structured room state, task boundaries, formula rules, and claim audit gaps while humans retain control over claims, settlement, payment, and final confirmation.
 
+## Devpost Text Description Draft
+
+We solved the agent overreach problem through strict architectural boundaries, not system prompts. AI contextually inspects and drafts; humans hold the final confirmation.
+
+Shared Room MCP is an open-source WebMCP room template for messy real-world group coordination: group buys, drink orders, restaurant splits, KTV rooms, sports venues, tickets, rentals, and other temporary shared-cost plans. These workflows usually start from a chat message, price-list photo, receipt, or copied text rather than a clean vendor API.
+
+The project gives the agent a page-local WebMCP tool surface. The agent can inspect the room, read the selected scenario, find missing confirmations, review price-reading quality, and create a proposal-only draft for the host. It cannot calculate money outside the app, assign claimants, submit bookings, write payment data, or finalize settlement.
+
+The core demo works without any paid API key: users can paste copied text from a price image, the local parser creates structured items, and deterministic room logic keeps totals and confirmation state inside the app. Optional model providers are only replaceable adapters for image/text repair, not the required agent workflow.
+
+The broader idea is an open-source pattern for the agent-native web: tools that are useful enough for AI assistants to operate, but narrow enough that humans keep control over final commitments.
+
 ## WebMCP Fit
 
 The app exposes page-local tools through `document.modelContext.registerTool()` when WebMCP is available. Most tools are deliberately read-only: agents can inspect the room, task router, formula contract, claim audit, and trust-layer contract, but they cannot calculate money externally, assign claims, overwrite formulas, finalize settlement, or write payment data. One proposal-only tool can create a bounded JSON draft for host review without applying it.
@@ -125,18 +137,23 @@ Open `http://localhost:3000`, create a room, choose a task type, paste OCR text 
 
 Target length: under 3 minutes.
 
-1. Show the room UI and select a task type such as drink order, KTV room, or sports venue.
-2. Paste local OCR text first to demonstrate local-first parsing.
-3. Show the task router, OCR quality, formula contract, and claim audit panels.
-4. Add participants and mark one item as an extra personal claim.
-5. Show the share calculator: shared candidate total is separate from personal claim total.
-6. Open the page with WebMCP-capable browsing and ask the agent to inspect the room using `inspect_room`.
-7. Ask the agent to call `suggest_next_actions` and explain which human confirmation is still required.
-8. Ask the agent to call `create_action_proposal` to prepare a draft host checklist for unresolved claims.
-9. Show the Host Draft Review panel and accept or reject the draft as the room owner.
-10. Show that the accepted draft did not calculate money externally, finalize settlement, write payment data, or submit to any external service.
-11. Explain that WebMCP is the browser-page tool surface registered by `document.modelContext.registerTool()`. The same-origin backend exists for app state, uploads, Socket.IO sync, persistence, and draft storage; it is not a public unrestricted agent mutation API.
-12. Close with the open-source extension model: the group room is the reference module, and future forks can add proposal-only adapters for bookings, repair appointments, salon reservations, activity signups, and other pre-commitment workflows.
+0:00-0:15: Open the live room and state the product in one sentence: "This is a shared room where people upload a price photo or paste copied text, pick items together, and keep the final confirmation human-controlled."
+
+0:15-0:45: In the Codex side panel, ask the agent to inspect the room through WebMCP. Show `inspect_room` and `suggest_next_actions` finding missing confirmations or a room-purpose mismatch without scraping the UI.
+
+0:45-1:10: Paste copied price text and open the room without any paid API key. Say: "The no-key path still works because local parsing runs first; external OCR or vision adapters are optional."
+
+1:10-1:35: Add or show items, mark one personal add-on, and show the shared total separated from personal add-ons.
+
+1:35-2:05: Ask the agent to create a host-reviewed draft with `create_action_proposal`. Show the Suggested Drafts panel and the waiting-for-host state.
+
+2:05-2:30: Accept or reject the draft as the host. Explain that acceptance reviews the suggestion but does not auto-settle, submit a booking, write payment data, or call an external system.
+
+2:30-2:55: Close with the open-source template angle: the group room is the reference module, and future forks can add proposal-only adapters for repair appointments, salon bookings, local services, activity signups, commerce catalogs, or private community workflows.
+
+Keep this exact spoken line near the start or close:
+
+"We solved the agent overreach problem through strict architectural boundaries, not system prompts. AI contextually inspects and drafts; humans hold the final confirmation."
 
 ## Compliance Notes
 
