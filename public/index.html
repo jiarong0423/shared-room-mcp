@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>揪團分帳房</title>
+  <title>Group Room Split</title>
   <script src="/socket.io/socket.io.js"></script>
   <style>
     :root {
@@ -97,7 +97,7 @@
     }
 
     .language-button {
-      min-width: 72px;
+      min-width: 82px;
       background: transparent;
       color: var(--muted);
       padding: 6px 10px;
@@ -200,6 +200,41 @@
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 10px;
       margin-bottom: 14px;
+    }
+
+    .contract-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .contract-pill {
+      display: grid;
+      min-height: 64px;
+      align-content: center;
+      gap: 3px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffdf9;
+      padding: 8px 10px;
+    }
+
+    .contract-pill strong {
+      overflow-wrap: anywhere;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .contract-pill span {
+      overflow-wrap: anywhere;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 650;
+      line-height: 1.25;
     }
 
     .text-field {
@@ -1115,6 +1150,10 @@
         justify-content: flex-start;
       }
 
+      .contract-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
       .title-block h1 {
         font-size: 23px;
       }
@@ -1217,35 +1256,62 @@
   <main class="app-shell">
     <header class="topbar">
       <div class="title-block">
-        <h1 data-i18n="appTitle">揪團分帳房</h1>
-        <p data-i18n="appSubtitle">上傳現場價格證據，房間內所有人同步選項、均分試算與個人費用。</p>
+        <h1 data-i18n="appTitle">Group Room Split</h1>
+        <p data-i18n="appSubtitle">Upload price evidence so everyone can pick items, audit claims, and review split totals in one room.</p>
       </div>
       <div class="status-row">
         <div class="language-toggle" id="languageToggle" aria-label="Language">
-          <button class="language-button" type="button" data-lang="zh">中文</button>
           <button class="language-button" type="button" data-lang="en">English</button>
+          <button class="language-button" type="button" data-lang="zh">中文</button>
         </div>
-        <span class="chip" id="connectionChip" data-i18n="connecting">連線中</span>
-        <span class="chip" id="menuChip" data-i18n="evidenceNotParsed">尚未解析證據</span>
+        <span class="chip" id="connectionChip" data-i18n="connecting">Connecting</span>
+        <span class="chip" id="menuChip" data-i18n="evidenceNotParsed">No evidence parsed</span>
       </div>
     </header>
 
     <section class="layout">
       <div class="panel">
         <div class="panel-header">
-          <h2 class="panel-title" data-i18n="evidenceAndItems">價格證據與項目</h2>
-          <button class="button secondary" id="copyOrderButton" type="button" disabled data-i18n="copySettlement">複製結算摘要</button>
+          <h2 class="panel-title" data-i18n="evidenceAndItems">Evidence And Items</h2>
+          <button class="button secondary" id="copyOrderButton" type="button" disabled data-i18n="copySettlement">Copy Summary</button>
         </div>
         <div class="panel-body">
           <div class="room-tools">
-            <div class="room-code" id="roomCode" data-i18n="creatingRoom">建立房間中</div>
-            <button class="button secondary" id="newRoomButton" type="button" data-i18n="newRoom">建立新房間</button>
-            <button class="button secondary" id="copyLinkButton" type="button" data-i18n="copyRoomLink">複製房間連結</button>
+            <div class="room-code" id="roomCode" data-i18n="creatingRoom">Creating room</div>
+            <button class="button secondary" id="newRoomButton" type="button" data-i18n="newRoom">New Room</button>
+            <button class="button secondary" id="copyLinkButton" type="button" data-i18n="copyRoomLink">Copy Room Link</button>
           </div>
 
           <div class="field-grid">
-            <input class="text-field" id="displayNameInput" maxlength="24" autocomplete="name" placeholder="你的名稱" data-i18n-placeholder="yourName">
-            <button class="button" id="saveNameButton" type="button" data-i18n="applyName">套用名稱</button>
+            <input class="text-field" id="displayNameInput" maxlength="24" autocomplete="name" placeholder="Your name" data-i18n-placeholder="yourName">
+            <button class="button" id="saveNameButton" type="button" data-i18n="applyName">Apply Name</button>
+          </div>
+
+          <div class="contract-strip" id="contractStrip" aria-label="Six WebMCP contract lines" data-i18n-aria-label="contractStripLabel">
+            <div class="contract-pill">
+              <strong data-i18n="contractTaskRouter">Task Router</strong>
+              <span data-i18n="contractTaskRouterHint">atomic one-way gate</span>
+            </div>
+            <div class="contract-pill">
+              <strong data-i18n="contractEvidence">Evidence / OCR</strong>
+              <span data-i18n="contractEvidenceHint">atomic one-way gate</span>
+            </div>
+            <div class="contract-pill">
+              <strong data-i18n="contractFormula">Formula Engine</strong>
+              <span data-i18n="contractFormulaHint">atomic one-way gate</span>
+            </div>
+            <div class="contract-pill">
+              <strong data-i18n="contractRepairGate">AI Repair Gate</strong>
+              <span data-i18n="contractRepairGateHint">atomic one-way gate</span>
+            </div>
+            <div class="contract-pill">
+              <strong data-i18n="contractClaimAudit">Claim Audit</strong>
+              <span data-i18n="contractClaimAuditHint">atomic one-way gate</span>
+            </div>
+            <div class="contract-pill">
+              <strong data-i18n="contractAgentGuard">Agent Drift Guard</strong>
+              <span data-i18n="contractAgentGuardHint">atomic one-way gate</span>
+            </div>
           </div>
 
           <div id="uploadSection">
@@ -1253,32 +1319,32 @@
               <input id="fileInput" type="file" accept="image/*">
               <span class="upload-stack">
                 <span class="upload-mark">＋</span>
-                <strong data-i18n="priceEvidenceImage">價格證據圖片</strong>
-                <span class="upload-copy" data-i18n="uploadCopy">選擇、拖放或貼上單張價格證據圖片。可用於吃飯、唱歌、運動、票券、租借或活動分帳。</span>
-                <button class="button" id="selectImageButton" type="button" data-i18n="selectImage">選擇圖片</button>
-                <img class="preview-image" id="previewImage" alt="價格證據預覽" data-i18n-alt="evidencePreview">
+                <strong data-i18n="priceEvidenceImage">Price Evidence Image</strong>
+                <span class="upload-copy" data-i18n="uploadCopy">Choose, drop, or paste one price-evidence image for meals, KTV, sports, tickets, rentals, events, or group buys.</span>
+                <button class="button" id="selectImageButton" type="button" data-i18n="selectImage">Select Image</button>
+                <img class="preview-image" id="previewImage" alt="Evidence preview" data-i18n-alt="evidencePreview">
                 <span class="task-selector">
-                  <label for="taskTypeSelect" data-i18n="taskType">任務類型</label>
+                  <label for="taskTypeSelect" data-i18n="taskType">Task Type</label>
                   <select id="taskTypeSelect">
-                    <option value="auto" data-i18n="taskAuto">自動判別</option>
-                    <option value="group_buy" data-i18n="taskGroupBuy">團購 / 免運門檻</option>
-                    <option value="drink_order" data-i18n="taskDrinkOrder">飲料揪團</option>
-                    <option value="restaurant_split" data-i18n="taskRestaurantSplit">吃飯分帳</option>
-                    <option value="ktv_room" data-i18n="taskKtvRoom">唱歌 / 包廂低消</option>
-                    <option value="sports_venue" data-i18n="taskSportsVenue">運動場地 / 場租</option>
-                    <option value="ticket_activity" data-i18n="taskTicketActivity">票券 / 活動報名</option>
-                    <option value="rental_share" data-i18n="taskRentalShare">租借 / 押金</option>
-                    <option value="generic_split" data-i18n="taskGenericSplit">一般分帳</option>
+                    <option value="auto" data-i18n="taskAuto">Auto Detect</option>
+                    <option value="group_buy" data-i18n="taskGroupBuy">Group Buy / Free Shipping</option>
+                    <option value="drink_order" data-i18n="taskDrinkOrder">Drink Order</option>
+                    <option value="restaurant_split" data-i18n="taskRestaurantSplit">Restaurant Split</option>
+                    <option value="ktv_room" data-i18n="taskKtvRoom">KTV / Room Minimum</option>
+                    <option value="sports_venue" data-i18n="taskSportsVenue">Sports Venue / Court Fee</option>
+                    <option value="ticket_activity" data-i18n="taskTicketActivity">Tickets / Activity Signup</option>
+                    <option value="rental_share" data-i18n="taskRentalShare">Rental / Deposit</option>
+                    <option value="generic_split" data-i18n="taskGenericSplit">Generic Split</option>
                   </select>
                 </span>
-                <textarea class="ocr-field" id="localOcrTextInput" maxlength="12000" placeholder="可選：貼上本地 OCR 文字，系統會先抓候選項目，再交給模型修正；沒有 API key 時也可用候選項目開房。" data-i18n-placeholder="localOcrPlaceholder"></textarea>
+                <textarea class="ocr-field" id="localOcrTextInput" maxlength="12000" placeholder="Optional: paste local OCR text. The app extracts candidates first, then asks the model only for repair. With no API key, enough local candidates can still open the room." data-i18n-placeholder="localOcrPlaceholder"></textarea>
                 <span class="upload-actions" id="uploadActions">
-                  <button class="button" id="confirmUploadButton" type="button" disabled data-i18n="confirmUpload">確定上傳</button>
-                  <button class="button secondary" id="cancelUploadButton" type="button" disabled data-i18n="cancelUpload">取消上傳</button>
+                  <button class="button" id="confirmUploadButton" type="button" disabled data-i18n="confirmUpload">Upload Evidence</button>
+                  <button class="button secondary" id="cancelUploadButton" type="button" disabled data-i18n="cancelUpload">Cancel Upload</button>
                 </span>
               </span>
             </label>
-            <div class="loading-bar" id="loadingBar" data-i18n="aiParsing">AI 解析中，請保持頁面開啟。</div>
+            <div class="loading-bar" id="loadingBar" data-i18n="aiParsing">AI repair is running. Keep this page open.</div>
           </div>
 
           <div class="message" id="messageBox"></div>
@@ -1287,45 +1353,45 @@
             <div class="quality-panel" id="qualityPanel"></div>
             <div class="source-menu-card" id="sourceMenuCard" hidden>
               <div class="source-menu-header">
-                <span data-i18n="compressedEvidence">壓縮證據圖</span>
-                <div class="source-menu-tools" aria-label="價格證據圖片縮放工具" data-i18n-aria-label="imageTools">
-                  <button class="image-tool-button" id="sourceMenuToggleButton" type="button" data-i18n="collapse">收合</button>
-                  <button class="image-tool-button" id="downloadCompressedImageButton" type="button" data-i18n="downloadEvidence">下載證據圖</button>
+                <span data-i18n="compressedEvidence">Compressed Evidence</span>
+                <div class="source-menu-tools" aria-label="Price evidence image tools" data-i18n-aria-label="imageTools">
+                  <button class="image-tool-button" id="sourceMenuToggleButton" type="button" data-i18n="collapse">Collapse</button>
+                  <button class="image-tool-button" id="downloadCompressedImageButton" type="button" data-i18n="downloadEvidence">Download Evidence</button>
                   <button class="image-tool-button" id="imageZoomOutButton" type="button">−</button>
-                  <button class="image-tool-button" id="imageResetButton" type="button" data-i18n="resetZoom">重置</button>
+                  <button class="image-tool-button" id="imageResetButton" type="button" data-i18n="resetZoom">Reset</button>
                   <button class="image-tool-button" id="imageZoomInButton" type="button">＋</button>
                 </div>
               </div>
-              <div class="source-menu-viewer" id="sourceMenuViewer" aria-label="可拖移縮放的壓縮證據圖" data-i18n-aria-label="draggableEvidence">
-                <img id="sourceMenuImage" alt="壓縮證據圖" draggable="false" data-i18n-alt="compressedEvidence">
+              <div class="source-menu-viewer" id="sourceMenuViewer" aria-label="Draggable and zoomable compressed evidence" data-i18n-aria-label="draggableEvidence">
+                <img id="sourceMenuImage" alt="Compressed Evidence" draggable="false" data-i18n-alt="compressedEvidence">
               </div>
-              <div class="source-menu-hint" data-i18n="sourceMenuHint">可拖移查看，滾輪或雙指可縮放。此圖為後端壓縮後版本，不使用項目裁切縮圖。</div>
+              <div class="source-menu-hint" data-i18n="sourceMenuHint">Drag to inspect. Use wheel or pinch to zoom. This is the server-compressed evidence image, not cropped item thumbnails.</div>
             </div>
             <div class="menu-mode-row">
               <div class="mode-copy">
-                <span data-i18n="itemMode">項目模式</span>
-                <span id="menuModeHint">AI 自動判斷</span>
+                <span data-i18n="itemMode">Item Mode</span>
+                <span id="menuModeHint">AI auto detect</span>
               </div>
-              <div class="mode-toggle" id="menuModeToggle" aria-label="項目模式切換" data-i18n-aria-label="itemModeToggle">
-                <button class="mode-button" type="button" data-menu-mode="auto" data-i18n="modeAuto">自動</button>
-                <button class="mode-button" type="button" data-menu-mode="general" data-i18n="modeGeneral">一般項目</button>
-                <button class="mode-button" type="button" data-menu-mode="drink" data-i18n="modeDrink">飲料單</button>
+              <div class="mode-toggle" id="menuModeToggle" aria-label="Item mode switch" data-i18n-aria-label="itemModeToggle">
+                <button class="mode-button" type="button" data-menu-mode="auto" data-i18n="modeAuto">Auto</button>
+                <button class="mode-button" type="button" data-menu-mode="general" data-i18n="modeGeneral">General Items</button>
+                <button class="mode-button" type="button" data-menu-mode="drink" data-i18n="modeDrink">Drink Menu</button>
               </div>
             </div>
             <div class="menu-list" id="menuBody"></div>
             <div class="order-confirm-row">
-              <span class="order-status" id="ownOrderStatus" data-i18n="noItemsSelected">尚未選項</span>
-              <button class="button" id="confirmOrderButton" type="button" disabled data-i18n="confirmPersonalCost">確認個人費用</button>
+              <span class="order-status" id="ownOrderStatus" data-i18n="noItemsSelected">No items selected</span>
+              <button class="button" id="confirmOrderButton" type="button" disabled data-i18n="confirmPersonalCost">Confirm My Cost</button>
             </div>
             <div class="settlement-row">
-              <button class="button" id="settleRoomButton" type="button" disabled data-i18n="ownerSettle">發起者結算並產生分帳單</button>
-              <button class="button secondary" id="printOrderButton" type="button" disabled data-i18n="printBill">列印分帳單</button>
-              <button class="button secondary" id="downloadPdfButton" type="button" disabled data-i18n="downloadPdf">下載 PDF</button>
+              <button class="button" id="settleRoomButton" type="button" disabled data-i18n="ownerSettle">Owner Finalizes Split Bill</button>
+              <button class="button secondary" id="printOrderButton" type="button" disabled data-i18n="printBill">Print Bill</button>
+              <button class="button secondary" id="downloadPdfButton" type="button" disabled data-i18n="downloadPdf">Download PDF</button>
             </div>
             <pre class="settlement-output" id="settlementOutput"></pre>
             <div class="actions">
-              <button class="button secondary" id="copyLinkButtonBottom" type="button" data-i18n="copyRoomLink">複製房間連結</button>
-              <button class="button danger" id="resetButton" type="button" data-i18n="resetRoom">清空房間</button>
+              <button class="button secondary" id="copyLinkButtonBottom" type="button" data-i18n="copyRoomLink">Copy Room Link</button>
+              <button class="button danger" id="resetButton" type="button" data-i18n="resetRoom">Reset Room</button>
             </div>
           </div>
         </div>
@@ -1333,28 +1399,28 @@
 
       <aside class="panel">
         <div class="summary-metric">
-          <span data-i18n="grandTotalLabel">全體總金額</span>
+          <span data-i18n="grandTotalLabel">Group Total</span>
           <strong id="grandTotal">NT$ 0</strong>
-          <small id="shareAverageText">共享均分：NT$ 0 / 人；額外單點自認 NT$ 0</small>
+          <small id="shareAverageText">Shared average: NT$ 0 / person; personal claims NT$ 0</small>
           <div class="threshold-box">
-            <input id="thresholdInput" type="number" min="0" step="1" inputmode="numeric" placeholder="免運 / 低消 / 成團門檻" data-i18n-placeholder="thresholdPlaceholder">
-            <small id="thresholdText" data-i18n="thresholdUnset">尚未設定門檻</small>
+            <input id="thresholdInput" type="number" min="0" step="1" inputmode="numeric" placeholder="Free shipping / minimum / group threshold" data-i18n-placeholder="thresholdPlaceholder">
+            <small id="thresholdText" data-i18n="thresholdUnset">No threshold set</small>
           </div>
         </div>
         <div class="panel-header">
-          <h2 class="panel-title" data-i18n="memberStats">成員統計</h2>
-          <span class="chip" id="memberCountChip">0 人</span>
+          <h2 class="panel-title" data-i18n="memberStats">Member Stats</h2>
+          <span class="chip" id="memberCountChip">0 people</span>
         </div>
         <div class="panel-body">
-          <div class="summary-tabs" id="summaryTabs" aria-label="統計切換" data-i18n-aria-label="summaryTabs">
-            <button class="summary-tab" type="button" data-summary-tab="items" data-i18n="itemStats">項目統計</button>
-            <button class="summary-tab" type="button" data-summary-tab="people" data-i18n="personDetails">每人明細</button>
+          <div class="summary-tabs" id="summaryTabs" aria-label="Summary tabs" data-i18n-aria-label="summaryTabs">
+            <button class="summary-tab" type="button" data-summary-tab="items" data-i18n="itemStats">Item Stats</button>
+            <button class="summary-tab" type="button" data-summary-tab="people" data-i18n="personDetails">Person Details</button>
           </div>
           <div class="summary-list" id="itemSummaryList">
-            <div class="empty-state" data-i18n="noItemStats">尚無品項統計</div>
+            <div class="empty-state" data-i18n="noItemStats">No item stats yet</div>
           </div>
           <div class="summary-list is-hidden" id="participantList">
-            <div class="empty-state" data-i18n="noMemberCosts">尚無成員費用</div>
+            <div class="empty-state" data-i18n="noMemberCosts">No member costs yet</div>
           </div>
         </div>
       </aside>
@@ -1362,8 +1428,8 @@
   </main>
 
   <div class="mobile-order-bar" id="mobileOrderBar">
-    <div class="mobile-order-text" id="mobileOrderText"><span data-i18n="noItemsSelected">尚未選項</span><span data-i18n="chooseItemsFirst">請先選擇項目</span></div>
-    <button class="button" id="mobileConfirmOrderButton" type="button" disabled data-i18n="confirm">確認</button>
+    <div class="mobile-order-text" id="mobileOrderText"><span data-i18n="noItemsSelected">No items selected</span><span data-i18n="chooseItemsFirst">Choose items first</span></div>
+    <button class="button" id="mobileConfirmOrderButton" type="button" disabled data-i18n="confirm">Confirm</button>
   </div>
 
   <script>
@@ -1581,7 +1647,20 @@
         modeSwitchFailed: '切換項目模式失敗',
         invalidName: '名稱不能空白，也不能使用「未命名」。',
         resetConfirm: '清空後可重新上傳價格證據，所有成員數量會歸零。',
-        resetFailed: '清空房間失敗'
+        resetFailed: '清空房間失敗',
+        contractStripLabel: '六個 WebMCP 契約模組',
+        contractTaskRouter: '任務路由',
+        contractTaskRouterHint: '原子性單向閥門',
+        contractEvidence: '證據 / OCR',
+        contractEvidenceHint: '原子性單向閥門',
+        contractFormula: '公式引擎',
+        contractFormulaHint: '原子性單向閥門',
+        contractRepairGate: 'AI 修補閥門',
+        contractRepairGateHint: '原子性單向閥門',
+        contractClaimAudit: '認領稽核',
+        contractClaimAuditHint: '原子性單向閥門',
+        contractAgentGuard: 'Agent 飄移防線',
+        contractAgentGuardHint: '原子性單向閥門'
       },
       en: {
         appTitle: 'Group Room Split',
@@ -1730,14 +1809,27 @@
         modeSwitchFailed: 'Failed to switch item mode',
         invalidName: 'Name cannot be blank or unnamed.',
         resetConfirm: 'Reset the room and clear all member quantities?',
-        resetFailed: 'Failed to reset room'
+        resetFailed: 'Failed to reset room',
+        contractStripLabel: 'Six WebMCP contract modules',
+        contractTaskRouter: 'Task Router',
+        contractTaskRouterHint: 'atomic one-way gate',
+        contractEvidence: 'Evidence / OCR',
+        contractEvidenceHint: 'atomic one-way gate',
+        contractFormula: 'Formula Engine',
+        contractFormulaHint: 'atomic one-way gate',
+        contractRepairGate: 'AI Repair Gate',
+        contractRepairGateHint: 'atomic one-way gate',
+        contractClaimAudit: 'Claim Audit',
+        contractClaimAuditHint: 'atomic one-way gate',
+        contractAgentGuard: 'Agent Drift Guard',
+        contractAgentGuardHint: 'atomic one-way gate'
       }
     };
 
     let roomId = new URLSearchParams(window.location.search).get('room');
     let participantId = localStorage.getItem(storageKeys.participantId);
     let displayName = localStorage.getItem(storageKeys.displayName) || '';
-    let currentLanguage = translations[localStorage.getItem(storageKeys.language)] ? localStorage.getItem(storageKeys.language) : 'zh';
+    let currentLanguage = translations[localStorage.getItem(storageKeys.language)] ? localStorage.getItem(storageKeys.language) : 'en';
     let currentRoom = null;
     let isUploading = false;
     let isBootReady = false;
@@ -1885,7 +1977,7 @@
     }
 
     function setLanguage(language) {
-      currentLanguage = translations[language] ? language : 'zh';
+      currentLanguage = translations[language] ? language : 'en';
       localStorage.setItem(storageKeys.language, currentLanguage);
       applyLanguage();
       renderThresholdProgress(currentRoom);
