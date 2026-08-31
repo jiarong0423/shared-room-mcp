@@ -286,14 +286,13 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json({ limit: '64kb' }));
+app.get(['/', '/index.html'], (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 app.use(express.static('public', {
   extensions: ['html'],
-  maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0,
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-store');
-    }
-  }
+  maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0
 }));
 app.use('/api', createRateLimitMiddleware('api', apiRateLimitMax));
 
