@@ -1617,7 +1617,8 @@ function buildClaimId(participantId, itemId, entry) {
 }
 
 function inferDrinkItem(name) {
-  const text = String(name || '').replace(/\s+/g, '');
+  const rawText = String(name || '').toLowerCase().replace(/[_｜|/（）()]+/g, ' ');
+  const text = rawText.replace(/\s+/g, '');
   if (!text) {
     return false;
   }
@@ -1626,7 +1627,9 @@ function inferDrinkItem(name) {
     return false;
   }
 
-  return /紅茶|綠茶|青茶|烏龍|奶茶|鮮奶|拿鐵|咖啡|可可|豆漿|果汁|檸檬|多多|冰沙|奶蓋|手搖|飲品|飲料|冷飲|熱飲|氣泡|珍珠|波霸|椰果|仙草|布丁|芋圓|黑糖|乳酸/.test(text);
+  const chineseDrink = /紅茶|綠茶|青茶|烏龍|奶茶|鮮奶|拿鐵|咖啡|可可|豆漿|果汁|檸檬|多多|冰沙|奶蓋|手搖|飲品|飲料|冷飲|熱飲|氣泡|珍珠|波霸|椰果|仙草|布丁|芋圓|黑糖|乳酸/.test(text);
+  const englishDrink = /\b(?:tea|milk tea|latte|coffee|cocoa|juice|lemonade|smoothie|boba|pearl|tapioca|foam|cheese foam|brown sugar|oolong|jasmine|matcha|yogurt|soda|cola)\b/i.test(rawText);
+  return chineseDrink || englishDrink;
 }
 
 function shouldDropNonMenuPriceName(name) {
@@ -1642,27 +1645,39 @@ function isNonMenuMetadataLabel(value) {
 }
 
 function inferMenuCategory(name, supportsDrinkOptions) {
-  const text = String(name || '').replace(/\s+/g, '');
+  const rawText = String(name || '').replace(/[_｜|/（）()]+/g, ' ');
+  const text = rawText.replace(/\s+/g, '');
   if (!text) {
     return 'other';
   }
-  if (/包廂|包場|場地|場租|球場|羽球|籃球|網球|桌球|保齡球|泳池|泳道|KTV|唱歌|Room|Court|Venue/i.test(text)) {
+  if (/包廂|包場|場地|場租|球場|羽球|籃球|網球|桌球|保齡球|泳池|泳道|KTV|唱歌/i.test(text)
+    || /\b(?:room|court|venue)\b/i.test(rawText)) {
     return 'venue';
   }
-  if (/票券|門票|入場|報名|課程|體驗|活動|展覽|演唱會|Ticket|Pass|Admission|Workshop|Class|Activity/i.test(text)) {
+  if (/票券|門票|入場|報名|課程|體驗|活動|展覽|演唱會/.test(text)
+    || /\b(?:ticket|pass|admission|workshop|class|activity)\b/i.test(rawText)) {
     return 'ticket';
   }
-  if (/租借|器材|球拍|鞋|裝備|麥克風|押金|Rental|Rent|Equipment/i.test(text)) {
+  if (/租借|器材|球拍|鞋|裝備|麥克風|押金/.test(text)
+    || /\b(?:rental|rent|equipment)\b/i.test(rawText)) {
     return 'rental';
   }
-  if (/服務費|清潔費|低消|開瓶費|人頭費|計時費|鐘點|每人|低消|Service|Minimum|PerPerson|perperson/i.test(text)) {
+  if (/服務費|清潔費|低消|開瓶費|人頭費|計時費|鐘點|每人|低消/.test(text)
+    || /\b(?:service|minimum|per person|perperson)\b/i.test(rawText)) {
     return 'service';
   }
   if (supportsDrinkOptions || inferDrinkItem(text)) {
     return 'drink';
   }
-  if (/套餐|組合|雙人|多人|分享餐|家庭餐|全餐|Combo|Set/i.test(text)) {
+  if (/套餐|組合|雙人|多人|分享餐|家庭餐|全餐/.test(text)
+    || /\b(?:combo|set)\b/i.test(rawText)) {
     return 'set';
+  }
+  if (/湯|羹|鍋/.test(text) || /\b(?:soup|stew|hot pot|broth)\b/i.test(rawText)) {
+    return 'soup';
+  }
+  if (/\b(?:steak|chicken|beef|pork|tofu|rice|noodle|ramen|pasta|burger|sandwich|pizza|curry|salad|fries|meal|dish)\b/i.test(rawText)) {
+    return 'main';
   }
   if (/湯|羹|鍋/.test(text)) {
     return 'soup';
@@ -1799,6 +1814,25 @@ function extractLocalOcrPriceMatches(line) {
   return matches;
 }
 
+function selectLocalOcrPriceMatch(line, priceMatches) {
+  if (priceMatches.length <= 1) {
+    return priceMatches[0] || null;
+  }
+
+  const normalizedLine = String(line || '').toLowerCase();
+  const nonPriceNumericContext = /(?:hour|hours|hr|hrs|pax|person|people|weekday|weekend|day|days|小時|鐘|人|位|堂|次|分鐘|分|杯|瓶|份)/i;
+  for (let index = 0; index < priceMatches.length - 1; index += 1) {
+    const current = priceMatches[index];
+    const next = priceMatches[index + 1];
+    const between = normalizedLine.slice(current.index + String(current.raw || '').length, next.index);
+    if (current.price <= 24 && nonPriceNumericContext.test(between)) {
+      return priceMatches[priceMatches.length - 1];
+    }
+  }
+
+  return priceMatches[0];
+}
+
 function inferLocalOcrMenuType(items) {
   if (!items.length) {
     return 'general';
@@ -1820,30 +1854,37 @@ function normalizeRoomTaskType(value) {
 }
 
 function inferTaskTypeFromSignals(text, items = []) {
-  const normalized = String(text || '').replace(/\s+/g, '').toLowerCase();
+  const normalizedRaw = String(text || '').toLowerCase().replace(/[_｜|/（）()]+/g, ' ');
   const itemText = items.map((item) => `${item.name || ''} ${item.category || ''} ${item.sectionName || ''} ${(item.tags || []).join(' ')}`).join(' ').toLowerCase();
-  const combined = `${normalized} ${itemText}`;
+  const combinedRaw = `${normalizedRaw} ${itemText}`;
+  const combined = combinedRaw.replace(/\s+/g, '');
 
-  if (/免運|滿額|滿[0-9]|團購|合購|批發|volume|free.?shipping|group.?buy/.test(combined)) {
+  if (/免運|滿額|滿[0-9]|團購|合購|批發/.test(combined)
+    || /\b(?:volume|free shipping|group buy|bulk discount)\b/i.test(combinedRaw)) {
     return 'group_buy';
   }
-  if (/ktv|唱歌|包廂|歡唱|低消|開瓶費|清潔費|room/.test(combined)) {
+  if (/ktv|唱歌|包廂|歡唱|低消|開瓶費|清潔費/.test(combined)
+    || /\broom\b/i.test(combinedRaw)) {
     return 'ktv_room';
   }
-  if (/球場|場租|羽球|籃球|網球|桌球|保齡球|泳道|健身|運動|court|venue|sports/.test(combined)) {
+  if (/球場|場租|羽球|籃球|網球|桌球|保齡球|泳道|健身|運動/.test(combined)
+    || /\b(?:court|venue|sports)\b/i.test(combinedRaw)) {
     return 'sports_venue';
   }
-  if (/票券|門票|報名|活動|課程|展覽|體驗|演唱會|ticket|admission|workshop|class|activity/.test(combined)) {
+  if (/票券|門票|報名|活動|課程|展覽|體驗|演唱會/.test(combined)
+    || /\b(?:ticket|admission|workshop|class|activity)\b/i.test(combinedRaw)) {
     return 'ticket_activity';
   }
-  if (/租借|器材|球拍|鞋|裝備|麥克風|押金|rental|equipment/.test(combined)) {
+  if (/租借|器材|球拍|鞋|裝備|麥克風|押金/.test(combined)
+    || /\b(?:rental|equipment)\b/i.test(combinedRaw)) {
     return 'rental_share';
   }
   const drinkCount = items.filter((item) => item.supportsDrinkOptions || item.category === 'drink').length;
-  if (drinkCount >= Math.max(2, Math.ceil(items.length * 0.6)) || /飲料|飲品|手搖|咖啡|茶飲|drink/.test(combined)) {
+  if (drinkCount >= Math.max(2, Math.ceil(items.length * 0.6)) || /飲料|飲品|手搖|咖啡|茶飲/.test(combined) || /\bdrink\b/i.test(combinedRaw)) {
     return 'drink_order';
   }
-  if (/餐廳|菜單|便當|飯|麵|火鍋|主餐|小菜|restaurant|menu|meal/.test(combined)) {
+  if (/餐廳|菜單|便當|飯|麵|火鍋|主餐|小菜/.test(combined)
+    || /\b(?:restaurant|menu|meal|steak|chicken|beef|pork|rice|noodle|soup|stew)\b/i.test(combinedRaw)) {
     return 'restaurant_split';
   }
   return 'generic_split';
@@ -2090,8 +2131,12 @@ function parseLocalOcrMenuCandidates(localOcrText, imageCount = 1) {
       continue;
     }
 
+    const selectedPrice = selectLocalOcrPriceMatch(line, priceMatches);
     const firstPrice = priceMatches[0];
-    const name = cleanLocalOcrName(line.slice(0, firstPrice.index));
+    const nameBoundary = selectedPrice && selectedPrice.index > firstPrice.index ? selectedPrice.index : firstPrice.index;
+    const name = cleanLocalOcrName(line.slice(0, nameBoundary)
+      .replace(/\b[0-9]{1,2}\s*(?:hour|hours|hr|hrs|pax|person|people|day|days)\b/gi, '')
+      .replace(/[0-9]{1,2}\s*(?:小時|鐘|人|位|堂|次|分鐘|分)/g, ''));
     if (!name || name.length < 2 || shouldDropNonMenuPriceName(name) || addonOnlyItemPattern.test(name)) {
       continue;
     }
@@ -2115,7 +2160,7 @@ function parseLocalOcrMenuCandidates(localOcrText, imageCount = 1) {
 
     rawItems.push({
       name,
-      price: firstPrice.price,
+      price: selectedPrice.price,
       supportsDrinkOptions,
       sourceImageIndex: Math.min(1, imageCount),
       category,
