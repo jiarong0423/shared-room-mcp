@@ -1,0 +1,3591 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>揪團分帳房</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #fbf9f6;
+      --panel: #ffffff;
+      --panel-soft: #f7f3ec;
+      --ink: #333333;
+      --muted: #8e8e93;
+      --line: #eae5dc;
+      --accent: #6e7f70;
+      --accent-dark: #4f5f52;
+      --accent-soft: #eef2ed;
+      --hoji: #d9a05b;
+      --warn: #b45309;
+      --danger: #b42318;
+      --good: #25744f;
+      --shadow: 0 10px 28px rgba(140, 118, 98, 0.07);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .app-shell {
+      width: min(1060px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 22px 0 30px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 2px 18px;
+    }
+
+    .title-block h1 {
+      margin: 0;
+      font-size: 26px;
+      font-weight: 600;
+      line-height: 1.15;
+      letter-spacing: 1px;
+    }
+
+    .title-block p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .status-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .language-toggle {
+      display: inline-flex;
+      overflow: hidden;
+      min-height: 32px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+    }
+
+    .language-button {
+      min-width: 72px;
+      background: transparent;
+      color: var(--muted);
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .language-button[data-active="true"] {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .chip {
+      display: inline-flex;
+      min-height: 32px;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #f0eae1;
+      color: #8c7662;
+      padding: 6px 11px;
+      font-size: 12px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .chip[data-tone="good"] {
+      border-color: rgba(110, 127, 112, 0.22);
+      color: var(--accent-dark);
+      background: var(--accent-soft);
+    }
+
+    .chip[data-tone="warn"] {
+      border-color: rgba(180, 83, 9, 0.28);
+      color: var(--warn);
+      background: #fff7ed;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(330px, 0.75fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      background: #fffdf9;
+      padding: 15px 17px;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 650;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .panel-body {
+      padding: 17px;
+    }
+
+    .room-tools {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .room-code {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--muted);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .text-field {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      padding: 9px 11px;
+      outline: none;
+      font-weight: 650;
+    }
+
+    .text-field:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(31, 122, 109, 0.14);
+    }
+
+    .ocr-field {
+      width: 100%;
+      min-height: 96px;
+      resize: vertical;
+      margin-top: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      padding: 10px 11px;
+      outline: none;
+      font: inherit;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .ocr-field:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(31, 122, 109, 0.14);
+    }
+
+    .button {
+      min-height: 38px;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      padding: 8px 14px;
+      font-weight: 650;
+      white-space: nowrap;
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+    }
+
+    .button:hover:not(:disabled) {
+      background: var(--accent-dark);
+    }
+
+    .button.secondary {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--accent-dark);
+      box-shadow: none;
+    }
+
+    .button.secondary:hover:not(:disabled) {
+      background: var(--panel-soft);
+    }
+
+    .button.danger {
+      background: var(--danger);
+    }
+
+    .button.danger:hover:not(:disabled) {
+      background: #891b13;
+    }
+
+    .upload-zone {
+      display: grid;
+      min-height: 280px;
+      place-items: center;
+      border: 1.5px dashed #d8d0c4;
+      border-radius: 8px;
+      background: var(--panel-soft);
+      padding: 18px;
+      text-align: center;
+      transition: border-color 140ms ease, background 140ms ease;
+    }
+
+    .upload-zone.is-dragging {
+      border-color: var(--accent);
+      background: #eef8f1;
+    }
+
+    .upload-zone input {
+      display: none;
+    }
+
+    .upload-stack {
+      display: grid;
+      justify-items: center;
+      gap: 12px;
+      max-width: 420px;
+    }
+
+    .upload-mark {
+      display: grid;
+      width: 68px;
+      height: 68px;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--hoji);
+      font-size: 34px;
+      font-weight: 700;
+      box-shadow: 0 8px 20px rgba(20, 24, 33, 0.06);
+    }
+
+    .upload-copy {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 14px;
+    }
+
+    .preview-image {
+      display: none;
+      width: min(100%, 320px);
+      max-height: 260px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      object-fit: contain;
+      background: #fff;
+    }
+
+    .upload-actions {
+      display: none;
+      grid-template-columns: minmax(130px, 1fr) minmax(130px, 1fr);
+      gap: 8px;
+      width: min(100%, 320px);
+    }
+
+    .upload-actions.is-visible {
+      display: grid;
+    }
+
+    .loading-bar {
+      display: none;
+      margin-top: 12px;
+      border: 1px solid rgba(31, 122, 109, 0.2);
+      border-radius: 8px;
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+
+    .message {
+      display: none;
+      margin-top: 12px;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .message[data-tone="error"] {
+      display: block;
+      border: 1px solid rgba(180, 35, 24, 0.22);
+      background: #fff1f0;
+      color: var(--danger);
+    }
+
+    .message[data-tone="warn"] {
+      display: block;
+      border: 1px solid rgba(180, 83, 9, 0.24);
+      background: #fff7ed;
+      color: var(--warn);
+    }
+
+    .message[data-tone="info"] {
+      display: block;
+      border: 1px solid rgba(31, 122, 109, 0.2);
+      background: #eef8f1;
+      color: var(--accent-dark);
+    }
+
+    .quality-panel {
+      display: none;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+      color: var(--ink);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .quality-panel[data-visible="true"] {
+      display: grid;
+      gap: 6px;
+    }
+
+    .quality-title {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+    }
+
+    .quality-title span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .quality-issues {
+      display: grid;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .source-menu-card {
+      display: grid;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffdf9;
+      padding: 11px;
+      margin-bottom: 14px;
+    }
+
+    .source-menu-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .source-menu-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+
+    .image-tool-button {
+      min-width: 34px;
+      min-height: 30px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--accent-dark);
+      padding: 4px 10px;
+      font-size: 13px;
+      font-weight: 750;
+      line-height: 1;
+    }
+
+    .source-menu-card[data-collapsed="true"] .source-menu-pages,
+    .source-menu-card[data-collapsed="true"] .source-menu-viewer,
+    .source-menu-card[data-collapsed="true"] .source-menu-hint {
+      display: none;
+    }
+
+    .source-menu-viewer {
+      position: relative;
+      height: clamp(220px, 46vh, 520px);
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .source-menu-viewer[data-dragging="true"] {
+      cursor: grabbing;
+    }
+
+    .source-menu-viewer img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transform-origin: center center;
+      will-change: transform;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .source-menu-hint {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .menu-list {
+      display: grid;
+      gap: 0;
+      border-top: 1px dashed var(--line);
+    }
+
+    .menu-row {
+      display: grid;
+      border: 0;
+      border-bottom: 1px dashed var(--line);
+      border-radius: 0;
+      background: #fff;
+      padding: 13px 0;
+      gap: 10px;
+      box-shadow: none;
+    }
+
+    .menu-row-main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 172px;
+      gap: 14px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .menu-item-block {
+      display: grid;
+      grid-template-columns: 86px minmax(0, 1fr);
+      gap: 13px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .menu-item-block.no-thumb {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .menu-thumb {
+      position: relative;
+      width: 86px;
+      height: 86px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      box-shadow: 0 4px 12px rgba(140, 118, 98, 0.05);
+    }
+
+    .menu-thumb img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .menu-thumb-placeholder {
+      display: grid;
+      width: 100%;
+      height: 100%;
+      place-items: center;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .menu-item-meta {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .menu-item-name {
+      color: var(--ink);
+      font-weight: 800;
+      line-height: 1.28;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      font-size: 16px;
+    }
+
+    .menu-item-price {
+      color: var(--hoji);
+      font-size: 17px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .menu-item-stats {
+      color: var(--muted);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .menu-row-side {
+      display: grid;
+      justify-items: end;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .menu-mode-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      padding: 11px 12px;
+      margin-bottom: 14px;
+    }
+
+    .mode-copy {
+      display: grid;
+      gap: 3px;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .mode-copy span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .mode-toggle {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+
+    .mode-button,
+    .option-pill {
+      min-height: 32px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--ink);
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .mode-button[data-active="true"],
+    .option-pill[data-active="true"] {
+      border-color: rgba(31, 122, 109, 0.35);
+      background: #dff3ed;
+      color: var(--accent-dark);
+    }
+
+    .qty-control {
+      display: grid;
+      grid-template-columns: 36px 48px 36px;
+      gap: 6px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .qty-button {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffdf9;
+      color: var(--accent-dark);
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .qty-button:hover {
+      background: var(--panel-soft);
+    }
+
+    .qty-value {
+      display: inline-grid;
+      min-width: 48px;
+      height: 36px;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .drink-customizer {
+      display: grid;
+      gap: 10px;
+      border: 1px dashed #d8d0c4;
+      border-radius: 8px;
+      background: var(--panel-soft);
+      padding: 11px;
+    }
+
+    .option-group {
+      display: grid;
+      gap: 7px;
+    }
+
+    .option-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .option-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .option-select {
+      width: min(260px, 100%);
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      padding: 7px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      outline: none;
+    }
+
+    .option-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(110, 127, 112, 0.16);
+    }
+
+    .option-checkbox-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .option-checkbox {
+      display: inline-flex;
+      min-height: 36px;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--ink);
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.2;
+      user-select: none;
+    }
+
+    .option-checkbox input {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--accent);
+    }
+
+    .option-checkbox:has(input:checked) {
+      border-color: rgba(110, 127, 112, 0.34);
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+    }
+
+    .empty-state {
+      display: grid;
+      min-height: 180px;
+      place-items: center;
+      color: var(--muted);
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .summary-metric {
+      display: grid;
+      gap: 3px;
+      border-bottom: 1px solid var(--line);
+      background: #fffdf9;
+      padding: 16px 17px;
+    }
+
+    .summary-metric span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .summary-metric strong {
+      color: var(--hoji);
+      font-size: 34px;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .summary-metric small {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+      line-height: 1.4;
+    }
+
+    .threshold-box {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .threshold-box input {
+      width: 100%;
+      min-height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      padding: 7px 9px;
+      outline: none;
+      font-weight: 700;
+    }
+
+    .threshold-box input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(31, 122, 109, 0.14);
+    }
+
+    .task-selector {
+      display: grid;
+      gap: 7px;
+      width: min(100%, 720px);
+      margin-top: 12px;
+    }
+
+    .task-selector label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .task-selector select {
+      width: 100%;
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      padding: 8px 10px;
+      font-weight: 750;
+      outline: none;
+    }
+
+    .task-selector select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(31, 122, 109, 0.14);
+    }
+
+    .summary-list {
+      display: grid;
+      gap: 0;
+      max-height: 360px;
+      overflow: auto;
+      padding-right: 3px;
+    }
+
+    .summary-list.is-hidden {
+      display: none;
+    }
+
+    .summary-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 8px;
+    }
+
+    .summary-tab {
+      position: relative;
+      flex: 1;
+      min-height: 40px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 650;
+      letter-spacing: 0;
+    }
+
+    .summary-tab[data-active="true"] {
+      color: var(--accent-dark);
+    }
+
+    .summary-tab[data-active="true"]::after {
+      position: absolute;
+      right: 25%;
+      bottom: -1px;
+      left: 25%;
+      height: 2px;
+      background: var(--accent);
+      content: "";
+    }
+
+    .person-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      border: 0;
+      border-bottom: 1px dashed var(--line);
+      border-radius: 0;
+      background: #fff;
+      padding: 12px 2px;
+    }
+
+    .person-row:last-child {
+      border-bottom: 0;
+    }
+
+    .item-summary-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      border-bottom: 1px dashed var(--line);
+      padding: 12px 2px;
+    }
+
+    .item-summary-row:last-child {
+      border-bottom: 0;
+    }
+
+    .item-summary-name {
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 650;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .item-summary-detail {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .item-summary-count {
+      color: var(--accent-dark);
+      font-size: 14px;
+      font-weight: 750;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .item-summary-price {
+      margin-top: 2px;
+      color: var(--hoji);
+      font-size: 13px;
+      font-weight: 750;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .person-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 700;
+    }
+
+    .person-total {
+      color: var(--accent-dark);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .person-state {
+      color: var(--muted);
+      font-size: 12px;
+      grid-column: 1 / -1;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding-top: 14px;
+    }
+
+    .order-confirm-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+      margin-top: 14px;
+    }
+
+    .order-status {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .order-status[data-tone="good"] {
+      color: var(--good);
+    }
+
+    .order-status[data-tone="warn"] {
+      color: var(--warn);
+    }
+
+    .settlement-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+      margin-top: 14px;
+    }
+
+    .settlement-output {
+      display: none;
+      width: 100%;
+      max-height: 360px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      padding: 12px;
+      margin: 12px 0 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .settlement-output[data-visible="true"] {
+      display: block;
+    }
+
+    aside.panel {
+      position: sticky;
+      top: 14px;
+    }
+
+    .mobile-order-bar {
+      display: none;
+      position: fixed;
+      right: 10px;
+      bottom: 10px;
+      left: 10px;
+      z-index: 30;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: var(--shadow);
+      padding: 10px;
+    }
+
+    .mobile-order-text {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .mobile-order-text span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .menu-hidden {
+      display: none;
+    }
+
+    @media (max-width: 860px) {
+      .app-shell {
+        width: min(100% - 18px, 720px);
+        padding-top: 10px;
+      }
+
+      .topbar,
+      .layout,
+      .room-tools,
+      .field-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .status-row {
+        justify-content: flex-start;
+      }
+
+      .title-block h1 {
+        font-size: 23px;
+      }
+
+      .panel-header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .button {
+        width: 100%;
+      }
+
+      .menu-row {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 10px;
+      }
+
+      .menu-row-main,
+      .menu-mode-row {
+        grid-template-columns: 1fr;
+      }
+
+      .menu-item-block {
+        grid-template-columns: 76px minmax(0, 1fr);
+      }
+
+      .menu-thumb {
+        width: 76px;
+        height: 76px;
+      }
+
+      .menu-row-side {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        justify-items: stretch;
+      }
+
+      .qty-control {
+        justify-content: start;
+      }
+
+      aside.panel {
+        position: static;
+      }
+
+      .mobile-order-bar[data-visible="true"] {
+        display: flex;
+      }
+
+      .actions .button {
+        width: auto;
+        flex: 1 1 140px;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .topbar,
+      .layout > .panel:first-child .panel-header,
+      .room-tools,
+      .field-grid,
+      #uploadSection,
+      #menuBody,
+      .menu-mode-row,
+      .order-confirm-row,
+      .actions,
+      .settlement-row,
+      .mobile-order-bar,
+      aside {
+        display: none !important;
+      }
+
+      .app-shell,
+      .layout,
+      .panel,
+      .panel-body {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        box-shadow: none;
+      }
+
+      .settlement-output {
+        display: block !important;
+        max-height: none;
+        border: 0;
+        padding: 0;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="title-block">
+        <h1 data-i18n="appTitle">揪團分帳房</h1>
+        <p data-i18n="appSubtitle">上傳現場價格證據，房間內所有人同步選項、均分試算與個人費用。</p>
+      </div>
+      <div class="status-row">
+        <div class="language-toggle" id="languageToggle" aria-label="Language">
+          <button class="language-button" type="button" data-lang="zh">中文</button>
+          <button class="language-button" type="button" data-lang="en">English</button>
+        </div>
+        <span class="chip" id="connectionChip" data-i18n="connecting">連線中</span>
+        <span class="chip" id="menuChip" data-i18n="evidenceNotParsed">尚未解析證據</span>
+      </div>
+    </header>
+
+    <section class="layout">
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title" data-i18n="evidenceAndItems">價格證據與項目</h2>
+          <button class="button secondary" id="copyOrderButton" type="button" disabled data-i18n="copySettlement">複製結算摘要</button>
+        </div>
+        <div class="panel-body">
+          <div class="room-tools">
+            <div class="room-code" id="roomCode" data-i18n="creatingRoom">建立房間中</div>
+            <button class="button secondary" id="newRoomButton" type="button" data-i18n="newRoom">建立新房間</button>
+            <button class="button secondary" id="copyLinkButton" type="button" data-i18n="copyRoomLink">複製房間連結</button>
+          </div>
+
+          <div class="field-grid">
+            <input class="text-field" id="displayNameInput" maxlength="24" autocomplete="name" placeholder="你的名稱" data-i18n-placeholder="yourName">
+            <button class="button" id="saveNameButton" type="button" data-i18n="applyName">套用名稱</button>
+          </div>
+
+          <div id="uploadSection">
+            <label class="upload-zone" id="uploadZone">
+              <input id="fileInput" type="file" accept="image/*">
+              <span class="upload-stack">
+                <span class="upload-mark">＋</span>
+                <strong data-i18n="priceEvidenceImage">價格證據圖片</strong>
+                <span class="upload-copy" data-i18n="uploadCopy">選擇、拖放或貼上單張價格證據圖片。可用於吃飯、唱歌、運動、票券、租借或活動分帳。</span>
+                <button class="button" id="selectImageButton" type="button" data-i18n="selectImage">選擇圖片</button>
+                <img class="preview-image" id="previewImage" alt="價格證據預覽" data-i18n-alt="evidencePreview">
+                <span class="task-selector">
+                  <label for="taskTypeSelect" data-i18n="taskType">任務類型</label>
+                  <select id="taskTypeSelect">
+                    <option value="auto" data-i18n="taskAuto">自動判別</option>
+                    <option value="group_buy" data-i18n="taskGroupBuy">團購 / 免運門檻</option>
+                    <option value="drink_order" data-i18n="taskDrinkOrder">飲料揪團</option>
+                    <option value="restaurant_split" data-i18n="taskRestaurantSplit">吃飯分帳</option>
+                    <option value="ktv_room" data-i18n="taskKtvRoom">唱歌 / 包廂低消</option>
+                    <option value="sports_venue" data-i18n="taskSportsVenue">運動場地 / 場租</option>
+                    <option value="ticket_activity" data-i18n="taskTicketActivity">票券 / 活動報名</option>
+                    <option value="rental_share" data-i18n="taskRentalShare">租借 / 押金</option>
+                    <option value="generic_split" data-i18n="taskGenericSplit">一般分帳</option>
+                  </select>
+                </span>
+                <textarea class="ocr-field" id="localOcrTextInput" maxlength="12000" placeholder="可選：貼上本地 OCR 文字，系統會先抓候選項目，再交給模型修正；沒有 API key 時也可用候選項目開房。" data-i18n-placeholder="localOcrPlaceholder"></textarea>
+                <span class="upload-actions" id="uploadActions">
+                  <button class="button" id="confirmUploadButton" type="button" disabled data-i18n="confirmUpload">確定上傳</button>
+                  <button class="button secondary" id="cancelUploadButton" type="button" disabled data-i18n="cancelUpload">取消上傳</button>
+                </span>
+              </span>
+            </label>
+            <div class="loading-bar" id="loadingBar" data-i18n="aiParsing">AI 解析中，請保持頁面開啟。</div>
+          </div>
+
+          <div class="message" id="messageBox"></div>
+
+          <div id="menuSection" class="menu-hidden">
+            <div class="quality-panel" id="qualityPanel"></div>
+            <div class="source-menu-card" id="sourceMenuCard" hidden>
+              <div class="source-menu-header">
+                <span data-i18n="compressedEvidence">壓縮證據圖</span>
+                <div class="source-menu-tools" aria-label="價格證據圖片縮放工具" data-i18n-aria-label="imageTools">
+                  <button class="image-tool-button" id="sourceMenuToggleButton" type="button" data-i18n="collapse">收合</button>
+                  <button class="image-tool-button" id="downloadCompressedImageButton" type="button" data-i18n="downloadEvidence">下載證據圖</button>
+                  <button class="image-tool-button" id="imageZoomOutButton" type="button">−</button>
+                  <button class="image-tool-button" id="imageResetButton" type="button" data-i18n="resetZoom">重置</button>
+                  <button class="image-tool-button" id="imageZoomInButton" type="button">＋</button>
+                </div>
+              </div>
+              <div class="source-menu-viewer" id="sourceMenuViewer" aria-label="可拖移縮放的壓縮證據圖" data-i18n-aria-label="draggableEvidence">
+                <img id="sourceMenuImage" alt="壓縮證據圖" draggable="false" data-i18n-alt="compressedEvidence">
+              </div>
+              <div class="source-menu-hint" data-i18n="sourceMenuHint">可拖移查看，滾輪或雙指可縮放。此圖為後端壓縮後版本，不使用項目裁切縮圖。</div>
+            </div>
+            <div class="menu-mode-row">
+              <div class="mode-copy">
+                <span data-i18n="itemMode">項目模式</span>
+                <span id="menuModeHint">AI 自動判斷</span>
+              </div>
+              <div class="mode-toggle" id="menuModeToggle" aria-label="項目模式切換" data-i18n-aria-label="itemModeToggle">
+                <button class="mode-button" type="button" data-menu-mode="auto" data-i18n="modeAuto">自動</button>
+                <button class="mode-button" type="button" data-menu-mode="general" data-i18n="modeGeneral">一般項目</button>
+                <button class="mode-button" type="button" data-menu-mode="drink" data-i18n="modeDrink">飲料單</button>
+              </div>
+            </div>
+            <div class="menu-list" id="menuBody"></div>
+            <div class="order-confirm-row">
+              <span class="order-status" id="ownOrderStatus" data-i18n="noItemsSelected">尚未選項</span>
+              <button class="button" id="confirmOrderButton" type="button" disabled data-i18n="confirmPersonalCost">確認個人費用</button>
+            </div>
+            <div class="settlement-row">
+              <button class="button" id="settleRoomButton" type="button" disabled data-i18n="ownerSettle">發起者結算並產生分帳單</button>
+              <button class="button secondary" id="printOrderButton" type="button" disabled data-i18n="printBill">列印分帳單</button>
+              <button class="button secondary" id="downloadPdfButton" type="button" disabled data-i18n="downloadPdf">下載 PDF</button>
+            </div>
+            <pre class="settlement-output" id="settlementOutput"></pre>
+            <div class="actions">
+              <button class="button secondary" id="copyLinkButtonBottom" type="button" data-i18n="copyRoomLink">複製房間連結</button>
+              <button class="button danger" id="resetButton" type="button" data-i18n="resetRoom">清空房間</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="panel">
+        <div class="summary-metric">
+          <span data-i18n="grandTotalLabel">全體總金額</span>
+          <strong id="grandTotal">NT$ 0</strong>
+          <small id="shareAverageText">共享均分：NT$ 0 / 人；額外單點自認 NT$ 0</small>
+          <div class="threshold-box">
+            <input id="thresholdInput" type="number" min="0" step="1" inputmode="numeric" placeholder="免運 / 低消 / 成團門檻" data-i18n-placeholder="thresholdPlaceholder">
+            <small id="thresholdText" data-i18n="thresholdUnset">尚未設定門檻</small>
+          </div>
+        </div>
+        <div class="panel-header">
+          <h2 class="panel-title" data-i18n="memberStats">成員統計</h2>
+          <span class="chip" id="memberCountChip">0 人</span>
+        </div>
+        <div class="panel-body">
+          <div class="summary-tabs" id="summaryTabs" aria-label="統計切換" data-i18n-aria-label="summaryTabs">
+            <button class="summary-tab" type="button" data-summary-tab="items" data-i18n="itemStats">項目統計</button>
+            <button class="summary-tab" type="button" data-summary-tab="people" data-i18n="personDetails">每人明細</button>
+          </div>
+          <div class="summary-list" id="itemSummaryList">
+            <div class="empty-state" data-i18n="noItemStats">尚無品項統計</div>
+          </div>
+          <div class="summary-list is-hidden" id="participantList">
+            <div class="empty-state" data-i18n="noMemberCosts">尚無成員費用</div>
+          </div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <div class="mobile-order-bar" id="mobileOrderBar">
+    <div class="mobile-order-text" id="mobileOrderText"><span data-i18n="noItemsSelected">尚未選項</span><span data-i18n="chooseItemsFirst">請先選擇項目</span></div>
+    <button class="button" id="mobileConfirmOrderButton" type="button" disabled data-i18n="confirm">確認</button>
+  </div>
+
+  <script>
+    const socket = io();
+    const elements = {
+      connectionChip: document.getElementById('connectionChip'),
+      menuChip: document.getElementById('menuChip'),
+      roomCode: document.getElementById('roomCode'),
+      newRoomButton: document.getElementById('newRoomButton'),
+      copyLinkButton: document.getElementById('copyLinkButton'),
+      copyLinkButtonBottom: document.getElementById('copyLinkButtonBottom'),
+      copyOrderButton: document.getElementById('copyOrderButton'),
+      displayNameInput: document.getElementById('displayNameInput'),
+      saveNameButton: document.getElementById('saveNameButton'),
+      uploadSection: document.getElementById('uploadSection'),
+      uploadZone: document.getElementById('uploadZone'),
+      fileInput: document.getElementById('fileInput'),
+      selectImageButton: document.getElementById('selectImageButton'),
+      previewImage: document.getElementById('previewImage'),
+      taskTypeSelect: document.getElementById('taskTypeSelect'),
+      localOcrTextInput: document.getElementById('localOcrTextInput'),
+      uploadActions: document.getElementById('uploadActions'),
+      confirmUploadButton: document.getElementById('confirmUploadButton'),
+      cancelUploadButton: document.getElementById('cancelUploadButton'),
+      loadingBar: document.getElementById('loadingBar'),
+      messageBox: document.getElementById('messageBox'),
+      menuSection: document.getElementById('menuSection'),
+      qualityPanel: document.getElementById('qualityPanel'),
+      sourceMenuCard: document.getElementById('sourceMenuCard'),
+      sourceMenuViewer: document.getElementById('sourceMenuViewer'),
+      sourceMenuImage: document.getElementById('sourceMenuImage'),
+      sourceMenuToggleButton: document.getElementById('sourceMenuToggleButton'),
+      downloadCompressedImageButton: document.getElementById('downloadCompressedImageButton'),
+      imageZoomOutButton: document.getElementById('imageZoomOutButton'),
+      imageResetButton: document.getElementById('imageResetButton'),
+      imageZoomInButton: document.getElementById('imageZoomInButton'),
+      menuModeHint: document.getElementById('menuModeHint'),
+      menuModeToggle: document.getElementById('menuModeToggle'),
+      menuBody: document.getElementById('menuBody'),
+      ownOrderStatus: document.getElementById('ownOrderStatus'),
+      confirmOrderButton: document.getElementById('confirmOrderButton'),
+      settleRoomButton: document.getElementById('settleRoomButton'),
+      printOrderButton: document.getElementById('printOrderButton'),
+      downloadPdfButton: document.getElementById('downloadPdfButton'),
+      settlementOutput: document.getElementById('settlementOutput'),
+      mobileOrderBar: document.getElementById('mobileOrderBar'),
+      mobileOrderText: document.getElementById('mobileOrderText'),
+      mobileConfirmOrderButton: document.getElementById('mobileConfirmOrderButton'),
+      grandTotal: document.getElementById('grandTotal'),
+      shareAverageText: document.getElementById('shareAverageText'),
+      thresholdInput: document.getElementById('thresholdInput'),
+      thresholdText: document.getElementById('thresholdText'),
+      memberCountChip: document.getElementById('memberCountChip'),
+      summaryTabs: document.getElementById('summaryTabs'),
+      itemSummaryList: document.getElementById('itemSummaryList'),
+      participantList: document.getElementById('participantList'),
+      resetButton: document.getElementById('resetButton'),
+      languageToggle: document.getElementById('languageToggle')
+    };
+
+    const storageKeys = {
+      participantId: 'group_menu_participant_id',
+      displayName: 'group_menu_display_name',
+      thresholdTarget: 'group_menu_threshold_target',
+      taskType: 'group_menu_task_type',
+      language: 'group_menu_language'
+    };
+
+    const translations = {
+      zh: {
+        appTitle: '揪團分帳房',
+        appSubtitle: '上傳現場價格證據，房間內所有人同步選項、均分試算與個人費用。',
+        connecting: '連線中',
+        connected: '已連線',
+        disconnected: '連線中斷',
+        evidenceNotParsed: '尚未解析證據',
+        evidenceAndItems: '價格證據與項目',
+        copySettlement: '複製結算摘要',
+        creatingRoom: '建立房間中',
+        roomLabel: '房間',
+        newRoom: '建立新房間',
+        copyRoomLink: '複製房間連結',
+        yourName: '你的名稱',
+        applyName: '套用名稱',
+        priceEvidenceImage: '價格證據圖片',
+        uploadCopy: '選擇、拖放或貼上單張價格證據圖片。可用於吃飯、唱歌、運動、票券、租借或活動分帳。',
+        selectImage: '選擇圖片',
+        evidencePreview: '價格證據預覽',
+        taskType: '任務類型',
+        taskAuto: '自動判別',
+        taskGroupBuy: '團購 / 免運門檻',
+        taskDrinkOrder: '飲料揪團',
+        taskRestaurantSplit: '吃飯分帳',
+        taskKtvRoom: '唱歌 / 包廂低消',
+        taskSportsVenue: '運動場地 / 場租',
+        taskTicketActivity: '票券 / 活動報名',
+        taskRentalShare: '租借 / 押金',
+        taskGenericSplit: '一般分帳',
+        localOcrPlaceholder: '可選：貼上本地 OCR 文字，系統會先抓候選項目，再交給模型修正；沒有 API key 時也可用候選項目開房。',
+        confirmUpload: '確定上傳',
+        cancelUpload: '取消上傳',
+        aiParsing: 'AI 解析中，請保持頁面開啟。',
+        compressedEvidence: '壓縮證據圖',
+        imageTools: '價格證據圖片縮放工具',
+        collapse: '收合',
+        expand: '展開',
+        downloadEvidence: '下載證據圖',
+        resetZoom: '重置',
+        draggableEvidence: '可拖移縮放的壓縮證據圖',
+        sourceMenuHint: '可拖移查看，滾輪或雙指可縮放。此圖為後端壓縮後版本，不使用項目裁切縮圖。',
+        itemMode: '項目模式',
+        aiAutoDetect: 'AI 自動判斷',
+        itemModeToggle: '項目模式切換',
+        modeAuto: '自動',
+        modeGeneral: '一般項目',
+        modeDrink: '飲料單',
+        noItemsSelected: '尚未選項',
+        confirmPersonalCost: '確認個人費用',
+        ownerSettle: '發起者結算並產生分帳單',
+        waitingOwnerSettle: '等待發起者結算',
+        settled: '已結算',
+        printBill: '列印分帳單',
+        downloadPdf: '下載 PDF',
+        resetRoom: '清空房間',
+        grandTotalLabel: '全體總金額',
+        thresholdPlaceholder: '免運 / 低消 / 成團門檻',
+        thresholdUnset: '尚未設定門檻',
+        memberStats: '成員統計',
+        summaryTabs: '統計切換',
+        itemStats: '項目統計',
+        personDetails: '每人明細',
+        noItemStats: '尚無品項統計',
+        noMemberCosts: '尚無成員費用',
+        chooseItemsFirst: '請先選擇項目',
+        confirm: '確認',
+        cancel: '取消',
+        itemCount: '個項目',
+        peopleCount: '人',
+        perPerson: '人',
+        sharedAverage: '共享均分',
+        personalClaims: '額外單點自認',
+        targetReached: '已達標，多',
+        targetRemaining: '還差',
+        qualityPass: '結構品質正常',
+        qualityWarn: '需要快速檢查',
+        qualityReview: '需要人工確認',
+        qualityNone: '尚無品質報告',
+        needsReview: '需要確認',
+        localOcrProvided: '本地 OCR',
+        localOcrMissing: '本地 OCR：未提供',
+        auditPending: '認領稽核',
+        auditReady: '認領稽核：可結算',
+        suspicious: '可疑',
+        optionGroups: '選項群',
+        quickReview: '需確認',
+        converged: '已收斂',
+        confidence: '信心',
+        modeHintPrefix: 'AI 判斷',
+        currentMode: '目前',
+        ownerCanSwitch: '你是發起者，可切換模式',
+        ownerOnlySwitch: '只有發起者可切換模式',
+        generalItems: '一般項目',
+        drinkMenu: '飲料單',
+        mixedItems: '混合項目',
+        selectableSweetIce: '可選甜度冰塊',
+        selectableOptions: '可選規格',
+        quantity: '數量',
+        totalAll: '全體',
+        units: '份',
+        sweetness: '甜度',
+        ice: '冰塊',
+        drinkOptions: '飲料選項',
+        unitPrice: '單價',
+        sharedCandidate: '共享候選',
+        noSharedDemand: '尚無共同需求',
+        online: '在線',
+        offline: '離線',
+        confirmed: '已確認',
+        unconfirmed: '未確認',
+        you: '你',
+        owner: '發起者',
+        notConfirmed: '尚未確認',
+        roomSettled: '房間已結算',
+        itemsNotReady: '項目尚未建立',
+        enterNameApplied: '請先輸入名稱並套用',
+        noUsableItems: '尚無可用品項',
+        selectedQty: '已選',
+        selectedImage: '已選擇 1 張圖片，確認後才會上傳解析。',
+        imageOnly: '請選擇圖片檔案。',
+        alreadyLoaded: '此房間已經有價格證據，請先清空房間再選擇新圖片。',
+        uploadCanceled: '已取消上傳。',
+        compressedDownloaded: '壓縮證據圖已下載。',
+        copiedLink: '房間連結已複製。',
+        copiedSettlement: '結算摘要已複製。',
+        nameSaved: '名稱已套用。',
+        missingName: '請先輸入名稱。',
+        roomMissingNew: '原房間已不存在，已建立新房間。'
+        ,
+        reconnecting: '重新連線中',
+        billTitle: '揪團分帳總單',
+        status: '狀態',
+        unsettled: '未結算',
+        itemSummary: '品項彙總',
+        noItems: '尚無品項',
+        personalDetails: '個人明細',
+        totalAmount: '總金額',
+        claimAudit: '認領稽核',
+        readyToSettle: '可結算',
+        notReadyCount: '未確認',
+        printPdfOpened: '已開啟列印視窗，請選擇「另存為 PDF」。',
+        billCopied: '分帳單已複製並顯示在下方。',
+        settleFailed: '結算失敗',
+        settledCopied: '已結算，分帳單已複製並顯示在下方。',
+        settledDisplayed: '已結算，分帳單已顯示在下方。',
+        modeSwitchFailed: '切換項目模式失敗',
+        invalidName: '名稱不能空白，也不能使用「未命名」。',
+        resetConfirm: '清空後可重新上傳價格證據，所有成員數量會歸零。',
+        resetFailed: '清空房間失敗'
+      },
+      en: {
+        appTitle: 'Group Room Split',
+        appSubtitle: 'Upload price evidence so everyone can pick items, audit claims, and review split totals in one room.',
+        connecting: 'Connecting',
+        connected: 'Connected',
+        disconnected: 'Disconnected',
+        evidenceNotParsed: 'No evidence parsed',
+        evidenceAndItems: 'Evidence And Items',
+        copySettlement: 'Copy Summary',
+        creatingRoom: 'Creating room',
+        roomLabel: 'Room',
+        newRoom: 'New Room',
+        copyRoomLink: 'Copy Room Link',
+        yourName: 'Your name',
+        applyName: 'Apply Name',
+        priceEvidenceImage: 'Price Evidence Image',
+        uploadCopy: 'Choose, drop, or paste one price-evidence image for meals, KTV, sports, tickets, rentals, events, or group buys.',
+        selectImage: 'Select Image',
+        evidencePreview: 'Evidence preview',
+        taskType: 'Task Type',
+        taskAuto: 'Auto Detect',
+        taskGroupBuy: 'Group Buy / Free Shipping',
+        taskDrinkOrder: 'Drink Order',
+        taskRestaurantSplit: 'Restaurant Split',
+        taskKtvRoom: 'KTV / Room Minimum',
+        taskSportsVenue: 'Sports Venue / Court Fee',
+        taskTicketActivity: 'Tickets / Activity Signup',
+        taskRentalShare: 'Rental / Deposit',
+        taskGenericSplit: 'Generic Split',
+        localOcrPlaceholder: 'Optional: paste local OCR text. The app extracts candidates first, then asks the model only for repair. With no API key, enough local candidates can still open the room.',
+        confirmUpload: 'Upload Evidence',
+        cancelUpload: 'Cancel Upload',
+        aiParsing: 'AI repair is running. Keep this page open.',
+        compressedEvidence: 'Compressed Evidence',
+        imageTools: 'Price evidence image tools',
+        collapse: 'Collapse',
+        expand: 'Expand',
+        downloadEvidence: 'Download Evidence',
+        resetZoom: 'Reset',
+        draggableEvidence: 'Draggable and zoomable compressed evidence',
+        sourceMenuHint: 'Drag to inspect. Use wheel or pinch to zoom. This is the server-compressed evidence image, not cropped item thumbnails.',
+        itemMode: 'Item Mode',
+        aiAutoDetect: 'AI auto detect',
+        itemModeToggle: 'Item mode switch',
+        modeAuto: 'Auto',
+        modeGeneral: 'General Items',
+        modeDrink: 'Drink Menu',
+        noItemsSelected: 'No items selected',
+        confirmPersonalCost: 'Confirm My Cost',
+        ownerSettle: 'Owner Finalizes Split Bill',
+        waitingOwnerSettle: 'Waiting for owner',
+        settled: 'Settled',
+        printBill: 'Print Bill',
+        downloadPdf: 'Download PDF',
+        resetRoom: 'Reset Room',
+        grandTotalLabel: 'Group Total',
+        thresholdPlaceholder: 'Free shipping / minimum / group threshold',
+        thresholdUnset: 'No threshold set',
+        memberStats: 'Member Stats',
+        summaryTabs: 'Summary tabs',
+        itemStats: 'Item Stats',
+        personDetails: 'Person Details',
+        noItemStats: 'No item stats yet',
+        noMemberCosts: 'No member costs yet',
+        chooseItemsFirst: 'Choose items first',
+        confirm: 'Confirm',
+        cancel: 'Cancel',
+        itemCount: 'items',
+        peopleCount: 'people',
+        perPerson: 'person',
+        sharedAverage: 'Shared average',
+        personalClaims: 'personal claims',
+        targetReached: 'Reached, over by',
+        targetRemaining: 'Remaining',
+        qualityPass: 'Structure looks clean',
+        qualityWarn: 'Quick review needed',
+        qualityReview: 'Human review required',
+        qualityNone: 'No quality report yet',
+        needsReview: 'Needs review',
+        localOcrProvided: 'Local OCR',
+        localOcrMissing: 'Local OCR: not provided',
+        auditPending: 'Claim audit',
+        auditReady: 'Claim audit: ready',
+        suspicious: 'issues',
+        optionGroups: 'option groups',
+        quickReview: 'Review',
+        converged: 'Converged',
+        confidence: 'confidence',
+        modeHintPrefix: 'AI detected',
+        currentMode: 'Current',
+        ownerCanSwitch: 'You are the owner and can switch modes',
+        ownerOnlySwitch: 'Only the owner can switch modes',
+        generalItems: 'General Items',
+        drinkMenu: 'Drink Menu',
+        mixedItems: 'Mixed Items',
+        selectableSweetIce: 'sweetness and ice options',
+        selectableOptions: 'item options',
+        quantity: 'quantity',
+        totalAll: 'All',
+        units: 'qty',
+        sweetness: 'Sweetness',
+        ice: 'Ice',
+        drinkOptions: 'drink options',
+        unitPrice: 'unit price',
+        sharedCandidate: 'shared candidate',
+        noSharedDemand: 'no shared demand',
+        online: 'online',
+        offline: 'offline',
+        confirmed: 'confirmed',
+        unconfirmed: 'unconfirmed',
+        you: 'you',
+        owner: 'owner',
+        notConfirmed: 'not confirmed',
+        roomSettled: 'room settled',
+        itemsNotReady: 'Items not ready',
+        enterNameApplied: 'Enter and apply your name first',
+        noUsableItems: 'No usable items yet',
+        selectedQty: 'Selected',
+        selectedImage: 'Selected 1 image. It will upload only after confirmation.',
+        imageOnly: 'Please choose an image file.',
+        alreadyLoaded: 'This room already has price evidence. Reset the room before choosing a new image.',
+        uploadCanceled: 'Upload canceled.',
+        compressedDownloaded: 'Compressed evidence image downloaded.',
+        copiedLink: 'Room link copied.',
+        copiedSettlement: 'Settlement summary copied.',
+        nameSaved: 'Name applied.',
+        missingName: 'Enter your name first.',
+        roomMissingNew: 'The original room no longer exists. A new room was created.',
+        reconnecting: 'Reconnecting',
+        billTitle: 'Group Split Bill',
+        status: 'Status',
+        unsettled: 'not settled',
+        itemSummary: 'Item summary',
+        noItems: 'No items',
+        personalDetails: 'Person details',
+        totalAmount: 'Total amount',
+        claimAudit: 'Claim audit',
+        readyToSettle: 'ready',
+        notReadyCount: 'unconfirmed',
+        printPdfOpened: 'Print dialog opened. Choose Save as PDF.',
+        billCopied: 'Split bill copied and shown below.',
+        settleFailed: 'Settlement failed',
+        settledCopied: 'Settled. Split bill copied and shown below.',
+        settledDisplayed: 'Settled. Split bill shown below.',
+        modeSwitchFailed: 'Failed to switch item mode',
+        invalidName: 'Name cannot be blank or unnamed.',
+        resetConfirm: 'Reset the room and clear all member quantities?',
+        resetFailed: 'Failed to reset room'
+      }
+    };
+
+    let roomId = new URLSearchParams(window.location.search).get('room');
+    let participantId = localStorage.getItem(storageKeys.participantId);
+    let displayName = localStorage.getItem(storageKeys.displayName) || '';
+    let currentLanguage = translations[localStorage.getItem(storageKeys.language)] ? localStorage.getItem(storageKeys.language) : 'zh';
+    let currentRoom = null;
+    let isUploading = false;
+    let isBootReady = false;
+    let isRecoveringRoom = false;
+    let pendingMenuFiles = [];
+    let pendingPreviewUrl = '';
+    let activeSummaryTab = 'items';
+    let thresholdTarget = Math.max(0, Number(localStorage.getItem(storageKeys.thresholdTarget) || 0) || 0);
+    let selectedTaskType = localStorage.getItem(storageKeys.taskType) || 'auto';
+    let isSourceMenuCollapsed = false;
+    const sourceImageState = {
+      scale: 1,
+      x: 0,
+      y: 0,
+      isDragging: false,
+      dragStartX: 0,
+      dragStartY: 0,
+      dragOriginX: 0,
+      dragOriginY: 0,
+      pinchStartDistance: 0,
+      pinchStartScale: 1,
+      pinchOriginX: 0,
+      pinchOriginY: 0
+    };
+    const sourceImagePointers = new Map();
+    const sweetnessOptions = ['正常糖', '少糖', '半糖', '微糖', '無糖'];
+    const iceOptions = ['正常冰', '少冰', '微冰', '去冰', '熱'];
+    const defaultDrinkOptions = {
+      sweetness: '正常糖',
+      ice: '正常冰'
+    };
+    const menuModeLabelKeys = {
+      auto: 'modeAuto',
+      general: 'modeGeneral',
+      drink: 'modeDrink'
+    };
+    const menuTypeLabelKeys = {
+      general: 'generalItems',
+      drink: 'drinkMenu',
+      mixed: 'mixedItems'
+    };
+    const taskTypeLabelKeys = {
+      auto: 'taskAuto',
+      group_buy: 'taskGroupBuy',
+      drink_order: 'taskDrinkOrder',
+      restaurant_split: 'taskRestaurantSplit',
+      ktv_room: 'taskKtvRoom',
+      sports_venue: 'taskSportsVenue',
+      ticket_activity: 'taskTicketActivity',
+      rental_share: 'taskRentalShare',
+      generic_split: 'taskGenericSplit'
+    };
+    const menuCategoryLabels = {
+      main: '主餐',
+      side: '配菜',
+      snack: '點心',
+      soup: '湯品',
+      dessert: '甜點',
+      drink: '飲品',
+      set: '套餐',
+      service: '服務',
+      ticket: '票券',
+      rental: '租借',
+      venue: '場地',
+      addon: '加料',
+      other: '其他'
+    };
+    const spiceLevelLabels = {
+      none: '不辣',
+      mild: '微辣',
+      medium: '中辣',
+      hot: '辣',
+      extra_hot: '特辣',
+      unknown: ''
+    };
+    const itemTagLabels = {
+      signature: '招牌',
+      popular: '熱賣',
+      limited: '限定',
+      seasonal: '季節',
+      new: '新品',
+      discount: '優惠',
+      combo: '組合',
+      shareable: '共享',
+      single_serving: '單人',
+      customizable: '可客製',
+      per_person: '人頭',
+      room_package: '包廂',
+      time_limited: '限時',
+      spicy: '辣',
+      vegetarian: '素食',
+      caffeinated: '咖啡因',
+      non_caffeinated: '無咖啡因',
+      manual_review: '待確認'
+    };
+
+    if (!participantId) {
+      participantId = crypto.randomUUID();
+      localStorage.setItem(storageKeys.participantId, participantId);
+    }
+
+    elements.displayNameInput.value = displayName;
+    elements.thresholdInput.value = thresholdTarget > 0 ? String(thresholdTarget) : '';
+    elements.taskTypeSelect.value = taskTypeLabelKeys[selectedTaskType] ? selectedTaskType : 'auto';
+
+    function t(key) {
+      return translations[currentLanguage]?.[key] || translations.zh[key] || key;
+    }
+
+    function applyLanguage() {
+      document.documentElement.lang = currentLanguage === 'en' ? 'en' : 'zh-Hant';
+      document.title = t('appTitle');
+
+      document.querySelectorAll('[data-i18n]').forEach((element) => {
+        const key = element.dataset.i18n;
+        if (key) {
+          element.textContent = t(key);
+        }
+      });
+
+      document.querySelectorAll('[data-i18n-placeholder]').forEach((element) => {
+        const key = element.dataset.i18nPlaceholder;
+        if (key) {
+          element.setAttribute('placeholder', t(key));
+        }
+      });
+
+      document.querySelectorAll('[data-i18n-aria-label]').forEach((element) => {
+        const key = element.dataset.i18nAriaLabel;
+        if (key) {
+          element.setAttribute('aria-label', t(key));
+        }
+      });
+
+      document.querySelectorAll('[data-i18n-alt]').forEach((element) => {
+        const key = element.dataset.i18nAlt;
+        if (key) {
+          element.setAttribute('alt', t(key));
+        }
+      });
+
+      elements.languageToggle.querySelectorAll('button[data-lang]').forEach((button) => {
+        button.dataset.active = button.dataset.lang === currentLanguage ? 'true' : 'false';
+      });
+    }
+
+    function setLanguage(language) {
+      currentLanguage = translations[language] ? language : 'zh';
+      localStorage.setItem(storageKeys.language, currentLanguage);
+      applyLanguage();
+      renderThresholdProgress(currentRoom);
+      if (currentRoom) {
+        renderRoom(currentRoom);
+      }
+    }
+
+    function formatMoney(value) {
+      const amount = Number(value) || 0;
+      return `NT$ ${amount.toLocaleString('zh-TW')}`;
+    }
+
+    function setChip(element, text, tone) {
+      element.textContent = text;
+      if (tone) {
+        element.dataset.tone = tone;
+      } else {
+        element.removeAttribute('data-tone');
+      }
+    }
+
+    function renderThresholdProgress(room) {
+      const target = Math.max(0, Number(thresholdTarget || 0) || 0);
+      const total = Number(room?.totals?.grandTotal || 0);
+      if (target <= 0) {
+        elements.thresholdText.textContent = t('thresholdUnset');
+        return;
+      }
+      const remaining = Math.max(0, target - total);
+      elements.thresholdText.textContent = remaining <= 0
+        ? `${t('targetReached')} ${formatMoney(total - target)}`
+        : `${t('targetRemaining')} ${formatMoney(remaining)}`;
+    }
+
+    function setMessage(text, tone) {
+      elements.messageBox.textContent = text || '';
+      if (!text) {
+        elements.messageBox.removeAttribute('data-tone');
+        return;
+      }
+      elements.messageBox.dataset.tone = tone || 'warn';
+    }
+
+    function setUploading(uploading) {
+      isUploading = uploading;
+      elements.loadingBar.style.display = uploading ? 'block' : 'none';
+      elements.fileInput.disabled = uploading;
+      elements.selectImageButton.disabled = uploading;
+      elements.confirmUploadButton.disabled = uploading || pendingMenuFiles.length === 0;
+      elements.cancelUploadButton.disabled = uploading || pendingMenuFiles.length === 0;
+    }
+
+    function setPendingUpload(files) {
+      const incomingFiles = Array.from(files || []).filter(Boolean);
+      if (incomingFiles.length === 0 || isUploading) {
+        return;
+      }
+      if (incomingFiles.some((file) => !file.type.startsWith('image/'))) {
+        setMessage(t('imageOnly'), 'error');
+        return;
+      }
+      if (currentRoom?.menuLoaded) {
+        setMessage(t('alreadyLoaded'), 'warn');
+        return;
+      }
+
+      const selectedFiles = [incomingFiles[0]];
+
+      if (selectedFiles.length === 0) {
+        return;
+      }
+
+      if (pendingPreviewUrl) {
+        URL.revokeObjectURL(pendingPreviewUrl);
+      }
+      pendingMenuFiles = selectedFiles;
+      pendingPreviewUrl = URL.createObjectURL(selectedFiles[0]);
+      elements.previewImage.src = pendingPreviewUrl;
+      elements.previewImage.style.display = 'block';
+      elements.uploadActions.classList.add('is-visible');
+      elements.confirmUploadButton.disabled = false;
+      elements.cancelUploadButton.disabled = false;
+      elements.fileInput.value = '';
+      setMessage(t('selectedImage'), 'info');
+    }
+
+    function clearPendingUpload(showMessage = true) {
+      pendingMenuFiles = [];
+      if (pendingPreviewUrl) {
+        URL.revokeObjectURL(pendingPreviewUrl);
+        pendingPreviewUrl = '';
+      }
+      elements.previewImage.removeAttribute('src');
+      elements.previewImage.style.display = 'none';
+      elements.uploadActions.classList.remove('is-visible');
+      elements.confirmUploadButton.disabled = true;
+      elements.cancelUploadButton.disabled = true;
+      elements.fileInput.value = '';
+      if (showMessage) {
+        setMessage(t('uploadCanceled'), 'info');
+      }
+    }
+
+    async function createRoom() {
+      const response = await fetch('/api/rooms', { method: 'POST' });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || '建立房間失敗');
+      }
+      roomId = data.id;
+      const url = new URL(window.location.href);
+      url.searchParams.set('room', roomId);
+      window.history.replaceState({}, '', url.toString());
+      return data;
+    }
+
+    async function loadExistingRoom() {
+      if (!roomId) {
+        return createRoom();
+      }
+
+      const response = await fetch(`/api/rooms/${encodeURIComponent(roomId)}`);
+      if (response.status === 404) {
+        const data = await createRoom();
+        setMessage(t('roomMissingNew'), 'warn');
+        return data;
+      }
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || '讀取房間失敗');
+      }
+      return data;
+    }
+
+    function joinRoom() {
+      if (!roomId || !socket.connected || !isBootReady) {
+        return;
+      }
+
+      socket.emit('joinRoom', {
+        roomId,
+        participantId,
+        displayName: displayName || elements.displayNameInput.value
+      }, (result) => {
+        if (!result || !result.ok) {
+          if (String(result?.error || '').includes('找不到房間')) {
+            recoverMissingRoom();
+            return;
+          }
+          setMessage(result?.error || '加入房間失敗', 'error');
+          return;
+        }
+        participantId = result.participantId || participantId;
+        localStorage.setItem(storageKeys.participantId, participantId);
+        renderRoom(result.room);
+      });
+    }
+
+    async function recoverMissingRoom() {
+      if (isRecoveringRoom) {
+        return;
+      }
+      isRecoveringRoom = true;
+      try {
+        const room = await createRoom();
+        roomId = room.id;
+        renderRoom(room);
+        setMessage(t('roomMissingNew'), 'info');
+        joinRoom();
+      } catch (error) {
+        setMessage(error.message || '建立新房間失敗', 'error');
+      } finally {
+        isRecoveringRoom = false;
+      }
+    }
+
+    async function boot() {
+      try {
+        const room = await loadExistingRoom();
+        roomId = room.id;
+        isBootReady = true;
+        renderRoom(room);
+        joinRoom();
+      } catch (error) {
+        isBootReady = true;
+        setMessage(error.message, 'error');
+      }
+    }
+
+    function getOwnQty(itemId) {
+      return getOwnOrderEntry(itemId).qty;
+    }
+
+    function normalizeDrinkOption(value, options, fallback) {
+      const cleaned = String(value || '').replace(/\s+/g, '').trim();
+      const match = options.find((option) => option.replace(/\s+/g, '') === cleaned);
+      return match || fallback;
+    }
+
+    function groupUsesMultipleSelection(group) {
+      return group?.selectionType === 'multiple' || group?.type === 'addon';
+    }
+
+    function normalizeSelectedOptions(item, options = {}) {
+      const selected = {};
+      const groups = Array.isArray(item?.optionGroups) ? item.optionGroups : [];
+      const rawOptions = options && typeof options === 'object' ? options : {};
+
+      groups.forEach((group) => {
+        const validOptions = Array.isArray(group.options) ? group.options : [];
+        if (!group.id || validOptions.length === 0) {
+          return;
+        }
+        if (groupUsesMultipleSelection(group)) {
+          const rawValue = rawOptions[group.id];
+          const requestedIds = Array.isArray(rawValue)
+            ? rawValue.map((value) => String(value || ''))
+            : String(rawValue || '').split(',').map((value) => value.trim()).filter(Boolean);
+          const validIds = new Set(validOptions.map((option) => option.id));
+          selected[group.id] = requestedIds.filter((optionId, index, list) => {
+            return validIds.has(optionId) && list.indexOf(optionId) === index;
+          });
+          return;
+        }
+        const requested = String(rawOptions[group.id] || '');
+        const match = validOptions.find((option) => option.id === requested) || validOptions[0];
+        if (match?.id) {
+          selected[group.id] = match.id;
+        }
+      });
+
+      return selected;
+    }
+
+    function normalizeOrderEntry(entry, item = null) {
+      if (typeof entry === 'number') {
+        return {
+          qty: Math.max(0, Math.min(99, Math.floor(Number(entry) || 0))),
+          sweetness: defaultDrinkOptions.sweetness,
+          ice: defaultDrinkOptions.ice,
+          options: normalizeSelectedOptions(item)
+        };
+      }
+
+      if (!entry || typeof entry !== 'object') {
+        return {
+          qty: 0,
+          sweetness: defaultDrinkOptions.sweetness,
+          ice: defaultDrinkOptions.ice,
+          options: normalizeSelectedOptions(item)
+        };
+      }
+
+      return {
+        qty: Math.max(0, Math.min(99, Math.floor(Number(entry.qty) || 0))),
+        sweetness: normalizeDrinkOption(entry.sweetness, sweetnessOptions, defaultDrinkOptions.sweetness),
+        ice: normalizeDrinkOption(entry.ice, iceOptions, defaultDrinkOptions.ice),
+        options: normalizeSelectedOptions(item, entry.options)
+      };
+    }
+
+    function getOwnOrderEntry(itemId) {
+      const participant = getOwnParticipant();
+      const item = currentRoom?.items?.find((candidate) => candidate.id === itemId) || null;
+      return normalizeOrderEntry(participant?.order?.[itemId], item);
+    }
+
+    function getParticipantOrderEntry(participant, itemId) {
+      const item = currentRoom?.items?.find((candidate) => candidate.id === itemId) || null;
+      return normalizeOrderEntry(participant?.order?.[itemId], item);
+    }
+
+    function hasItemOptionGroups(item) {
+      return Array.isArray(item?.optionGroups) && item.optionGroups.some((group) => Array.isArray(group.options) && group.options.length > 1);
+    }
+
+    function getSelectedItemOptions(item, entry) {
+      const normalizedEntry = normalizeOrderEntry(entry, item);
+      const selected = [];
+      (Array.isArray(item?.optionGroups) ? item.optionGroups : []).forEach((group) => {
+        if (!Array.isArray(group.options)) {
+          return;
+        }
+        if (groupUsesMultipleSelection(group)) {
+          const optionIds = Array.isArray(normalizedEntry.options[group.id])
+            ? normalizedEntry.options[group.id]
+            : [];
+          optionIds.forEach((optionId) => {
+            const option = group.options.find((candidate) => candidate.id === optionId);
+            if (option) {
+              selected.push({ group, option });
+            }
+          });
+          return;
+        }
+        const optionId = normalizedEntry.options[group.id];
+        const option = group.options.find((candidate) => candidate.id === optionId);
+        if (option) {
+          selected.push({ group, option });
+        }
+      });
+      return selected;
+    }
+
+    function getItemUnitPrice(item, entry) {
+      const basePrice = Number(item?.price || 0);
+      return Math.max(0, basePrice + getSelectedItemOptions(item, entry)
+        .reduce((sum, selected) => sum + (Number(selected.option.priceDelta) || 0), 0));
+    }
+
+    function getOwnParticipant() {
+      return currentRoom?.participants?.find((candidate) => candidate.id === participantId) || null;
+    }
+
+    function hasValidDisplayName(nameValue) {
+      const name = String(nameValue || '').trim();
+      return Boolean(name) && name !== '未命名';
+    }
+
+    function hasSavedDisplayName() {
+      return hasValidDisplayName(getOwnParticipant()?.displayName);
+    }
+
+    function isOwner(room = currentRoom) {
+      return Boolean(room?.ownerParticipantId && room.ownerParticipantId === participantId);
+    }
+
+    function shouldShowDrinkOptions(item, room = currentRoom) {
+      const mode = room?.menuMode || 'auto';
+      if (mode === 'drink') {
+        return true;
+      }
+      if (mode === 'general') {
+        return false;
+      }
+      return Boolean(item?.supportsDrinkOptions) || room?.menuType === 'drink';
+    }
+
+    function getMenuModeHint(room) {
+      const aiType = t(menuTypeLabelKeys[room.menuType] || 'generalItems');
+      const mode = t(menuModeLabelKeys[room.menuMode] || 'modeAuto');
+      const ownerText = isOwner(room) ? t('ownerCanSwitch') : t('ownerOnlySwitch');
+      return `${t('modeHintPrefix')}: ${aiType} · ${t('currentMode')}: ${mode} · ${ownerText}`;
+    }
+
+    function getTaskRouterText(room) {
+      const router = room?.taskRouter || {};
+      const taskLabel = t(taskTypeLabelKeys[router.taskType] || 'taskGenericSplit');
+      const score = Number(router.confidenceScore || 0);
+      const review = router.reviewStatus === 'needs_human_review' ? t('quickReview') : t('converged');
+      return `${taskLabel} · ${review} · ${t('confidence')} ${Math.round(score * 100)}%`;
+    }
+
+    function getWebMcpRoomSnapshot() {
+      return {
+        roomId: currentRoom?.id || null,
+        menuLoaded: Boolean(currentRoom?.menuLoaded),
+        taskRouter: currentRoom?.taskRouter || null,
+        taskRouterContract: currentRoom?.taskRouterContract || null,
+        evidenceContract: currentRoom?.evidenceContract || null,
+        formulaContract: currentRoom?.formulaContract || null,
+        formulaResults: currentRoom?.formulaResults || null,
+        audit: currentRoom?.audit || null,
+        parseQuality: currentRoom?.parseQuality || null,
+        localOcr: currentRoom?.localOcr || null,
+        totals: currentRoom?.totals || null,
+        participantCount: Array.isArray(currentRoom?.participants) ? currentRoom.participants.length : 0,
+        itemCount: Array.isArray(currentRoom?.items) ? currentRoom.items.length : 0
+      };
+    }
+
+    function getAgentNextActions() {
+      const snapshot = getWebMcpRoomSnapshot();
+      const actions = [];
+      const humanReview = [];
+      const forbiddenActions = [
+        'calculate_money_outside_formula_contract',
+        'assign_claimant_without_human_confirmation',
+        'override_task_router',
+        'write_payment_data',
+        'scrape_authenticated_vendor_session',
+        'send_raw_ocr_or_images_to_google_sheets'
+      ];
+
+      if (!snapshot.roomId) {
+        actions.push({
+          id: 'wait_for_room',
+          priority: 'P0',
+          label: '等待房間建立完成',
+          reason: '目前沒有可稽核的 room id。'
+        });
+      }
+
+      if (!snapshot.menuLoaded) {
+        actions.push({
+          id: 'collect_evidence',
+          priority: 'P0',
+          label: '請主揪上傳價格證據或貼上本地 OCR 文字',
+          reason: '沒有價格證據時，agent 只能讀取空房間狀態，不能產生分帳草稿。'
+        });
+      }
+
+      if (snapshot.taskRouter?.hasTaskConflict) {
+        actions.push({
+          id: 'resolve_task_conflict',
+          priority: 'P0',
+          label: '請主揪確認任務類型',
+          reason: `使用者選擇與證據推論不同：${snapshot.taskRouter.conflictTaskType || 'unknown'}。`
+        });
+        humanReview.push('task_conflict');
+      }
+
+      const parseStatus = snapshot.parseQuality?.status || '';
+      if (parseStatus === 'review_required') {
+        actions.push({
+          id: 'review_ocr_quality',
+          priority: 'P0',
+          label: '請人工確認 OCR 可疑欄位',
+          reason: 'quality gate 已標示需要人工確認，AI 只能做 schema repair。'
+        });
+        humanReview.push('ocr_quality');
+      }
+
+      if (snapshot.audit?.pendingClaimCount > 0) {
+        actions.push({
+          id: 'resolve_pending_claims',
+          priority: 'P0',
+          label: '請成員確認額外單點或共享候選認領',
+          reason: `目前尚有 ${snapshot.audit.pendingClaimCount} 筆 claim 需要確認。`
+        });
+        humanReview.push('claim_audit');
+      }
+
+      if (snapshot.audit?.unconfirmedParticipantCount > 0) {
+        actions.push({
+          id: 'confirm_participants',
+          priority: 'P0',
+          label: '請未確認成員確認自己的項目',
+          reason: `目前尚有 ${snapshot.audit.unconfirmedParticipantCount} 位成員未確認。`
+        });
+        humanReview.push('participant_confirmation');
+      }
+
+      if (snapshot.menuLoaded && actions.length === 0) {
+        actions.push({
+          id: 'ready_for_human_settlement',
+          priority: 'P1',
+          label: '可由主揪檢查結算摘要',
+          reason: '目前沒有 WebMCP 可見的 P0 阻塞；仍需人類做最後結算確認。'
+        });
+      }
+
+      return {
+        roomId: snapshot.roomId,
+        agentRole: 'read_only_workflow_assistant',
+        toolSurfaceVersion: currentRoom?.webMcpToolSurface?.toolSurfaceVersion || null,
+        taskType: snapshot.taskRouter?.taskType || null,
+        reviewStatus: snapshot.taskRouter?.reviewStatus || null,
+        menuLoaded: snapshot.menuLoaded,
+        actions,
+        humanReview: Array.from(new Set(humanReview)),
+        forbiddenActions,
+        formulaBoundary: snapshot.formulaContract?.deterministicOnly
+          ? 'money math stays inside formulaResults'
+          : 'formula contract unavailable',
+        settlementReady: Boolean(snapshot.audit?.settlementReady)
+      };
+    }
+
+    async function registerWebMcpTools() {
+      const modelContext = document.modelContext;
+      if (!modelContext || typeof modelContext.registerTool !== 'function') {
+        return;
+      }
+
+      const readOnlyAnnotations = {
+        readOnlyHint: true,
+        untrustedContentHint: true
+      };
+      const emptyInputSchema = {
+        type: 'object',
+        properties: {},
+        additionalProperties: false
+      };
+      const tools = [
+        {
+          name: 'inspect_room',
+          title: 'Inspect room',
+          description: 'Read the current group split room state, including task router, formula contract, totals, claim audit, OCR quality, and local-first warnings. This tool never calculates money outside the app and never writes to Google Sheets.',
+          inputSchema: emptyInputSchema,
+          execute: async () => JSON.stringify(getWebMcpRoomSnapshot())
+        },
+        {
+          name: 'get_task_router',
+          title: 'Get task router',
+          description: 'Read the current task router contract and task conflict state. This is read-only and cannot change the selected task.',
+          inputSchema: emptyInputSchema,
+          execute: async () => JSON.stringify({
+            taskRouter: currentRoom?.taskRouter || null,
+            taskRouterContract: currentRoom?.taskRouterContract || null
+          })
+        },
+        {
+          name: 'get_claim_audit',
+          title: 'Get claim audit',
+          description: 'Read the current claim audit and per-claim ledger. This is read-only and cannot assign claimants or finalize settlement.',
+          inputSchema: emptyInputSchema,
+          execute: async () => JSON.stringify({
+            audit: currentRoom?.audit || null
+          })
+        },
+        {
+          name: 'get_formula_contract',
+          title: 'Get formula contract',
+          description: 'Read the deterministic formula contract. Google Sheets, external AI, Notion, and browser scraping are forbidden as calculation targets.',
+          inputSchema: emptyInputSchema,
+          execute: async () => JSON.stringify({
+            formulaContract: currentRoom?.formulaContract || null,
+            formulaResults: currentRoom?.formulaResults || null
+          })
+        },
+        {
+          name: 'get_trust_layer_contract',
+          title: 'Get trust layer contract',
+          description: 'Read the Google Sheets trust-layer schema for short-lived whitelist and audit status. This tool never reads or writes payment data.',
+          inputSchema: emptyInputSchema,
+          execute: async () => JSON.stringify({
+            trustLayerContract: currentRoom?.trustLayerContract || null,
+            webMcpToolSurface: currentRoom?.webMcpToolSurface || null
+          })
+        },
+        {
+          name: 'suggest_next_actions',
+          title: 'Suggest next actions',
+          description: 'Return read-only workflow suggestions for an agent based on the room state, OCR quality, task conflict, formula boundary, and claim audit. This tool cannot mutate the room and cannot calculate new money values.',
+          inputSchema: emptyInputSchema,
+          execute: async () => JSON.stringify(getAgentNextActions())
+        }
+      ];
+
+      for (const tool of tools) {
+        try {
+          await modelContext.registerTool({
+            ...tool,
+            annotations: readOnlyAnnotations
+          });
+        } catch (error) {
+          console.warn('webmcp_register_failed', tool.name, error);
+        }
+      }
+    }
+
+    function getItemMetaText(item, drinkOptionsEnabled, itemOptionsEnabled) {
+      const parts = [];
+      const category = menuCategoryLabels[item?.category] || '';
+      if (category) {
+        parts.push(category);
+      }
+      if (item?.sectionName) {
+        parts.push(item.sectionName);
+      }
+      if (item?.sizeLabel) {
+        parts.push(item.sizeLabel);
+      }
+      if (item?.temperature && item.temperature !== '未標示') {
+        parts.push(item.temperature);
+      }
+      const spice = spiceLevelLabels[item?.spiceLevel] || '';
+      if (spice) {
+        parts.push(spice);
+      }
+      for (const tag of Array.isArray(item?.tags) ? item.tags : []) {
+        const label = itemTagLabels[tag];
+        if (label && !parts.includes(label)) {
+          parts.push(label);
+        }
+      }
+      if (drinkOptionsEnabled) {
+        parts.push(t('selectableSweetIce'));
+      }
+      if (itemOptionsEnabled) {
+        parts.push(t('selectableOptions'));
+      }
+      if (item?.note) {
+        parts.push(item.note);
+      }
+      return parts.filter(Boolean).join(' · ') || t('generalItems');
+    }
+
+    function getQualityStatusLabel(status) {
+      if (status === 'pass') {
+        return t('qualityPass');
+      }
+      if (status === 'warn') {
+        return t('qualityWarn');
+      }
+      if (status === 'review_required') {
+        return t('qualityReview');
+      }
+      return t('qualityNone');
+    }
+
+    function renderParseQuality(room) {
+      const quality = room.parseQuality || null;
+      const localOcr = room.localOcr || null;
+      if (!quality && !localOcr) {
+        elements.qualityPanel.removeAttribute('data-visible');
+        elements.qualityPanel.innerHTML = '';
+        return;
+      }
+
+      const issueRows = Array.isArray(quality?.issues)
+        ? quality.issues.slice(0, 4).map((issue) => {
+          const target = issue.item ? `：${issue.item}` : '';
+          return `<div>${escapeHtml(`${issue.detail || issue.type || t('needsReview')}${target}`)}</div>`;
+        }).join('')
+        : '';
+      const localOcrText = localOcr?.enabled
+        ? `${t('localOcrProvided')}: ${Number(localOcr.lineCount || 0)} lines / ${Number(localOcr.candidateCount || 0)} candidates`
+        : t('localOcrMissing');
+      const taskText = getTaskRouterText(room);
+      const audit = room.audit || {};
+      const auditText = Number(audit.unconfirmedParticipantCount || 0) > 0
+        ? `${t('auditPending')}: ${Number(audit.unconfirmedParticipantCount || 0)} ${t('unconfirmed')}`
+        : t('auditReady');
+
+      elements.qualityPanel.dataset.visible = 'true';
+      elements.qualityPanel.innerHTML = `
+        <div class="quality-title">
+          ${escapeHtml(getQualityStatusLabel(quality?.status))}
+          <span>${escapeHtml(taskText)} · ${escapeHtml(localOcrText)} · ${escapeHtml(auditText)} · ${t('suspicious')} ${Number(quality?.issueCount || 0)} · ${t('optionGroups')} ${Number(quality?.optionGroupCount || 0)}</span>
+        </div>
+        ${issueRows ? `<div class="quality-issues">${issueRows}</div>` : ''}
+      `;
+    }
+
+    function renderRoom(room) {
+      if (!room) {
+        return;
+      }
+
+      currentRoom = room;
+      elements.roomCode.textContent = `${t('roomLabel')} ${room.id} · ${window.location.origin}${window.location.pathname}?room=${room.id}`;
+      elements.grandTotal.textContent = formatMoney(room.totals?.grandTotal || 0);
+      const billableParticipants = Array.from(room.participants || [])
+        .filter((participant) => Number(participant.total || 0) > 0 || participant.confirmed);
+      const averagePeople = Math.max(1, billableParticipants.length || room.participants?.length || 1);
+      const sharedCandidateTotal = Number(room.totals?.sharedCandidateTotal || 0);
+      const personalClaimTotal = Number(room.totals?.personalClaimTotal || 0);
+      const averageAmount = Math.ceil(sharedCandidateTotal / averagePeople);
+      elements.shareAverageText.textContent = `${t('sharedAverage')}: ${formatMoney(averageAmount)} / ${t('perPerson')} (${averagePeople} ${t('peopleCount')}); ${t('personalClaims')} ${formatMoney(personalClaimTotal)}`;
+      renderThresholdProgress(room);
+      elements.memberCountChip.textContent = `${room.participants?.length || 0} ${t('peopleCount')}`;
+
+      if (room.menuLoaded) {
+        setChip(elements.menuChip, `${room.items.length} ${t('itemCount')}`, 'good');
+        elements.uploadSection.style.display = 'none';
+        elements.menuSection.classList.remove('menu-hidden');
+        elements.copyOrderButton.disabled = Number(room.totals?.grandTotal || 0) <= 0;
+        renderSourceMenu(room);
+        renderParseQuality(room);
+        renderMenuMode(room);
+        renderMenu(room);
+      } else {
+        setChip(elements.menuChip, t('evidenceNotParsed'), 'warn');
+        elements.uploadSection.style.display = 'block';
+        elements.menuSection.classList.add('menu-hidden');
+        elements.copyOrderButton.disabled = true;
+        elements.sourceMenuCard.hidden = true;
+        elements.qualityPanel.removeAttribute('data-visible');
+        elements.qualityPanel.innerHTML = '';
+        elements.sourceMenuImage.removeAttribute('src');
+        elements.menuBody.innerHTML = '';
+        elements.settlementOutput.textContent = '';
+        elements.settlementOutput.removeAttribute('data-visible');
+      }
+
+      renderOwnOrderState(room);
+      renderItemSummary(room);
+      renderParticipants(room);
+      renderSummaryTabs();
+      renderSettlement(room);
+
+      if (!isUploading) {
+        setMessage('', 'warn');
+      }
+    }
+
+    function renderMenuMode(room) {
+      elements.menuModeHint.textContent = getMenuModeHint(room);
+      const buttons = elements.menuModeToggle.querySelectorAll('button[data-menu-mode]');
+      buttons.forEach((button) => {
+        const mode = button.dataset.menuMode;
+        button.dataset.active = mode === (room.menuMode || 'auto') ? 'true' : 'false';
+        button.disabled = !isOwner(room) || room.settled;
+      });
+    }
+
+    function renderSourceMenu(room) {
+      const images = Array.isArray(room.menuImages) && room.menuImages.length > 0
+        ? room.menuImages
+        : room.menuImageUrl ? [{ index: 0, url: room.menuImageUrl }] : [];
+
+      if (images.length === 0) {
+        elements.sourceMenuCard.hidden = true;
+        elements.sourceMenuImage.removeAttribute('src');
+        return;
+      }
+
+      elements.sourceMenuCard.hidden = false;
+      updateSourceMenuCollapse();
+      const activeImage = images[0];
+      if (elements.sourceMenuImage.getAttribute('src') !== activeImage.url) {
+        elements.sourceMenuImage.src = activeImage.url;
+        resetSourceImageTransform();
+      } else {
+        applySourceImageTransform();
+      }
+    }
+
+    function updateSourceMenuCollapse() {
+      elements.sourceMenuCard.dataset.collapsed = isSourceMenuCollapsed ? 'true' : 'false';
+      elements.sourceMenuToggleButton.textContent = isSourceMenuCollapsed ? t('expand') : t('collapse');
+      elements.imageZoomOutButton.disabled = isSourceMenuCollapsed;
+      elements.imageResetButton.disabled = isSourceMenuCollapsed;
+      elements.imageZoomInButton.disabled = isSourceMenuCollapsed;
+    }
+
+    function toggleSourceMenuCollapse() {
+      isSourceMenuCollapsed = !isSourceMenuCollapsed;
+      updateSourceMenuCollapse();
+    }
+
+    function downloadCompressedImage() {
+      const images = Array.isArray(currentRoom?.menuImages) && currentRoom.menuImages.length > 0
+        ? currentRoom.menuImages
+        : currentRoom?.menuImageUrl ? [{ url: currentRoom.menuImageUrl }] : [];
+      const image = images[0];
+      if (!image?.url) {
+        return;
+      }
+      const link = document.createElement('a');
+      link.href = image.url;
+      link.download = `compressed-menu-${currentRoom?.id || 'room'}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setMessage(t('compressedDownloaded'), 'info');
+    }
+
+    function clampSourceImageScale(scale) {
+      return Math.max(1, Math.min(4, Number(scale) || 1));
+    }
+
+    function applySourceImageTransform() {
+      sourceImageState.scale = clampSourceImageScale(sourceImageState.scale);
+      if (sourceImageState.scale === 1) {
+        sourceImageState.x = 0;
+        sourceImageState.y = 0;
+      }
+      elements.sourceMenuImage.style.transform = `translate(${sourceImageState.x}px, ${sourceImageState.y}px) scale(${sourceImageState.scale})`;
+    }
+
+    function resetSourceImageTransform() {
+      sourceImageState.scale = 1;
+      sourceImageState.x = 0;
+      sourceImageState.y = 0;
+      sourceImageState.isDragging = false;
+      sourceImageState.pinchStartDistance = 0;
+      sourceImagePointers.clear();
+      elements.sourceMenuViewer.dataset.dragging = 'false';
+      applySourceImageTransform();
+    }
+
+    function zoomSourceImage(delta) {
+      sourceImageState.scale = clampSourceImageScale(sourceImageState.scale + delta);
+      applySourceImageTransform();
+    }
+
+    function getPointerDistance() {
+      const points = Array.from(sourceImagePointers.values());
+      if (points.length < 2) {
+        return 0;
+      }
+      return Math.hypot(points[0].clientX - points[1].clientX, points[0].clientY - points[1].clientY);
+    }
+
+    function renderMenu(room) {
+      const ownParticipant = getOwnParticipant();
+      const isLocked = Boolean(ownParticipant?.confirmed) || Boolean(room.settled);
+      const visibleItems = Array.from(room.items || []);
+      const rows = visibleItems.map((item) => {
+        const ownEntry = getOwnOrderEntry(item.id);
+        const itemTotal = room.totals?.itemTotals?.[item.id] || { qty: 0, subtotal: 0 };
+        const drinkOptionsEnabled = shouldShowDrinkOptions(item, room);
+        const itemOptionsEnabled = hasItemOptionGroups(item);
+        const customizer = ownEntry.qty > 0 && (drinkOptionsEnabled || itemOptionsEnabled)
+          ? renderDrinkCustomizer(item, ownEntry, isLocked)
+          : '';
+        const itemTags = getItemMetaText(item, drinkOptionsEnabled, itemOptionsEnabled);
+        return `
+          <div class="menu-row" data-item-id="${escapeHtml(item.id)}">
+            <div class="menu-row-main">
+              <div class="menu-item-block no-thumb">
+                <div class="menu-item-meta">
+                  <div class="menu-item-name">${escapeHtml(item.name)}</div>
+                  <div class="menu-item-price">${formatMoney(getItemUnitPrice(item, ownEntry))}</div>
+                  <div class="menu-item-stats">${escapeHtml(itemTags)}</div>
+                </div>
+              </div>
+              <div class="menu-row-side">
+                <div class="qty-control" aria-label="${escapeHtml(`${item.name} ${t('quantity')}`)}">
+                  <button class="qty-button" type="button" data-action="decrease" data-item-id="${escapeHtml(item.id)}" ${isLocked ? 'disabled' : ''}>−</button>
+                  <span class="qty-value">${ownEntry.qty}</span>
+                  <button class="qty-button" type="button" data-action="increase" data-item-id="${escapeHtml(item.id)}" ${isLocked ? 'disabled' : ''}>+</button>
+                </div>
+                <div class="menu-item-stats">${t('totalAll')} ${itemTotal.qty} ${t('units')} · ${formatMoney(itemTotal.subtotal)}</div>
+              </div>
+            </div>
+            ${customizer}
+          </div>
+        `;
+      }).join('');
+
+      elements.menuBody.innerHTML = rows || `<div class="empty-state">${t('noUsableItems')}</div>`;
+    }
+
+    function renderDrinkCustomizer(item, entry, disabled) {
+      const itemOptionControls = hasItemOptionGroups(item)
+        ? (item.optionGroups || []).map((group) => renderOptionControl(item, group, entry, disabled)).join('')
+        : '';
+      const drinkOptionControls = shouldShowDrinkOptions(item)
+        ? `
+          <div class="option-group">
+            <div class="option-label">${t('sweetness')}</div>
+            <div class="option-list">
+              ${sweetnessOptions.map((option) => renderOptionPill(item.id, 'sweetness', option, entry.sweetness, disabled)).join('')}
+            </div>
+          </div>
+          <div class="option-group">
+            <div class="option-label">${t('ice')}</div>
+            <div class="option-list">
+              ${iceOptions.map((option) => renderOptionPill(item.id, 'ice', option, entry.ice, disabled)).join('')}
+            </div>
+          </div>
+        `
+        : '';
+      return `
+        <div class="drink-customizer" aria-label="${escapeHtml(`${item.name} ${t('drinkOptions')}`)}">
+          ${itemOptionControls}
+          ${drinkOptionControls}
+        </div>
+      `;
+    }
+
+    function renderOptionControl(item, group, entry, disabled) {
+      if (groupUsesMultipleSelection(group)) {
+        return renderOptionCheckboxes(item, group, entry, disabled);
+      }
+      return renderOptionSelect(item, group, entry, disabled);
+    }
+
+    function renderOptionSelect(item, group, entry, disabled) {
+      const selectedOptionId = normalizeOrderEntry(entry, item).options[group.id] || group.options?.[0]?.id || '';
+      const options = (Array.isArray(group.options) ? group.options : []).map((option) => {
+        const delta = Number(option.priceDelta || 0);
+        const suffix = delta > 0 ? ` +${formatMoney(delta)}` : '';
+        return `<option value="${escapeHtml(option.id)}" ${option.id === selectedOptionId ? 'selected' : ''}>${escapeHtml(option.label)}${suffix}</option>`;
+      }).join('');
+      return `
+        <div class="option-group">
+          <label class="option-label" for="option-${escapeHtml(item.id)}-${escapeHtml(group.id)}">${escapeHtml(group.label)}</label>
+          <select
+            class="option-select"
+            id="option-${escapeHtml(item.id)}-${escapeHtml(group.id)}"
+            data-action="set-item-option"
+            data-item-id="${escapeHtml(item.id)}"
+            data-option-group-id="${escapeHtml(group.id)}"
+            ${disabled ? 'disabled' : ''}
+          >${options}</select>
+        </div>
+      `;
+    }
+
+    function renderOptionCheckboxes(item, group, entry, disabled) {
+      const selectedOptionIds = normalizeOrderEntry(entry, item).options[group.id] || [];
+      const options = (Array.isArray(group.options) ? group.options : []).map((option) => {
+        const delta = Number(option.priceDelta || 0);
+        const suffix = delta > 0 ? ` +${formatMoney(delta)}` : '';
+        const checked = selectedOptionIds.includes(option.id) ? 'checked' : '';
+        return `
+          <label class="option-checkbox">
+            <input
+              type="checkbox"
+              data-action="toggle-item-option"
+              data-item-id="${escapeHtml(item.id)}"
+              data-option-group-id="${escapeHtml(group.id)}"
+              data-option-id="${escapeHtml(option.id)}"
+              ${checked}
+              ${disabled ? 'disabled' : ''}
+            >
+            <span>${escapeHtml(option.label)}${suffix}</span>
+          </label>
+        `;
+      }).join('');
+      return `
+        <div class="option-group">
+          <div class="option-label">${escapeHtml(group.label)}</div>
+          <div class="option-checkbox-list">${options}</div>
+        </div>
+      `;
+    }
+
+    function renderOptionPill(itemId, optionType, option, selected, disabled) {
+      return `
+        <button
+          class="option-pill"
+          type="button"
+          data-action="set-option"
+          data-item-id="${escapeHtml(itemId)}"
+          data-option-type="${escapeHtml(optionType)}"
+          data-option-value="${escapeHtml(option)}"
+          data-active="${option === selected ? 'true' : 'false'}"
+          ${disabled ? 'disabled' : ''}
+        >${escapeHtml(option)}</button>
+      `;
+    }
+
+    function renderOwnOrderState(room) {
+      const ownParticipant = getOwnParticipant();
+      const total = Number(ownParticipant?.total || 0);
+      const isConfirmed = Boolean(ownParticipant?.confirmed);
+
+      if (!room.menuLoaded) {
+        elements.ownOrderStatus.textContent = t('itemsNotReady');
+        elements.ownOrderStatus.dataset.tone = 'warn';
+        elements.confirmOrderButton.textContent = t('confirmPersonalCost');
+        elements.confirmOrderButton.disabled = true;
+        elements.confirmOrderButton.className = 'button';
+        updateMobileOrderBar(room);
+        return;
+      }
+
+      if (room.settled) {
+        elements.ownOrderStatus.textContent = `${t('settled')} · ${formatMoney(total)}`;
+        elements.ownOrderStatus.dataset.tone = 'good';
+        elements.confirmOrderButton.textContent = t('settled');
+        elements.confirmOrderButton.disabled = true;
+        elements.confirmOrderButton.className = 'button secondary';
+        updateMobileOrderBar(room);
+        return;
+      }
+
+      if (!hasSavedDisplayName()) {
+        elements.ownOrderStatus.textContent = t('enterNameApplied');
+        elements.ownOrderStatus.dataset.tone = 'warn';
+        elements.confirmOrderButton.textContent = t('confirmPersonalCost');
+        elements.confirmOrderButton.disabled = true;
+        elements.confirmOrderButton.className = 'button';
+        updateMobileOrderBar(room);
+        return;
+      }
+
+      if (isConfirmed) {
+        elements.ownOrderStatus.textContent = `${t('confirmed')} · ${formatMoney(total)}`;
+        elements.ownOrderStatus.dataset.tone = 'good';
+        elements.confirmOrderButton.textContent = t('cancel');
+        elements.confirmOrderButton.disabled = false;
+        elements.confirmOrderButton.className = 'button secondary';
+        updateMobileOrderBar(room);
+        return;
+      }
+
+      if (total > 0) {
+        elements.ownOrderStatus.textContent = `${t('notConfirmed')} · ${formatMoney(total)}`;
+        elements.ownOrderStatus.dataset.tone = 'warn';
+        elements.confirmOrderButton.textContent = t('confirmPersonalCost');
+        elements.confirmOrderButton.disabled = false;
+        elements.confirmOrderButton.className = 'button';
+        updateMobileOrderBar(room);
+        return;
+      }
+
+      elements.ownOrderStatus.textContent = t('noItemsSelected');
+      elements.ownOrderStatus.dataset.tone = 'warn';
+      elements.confirmOrderButton.textContent = t('confirmPersonalCost');
+      elements.confirmOrderButton.disabled = true;
+      elements.confirmOrderButton.className = 'button';
+      updateMobileOrderBar(room);
+    }
+
+    function updateMobileOrderBar(room) {
+      if (!room?.menuLoaded) {
+        elements.mobileOrderBar.dataset.visible = 'false';
+        elements.mobileConfirmOrderButton.disabled = true;
+        return;
+      }
+
+      const ownParticipant = getOwnParticipant();
+      const total = Number(ownParticipant?.total || 0);
+      const qty = Object.values(ownParticipant?.order || {})
+        .reduce((sum, entry) => sum + normalizeOrderEntry(entry).qty, 0);
+      const isConfirmed = Boolean(ownParticipant?.confirmed);
+      const label = qty > 0 ? `${t('selectedQty')} ${qty} ${t('units')} · ${formatMoney(total)}` : t('noItemsSelected');
+      const detail = room.settled ? t('roomSettled') : `${t('totalAll')} ${formatMoney(room.totals?.grandTotal || 0)}`;
+      elements.mobileOrderText.innerHTML = `${escapeHtml(label)}<span>${escapeHtml(detail)}</span>`;
+      elements.mobileConfirmOrderButton.textContent = room.settled
+        ? t('settled')
+        : isConfirmed ? t('cancel') : t('confirm');
+      elements.mobileConfirmOrderButton.disabled = room.settled
+        || !hasSavedDisplayName()
+        || (!isConfirmed && total <= 0);
+      elements.mobileOrderBar.dataset.visible = 'true';
+    }
+
+    function renderItemSummary(room) {
+      const orderedItems = Array.from(room.items || [])
+        .map((item) => ({
+          item,
+          total: room.totals?.itemTotals?.[item.id] || { qty: 0, subtotal: 0 }
+        }))
+        .filter((entry) => entry.total.qty > 0)
+        .sort((a, b) => Number(b.total.subtotal || 0) - Number(a.total.subtotal || 0));
+
+      if (orderedItems.length === 0) {
+        elements.itemSummaryList.innerHTML = `<div class="empty-state">${t('noItemStats')}</div>`;
+        return;
+      }
+
+      function buyersForItem(itemId) {
+        return Array.from(room.participants || [])
+          .map((participant) => {
+            const entry = getParticipantOrderEntry(participant, itemId);
+            return entry.qty > 0 ? `${participant.displayName} x${entry.qty}` : '';
+          })
+          .filter(Boolean);
+      }
+
+      elements.itemSummaryList.innerHTML = orderedItems.map(({ item, total }) => `
+        <div class="item-summary-row">
+          <div>
+            <div class="item-summary-name">${escapeHtml(item.name)}</div>
+            <div class="item-summary-detail">${formatMoney(item.price)} ${t('unitPrice')} · ${total.claimMode === 'shared_candidate' ? t('sharedCandidate') : t('personalClaims')} · ${escapeHtml(buyersForItem(item.id).join('、') || t('noSharedDemand'))}</div>
+          </div>
+          <div>
+            <div class="item-summary-count">× ${total.qty}</div>
+            <div class="item-summary-price">${formatMoney(total.subtotal)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderParticipants(room) {
+      const participants = Array.from(room.participants || [])
+        .sort((a, b) => Number(b.total || 0) - Number(a.total || 0));
+
+      if (participants.length === 0) {
+        elements.participantList.innerHTML = `<div class="empty-state">${t('noMemberCosts')}</div>`;
+        return;
+      }
+
+      elements.participantList.innerHTML = participants.map((participant) => {
+        const status = room.settled ? t('settled') : participant.confirmed ? t('confirmed') : t('unconfirmed');
+        const presence = participant.connected ? t('online') : t('offline');
+        const selfSuffix = participant.id === participantId ? ` · ${t('you')}` : '';
+        const ownerSuffix = participant.id === room.ownerParticipantId ? ` · ${t('owner')}` : '';
+        return `
+          <div class="person-row">
+            <div class="person-name">${escapeHtml(participant.displayName)}${selfSuffix}${ownerSuffix}</div>
+            <div class="person-total">${formatMoney(participant.total)}</div>
+            <div class="person-state">${presence} · ${status}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderSummaryTabs() {
+      const tabs = elements.summaryTabs.querySelectorAll('button[data-summary-tab]');
+      tabs.forEach((tab) => {
+        tab.dataset.active = tab.dataset.summaryTab === activeSummaryTab ? 'true' : 'false';
+      });
+      elements.itemSummaryList.classList.toggle('is-hidden', activeSummaryTab !== 'items');
+      elements.participantList.classList.toggle('is-hidden', activeSummaryTab !== 'people');
+    }
+
+    function renderSettlement(room) {
+      if (!room?.menuLoaded) {
+        elements.settleRoomButton.disabled = true;
+        elements.printOrderButton.disabled = true;
+        elements.downloadPdfButton.disabled = true;
+        return;
+      }
+
+      const hasTotal = Number(room.totals?.grandTotal || 0) > 0;
+      const owner = isOwner(room);
+      elements.settleRoomButton.disabled = room.settled || !owner || !hasSavedDisplayName() || !hasTotal;
+      elements.settleRoomButton.textContent = room.settled
+        ? t('settled')
+        : owner ? t('ownerSettle') : t('waitingOwnerSettle');
+      elements.printOrderButton.disabled = !hasTotal;
+      elements.downloadPdfButton.disabled = !hasTotal;
+
+      if (room.settled) {
+        elements.settlementOutput.textContent = buildOrderText(room);
+        elements.settlementOutput.dataset.visible = 'true';
+      } else if (elements.settlementOutput.dataset.visible === 'true') {
+        elements.settlementOutput.textContent = buildOrderText(room);
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function changeQty(itemId, delta) {
+      if (!currentRoom?.menuLoaded) {
+        return;
+      }
+      if (currentRoom.settled) {
+        setMessage('此房間已結算，不能再修改數量。', 'error');
+        return;
+      }
+      if (!hasSavedDisplayName()) {
+        setMessage('請先輸入名稱並套用名稱再選擇項目。', 'error');
+        elements.displayNameInput.focus();
+        return;
+      }
+      if (getOwnParticipant()?.confirmed) {
+        setMessage('個人費用已確認，請先取消確認再修改數量。', 'error');
+        return;
+      }
+      const nextQty = Math.max(0, Math.min(99, getOwnQty(itemId) + delta));
+      socket.emit('setItemQty', {
+        roomId,
+        participantId,
+        itemId,
+        qty: nextQty
+      }, (result) => {
+        if (!result || !result.ok) {
+          setMessage(result?.error || '更新數量失敗', 'error');
+        }
+      });
+    }
+
+    function setDrinkOption(itemId, optionType, value) {
+      if (!currentRoom?.menuLoaded) {
+        return;
+      }
+      if (currentRoom.settled) {
+        setMessage('此房間已結算，不能再修改甜度冰塊。', 'error');
+        return;
+      }
+      if (!hasSavedDisplayName()) {
+        setMessage('請先輸入名稱並套用名稱再選甜度冰塊。', 'error');
+        elements.displayNameInput.focus();
+        return;
+      }
+      if (getOwnParticipant()?.confirmed) {
+        setMessage('個人費用已確認，請先取消確認再修改甜度冰塊。', 'error');
+        return;
+      }
+
+      socket.emit('setDrinkOption', {
+        roomId,
+        participantId,
+        itemId,
+        optionType,
+        value
+      }, (result) => {
+        if (!result || !result.ok) {
+          setMessage(result?.error || '更新甜度冰塊失敗', 'error');
+        }
+      });
+    }
+
+    function setItemOption(itemId, groupId, optionId, selected = true) {
+      if (!currentRoom?.menuLoaded) {
+        return;
+      }
+      if (currentRoom.settled) {
+        setMessage('此房間已結算，不能再修改選項。', 'error');
+        return;
+      }
+      if (!hasSavedDisplayName()) {
+        setMessage('請先輸入名稱並套用名稱再選規格。', 'error');
+        elements.displayNameInput.focus();
+        return;
+      }
+      if (getOwnParticipant()?.confirmed) {
+        setMessage('個人費用已確認，請先取消確認再修改選項。', 'error');
+        return;
+      }
+
+      socket.emit('setItemOption', {
+        roomId,
+        participantId,
+        itemId,
+        groupId,
+        optionId,
+        selected
+      }, (result) => {
+        if (!result || !result.ok) {
+          setMessage(result?.error || '更新選項失敗', 'error');
+        }
+      });
+    }
+
+    function toggleOrderConfirmation() {
+      if (!currentRoom?.menuLoaded) {
+        return;
+      }
+      if (currentRoom.settled) {
+        setMessage('此房間已結算，不能再修改確認狀態。', 'error');
+        return;
+      }
+      if (!hasSavedDisplayName()) {
+        setMessage('請先輸入名稱並套用名稱再確認個人費用。', 'error');
+        elements.displayNameInput.focus();
+        return;
+      }
+
+      const ownParticipant = getOwnParticipant();
+      const shouldConfirm = !ownParticipant?.confirmed;
+      if (shouldConfirm && Number(ownParticipant?.total || 0) <= 0) {
+        setMessage('目前沒有費用項目，不能確認空明細。', 'error');
+        return;
+      }
+
+      socket.emit('confirmOrder', {
+        roomId,
+        participantId,
+        confirmed: shouldConfirm
+      }, (result) => {
+        if (!result || !result.ok) {
+          setMessage(result?.error || '個人費用確認失敗', 'error');
+          return;
+        }
+        renderRoom(result.room);
+      });
+    }
+
+    async function uploadPendingImage() {
+      if (pendingMenuFiles.length === 0 || isUploading) {
+        return;
+      }
+      if (currentRoom?.menuLoaded) {
+        setMessage('此房間已經有價格證據，請先清空房間再上傳新圖片。', 'warn');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('menuImage', pendingMenuFiles[0]);
+      const localOcrText = String(elements.localOcrTextInput.value || '').trim();
+      if (localOcrText) {
+        formData.append('ocrText', localOcrText);
+      }
+      formData.append('taskType', selectedTaskType);
+
+      setUploading(true);
+      setMessage('', 'warn');
+
+      try {
+        const response = await fetch(`/api/rooms/${encodeURIComponent(roomId)}/menu`, {
+          method: 'POST',
+          body: formData
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || '圖片解析失敗');
+        }
+        clearPendingUpload(false);
+        renderRoom(data);
+      } catch (error) {
+        setMessage(error.message, 'error');
+      } finally {
+        setUploading(false);
+      }
+    }
+
+    function copyRoomLink() {
+      const url = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(roomId)}`;
+      navigator.clipboard.writeText(url)
+        .then(() => setMessage('房間連結已複製。', 'info'))
+        .catch(() => setMessage(url, 'info'));
+    }
+
+    async function startNewRoom() {
+      const shouldCreate = !currentRoom?.menuLoaded
+        || window.confirm('建立新房間會產生新的隨機連結，原房間連結不會清空。確定建立嗎？');
+      if (!shouldCreate) {
+        return;
+      }
+
+      try {
+        const room = await createRoom();
+        isSourceMenuCollapsed = false;
+        clearPendingUpload(false);
+        renderRoom(room);
+        setMessage('已建立新的隨機房間連結。', 'info');
+        joinRoom();
+      } catch (error) {
+        setMessage(error.message || '建立新房間失敗', 'error');
+      }
+    }
+
+    function formatDrinkOptions(item, entry, room = currentRoom) {
+      if (!entry || entry.qty <= 0) {
+        return '';
+      }
+      const parts = [];
+      const grouped = new Map();
+      for (const selected of getSelectedItemOptions(item, entry)) {
+        const values = grouped.get(selected.group.label) || [];
+        values.push(selected.option.label);
+        grouped.set(selected.group.label, values);
+      }
+      for (const [label, values] of grouped.entries()) {
+        parts.push(`${label}:${values.join('+')}`);
+      }
+      if (shouldShowDrinkOptions(item, room)) {
+        parts.push(entry.sweetness, entry.ice);
+      }
+      return parts.length > 0 ? `（${parts.join('、')}）` : '';
+    }
+
+    function buildOrderText(room = currentRoom) {
+      if (!room?.menuLoaded) {
+        return '';
+      }
+
+      const lines = [
+        t('billTitle'),
+        `${t('roomLabel')} ${room.id}`,
+        `${t('status')} ${room.settled ? t('settled') : t('unsettled')}`,
+        ''
+      ];
+
+      lines.push(t('itemSummary'));
+      let hasAnyItem = false;
+      for (const item of room.items) {
+        const total = room.totals?.itemTotals?.[item.id];
+        if (total && total.qty > 0) {
+          lines.push(`${item.name} x ${total.qty} = ${formatMoney(total.subtotal)}`);
+          hasAnyItem = true;
+        }
+      }
+
+      if (!hasAnyItem) {
+        lines.push(t('noItems'));
+      }
+
+      lines.push('');
+      lines.push(t('personalDetails'));
+      const participants = Array.from(room.participants || [])
+        .filter((participant) => Number(participant.total || 0) > 0)
+        .sort((a, b) => String(a.displayName).localeCompare(String(b.displayName), 'zh-Hant'));
+
+      if (participants.length === 0) {
+        lines.push(t('noMemberCosts'));
+      }
+
+      for (const participant of participants) {
+        lines.push(`${participant.displayName}: ${formatMoney(participant.total)} ${participant.confirmed || room.settled ? t('confirmed') : t('unconfirmed')}`);
+        for (const item of room.items) {
+          const entry = getParticipantOrderEntry(participant, item.id);
+          if (entry.qty > 0) {
+            const subtotal = getItemUnitPrice(item, entry) * entry.qty;
+            lines.push(`  ${item.name}${formatDrinkOptions(item, entry, room)} x ${entry.qty} = ${formatMoney(subtotal)}`);
+          }
+        }
+      }
+
+      lines.push('');
+      lines.push(`${t('totalAmount')} ${formatMoney(room.totals?.grandTotal || 0)}`);
+      lines.push(`${t('sharedCandidate')} ${formatMoney(room.totals?.sharedCandidateTotal || 0)}`);
+      lines.push(`${t('personalClaims')} ${formatMoney(room.totals?.personalClaimTotal || 0)}`);
+      lines.push(`${t('claimAudit')} ${room.audit?.settlementReady ? t('readyToSettle') : `${t('notReadyCount')} ${Number(room.audit?.unconfirmedParticipantCount || 0)} ${t('peopleCount')}`}`);
+      return lines.join('\n');
+    }
+
+    function downloadPdf() {
+      const text = buildOrderText();
+      if (!text) {
+        return;
+      }
+      elements.settlementOutput.textContent = text;
+      elements.settlementOutput.dataset.visible = 'true';
+      setMessage(t('printPdfOpened'), 'info');
+      window.print();
+    }
+
+    function copyOrderText() {
+      const text = buildOrderText();
+      if (!text) {
+        return;
+      }
+      elements.settlementOutput.textContent = text;
+      elements.settlementOutput.dataset.visible = 'true';
+      navigator.clipboard.writeText(text)
+        .then(() => setMessage(t('billCopied'), 'info'))
+        .catch(() => setMessage(text, 'info'));
+    }
+
+    function settleRoom() {
+      if (!currentRoom?.menuLoaded) {
+        return;
+      }
+      socket.emit('settleRoom', {
+        roomId,
+        participantId
+      }, (result) => {
+        if (!result || !result.ok) {
+          setMessage(result?.error || t('settleFailed'), 'error');
+          return;
+        }
+        renderRoom(result.room);
+        const text = buildOrderText(result.room);
+        elements.settlementOutput.textContent = text;
+        elements.settlementOutput.dataset.visible = 'true';
+        navigator.clipboard.writeText(text)
+          .then(() => setMessage(t('settledCopied'), 'info'))
+          .catch(() => setMessage(t('settledDisplayed'), 'info'));
+      });
+    }
+
+    function printOrderText() {
+      const text = buildOrderText();
+      if (!text) {
+        return;
+      }
+      elements.settlementOutput.textContent = text;
+      elements.settlementOutput.dataset.visible = 'true';
+      window.print();
+    }
+
+    function setMenuMode(menuMode) {
+      if (!currentRoom?.menuLoaded) {
+        return;
+      }
+      socket.emit('setMenuMode', {
+        roomId,
+        participantId,
+        menuMode
+      }, (result) => {
+        if (!result || !result.ok) {
+          setMessage(result?.error || t('modeSwitchFailed'), 'error');
+          return;
+        }
+        renderRoom(result.room);
+      });
+    }
+
+    function saveDisplayName() {
+      const nextName = elements.displayNameInput.value.trim().slice(0, 24);
+      if (!hasValidDisplayName(nextName)) {
+        setMessage(t('invalidName'), 'error');
+        elements.displayNameInput.focus();
+        return;
+      }
+      displayName = nextName;
+      elements.displayNameInput.value = displayName;
+      localStorage.setItem(storageKeys.displayName, displayName);
+      joinRoom();
+    }
+
+    function resetRoom() {
+      const confirmed = window.confirm(t('resetConfirm'));
+      if (!confirmed) {
+        return;
+      }
+
+      socket.emit('resetRoom', { roomId }, (result) => {
+        if (!result || !result.ok) {
+          setMessage(result?.error || t('resetFailed'), 'error');
+          return;
+        }
+        clearPendingUpload(false);
+        renderRoom(result.room);
+      });
+    }
+
+    socket.on('connect', () => {
+      setChip(elements.connectionChip, t('connected'), 'good');
+      if (isBootReady) {
+        joinRoom();
+      }
+    });
+
+    socket.on('disconnect', () => {
+      setChip(elements.connectionChip, t('reconnecting'), 'warn');
+    });
+
+    socket.on('roomState', renderRoom);
+    socket.on('presenceState', renderRoom);
+
+    elements.languageToggle.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-lang]');
+      if (!button) {
+        return;
+      }
+      setLanguage(button.dataset.lang);
+    });
+
+    elements.menuBody.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-item-id]');
+      if (!button) {
+        return;
+      }
+      if (button.dataset.action === 'set-option') {
+        setDrinkOption(button.dataset.itemId, button.dataset.optionType, button.dataset.optionValue);
+        return;
+      }
+      const delta = button.dataset.action === 'increase' ? 1 : -1;
+      changeQty(button.dataset.itemId, delta);
+    });
+
+    elements.menuBody.addEventListener('change', (event) => {
+      const select = event.target.closest('select[data-action="set-item-option"]');
+      if (select) {
+        setItemOption(select.dataset.itemId, select.dataset.optionGroupId, select.value);
+        return;
+      }
+
+      const checkbox = event.target.closest('input[data-action="toggle-item-option"]');
+      if (!checkbox) {
+        return;
+      }
+      setItemOption(
+        checkbox.dataset.itemId,
+        checkbox.dataset.optionGroupId,
+        checkbox.dataset.optionId,
+        checkbox.checked
+      );
+    });
+
+    elements.menuModeToggle.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-menu-mode]');
+      if (!button) {
+        return;
+      }
+      setMenuMode(button.dataset.menuMode);
+    });
+
+    elements.summaryTabs.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-summary-tab]');
+      if (!button) {
+        return;
+      }
+      activeSummaryTab = button.dataset.summaryTab === 'people' ? 'people' : 'items';
+      renderSummaryTabs();
+    });
+
+    elements.sourceMenuToggleButton.addEventListener('click', toggleSourceMenuCollapse);
+    elements.downloadCompressedImageButton.addEventListener('click', downloadCompressedImage);
+    elements.imageZoomOutButton.addEventListener('click', () => zoomSourceImage(-0.25));
+    elements.imageResetButton.addEventListener('click', resetSourceImageTransform);
+    elements.imageZoomInButton.addEventListener('click', () => zoomSourceImage(0.25));
+
+    elements.sourceMenuViewer.addEventListener('wheel', (event) => {
+      event.preventDefault();
+      zoomSourceImage(event.deltaY < 0 ? 0.18 : -0.18);
+    }, { passive: false });
+
+    elements.sourceMenuViewer.addEventListener('pointerdown', (event) => {
+      sourceImagePointers.set(event.pointerId, event);
+      elements.sourceMenuViewer.setPointerCapture(event.pointerId);
+      if (sourceImagePointers.size === 1) {
+        sourceImageState.isDragging = true;
+        sourceImageState.dragStartX = event.clientX;
+        sourceImageState.dragStartY = event.clientY;
+        sourceImageState.dragOriginX = sourceImageState.x;
+        sourceImageState.dragOriginY = sourceImageState.y;
+        elements.sourceMenuViewer.dataset.dragging = 'true';
+      } else if (sourceImagePointers.size === 2) {
+        sourceImageState.pinchStartDistance = getPointerDistance();
+        sourceImageState.pinchStartScale = sourceImageState.scale;
+        sourceImageState.pinchOriginX = sourceImageState.x;
+        sourceImageState.pinchOriginY = sourceImageState.y;
+      }
+    });
+
+    elements.sourceMenuViewer.addEventListener('pointermove', (event) => {
+      if (!sourceImagePointers.has(event.pointerId)) {
+        return;
+      }
+      sourceImagePointers.set(event.pointerId, event);
+      if (sourceImagePointers.size >= 2 && sourceImageState.pinchStartDistance > 0) {
+        const nextDistance = getPointerDistance();
+        sourceImageState.scale = clampSourceImageScale(sourceImageState.pinchStartScale * (nextDistance / sourceImageState.pinchStartDistance));
+        applySourceImageTransform();
+        return;
+      }
+      if (sourceImageState.isDragging && sourceImageState.scale > 1) {
+        sourceImageState.x = sourceImageState.dragOriginX + event.clientX - sourceImageState.dragStartX;
+        sourceImageState.y = sourceImageState.dragOriginY + event.clientY - sourceImageState.dragStartY;
+        applySourceImageTransform();
+      }
+    });
+
+    function endSourcePointer(event) {
+      sourceImagePointers.delete(event.pointerId);
+      if (sourceImagePointers.size === 0) {
+        sourceImageState.isDragging = false;
+        sourceImageState.pinchStartDistance = 0;
+        elements.sourceMenuViewer.dataset.dragging = 'false';
+      }
+    }
+
+    elements.sourceMenuViewer.addEventListener('pointerup', endSourcePointer);
+    elements.sourceMenuViewer.addEventListener('pointercancel', endSourcePointer);
+    elements.sourceMenuViewer.addEventListener('pointerleave', endSourcePointer);
+
+    elements.fileInput.addEventListener('change', (event) => {
+      setPendingUpload(event.target.files);
+    });
+
+    elements.thresholdInput.addEventListener('input', () => {
+      thresholdTarget = Math.max(0, Number(elements.thresholdInput.value || 0) || 0);
+      if (thresholdTarget > 0) {
+        localStorage.setItem(storageKeys.thresholdTarget, String(thresholdTarget));
+      } else {
+        localStorage.removeItem(storageKeys.thresholdTarget);
+      }
+      renderThresholdProgress(currentRoom);
+    });
+
+    elements.taskTypeSelect.addEventListener('change', () => {
+      selectedTaskType = taskTypeLabelKeys[elements.taskTypeSelect.value] ? elements.taskTypeSelect.value : 'auto';
+      localStorage.setItem(storageKeys.taskType, selectedTaskType);
+    });
+
+    elements.selectImageButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      elements.fileInput.click();
+    });
+
+    elements.confirmUploadButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      uploadPendingImage();
+    });
+
+    elements.cancelUploadButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      clearPendingUpload(true);
+    });
+
+    elements.uploadZone.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      elements.uploadZone.classList.add('is-dragging');
+    });
+
+    elements.uploadZone.addEventListener('dragleave', () => {
+      elements.uploadZone.classList.remove('is-dragging');
+    });
+
+    elements.uploadZone.addEventListener('drop', (event) => {
+      event.preventDefault();
+      elements.uploadZone.classList.remove('is-dragging');
+      setPendingUpload(event.dataTransfer.files);
+    });
+
+    window.addEventListener('paste', (event) => {
+      const imageFiles = Array.from(event.clipboardData.items)
+        .filter((item) => item.type.startsWith('image/'))
+        .map((item) => item.getAsFile())
+        .filter(Boolean);
+      if (imageFiles.length > 0) {
+        setPendingUpload(imageFiles);
+      }
+    });
+
+    elements.copyLinkButton.addEventListener('click', copyRoomLink);
+    elements.newRoomButton.addEventListener('click', startNewRoom);
+    elements.copyLinkButtonBottom.addEventListener('click', copyRoomLink);
+    elements.copyOrderButton.addEventListener('click', copyOrderText);
+    elements.confirmOrderButton.addEventListener('click', toggleOrderConfirmation);
+    elements.mobileConfirmOrderButton.addEventListener('click', toggleOrderConfirmation);
+    elements.settleRoomButton.addEventListener('click', settleRoom);
+    elements.printOrderButton.addEventListener('click', printOrderText);
+    elements.downloadPdfButton.addEventListener('click', downloadPdf);
+    elements.saveNameButton.addEventListener('click', saveDisplayName);
+    elements.displayNameInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        saveDisplayName();
+      }
+    });
+    elements.resetButton.addEventListener('click', resetRoom);
+
+    applyLanguage();
+    registerWebMcpTools();
+    boot();
+  </script>
+</body>
+</html>

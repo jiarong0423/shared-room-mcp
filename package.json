@@ -1,0 +1,25 @@
+{
+  "name": "zeabur-group-menu-order",
+  "version": "1.0.0",
+  "description": "WebMCP-powered social group split room with local-first OCR, deterministic formulas, claim audit, and short-lived trust layer.",
+  "license": "MIT",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "check": "node --check server.js",
+    "audit:tasks": "node scripts/task-gap-audit.mjs",
+    "stress:menu": "node scripts/stress-menu-parser.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@google/genai": "^1.11.0",
+    "express": "^4.19.2",
+    "multer": "^2.1.1",
+    "sharp": "^0.34.5",
+    "socket.io": "^4.7.5"
+  }
+}

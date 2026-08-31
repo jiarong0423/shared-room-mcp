@@ -1,0 +1,920 @@
+{
+  "generatedAt": "2026-08-31T15:10:56.451Z",
+  "projectRoot": "/Users/sunjiarong/Developer/other/menu",
+  "sourceFiles": {
+    "server": "/Users/sunjiarong/Developer/other/menu/server.js",
+    "client": "/Users/sunjiarong/Developer/other/menu/public/index.html",
+    "packageJson": "/Users/sunjiarong/Developer/other/menu/package.json",
+    "license": "/Users/sunjiarong/Developer/other/menu/LICENSE",
+    "readme": "/Users/sunjiarong/Developer/other/menu/README.md",
+    "submission": "/Users/sunjiarong/Developer/other/menu/docs/submission/WEBMCP_SUBMISSION.md",
+    "mermaid": "/Users/sunjiarong/Developer/other/menu/docs/ai-generated/2026Q3/group_room_mermaid_module_design_20260831.md"
+  },
+  "checks": [
+    {
+      "id": "task-router-taxonomy",
+      "title": "固定任務模組分類",
+      "layer": "task-router",
+      "priority": "P0",
+      "status": "ready",
+      "expected": [
+        "auto",
+        "group_buy",
+        "drink_order",
+        "restaurant_split",
+        "ktv_room",
+        "sports_venue",
+        "ticket_activity",
+        "rental_share",
+        "generic_split",
+        "taskRouterContract",
+        "group-room-task-router-contract.v1",
+        "contractVersion",
+        "supportedTaskTypes",
+        "selectedTaskType",
+        "inferredTaskType",
+        "taskType",
+        "confidenceScore",
+        "confidenceReason",
+        "reviewStatus",
+        "riskPolicy",
+        "thresholdKind",
+        "splitMode",
+        "evidenceStrength",
+        "hasTaskConflict",
+        "conflictTaskType",
+        "lockedByUser",
+        "aiRepairAllowed",
+        "aiRepairScope",
+        "forbiddenAiActions"
+      ],
+      "missing": [],
+      "evidence": [
+        {
+          "marker": "auto",
+          "present": true
+        },
+        {
+          "marker": "group_buy",
+          "present": true
+        },
+        {
+          "marker": "drink_order",
+          "present": true
+        },
+        {
+          "marker": "restaurant_split",
+          "present": true
+        },
+        {
+          "marker": "ktv_room",
+          "present": true
+        },
+        {
+          "marker": "sports_venue",
+          "present": true
+        },
+        {
+          "marker": "ticket_activity",
+          "present": true
+        },
+        {
+          "marker": "rental_share",
+          "present": true
+        },
+        {
+          "marker": "generic_split",
+          "present": true
+        },
+        {
+          "marker": "taskRouterContract",
+          "present": true
+        },
+        {
+          "marker": "group-room-task-router-contract.v1",
+          "present": true
+        },
+        {
+          "marker": "contractVersion",
+          "present": true
+        },
+        {
+          "marker": "supportedTaskTypes",
+          "present": true
+        },
+        {
+          "marker": "selectedTaskType",
+          "present": true
+        },
+        {
+          "marker": "inferredTaskType",
+          "present": true
+        },
+        {
+          "marker": "taskType",
+          "present": true
+        },
+        {
+          "marker": "confidenceScore",
+          "present": true
+        },
+        {
+          "marker": "confidenceReason",
+          "present": true
+        },
+        {
+          "marker": "reviewStatus",
+          "present": true
+        },
+        {
+          "marker": "riskPolicy",
+          "present": true
+        },
+        {
+          "marker": "thresholdKind",
+          "present": true
+        },
+        {
+          "marker": "splitMode",
+          "present": true
+        },
+        {
+          "marker": "evidenceStrength",
+          "present": true
+        },
+        {
+          "marker": "hasTaskConflict",
+          "present": true
+        },
+        {
+          "marker": "conflictTaskType",
+          "present": true
+        },
+        {
+          "marker": "lockedByUser",
+          "present": true
+        },
+        {
+          "marker": "aiRepairAllowed",
+          "present": true
+        },
+        {
+          "marker": "aiRepairScope",
+          "present": true
+        },
+        {
+          "marker": "forbiddenAiActions",
+          "present": true
+        }
+      ],
+      "remediation": "維持 taskRouterContract 為任務路由獨立輸出；新增任務時必須同步 server、UI、README、Mermaid。"
+    },
+    {
+      "id": "formula-module-vocabulary",
+      "title": "公式模組詞彙",
+      "layer": "formula-engine",
+      "priority": "P0",
+      "status": "ready",
+      "expected": [
+        "sameItemMerge",
+        "participantSubtotal",
+        "grandTotal",
+        "averageSplit",
+        "thresholdRemaining",
+        "optionDelta",
+        "sharedFeeSplit",
+        "depositGate",
+        "tierDiscount",
+        "extraPersonalClaim",
+        "formulaContract",
+        "group-room-formula-contract.v1",
+        "group-room-formula.v1",
+        "formulaModuleContracts",
+        "deterministicOnly",
+        "activeModules",
+        "pendingModules",
+        "inputSources",
+        "outputFields",
+        "aiAllowed",
+        "externalCalculationAllowed",
+        "externalFormulaTargetsAllowed",
+        "forbiddenExternalCalculationTargets",
+        "google_sheets",
+        "calculate_money",
+        "change_formula",
+        "assign_cost_pool",
+        "override_claim_mode"
+      ],
+      "missing": [],
+      "evidence": [
+        {
+          "marker": "sameItemMerge",
+          "present": true
+        },
+        {
+          "marker": "participantSubtotal",
+          "present": true
+        },
+        {
+          "marker": "grandTotal",
+          "present": true
+        },
+        {
+          "marker": "averageSplit",
+          "present": true
+        },
+        {
+          "marker": "thresholdRemaining",
+          "present": true
+        },
+        {
+          "marker": "optionDelta",
+          "present": true
+        },
+        {
+          "marker": "sharedFeeSplit",
+          "present": true
+        },
+        {
+          "marker": "depositGate",
+          "present": true
+        },
+        {
+          "marker": "tierDiscount",
+          "present": true
+        },
+        {
+          "marker": "extraPersonalClaim",
+          "present": true
+        },
+        {
+          "marker": "formulaContract",
+          "present": true
+        },
+        {
+          "marker": "group-room-formula-contract.v1",
+          "present": true
+        },
+        {
+          "marker": "group-room-formula.v1",
+          "present": true
+        },
+        {
+          "marker": "formulaModuleContracts",
+          "present": true
+        },
+        {
+          "marker": "deterministicOnly",
+          "present": true
+        },
+        {
+          "marker": "activeModules",
+          "present": true
+        },
+        {
+          "marker": "pendingModules",
+          "present": true
+        },
+        {
+          "marker": "inputSources",
+          "present": true
+        },
+        {
+          "marker": "outputFields",
+          "present": true
+        },
+        {
+          "marker": "aiAllowed",
+          "present": true
+        },
+        {
+          "marker": "externalCalculationAllowed",
+          "present": true
+        },
+        {
+          "marker": "externalFormulaTargetsAllowed",
+          "present": true
+        },
+        {
+          "marker": "forbiddenExternalCalculationTargets",
+          "present": true
+        },
+        {
+          "marker": "google_sheets",
+          "present": true
+        },
+        {
+          "marker": "calculate_money",
+          "present": true
+        },
+        {
+          "marker": "change_formula",
+          "present": true
+        },
+        {
+          "marker": "assign_cost_pool",
+          "present": true
+        },
+        {
+          "marker": "override_claim_mode",
+          "present": true
+        }
+      ],
+      "remediation": "維持 formulaContract 為本地 deterministic formula engine 的獨立契約；P1 公式必須以 manual input 接入，不交給 AI。"
+    },
+    {
+      "id": "evidence-ocr-contract",
+      "title": "價格證據與 OCR 契約",
+      "layer": "evidence-ocr",
+      "priority": "P0",
+      "status": "ready",
+      "expected": [
+        "evidenceContract",
+        "group-room-evidence-ocr-contract.v1",
+        "evidenceLine",
+        "localFirst",
+        "localOcr",
+        "imageInput",
+        "acceptedEvidenceSources",
+        "forbiddenEvidenceSources",
+        "deterministicParser",
+        "qualityGate",
+        "aiRepairGate",
+        "privacyBoundary",
+        "user_uploaded_price_photo",
+        "user_provided_local_ocr_text",
+        "fake_account_scraping",
+        "vendor_api_reverse_engineering",
+        "cookies_or_authenticated_vendor_session",
+        "storeRawOcrInSheets",
+        "repairScope"
+      ],
+      "missing": [],
+      "evidence": [
+        {
+          "marker": "evidenceContract",
+          "present": true
+        },
+        {
+          "marker": "group-room-evidence-ocr-contract.v1",
+          "present": true
+        },
+        {
+          "marker": "evidenceLine",
+          "present": true
+        },
+        {
+          "marker": "localFirst",
+          "present": true
+        },
+        {
+          "marker": "localOcr",
+          "present": true
+        },
+        {
+          "marker": "imageInput",
+          "present": true
+        },
+        {
+          "marker": "acceptedEvidenceSources",
+          "present": true
+        },
+        {
+          "marker": "forbiddenEvidenceSources",
+          "present": true
+        },
+        {
+          "marker": "deterministicParser",
+          "present": true
+        },
+        {
+          "marker": "qualityGate",
+          "present": true
+        },
+        {
+          "marker": "aiRepairGate",
+          "present": true
+        },
+        {
+          "marker": "privacyBoundary",
+          "present": true
+        },
+        {
+          "marker": "user_uploaded_price_photo",
+          "present": true
+        },
+        {
+          "marker": "user_provided_local_ocr_text",
+          "present": true
+        },
+        {
+          "marker": "fake_account_scraping",
+          "present": true
+        },
+        {
+          "marker": "vendor_api_reverse_engineering",
+          "present": true
+        },
+        {
+          "marker": "cookies_or_authenticated_vendor_session",
+          "present": true
+        },
+        {
+          "marker": "storeRawOcrInSheets",
+          "present": true
+        },
+        {
+          "marker": "repairScope",
+          "present": true
+        }
+      ],
+      "remediation": "維持 evidenceContract 為價格證據/OCR 的獨立契約；AI 只能 schema repair，OCR 文字與圖片不可送 Google Sheets。"
+    },
+    {
+      "id": "claim-audit-aggregate",
+      "title": "認領稽核聚合欄位",
+      "layer": "claim-audit",
+      "priority": "P0",
+      "status": "ready",
+      "expected": [
+        "claimAuditVersion",
+        "sharedCandidateTotal",
+        "personalClaimTotal",
+        "claimedOrderCount",
+        "claimLedgerCount",
+        "pendingClaimCount",
+        "claimStateCounts",
+        "claimLedger",
+        "claim_id",
+        "item_id",
+        "claimer_id",
+        "mode",
+        "cost_pool",
+        "verifiers",
+        "approvals",
+        "state",
+        "updated_at",
+        "unconfirmedParticipantCount",
+        "unconfirmedParticipants",
+        "settlementReady",
+        "rules"
+      ],
+      "missing": [],
+      "evidence": [
+        {
+          "marker": "claimAuditVersion",
+          "present": true
+        },
+        {
+          "marker": "sharedCandidateTotal",
+          "present": true
+        },
+        {
+          "marker": "personalClaimTotal",
+          "present": true
+        },
+        {
+          "marker": "claimedOrderCount",
+          "present": true
+        },
+        {
+          "marker": "claimLedgerCount",
+          "present": true
+        },
+        {
+          "marker": "pendingClaimCount",
+          "present": true
+        },
+        {
+          "marker": "claimStateCounts",
+          "present": true
+        },
+        {
+          "marker": "claimLedger",
+          "present": true
+        },
+        {
+          "marker": "claim_id",
+          "present": true
+        },
+        {
+          "marker": "item_id",
+          "present": true
+        },
+        {
+          "marker": "claimer_id",
+          "present": true
+        },
+        {
+          "marker": "mode",
+          "present": true
+        },
+        {
+          "marker": "cost_pool",
+          "present": true
+        },
+        {
+          "marker": "verifiers",
+          "present": true
+        },
+        {
+          "marker": "approvals",
+          "present": true
+        },
+        {
+          "marker": "state",
+          "present": true
+        },
+        {
+          "marker": "updated_at",
+          "present": true
+        },
+        {
+          "marker": "unconfirmedParticipantCount",
+          "present": true
+        },
+        {
+          "marker": "unconfirmedParticipants",
+          "present": true
+        },
+        {
+          "marker": "settlementReady",
+          "present": true
+        },
+        {
+          "marker": "rules",
+          "present": true
+        }
+      ],
+      "remediation": "保留聚合欄位，下一步補 per-claim ledger 與 approvals state。"
+    },
+    {
+      "id": "google-sheets-whitelist-contract",
+      "title": "Google Sheets 短效白名單欄位",
+      "layer": "trust-layer",
+      "priority": "P1",
+      "status": "ready",
+      "expected": [
+        "room_id",
+        "invite_code_hash",
+        "device_id_hash",
+        "display_name",
+        "role",
+        "status",
+        "expires_at",
+        "created_at",
+        "last_seen_at",
+        "notes"
+      ],
+      "missing": [],
+      "evidence": [
+        {
+          "marker": "room_id",
+          "present": true
+        },
+        {
+          "marker": "invite_code_hash",
+          "present": true
+        },
+        {
+          "marker": "device_id_hash",
+          "present": true
+        },
+        {
+          "marker": "display_name",
+          "present": true
+        },
+        {
+          "marker": "role",
+          "present": true
+        },
+        {
+          "marker": "status",
+          "present": true
+        },
+        {
+          "marker": "expires_at",
+          "present": true
+        },
+        {
+          "marker": "created_at",
+          "present": true
+        },
+        {
+          "marker": "last_seen_at",
+          "present": true
+        },
+        {
+          "marker": "notes",
+          "present": true
+        }
+      ],
+      "remediation": "建立 MCP/Apps Script 工具前，先固定 hash-only schema 與 EXPIRED prune 規則。"
+    },
+    {
+      "id": "webmcp-tool-surface",
+      "title": "WebMCP 工具面",
+      "layer": "webmcp",
+      "priority": "P0",
+      "status": "ready",
+      "expected": [
+        "inspect_room",
+        "get_task_router",
+        "get_claim_audit",
+        "get_formula_contract",
+        "get_trust_layer_contract",
+        "suggest_next_actions",
+        "document.modelContext",
+        "registerTool",
+        "webMcpToolSurface",
+        "group-room-webmcp-tools.v1",
+        "trustLayerContract",
+        "group-room-trust-layer-contract.v1",
+        "check_whitelist",
+        "enroll_device",
+        "revoke_device"
+      ],
+      "missing": [],
+      "evidence": [
+        {
+          "marker": "inspect_room",
+          "present": true
+        },
+        {
+          "marker": "get_task_router",
+          "present": true
+        },
+        {
+          "marker": "get_claim_audit",
+          "present": true
+        },
+        {
+          "marker": "get_formula_contract",
+          "present": true
+        },
+        {
+          "marker": "get_trust_layer_contract",
+          "present": true
+        },
+        {
+          "marker": "suggest_next_actions",
+          "present": true
+        },
+        {
+          "marker": "document.modelContext",
+          "present": true
+        },
+        {
+          "marker": "registerTool",
+          "present": true
+        },
+        {
+          "marker": "webMcpToolSurface",
+          "present": true
+        },
+        {
+          "marker": "group-room-webmcp-tools.v1",
+          "present": true
+        },
+        {
+          "marker": "trustLayerContract",
+          "present": true
+        },
+        {
+          "marker": "group-room-trust-layer-contract.v1",
+          "present": true
+        },
+        {
+          "marker": "check_whitelist",
+          "present": true
+        },
+        {
+          "marker": "enroll_device",
+          "present": true
+        },
+        {
+          "marker": "revoke_device",
+          "present": true
+        }
+      ],
+      "remediation": "補 WebMCP manifest 與 read-only room inspection tools；白名單工具維持 P1。"
+    },
+    {
+      "id": "submission-local-package",
+      "title": "本地比賽提交包",
+      "layer": "submission",
+      "priority": "P0",
+      "status": "ready",
+      "expected": [
+        "MIT License",
+        "\"license\": \"MIT\"",
+        "WebMCP Hackathon Submission Packet",
+        "Live URL",
+        "Public repository URL",
+        "YouTube demo URL",
+        "What Changed After August 25, 2026",
+        "document.modelContext.registerTool()",
+        "Environment Variables",
+        "TRUST_LAYER_SPREADSHEET_ID",
+        "RATE_LIMIT_WINDOW_MS",
+        "MENU_PARSE_RATE_LIMIT_MAX",
+        "GEMINI_API_KEY",
+        "Do not commit API keys",
+        "Demo Script",
+        "Compliance Notes"
+      ],
+      "missing": [],
+      "evidence": [
+        {
+          "marker": "MIT License",
+          "present": true
+        },
+        {
+          "marker": "\"license\": \"MIT\"",
+          "present": true
+        },
+        {
+          "marker": "WebMCP Hackathon Submission Packet",
+          "present": true
+        },
+        {
+          "marker": "Live URL",
+          "present": true
+        },
+        {
+          "marker": "Public repository URL",
+          "present": true
+        },
+        {
+          "marker": "YouTube demo URL",
+          "present": true
+        },
+        {
+          "marker": "What Changed After August 25, 2026",
+          "present": true
+        },
+        {
+          "marker": "document.modelContext.registerTool()",
+          "present": true
+        },
+        {
+          "marker": "Environment Variables",
+          "present": true
+        },
+        {
+          "marker": "TRUST_LAYER_SPREADSHEET_ID",
+          "present": true
+        },
+        {
+          "marker": "RATE_LIMIT_WINDOW_MS",
+          "present": true
+        },
+        {
+          "marker": "MENU_PARSE_RATE_LIMIT_MAX",
+          "present": true
+        },
+        {
+          "marker": "GEMINI_API_KEY",
+          "present": true
+        },
+        {
+          "marker": "Do not commit API keys",
+          "present": true
+        },
+        {
+          "marker": "Demo Script",
+          "present": true
+        },
+        {
+          "marker": "Compliance Notes",
+          "present": true
+        }
+      ],
+      "remediation": "保持 LICENSE、README、submission packet 與 env 需求同步；公開 repo、live URL、YouTube 仍需人工提交前確認。"
+    }
+  ],
+  "gaps": [
+    {
+      "id": "GAP-P0-001",
+      "title": "公式引擎尚未從 serializeRoom / 前端 UI 完整抽離",
+      "layer": "formula-engine",
+      "priority": "P0",
+      "status": "ready",
+      "evidence": "server 已輸出 formulaContract 與 formulaResults；active/P1 模組已明確分離，AI 被禁止計算金額或覆寫公式。",
+      "nextAction": "下一步在 formula-controls 線補 UI manual inputs；不需要更動 formula engine contract。",
+      "writeRisk": "medium"
+    },
+    {
+      "id": "GAP-P0-002",
+      "title": "認領稽核仍是房間總量級，缺 per-claim ledger",
+      "layer": "claim-audit",
+      "priority": "P0",
+      "status": "ready",
+      "evidence": "server 已輸出 audit.claimLedger，包含 claim_id、item_id、claimer_id、mode、cost_pool、verifiers、approvals、state、updated_at。",
+      "nextAction": "下一步在 testing 線補 socket 非空 ledger 測試；不需要改 claim audit contract。",
+      "writeRisk": "medium"
+    },
+    {
+      "id": "GAP-P0-003",
+      "title": "WebMCP tool surface 尚未落地",
+      "layer": "webmcp",
+      "priority": "P0",
+      "status": "ready",
+      "evidence": "前端已使用 document.modelContext.registerTool 註冊 read-only tools，後端 API 已輸出 webMcpToolSurface 與 trustLayerContract。",
+      "nextAction": "下一步只需要在瀏覽器支援 WebMCP 的環境做真機 demo；Sheets 寫入 bridge 仍屬 P1。",
+      "writeRisk": "medium"
+    },
+    {
+      "id": "GAP-P0-004",
+      "title": "任務衝突沒有成為獨立 high-risk gate",
+      "layer": "ai-repair-gate",
+      "priority": "P0",
+      "status": "ready",
+      "evidence": "server 已輸出 hasTaskConflict/conflictTaskType，且 parseQuality 會產生 task_conflict high issue 與 taskConflict flag。",
+      "nextAction": "下一步在 testing 線補 conflict smoke case，確認手動鎖定錯誤任務時 local-first 不放行。",
+      "writeRisk": "low"
+    },
+    {
+      "id": "GAP-P0-005",
+      "title": "提交所需 OSS/license/live demo 文件未完整固定",
+      "layer": "submission",
+      "priority": "P0",
+      "status": "partial",
+      "evidence": "本地已補 LICENSE、package license、英文 submission packet、env 需求、demo script、合規邊界；public repo URL 與 YouTube URL 仍需在 Devpost 提交前填入正式連結。",
+      "nextAction": "部署後驗證 live URL；公開 repo 與 YouTube demo 完成後替換 submission packet 的 TODO URL。",
+      "writeRisk": "low"
+    },
+    {
+      "id": "GAP-P1-001",
+      "title": "Google Sheets 白名單仍是設計稿",
+      "layer": "trust-layer",
+      "priority": "P1",
+      "status": "partial",
+      "evidence": "README 已有 hash-only schema，但沒有 check/enroll/revoke implementation，也沒有 expires prune。",
+      "nextAction": "建立 Sheets bridge P1；只存短效 hash，不存原始 device id、付款資訊、社群帳號。",
+      "writeRisk": "medium"
+    },
+    {
+      "id": "GAP-P1-002",
+      "title": "價格證據與 OCR contract 尚未獨立",
+      "layer": "evidence-ocr",
+      "priority": "P0",
+      "status": "ready",
+      "evidence": "server 已輸出 evidenceContract；local-first、image input、accepted/forbidden evidence sources、qualityGate、aiRepairGate、privacyBoundary 已獨立。",
+      "nextAction": "後續加強可評估 Web OCR/WASM OCR 或裝置端 companion；不影響六線解耦完成。",
+      "writeRisk": "medium"
+    },
+    {
+      "id": "GAP-P1-003",
+      "title": "任務特定公式輸入不足",
+      "layer": "formula-controls",
+      "priority": "P1",
+      "status": "open",
+      "evidence": "目前前端只有一個門檻欄位，尚未有服務費百分比、時數、押金是否納入、運費分攤、團體折扣、人數門檻。",
+      "nextAction": "依任務模組顯示最少必要公式欄位，不讓 AI 計算金額。",
+      "writeRisk": "medium"
+    },
+    {
+      "id": "GAP-P1-004",
+      "title": "測試覆蓋還停在 syntax 與 smoke",
+      "layer": "testing",
+      "priority": "P1",
+      "status": "open",
+      "evidence": "已有 npm run check 與 API smoke；socket smoke 缺 socket.io-client，公式與 claim mode 沒有獨立 unit tests。",
+      "nextAction": "補 deterministic parser、task router、formula、claim audit tests；socket 測試等需要時再加依賴。",
+      "writeRisk": "low"
+    }
+  ],
+  "nextDecouplingBatches": [
+    {
+      "batch": "A",
+      "priority": "P0",
+      "scope": "formula-engine + claim-audit pure contracts",
+      "stopCondition": "API response exposes formulaResults and claim ledger without changing settlement behavior."
+    },
+    {
+      "batch": "B",
+      "priority": "P0",
+      "scope": "WebMCP read-only tools",
+      "stopCondition": "Agent can inspect room, task router, totals, quality issues, and claim audit without browser scraping."
+    },
+    {
+      "batch": "C",
+      "priority": "P0",
+      "scope": "task conflict quality gate + submission checklist",
+      "stopCondition": "Mismatched evidence routes to manual review; LICENSE/submission checklist present."
+    },
+    {
+      "batch": "D",
+      "priority": "P1",
+      "scope": "Google Sheets short-lived whitelist",
+      "stopCondition": "check/enroll/revoke tools operate on hash-only rows and expired rows fail closed."
+    },
+    {
+      "batch": "E",
+      "priority": "P1",
+      "scope": "task-specific formula controls",
+      "stopCondition": "UI emits formula inputs for service fee, hourly rate, deposit, shipping, and group thresholds."
+    }
+  ]
+}
