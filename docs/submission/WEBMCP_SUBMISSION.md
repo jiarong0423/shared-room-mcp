@@ -4,7 +4,7 @@ Project name: Group Room Split MCP
 
 Live URL: https://group-menu-order.zeabur.app
 
-Public repository URL: TODO_PUBLIC_REPO_URL
+Public repository URL: https://github.com/jiarong0423/group-menu-order
 
 YouTube demo URL: TODO_YOUTUBE_DEMO_URL
 
@@ -16,7 +16,7 @@ Group Room Split MCP is an open-source WebMCP template for pre-payment social co
 
 ## WebMCP Fit
 
-The app exposes page-local tools through `document.modelContext.registerTool()` when WebMCP is available. The current tool surface is deliberately read-only: agents can inspect the room, task router, formula contract, claim audit, and trust-layer contract, but they cannot calculate money externally, assign claims, overwrite formulas, finalize settlement, or write payment data.
+The app exposes page-local tools through `document.modelContext.registerTool()` when WebMCP is available. Most tools are deliberately read-only: agents can inspect the room, task router, formula contract, claim audit, and trust-layer contract, but they cannot calculate money externally, assign claims, overwrite formulas, finalize settlement, or write payment data. One proposal-only tool can create a bounded JSON draft for host review without applying it.
 
 This is a tool-layer template, not a paid API wrapper. Manual input, sample data, local OCR text, and deterministic parsing are the default path. Cloud OCR, vision, model, spreadsheet, commerce, booking, CRM, or community integrations are optional adapters owned by the deployment owner.
 
@@ -28,14 +28,13 @@ Implemented WebMCP tools:
 - `get_formula_contract`
 - `get_trust_layer_contract`
 - `suggest_next_actions`
+- `create_action_proposal`
 
 ## Human And Agent Collaboration
 
-The human controls the room, task type, uploaded evidence, OCR text, participant names, claim confirmation, and settlement. The agent helps by reading the current state, identifying task conflicts, explaining missing claims, and guiding the next action from the WebMCP tool output. The `suggest_next_actions` tool is the primary agent workflow entrypoint: it returns read-only action suggestions, human-review blockers, formula boundaries, and forbidden actions.
+The human controls the room, task type, uploaded evidence, OCR text, participant names, claim confirmation, and settlement. The agent helps by reading the current state, identifying task conflicts, explaining missing claims, guiding the next action from the WebMCP tool output, and preparing draft proposals for the host. The `suggest_next_actions` tool is the primary read path. The `create_action_proposal` tool is the primary safe action path: it stores `pending_host_confirmation` JSON under `room.agentProposals[]`, and owner review can mark the draft accepted or rejected without mutating orders, formulas, settlement, payment, Google Sheets, or external services.
 
-Provider AI is optional and limited to OCR/schema repair adapters. It cannot decide who owes money, change formulas, assign cost pools, or settle disputes. Future forks can add proposal-only tools for booking drafts, repair appointment drafts, salon reservation drafts, activity signup drafts, and other pre-commitment workflows, but final submission and payment should remain human-controlled.
-
-Future modules can add proposal-only tools that let the agent prepare drafts for human review. Those tools should never change orders, claims, formulas, task routing, settlement, payment data, or external systems without explicit human confirmation.
+Provider AI is optional and limited to OCR/schema repair adapters. It cannot decide who owes money, change formulas, assign cost pools, or settle disputes. Future forks can reuse the same proposal-only contract for booking drafts, repair appointment drafts, salon reservation drafts, activity signup drafts, and other pre-commitment workflows, but final submission and payment should remain human-controlled.
 
 ## What Changed After August 25, 2026
 
@@ -46,7 +45,7 @@ This project existed earlier as a group menu ordering room. The WebMCP hackathon
 - Deterministic formula engine contract that keeps money math inside the app.
 - AI repair gate and task conflict gate.
 - Claim audit ledger for shared candidates and extra personal claims.
-- WebMCP read-only tool surface plus a hash-only Google Sheets trust-layer contract.
+- WebMCP read-only inspection tools, one proposal-only draft tool, and a hash-only Google Sheets trust-layer contract.
 - Open-source adapter positioning for future social, commerce, booking, OCR, spreadsheet, and private-community integrations.
 
 ## Environment Variables
@@ -113,9 +112,11 @@ Target length: under 3 minutes.
 5. Show the share calculator: shared candidate total is separate from personal claim total.
 6. Open the page with WebMCP-capable browsing and ask the agent to inspect the room using `inspect_room`.
 7. Ask the agent to call `suggest_next_actions` and explain which human confirmation is still required.
-8. Show that the agent can read contracts and audit state, but cannot calculate money externally or write payment data.
-9. Explain that WebMCP is the browser-page tool surface registered by `document.modelContext.registerTool()`. The same-origin backend exists for app state, uploads, Socket.IO sync, and persistence; it is not a public agent mutation API.
-10. Close with the open-source extension model: the group room is the reference module, and future forks can add proposal-only adapters for bookings, repair appointments, salon reservations, activity signups, and other pre-commitment workflows.
+8. Ask the agent to call `create_action_proposal` to prepare a draft host checklist for unresolved claims.
+9. Show the Host Draft Review panel and accept or reject the draft as the room owner.
+10. Show that the accepted draft did not calculate money externally, finalize settlement, write payment data, or submit to any external service.
+11. Explain that WebMCP is the browser-page tool surface registered by `document.modelContext.registerTool()`. The same-origin backend exists for app state, uploads, Socket.IO sync, persistence, and draft storage; it is not a public unrestricted agent mutation API.
+12. Close with the open-source extension model: the group room is the reference module, and future forks can add proposal-only adapters for bookings, repair appointments, salon reservations, activity signups, and other pre-commitment workflows.
 
 ## Compliance Notes
 

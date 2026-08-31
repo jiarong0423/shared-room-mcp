@@ -67,7 +67,7 @@ This keeps the template useful for developers and safer for users: the project c
 
 The browser page registers tools with `document.modelContext.registerTool()` when WebMCP is available.
 
-Implemented read-only tools:
+Implemented tools:
 
 - `inspect_room`
 - `get_task_router`
@@ -75,10 +75,11 @@ Implemented read-only tools:
 - `get_formula_contract`
 - `get_trust_layer_contract`
 - `suggest_next_actions`
+- `create_action_proposal`
 
 The `suggest_next_actions` tool is the main agent workflow entrypoint. It returns current blockers, human-review requirements, formula boundaries, and forbidden actions. It cannot mutate room state and cannot calculate new money values.
 
-Future modules can add proposal-only tools that let the agent prepare drafts for human review. Those tools should never change orders, claims, formulas, task routing, settlement, payment data, or Google Sheets without explicit human confirmation.
+The `create_action_proposal` tool is proposal-only. It can store a bounded JSON draft in `room.agentProposals[]` for the room owner, with status `pending_host_confirmation`. Owner review can mark the draft accepted or rejected, but acceptance does not automatically change orders, claims, formulas, task routing, settlement, payment data, Google Sheets, bookings, or external systems.
 
 ## Six Atomic One-Way Gates
 
@@ -91,7 +92,7 @@ The UI and API intentionally expose six fixed module boundaries. Each module pas
 | Formula Engine | Runs deterministic local math through `formulaResults` | Sheets, external AI, Notion, and browser scraping cannot calculate money |
 | AI Repair Gate | Repairs OCR/schema only when local confidence is insufficient | AI cannot settle disputes, assign claims, or change formulas |
 | Claim Audit | Tracks shared candidates and extra personal claims | Agent cannot confirm claims on behalf of humans |
-| Agent Drift Guard | Exposes read-only WebMCP tools and future proposal-only extension points | Agent cannot mutate room state, finalize claims, or write payment data |
+| Agent Drift Guard | Exposes read-only WebMCP tools plus draft-only proposal creation | Agent cannot mutate final room state, finalize claims, or write payment data |
 
 ## Task And Formula Matrix
 

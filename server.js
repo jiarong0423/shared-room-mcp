@@ -162,9 +162,26 @@ const formulaModuleContracts = Object.freeze([
   }
 ]);
 const trustLayerContractVersion = 'group-room-trust-layer-contract.v1';
-const webMcpToolSurfaceVersion = 'group-room-webmcp-tools.v1';
+const webMcpToolSurfaceVersion = 'group-room-webmcp-tools.v2';
 const evidenceContractVersion = 'group-room-evidence-ocr-contract.v1';
+const agentProposalContractVersion = 'group-room-agent-proposal-contract.v1';
 const rateLimitBuckets = new Map();
+const agentProposalTypes = new Set([
+  'claim_assignment',
+  'missing_confirmation',
+  'evidence_review',
+  'task_router_review',
+  'booking_draft',
+  'service_request_draft',
+  'activity_signup_draft',
+  'generic_next_step'
+]);
+const agentProposalRiskLevels = new Set(['low', 'medium', 'needs_human_review']);
+const agentProposalStatuses = new Set([
+  'pending_host_confirmation',
+  'accepted_by_host',
+  'rejected_by_host'
+]);
 const optionGroupTypes = new Set(['size', 'addon', 'custom']);
 const optionSelectionTypes = new Set(['single', 'multiple']);
 const sweetnessOptions = ['正常糖', '少糖', '半糖', '微糖', '無糖'];
@@ -619,6 +636,129 @@ function decodeBufferFromStore(value) {
   }
 }
 
+function normalizeBoundedText(value, maxLength = 280) {
+  return String(value || '')
+    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, maxLength);
+}
+
+function sanitizeProposalPayload(value, depth = 0) {
+  if (depth > 4) {
+    return '[max_depth_reached]';
+  }
+  if (value === null || ['string', 'number', 'boolean'].includes(typeof value)) {
+    if (typeof value === 'string') {
+      return normalizeBoundedText(value, 1000);
+    }
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? value : null;
+    }
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.slice(0, 40).map((entry) => sanitizeProposalPayload(entry, depth + 1));
+  }
+  if (typeof value === 'object') {
+    const result = {};
+    for (const [key, entry] of Object.entries(value).slice(0, 40)) {
+      const cleanKey = normalizeBoundedText(key, 48).replace(/[^a-zA-Z0-9_.-]/g, '_');
+      if (!cleanKey) {
+        continue;
+      }
+      result[cleanKey] = sanitizeProposalPayload(entry, depth + 1);
+    }
+    return result;
+  }
+  return null;
+}
+
+function buildAgentProposalContract() {
+  return {
+    contractVersion: agentProposalContractVersion,
+    toolName: 'create_action_proposal',
+    targetRole: 'host',
+    allowedEffect: 'draft_only',
+    defaultStatus: 'pending_host_confirmation',
+    allowedProposalTypes: Array.from(agentProposalTypes),
+    forbiddenEffects: [
+      'payment',
+      'credit_card_collection',
+      'final_submit',
+      'direct_order',
+      'booking_commit',
+      'settlement_commit',
+      'claim_assignment_commit',
+      'formula_override',
+      'task_router_override',
+      'external_system_write',
+      'google_sheets_write'
+    ],
+    hostReviewRequired: true,
+    approveEffect: 'marks_proposal_as_accepted_only',
+    rejectEffect: 'marks_proposal_as_rejected_only'
+  };
+}
+
+function normalizeAgentProposalInput(input = {}) {
+  const requestedType = normalizeBoundedText(input.proposalType, 64);
+  const proposalType = agentProposalTypes.has(requestedType) ? requestedType : 'generic_next_step';
+  const requestedRisk = normalizeBoundedText(input.riskLevel, 64);
+  const riskLevel = agentProposalRiskLevels.has(requestedRisk) ? requestedRisk : 'needs_human_review';
+  const summary = normalizeBoundedText(input.summary, 360) || 'Agent prepared a draft for host review.';
+  const rationale = normalizeBoundedText(input.rationale, 700);
+  const payload = sanitizeProposalPayload(input.payload && typeof input.payload === 'object' ? input.payload : {});
+
+  return {
+    proposalType,
+    summary,
+    rationale,
+    payload,
+    riskLevel
+  };
+}
+
+function serializeAgentProposal(proposal) {
+  return {
+    id: proposal.id,
+    roomId: proposal.roomId,
+    createdBy: proposal.createdBy || 'webmcp_agent',
+    targetRole: 'host',
+    status: agentProposalStatuses.has(proposal.status) ? proposal.status : 'pending_host_confirmation',
+    proposalType: agentProposalTypes.has(proposal.proposalType) ? proposal.proposalType : 'generic_next_step',
+    summary: normalizeBoundedText(proposal.summary, 360),
+    rationale: normalizeBoundedText(proposal.rationale, 700),
+    payload: sanitizeProposalPayload(proposal.payload && typeof proposal.payload === 'object' ? proposal.payload : {}),
+    riskLevel: agentProposalRiskLevels.has(proposal.riskLevel) ? proposal.riskLevel : 'needs_human_review',
+    allowedEffect: 'draft_only',
+    forbiddenEffects: buildAgentProposalContract().forbiddenEffects,
+    createdAt: safeIso(proposal.createdAt),
+    reviewedAt: proposal.reviewedAt ? safeIso(proposal.reviewedAt) : null,
+    reviewedBy: proposal.reviewedBy || null
+  };
+}
+
+function createAgentProposal(room, input = {}) {
+  const normalized = normalizeAgentProposalInput(input);
+  const proposals = Array.isArray(room.agentProposals) ? room.agentProposals : [];
+  const proposal = serializeAgentProposal({
+    id: `proposal_${randomUUID().slice(0, 8)}`,
+    roomId: room.id,
+    createdBy: 'webmcp_agent',
+    targetRole: 'host',
+    status: 'pending_host_confirmation',
+    createdAt: nowIso(),
+    reviewedAt: null,
+    reviewedBy: null,
+    ...normalized
+  });
+
+  room.agentProposals = [proposal, ...proposals].slice(0, 24);
+  touchRoom(room, 'agent_proposal_created');
+  return proposal;
+}
+
 function serializeRoomForStore(room) {
   return {
     id: room.id,
@@ -639,6 +779,9 @@ function serializeRoomForStore(room) {
     settled: Boolean(room.settled),
     settledAt: room.settledAt || null,
     settledBy: room.settledBy || null,
+    agentProposals: Array.isArray(room.agentProposals)
+      ? room.agentProposals.map((proposal) => serializeAgentProposal(proposal))
+      : [],
     warnings: Array.isArray(room.warnings) ? room.warnings : [],
     parseQuality: room.parseQuality || null,
     localOcr: room.localOcr || {
@@ -717,6 +860,14 @@ function hydrateRoomFromStore(record) {
     settled: Boolean(record.settled),
     settledAt: record.settledAt || null,
     settledBy: record.settledBy || null,
+    agentProposals: Array.isArray(record.agentProposals)
+      ? record.agentProposals
+        .map((proposal) => serializeAgentProposal({
+          ...proposal,
+          roomId: record.id
+        }))
+        .filter((proposal) => proposal.id)
+      : [],
     warnings: Array.isArray(record.warnings) ? record.warnings : [],
     parseQuality: record.parseQuality || null,
     localOcr: record.localOcr || {
@@ -1243,6 +1394,7 @@ function createRoom() {
     settled: false,
     settledAt: null,
     settledBy: null,
+    agentProposals: [],
     warnings: [],
     parseQuality: null,
     localOcr: {
@@ -2984,14 +3136,19 @@ function buildWebMcpToolSurface(room) {
       'get_trust_layer_contract',
       'suggest_next_actions'
     ],
+    proposalOnlyTools: [
+      'create_action_proposal'
+    ],
     trustLayerTools: [
       'check_whitelist',
       'enroll_device',
       'revoke_device'
     ],
+    proposalContract: buildAgentProposalContract(),
     registeredWhenSupported: true,
     activeRoomId: room?.id || null,
     readOnlyByDefault: true,
+    draftMutationAllowed: true,
     moneyCalculationAllowed: false,
     externalCalculationAllowed: false
   };
@@ -3190,6 +3347,10 @@ function serializeRoom(room) {
     settled: Boolean(room.settled),
     settledAt: room.settledAt,
     settledBy: room.settledBy,
+    agentProposalContract: buildAgentProposalContract(),
+    agentProposals: Array.isArray(room.agentProposals)
+      ? room.agentProposals.map((proposal) => serializeAgentProposal(proposal))
+      : [],
     participants: formulaSnapshot.participants,
     totals: formulaSnapshot.totals,
     formulaContract: formulaSnapshot.formulaContract,
@@ -3626,6 +3787,29 @@ app.get('/api/rooms/:roomId', (req, res) => {
   }
   touchRoom(room, 'room_read', false);
   res.json(serializeRoom(room));
+});
+
+app.post('/api/rooms/:roomId/agent-proposals', (req, res) => {
+  const room = getRoom(req.params.roomId);
+  if (!room) {
+    res.status(404).json({ error: '找不到房間，請重新建立揪團分帳房' });
+    return;
+  }
+
+  const proposal = createAgentProposal(room, req.body || {});
+  const state = serializeRoom(room);
+  io.to(room.id).emit('roomState', state);
+  writeLog('info', 'agent_proposal_created', {
+    roomId: room.id,
+    proposalId: proposal.id,
+    proposalType: proposal.proposalType,
+    riskLevel: proposal.riskLevel
+  });
+  res.status(201).json({
+    ok: true,
+    proposal,
+    room: state
+  });
 });
 
 app.post('/api/rooms/:roomId/menu', createRateLimitMiddleware('menu_parse', menuParseRateLimitMax), upload.single('menuImage'), async (req, res, next) => {
@@ -4109,6 +4293,59 @@ io.on('connection', (socket) => {
     ack?.({ ok: true, room: state });
   });
 
+  socket.on('reviewAgentProposal', (payload, ack) => {
+    const room = getRoom(payload?.roomId);
+    if (!room) {
+      ack?.({ ok: false, error: '找不到房間' });
+      return;
+    }
+
+    const reviewerId = String(payload?.participantId || '');
+    if (!reviewerId || room.ownerParticipantId !== reviewerId) {
+      ack?.({ ok: false, error: '只有發起者可以審核 Agent 草稿' });
+      return;
+    }
+
+    const proposalId = String(payload?.proposalId || '');
+    const action = String(payload?.action || '');
+    const nextStatus = action === 'accept'
+      ? 'accepted_by_host'
+      : action === 'reject'
+        ? 'rejected_by_host'
+        : '';
+    if (!nextStatus) {
+      ack?.({ ok: false, error: '不支援的草稿審核動作' });
+      return;
+    }
+
+    const proposals = Array.isArray(room.agentProposals) ? room.agentProposals : [];
+    const proposal = proposals.find((candidate) => candidate.id === proposalId);
+    if (!proposal) {
+      ack?.({ ok: false, error: '找不到 Agent 草稿' });
+      return;
+    }
+    if (proposal.status !== 'pending_host_confirmation') {
+      ack?.({ ok: false, error: '此 Agent 草稿已審核' });
+      return;
+    }
+
+    proposal.status = nextStatus;
+    proposal.reviewedAt = nowIso();
+    proposal.reviewedBy = reviewerId;
+    room.agentProposals = proposals.map((candidate) => serializeAgentProposal(candidate));
+    touchRoom(room, 'agent_proposal_reviewed');
+
+    const state = serializeRoom(room);
+    io.to(room.id).emit('roomState', state);
+    writeLog('info', 'agent_proposal_reviewed', {
+      roomId: room.id,
+      proposalId,
+      status: nextStatus,
+      reviewedBy: reviewerId
+    });
+    ack?.({ ok: true, room: state });
+  });
+
   socket.on('resetRoom', (payload, ack) => {
     const room = getRoom(payload?.roomId);
     if (!room) {
@@ -4138,6 +4375,7 @@ io.on('connection', (socket) => {
     room.settled = false;
     room.settledAt = null;
     room.settledBy = null;
+    room.agentProposals = [];
     room.parsedAt = null;
     for (const participant of room.participants.values()) {
       participant.order = {};

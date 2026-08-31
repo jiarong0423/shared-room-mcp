@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-31T15:52:27.613Z",
+  "generatedAt": "2026-08-31T16:47:34.849Z",
   "projectRoot": "/Users/sunjiarong/Developer/other/menu",
   "sourceFiles": {
     "server": "/Users/sunjiarong/Developer/other/menu/server.js",
@@ -624,10 +624,13 @@
         "get_formula_contract",
         "get_trust_layer_contract",
         "suggest_next_actions",
+        "create_action_proposal",
+        "agentProposals",
+        "pending_host_confirmation",
         "document.modelContext",
         "registerTool",
         "webMcpToolSurface",
-        "group-room-webmcp-tools.v1",
+        "group-room-webmcp-tools.v2",
         "trustLayerContract",
         "group-room-trust-layer-contract.v1",
         "check_whitelist",
@@ -661,6 +664,18 @@
           "present": true
         },
         {
+          "marker": "create_action_proposal",
+          "present": true
+        },
+        {
+          "marker": "agentProposals",
+          "present": true
+        },
+        {
+          "marker": "pending_host_confirmation",
+          "present": true
+        },
+        {
           "marker": "document.modelContext",
           "present": true
         },
@@ -673,7 +688,7 @@
           "present": true
         },
         {
-          "marker": "group-room-webmcp-tools.v1",
+          "marker": "group-room-webmcp-tools.v2",
           "present": true
         },
         {

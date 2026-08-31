@@ -1,6 +1,6 @@
 # Group Room Task Gap Decoupling Audit
 
-Generated at: 2026-08-31T15:52:27.613Z
+Generated at: 2026-08-31T16:47:34.849Z
 
 Owner project: `/Users/sunjiarong/Developer/other/menu`
 
@@ -158,10 +158,13 @@ Owner project: `/Users/sunjiarong/Developer/other/menu`
 - OK: `get_formula_contract`
 - OK: `get_trust_layer_contract`
 - OK: `suggest_next_actions`
+- OK: `create_action_proposal`
+- OK: `agentProposals`
+- OK: `pending_host_confirmation`
 - OK: `document.modelContext`
 - OK: `registerTool`
 - OK: `webMcpToolSurface`
-- OK: `group-room-webmcp-tools.v1`
+- OK: `group-room-webmcp-tools.v2`
 - OK: `trustLayerContract`
 - OK: `group-room-trust-layer-contract.v1`
 - OK: `check_whitelist`

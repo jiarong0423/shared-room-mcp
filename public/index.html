@@ -458,6 +458,93 @@
       font-size: 12px;
     }
 
+    .proposal-panel {
+      display: none;
+      gap: 10px;
+      border-bottom: 1px solid var(--line);
+      background: #fffdf9;
+      padding: 14px 17px;
+    }
+
+    .proposal-panel[data-visible="true"] {
+      display: grid;
+    }
+
+    .proposal-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .proposal-list {
+      display: grid;
+      gap: 8px;
+      max-height: 280px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .proposal-card {
+      display: grid;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 10px;
+    }
+
+    .proposal-card[data-status="pending_host_confirmation"] {
+      border-color: rgba(180, 83, 9, 0.32);
+      background: #fffaf4;
+    }
+
+    .proposal-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .proposal-summary {
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 750;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .proposal-payload {
+      max-height: 120px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      color: var(--muted);
+      padding: 8px;
+      font-size: 11px;
+      line-height: 1.35;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .proposal-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .proposal-actions .button {
+      min-height: 32px;
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+
     .source-menu-card {
       display: grid;
       gap: 10px;
@@ -1407,6 +1494,15 @@
             <small id="thresholdText" data-i18n="thresholdUnset">No threshold set</small>
           </div>
         </div>
+        <div class="proposal-panel" id="proposalPanel">
+          <div class="proposal-heading">
+            <span data-i18n="agentDrafts">Agent Drafts</span>
+            <span class="chip" id="proposalCountChip">0</span>
+          </div>
+          <div class="proposal-list" id="proposalList">
+            <div class="empty-state" data-i18n="noAgentDrafts">No agent drafts yet</div>
+          </div>
+        </div>
         <div class="panel-header">
           <h2 class="panel-title" data-i18n="memberStats">Member Stats</h2>
           <span class="chip" id="memberCountChip">0 people</span>
@@ -1482,6 +1578,9 @@
       shareAverageText: document.getElementById('shareAverageText'),
       thresholdInput: document.getElementById('thresholdInput'),
       thresholdText: document.getElementById('thresholdText'),
+      proposalPanel: document.getElementById('proposalPanel'),
+      proposalCountChip: document.getElementById('proposalCountChip'),
+      proposalList: document.getElementById('proposalList'),
       memberCountChip: document.getElementById('memberCountChip'),
       summaryTabs: document.getElementById('summaryTabs'),
       itemSummaryList: document.getElementById('itemSummaryList'),
@@ -1660,7 +1759,18 @@
         contractClaimAudit: '認領稽核',
         contractClaimAuditHint: '原子性單向閥門',
         contractAgentGuard: 'Agent 飄移防線',
-        contractAgentGuardHint: '原子性單向閥門'
+        contractAgentGuardHint: '原子性單向閥門',
+        agentDrafts: 'Agent 草稿',
+        noAgentDrafts: '尚無 Agent 草稿',
+        pendingHostConfirmation: '等待發起者確認',
+        acceptedByHost: '發起者已採納',
+        rejectedByHost: '發起者已拒絕',
+        proposalOnly: '只存草稿',
+        acceptDraft: '採納草稿',
+        rejectDraft: '拒絕草稿',
+        ownerOnlyDraftReview: '只有發起者可審核',
+        draftReviewFailed: '草稿審核失敗',
+        draftCreated: 'Agent 草稿已建立，等待發起者確認。'
       },
       en: {
         appTitle: 'Group Room Split',
@@ -1822,7 +1932,18 @@
         contractClaimAudit: 'Claim Audit',
         contractClaimAuditHint: 'atomic one-way gate',
         contractAgentGuard: 'Agent Drift Guard',
-        contractAgentGuardHint: 'atomic one-way gate'
+        contractAgentGuardHint: 'atomic one-way gate',
+        agentDrafts: 'Agent Drafts',
+        noAgentDrafts: 'No agent drafts yet',
+        pendingHostConfirmation: 'pending host confirmation',
+        acceptedByHost: 'accepted by host',
+        rejectedByHost: 'rejected by host',
+        proposalOnly: 'draft only',
+        acceptDraft: 'Accept Draft',
+        rejectDraft: 'Reject Draft',
+        ownerOnlyDraftReview: 'owner review only',
+        draftReviewFailed: 'Failed to review draft',
+        draftCreated: 'Agent draft saved for host confirmation.'
       }
     };
 
@@ -2345,6 +2466,8 @@
         parseQuality: currentRoom?.parseQuality || null,
         localOcr: currentRoom?.localOcr || null,
         totals: currentRoom?.totals || null,
+        agentProposalContract: currentRoom?.agentProposalContract || null,
+        agentProposals: currentRoom?.agentProposals || [],
         participantCount: Array.isArray(currentRoom?.participants) ? currentRoom.participants.length : 0,
         itemCount: Array.isArray(currentRoom?.items) ? currentRoom.items.length : 0
       };
@@ -2433,7 +2556,7 @@
 
       return {
         roomId: snapshot.roomId,
-        agentRole: 'read_only_workflow_assistant',
+        agentRole: 'proposal_only_workflow_assistant',
         toolSurfaceVersion: currentRoom?.webMcpToolSurface?.toolSurfaceVersion || null,
         taskType: snapshot.taskRouter?.taskType || null,
         reviewStatus: snapshot.taskRouter?.reviewStatus || null,
@@ -2448,6 +2571,33 @@
       };
     }
 
+    async function createActionProposal(input = {}) {
+      if (!currentRoom?.id) {
+        return JSON.stringify({
+          ok: false,
+          error: 'room_not_ready'
+        });
+      }
+
+      const response = await fetch(`/api/rooms/${encodeURIComponent(currentRoom.id)}/agent-proposals`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(input || {})
+      });
+      const result = await response.json();
+      if (result?.room) {
+        renderRoom(result.room);
+      }
+      return JSON.stringify({
+        ok: response.ok && result?.ok === true,
+        proposal: result?.proposal || null,
+        contract: currentRoom?.agentProposalContract || null,
+        boundary: 'draft_only_pending_host_confirmation'
+      });
+    }
+
     async function registerWebMcpTools() {
       const modelContext = document.modelContext;
       if (!modelContext || typeof modelContext.registerTool !== 'function') {
@@ -2456,6 +2606,13 @@
 
       const readOnlyAnnotations = {
         readOnlyHint: true,
+        untrustedContentHint: true
+      };
+      const proposalAnnotations = {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
         untrustedContentHint: true
       };
       const emptyInputSchema = {
@@ -2516,6 +2673,48 @@
           description: 'Return read-only workflow suggestions for an agent based on the room state, OCR quality, task conflict, formula boundary, and claim audit. This tool cannot mutate the room and cannot calculate new money values.',
           inputSchema: emptyInputSchema,
           execute: async () => JSON.stringify(getAgentNextActions())
+        },
+        {
+          name: 'create_action_proposal',
+          title: 'Create action proposal',
+          description: 'Create a draft-only action proposal for the room owner. The proposal is stored as pending_host_confirmation and cannot change claims, formulas, settlement, payment, booking submission, Google Sheets, or external systems.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              proposalType: {
+                type: 'string',
+                enum: [
+                  'claim_assignment',
+                  'missing_confirmation',
+                  'evidence_review',
+                  'task_router_review',
+                  'booking_draft',
+                  'service_request_draft',
+                  'activity_signup_draft',
+                  'generic_next_step'
+                ]
+              },
+              summary: {
+                type: 'string',
+                maxLength: 360
+              },
+              rationale: {
+                type: 'string',
+                maxLength: 700
+              },
+              riskLevel: {
+                type: 'string',
+                enum: ['low', 'medium', 'needs_human_review']
+              },
+              payload: {
+                type: 'object'
+              }
+            },
+            required: ['proposalType', 'summary'],
+            additionalProperties: false
+          },
+          annotations: proposalAnnotations,
+          execute: createActionProposal
         }
       ];
 
@@ -2523,7 +2722,7 @@
         try {
           await modelContext.registerTool({
             ...tool,
-            annotations: readOnlyAnnotations
+            annotations: tool.annotations || readOnlyAnnotations
           });
         } catch (error) {
           console.warn('webmcp_register_failed', tool.name, error);
@@ -2615,6 +2814,60 @@
       `;
     }
 
+    function getProposalStatusText(status) {
+      if (status === 'accepted_by_host') {
+        return t('acceptedByHost');
+      }
+      if (status === 'rejected_by_host') {
+        return t('rejectedByHost');
+      }
+      return t('pendingHostConfirmation');
+    }
+
+    function renderAgentProposals(room) {
+      const proposals = Array.isArray(room?.agentProposals) ? room.agentProposals : [];
+      const pendingCount = proposals.filter((proposal) => proposal.status === 'pending_host_confirmation').length;
+      elements.proposalPanel.dataset.visible = proposals.length > 0 ? 'true' : 'false';
+      elements.proposalCountChip.textContent = pendingCount > 0
+        ? `${pendingCount} ${t('needsReview')}`
+        : String(proposals.length);
+      elements.proposalCountChip.dataset.tone = pendingCount > 0 ? 'warn' : 'good';
+
+      if (proposals.length === 0) {
+        elements.proposalList.innerHTML = `<div class="empty-state">${escapeHtml(t('noAgentDrafts'))}</div>`;
+        return;
+      }
+
+      const owner = isOwner(room);
+      elements.proposalList.innerHTML = proposals.slice(0, 12).map((proposal) => {
+        const isPending = proposal.status === 'pending_host_confirmation';
+        const payloadText = JSON.stringify(proposal.payload || {}, null, 2);
+        const controls = isPending
+          ? `
+            <div class="proposal-actions">
+              <button class="button" type="button" data-proposal-action="accept" data-proposal-id="${escapeHtml(proposal.id)}" ${owner ? '' : 'disabled'}>${escapeHtml(t('acceptDraft'))}</button>
+              <button class="button secondary" type="button" data-proposal-action="reject" data-proposal-id="${escapeHtml(proposal.id)}" ${owner ? '' : 'disabled'}>${escapeHtml(t('rejectDraft'))}</button>
+              ${owner ? '' : `<span class="proposal-meta">${escapeHtml(t('ownerOnlyDraftReview'))}</span>`}
+            </div>
+          `
+          : '';
+        return `
+          <article class="proposal-card" data-status="${escapeHtml(proposal.status)}">
+            <div class="proposal-meta">
+              <span>${escapeHtml(proposal.proposalType || 'generic_next_step')}</span>
+              <span>${escapeHtml(getProposalStatusText(proposal.status))}</span>
+              <span>${escapeHtml(t('proposalOnly'))}</span>
+              <span>${escapeHtml(proposal.riskLevel || 'needs_human_review')}</span>
+            </div>
+            <div class="proposal-summary">${escapeHtml(proposal.summary || '')}</div>
+            ${proposal.rationale ? `<div class="proposal-meta">${escapeHtml(proposal.rationale)}</div>` : ''}
+            <pre class="proposal-payload">${escapeHtml(payloadText)}</pre>
+            ${controls}
+          </article>
+        `;
+      }).join('');
+    }
+
     function renderRoom(room) {
       if (!room) {
         return;
@@ -2661,6 +2914,7 @@
       renderParticipants(room);
       renderSummaryTabs();
       renderSettlement(room);
+      renderAgentProposals(room);
 
       if (!isUploading) {
         setMessage('', 'warn');
@@ -3409,6 +3663,24 @@
       });
     }
 
+    function reviewAgentProposal(proposalId, action) {
+      if (!currentRoom?.id) {
+        return;
+      }
+      socket.emit('reviewAgentProposal', {
+        roomId: currentRoom.id,
+        participantId,
+        proposalId,
+        action
+      }, (result) => {
+        if (!result || !result.ok) {
+          setMessage(result?.error || t('draftReviewFailed'), 'error');
+          return;
+        }
+        renderRoom(result.room);
+      });
+    }
+
     function printOrderText() {
       const text = buildOrderText();
       if (!text) {
@@ -3534,6 +3806,14 @@
       }
       activeSummaryTab = button.dataset.summaryTab === 'people' ? 'people' : 'items';
       renderSummaryTabs();
+    });
+
+    elements.proposalList.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-proposal-action]');
+      if (!button) {
+        return;
+      }
+      reviewAgentProposal(button.dataset.proposalId, button.dataset.proposalAction);
     });
 
     elements.sourceMenuToggleButton.addEventListener('click', toggleSourceMenuCollapse);
