@@ -92,6 +92,8 @@ Required runtime variables:
 HOST=0.0.0.0
 PORT=3000
 ROOM_TTL_HOURS=12
+ROOM_PERSISTENCE=json
+ROOM_STORE_PATH=data/rooms.json
 MAX_IMAGE_MB=8
 RATE_LIMIT_WINDOW_MS=60000
 API_RATE_LIMIT_MAX=180
@@ -145,7 +147,9 @@ The app does not automatically load `.env`. If local AI image parsing is needed,
 2. Create a Node.js service.
 3. Set the required environment variables listed above.
 4. Add optional AI keys only if OCR/schema repair should call external models.
-5. Zeabur runs `npm install` and `npm start`.
+5. Add a persistent volume and set `ROOM_STORE_PATH=/data/rooms.json` if rooms must survive service restarts.
+6. Keep the public demo on one service instance when using JSON persistence.
+7. Zeabur runs `npm install` and `npm start`.
 
 Recommended public-demo limits:
 
@@ -186,6 +190,7 @@ Expected audit state:
 7. Ask the agent to call `inspect_room`.
 8. Ask the agent to call `suggest_next_actions`.
 9. Show that the agent can inspect contracts and blockers but cannot calculate money externally or write payment data.
+10. State that WebMCP tools are registered in the browser page with `document.modelContext.registerTool()`; the same-origin backend only supports the app data layer.
 
 ## Compliance Notes
 
@@ -199,8 +204,9 @@ Expected audit state:
 
 ## Known MVP Limits
 
-- Rooms are stored in memory. A Zeabur restart clears rooms.
-- Production use should add Redis or PostgreSQL for room persistence.
+- Rooms use a local JSON store by default. On Zeabur, attach a volume and set `ROOM_STORE_PATH=/data/rooms.json`; otherwise platform filesystem resets can still clear runtime state.
+- The JSON store is intended for a single-instance demo. Concurrent writes or horizontal scaling should move to Redis or PostgreSQL.
+- Production scale should replace the JSON store with Redis or PostgreSQL.
 - Reset room currently has no owner-only management code.
 - OCR quality depends on image clarity.
 - Additional P1 formula controls are still needed for shipping split, hourly venue fee, room minimum, deposit include/exclude, and tier discounts.

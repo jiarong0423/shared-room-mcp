@@ -52,6 +52,8 @@ Required for normal Zeabur runtime:
 HOST=0.0.0.0
 PORT=3000
 ROOM_TTL_HOURS=12
+ROOM_PERSISTENCE=json
+ROOM_STORE_PATH=/data/rooms.json
 MAX_IMAGE_MB=8
 RATE_LIMIT_WINDOW_MS=60000
 API_RATE_LIMIT_MAX=180
@@ -78,6 +80,10 @@ GEMINI_RETRY_ATTEMPTS=2
 
 Do not commit API keys. Set secrets in Zeabur environment variables only.
 
+For Zeabur, attach a persistent volume before using `/data/rooms.json`. Without a volume, the JSON store still works during one runtime session, but platform filesystem resets can clear room state.
+
+The JSON store is a hackathon MVP persistence layer for one running service instance. It should be disclosed as not suitable for horizontal scaling or high-concurrency writes; production should use Redis or PostgreSQL.
+
 ## Local Verification
 
 ```bash
@@ -101,6 +107,7 @@ Target length: under 3 minutes.
 6. Open the page with WebMCP-capable browsing and ask the agent to inspect the room using `inspect_room`.
 7. Ask the agent to call `suggest_next_actions` and explain which human confirmation is still required.
 8. Show that the agent can read contracts and audit state, but cannot calculate money externally or write payment data.
+9. Explain that WebMCP is the browser-page tool surface registered by `document.modelContext.registerTool()`. The same-origin backend exists for app state, uploads, Socket.IO sync, and persistence; it is not a public agent mutation API.
 
 ## Compliance Notes
 
@@ -116,4 +123,5 @@ Target length: under 3 minutes.
 - Replace `TODO_PUBLIC_REPO_URL` after publishing the repository.
 - Replace `TODO_YOUTUBE_DEMO_URL` after uploading the public demo video.
 - Verify the live Zeabur URL after deployment.
+- Confirm Zeabur volume is mounted when `ROOM_STORE_PATH=/data/rooms.json` is configured.
 - Confirm Devpost description uses the same WebMCP boundary stated here.

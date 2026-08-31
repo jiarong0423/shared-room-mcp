@@ -1,11 +1,16 @@
 import express from 'express';
+import fs from 'fs';
 import http from 'http';
 import multer from 'multer';
+import path from 'path';
 import sharp from 'sharp';
 import { randomUUID } from 'crypto';
+import { fileURLToPath } from 'url';
 import { Server } from 'socket.io';
 import { GoogleGenAI, Type } from '@google/genai';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -53,6 +58,9 @@ const trustLayerSpreadsheetId = String(process.env.TRUST_LAYER_SPREADSHEET_ID ||
 const trustLayerSpreadsheetUrl = trustLayerSpreadsheetId
   ? `https://docs.google.com/spreadsheets/d/${encodeURIComponent(trustLayerSpreadsheetId)}/edit`
   : '';
+const roomPersistenceEnabled = String(process.env.ROOM_PERSISTENCE || 'json').toLowerCase() !== 'memory';
+const roomStorePath = path.resolve(__dirname, process.env.ROOM_STORE_PATH || 'data/rooms.json');
+const roomStoreVersion = 'group-room-json-store.v1';
 const rooms = new Map();
 const geminiApiKeyNames = [
   'GEMINI_API_KEY',
@@ -574,6 +582,14 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+function safeIso(value, fallback = nowIso()) {
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  return new Date(parsed).toISOString();
+}
+
 function writeLog(level, message, meta = {}) {
   const payload = Object.assign({
     time: nowIso(),
@@ -586,6 +602,222 @@ function writeLog(level, message, meta = {}) {
     return;
   }
   console.log(line);
+}
+
+function encodeBufferForStore(buffer) {
+  return Buffer.isBuffer(buffer) ? buffer.toString('base64') : null;
+}
+
+function decodeBufferFromStore(value) {
+  if (typeof value !== 'string' || !value) {
+    return null;
+  }
+  try {
+    return Buffer.from(value, 'base64');
+  } catch (error) {
+    return null;
+  }
+}
+
+function serializeRoomForStore(room) {
+  return {
+    id: room.id,
+    menuLoaded: Boolean(room.menuLoaded),
+    items: Array.isArray(room.items) ? room.items : [],
+    menuType: room.menuType || 'general',
+    menuMode: room.menuMode || 'auto',
+    taskRouter: room.taskRouter || { ...defaultTaskRouter },
+    participants: Array.from(room.participants.values()).map((participant) => ({
+      id: participant.id,
+      displayName: participant.displayName,
+      order: participant.order && typeof participant.order === 'object' ? participant.order : {},
+      confirmed: Boolean(participant.confirmed),
+      confirmedAt: participant.confirmedAt || null,
+      updatedAt: participant.updatedAt || room.updatedAt || room.createdAt
+    })),
+    ownerParticipantId: room.ownerParticipantId || null,
+    settled: Boolean(room.settled),
+    settledAt: room.settledAt || null,
+    settledBy: room.settledBy || null,
+    warnings: Array.isArray(room.warnings) ? room.warnings : [],
+    parseQuality: room.parseQuality || null,
+    localOcr: room.localOcr || {
+      enabled: false,
+      lineCount: 0,
+      candidateCount: 0,
+      itemCount: 0
+    },
+    menuImages: Array.isArray(room.menuImages)
+      ? room.menuImages.map((image, index) => ({
+        index,
+        bufferBase64: encodeBufferForStore(image.buffer),
+        mimeType: image.mimeType || image.mimetype || 'image/jpeg',
+        width: image.width || null,
+        height: image.height || null,
+        originalBytes: image.originalBytes || null,
+        processedBytes: image.processedBytes || null
+      }))
+      : [],
+    menuImageBufferBase64: encodeBufferForStore(room.menuImageBuffer),
+    menuImageMimeType: room.menuImageMimeType || null,
+    menuImageWidth: room.menuImageWidth || null,
+    menuImageHeight: room.menuImageHeight || null,
+    createdAt: safeIso(room.createdAt),
+    updatedAt: safeIso(room.updatedAt, safeIso(room.createdAt)),
+    parsedAt: room.parsedAt ? safeIso(room.parsedAt) : null
+  };
+}
+
+function hydrateRoomFromStore(record) {
+  if (!record || typeof record !== 'object' || typeof record.id !== 'string' || !record.id) {
+    return null;
+  }
+
+  const participants = new Map();
+  const participantRecords = Array.isArray(record.participants) ? record.participants : [];
+  for (const participant of participantRecords) {
+    if (!participant || typeof participant.id !== 'string' || !participant.id) {
+      continue;
+    }
+    participants.set(participant.id, {
+      id: participant.id,
+      displayName: normalizeDisplayName(participant.displayName),
+      order: participant.order && typeof participant.order === 'object' ? participant.order : {},
+      confirmed: Boolean(participant.confirmed),
+      confirmedAt: participant.confirmedAt || null,
+      connectedCount: 0,
+      updatedAt: safeIso(participant.updatedAt, safeIso(record.updatedAt, safeIso(record.createdAt)))
+    });
+  }
+
+  const menuImages = Array.isArray(record.menuImages)
+    ? record.menuImages.map((image, index) => ({
+      index,
+      buffer: decodeBufferFromStore(image?.bufferBase64),
+      mimeType: image?.mimeType || 'image/jpeg',
+      width: image?.width || null,
+      height: image?.height || null,
+      originalBytes: image?.originalBytes || null,
+      processedBytes: image?.processedBytes || null
+    })).filter((image) => Buffer.isBuffer(image.buffer))
+    : [];
+  const menuImageBuffer = decodeBufferFromStore(record.menuImageBufferBase64) || menuImages[0]?.buffer || null;
+
+  return {
+    id: record.id,
+    menuLoaded: Boolean(record.menuLoaded),
+    items: Array.isArray(record.items) ? record.items : [],
+    menuType: menuTypes.has(record.menuType) ? record.menuType : 'general',
+    menuMode: menuModes.has(record.menuMode) ? record.menuMode : 'auto',
+    taskRouter: record.taskRouter && typeof record.taskRouter === 'object'
+      ? record.taskRouter
+      : { ...defaultTaskRouter },
+    participants,
+    ownerParticipantId: typeof record.ownerParticipantId === 'string' ? record.ownerParticipantId : null,
+    settled: Boolean(record.settled),
+    settledAt: record.settledAt || null,
+    settledBy: record.settledBy || null,
+    warnings: Array.isArray(record.warnings) ? record.warnings : [],
+    parseQuality: record.parseQuality || null,
+    localOcr: record.localOcr || {
+      enabled: false,
+      lineCount: 0,
+      candidateCount: 0,
+      itemCount: 0
+    },
+    menuImages,
+    menuImageBuffer,
+    menuImageMimeType: record.menuImageMimeType || menuImages[0]?.mimeType || null,
+    menuImageWidth: record.menuImageWidth || menuImages[0]?.width || null,
+    menuImageHeight: record.menuImageHeight || menuImages[0]?.height || null,
+    itemImageCache: new Map(),
+    createdAt: safeIso(record.createdAt),
+    updatedAt: safeIso(record.updatedAt, safeIso(record.createdAt)),
+    parsedAt: record.parsedAt ? safeIso(record.parsedAt) : null
+  };
+}
+
+function persistRooms(reason = 'room_state_changed') {
+  if (!roomPersistenceEnabled) {
+    return;
+  }
+
+  const payload = {
+    storeVersion: roomStoreVersion,
+    savedAt: nowIso(),
+    roomTtlHours: roomTtlMs / 60 / 60 / 1000,
+    rooms: Array.from(rooms.values()).map((room) => serializeRoomForStore(room))
+  };
+  const tempPath = `${roomStorePath}.tmp`;
+
+  try {
+    fs.mkdirSync(path.dirname(roomStorePath), { recursive: true });
+    fs.writeFileSync(tempPath, `${JSON.stringify(payload)}\n`, 'utf8');
+    fs.renameSync(tempPath, roomStorePath);
+    writeLog('info', 'rooms_persisted', {
+      reason,
+      roomCount: payload.rooms.length,
+      roomStorePath
+    });
+  } catch (error) {
+    writeLog('error', 'rooms_persist_failed', {
+      reason,
+      roomStorePath,
+      error: error.message
+    });
+  }
+}
+
+function loadPersistedRooms() {
+  if (!roomPersistenceEnabled) {
+    writeLog('info', 'room_persistence_disabled', {
+      mode: 'memory'
+    });
+    return;
+  }
+  if (!fs.existsSync(roomStorePath)) {
+    writeLog('info', 'room_store_not_found', {
+      roomStorePath
+    });
+    return;
+  }
+
+  try {
+    const raw = fs.readFileSync(roomStorePath, 'utf8');
+    const parsed = JSON.parse(raw);
+    const records = Array.isArray(parsed?.rooms) ? parsed.rooms : [];
+    const now = Date.now();
+    let loadedCount = 0;
+    let expiredCount = 0;
+
+    for (const record of records) {
+      const room = hydrateRoomFromStore(record);
+      if (!room) {
+        continue;
+      }
+      if (now - Date.parse(room.updatedAt) > roomTtlMs) {
+        expiredCount += 1;
+        continue;
+      }
+      rooms.set(room.id, room);
+      loadedCount += 1;
+    }
+
+    writeLog('info', 'rooms_loaded', {
+      roomStorePath,
+      loadedCount,
+      expiredCount
+    });
+
+    if (expiredCount > 0) {
+      persistRooms('startup_expired_room_prune');
+    }
+  } catch (error) {
+    writeLog('error', 'rooms_load_failed', {
+      roomStorePath,
+      error: error.message
+    });
+  }
 }
 
 function getRequestClientKey(req) {
@@ -1030,6 +1262,7 @@ function createRoom() {
     parsedAt: null
   };
   rooms.set(id, room);
+  persistRooms('room_created');
   return room;
 }
 
@@ -1040,8 +1273,11 @@ function getRoom(roomId) {
   return rooms.get(roomId) || null;
 }
 
-function touchRoom(room) {
+function touchRoom(room, reason = 'room_touched', shouldPersist = true) {
   room.updatedAt = nowIso();
+  if (shouldPersist) {
+    persistRooms(reason);
+  }
 }
 
 function hasUsableDisplayName(displayName) {
@@ -3321,11 +3557,16 @@ async function parseMenuImages(files, options = {}) {
 
 function cleanupExpiredRooms() {
   const now = Date.now();
+  let deletedCount = 0;
   for (const [roomId, room] of rooms.entries()) {
     if (now - Date.parse(room.updatedAt) > roomTtlMs) {
       rooms.delete(roomId);
+      deletedCount += 1;
       writeLog('info', 'expired_room_deleted', { roomId });
     }
+  }
+  if (deletedCount > 0) {
+    persistRooms('expired_room_cleanup');
   }
 }
 
@@ -3356,6 +3597,9 @@ app.get('/healthz', (req, res) => {
     apiRateLimitMax,
     roomCreateRateLimitMax,
     menuParseRateLimitMax,
+    roomPersistenceEnabled,
+    roomStorePath,
+    roomStoreVersion,
     evidenceContractVersion,
     trustLayerConfigured: Boolean(trustLayerSpreadsheetId),
     trustLayerContractVersion,
@@ -3380,7 +3624,7 @@ app.get('/api/rooms/:roomId', (req, res) => {
     res.status(404).json({ error: '找不到房間，請重新建立揪團分帳房' });
     return;
   }
-  touchRoom(room);
+  touchRoom(room, 'room_read', false);
   res.json(serializeRoom(room));
 });
 
@@ -3955,6 +4199,7 @@ server.on('error', (error) => {
   process.exitCode = 1;
 });
 
+loadPersistedRooms();
 setInterval(cleanupExpiredRooms, 30 * 60 * 1000).unref();
 
 server.listen(port, host, () => {
@@ -3965,6 +4210,8 @@ server.listen(port, host, () => {
     geminiModel,
     openAiModel,
     roomTtlHours: roomTtlMs / 60 / 60 / 1000,
-    maxImageMb
+    maxImageMb,
+    roomPersistenceEnabled,
+    roomStorePath
   });
 });
