@@ -28,6 +28,8 @@ This repository is intended to be a clean, forkable WebMCP tool layer. The proje
 
 Deployment owners can keep the default no-key manual/local-OCR workflow, remove the provider adapters, or replace them with their own OCR, vision, browser, commerce, spreadsheet, or private-community integrations. The stable part is the WebMCP contract surface and deterministic room state, not any paid API.
 
+External developers should be able to fork the template, reuse the WebMCP tool contracts, and plug in their own adapters without asking for access to a central service. The intended extension surface is open-source code and documented tool boundaries, not an unrestricted public mutation API. High-risk actions such as booking submission, payment, account access, claims, and settlement should stay behind explicit human confirmation.
+
 ## Future Extension Modules
 
 The group split room is the first reference module, not the only possible use case. The primary extension path should stay close to multi-person, pre-payment, or pre-commitment coordination where agent-readable state, audit, and human confirmation matter.

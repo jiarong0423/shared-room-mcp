@@ -12,11 +12,13 @@ License: MIT
 
 ## One-Line Pitch
 
-Group Room Split MCP is a WebMCP-powered room for social group buying, meals, drinks, KTV rooms, sports venues, tickets, rentals, and generic shared expenses. It lets a human start with photos or local OCR text, then lets an agent inspect the room through read-only WebMCP tools without taking over money decisions.
+Group Room Split MCP is an open-source WebMCP template for pre-payment social coordination. It lets a browser-side agent inspect structured room state, task boundaries, formula rules, and claim audit gaps while humans retain control over claims, settlement, payment, and final confirmation.
 
 ## WebMCP Fit
 
-The app exposes page-local tools through `document.modelContext.registerTool()` when WebMCP is available. The first tool surface is deliberately read-only: agents can inspect the room, task router, formula contract, claim audit, and trust-layer contract, but they cannot calculate money externally, assign claims, overwrite formulas, or write payment data.
+The app exposes page-local tools through `document.modelContext.registerTool()` when WebMCP is available. The current tool surface is deliberately read-only: agents can inspect the room, task router, formula contract, claim audit, and trust-layer contract, but they cannot calculate money externally, assign claims, overwrite formulas, finalize settlement, or write payment data.
+
+This is a tool-layer template, not a paid API wrapper. Manual input, sample data, local OCR text, and deterministic parsing are the default path. Cloud OCR, vision, model, spreadsheet, commerce, booking, CRM, or community integrations are optional adapters owned by the deployment owner.
 
 Implemented WebMCP tools:
 
@@ -29,9 +31,11 @@ Implemented WebMCP tools:
 
 ## Human And Agent Collaboration
 
-The human controls the room, task type, uploaded evidence, OCR text, participant names, and claim confirmation. The agent helps by reading the current state, identifying task conflicts, explaining missing claims, and guiding the next action from the WebMCP tool output. The `suggest_next_actions` tool is the primary agent workflow entrypoint: it returns read-only action suggestions, human-review blockers, formula boundaries, and forbidden actions.
+The human controls the room, task type, uploaded evidence, OCR text, participant names, claim confirmation, and settlement. The agent helps by reading the current state, identifying task conflicts, explaining missing claims, and guiding the next action from the WebMCP tool output. The `suggest_next_actions` tool is the primary agent workflow entrypoint: it returns read-only action suggestions, human-review blockers, formula boundaries, and forbidden actions.
 
-AI is limited to OCR/schema repair. It cannot decide who owes money, change formulas, assign cost pools, or settle disputes.
+Provider AI is optional and limited to OCR/schema repair adapters. It cannot decide who owes money, change formulas, assign cost pools, or settle disputes. Future forks can add proposal-only tools for booking drafts, repair appointment drafts, salon reservation drafts, activity signup drafts, and other pre-commitment workflows, but final submission and payment should remain human-controlled.
+
+Future modules can add proposal-only tools that let the agent prepare drafts for human review. Those tools should never change orders, claims, formulas, task routing, settlement, payment data, or external systems without explicit human confirmation.
 
 ## What Changed After August 25, 2026
 
@@ -43,6 +47,7 @@ This project existed earlier as a group menu ordering room. The WebMCP hackathon
 - AI repair gate and task conflict gate.
 - Claim audit ledger for shared candidates and extra personal claims.
 - WebMCP read-only tool surface plus a hash-only Google Sheets trust-layer contract.
+- Open-source adapter positioning for future social, commerce, booking, OCR, spreadsheet, and private-community integrations.
 
 ## Environment Variables
 
@@ -84,7 +89,7 @@ For Zeabur, attach a persistent volume before using `/data/rooms.json`. Without 
 
 The JSON store is a hackathon MVP persistence layer for one running service instance. It should be disclosed as not suitable for horizontal scaling or high-concurrency writes; production should use Redis or PostgreSQL.
 
-Deployment owners should replace secrets only in Zeabur Variables or the hosting provider secret manager. The repository includes variable names in `.env.example`, but no real key values. AI provider keys are optional because manual input and local OCR text can still demonstrate the WebMCP tool workflow.
+Deployment owners should replace secrets only in Zeabur Variables or the hosting provider secret manager. The repository includes variable names in `.env.example`, but no real key values. AI provider keys are optional adapters because manual input and local OCR text can still demonstrate the WebMCP tool workflow.
 
 ## Local Verification
 
@@ -110,6 +115,7 @@ Target length: under 3 minutes.
 7. Ask the agent to call `suggest_next_actions` and explain which human confirmation is still required.
 8. Show that the agent can read contracts and audit state, but cannot calculate money externally or write payment data.
 9. Explain that WebMCP is the browser-page tool surface registered by `document.modelContext.registerTool()`. The same-origin backend exists for app state, uploads, Socket.IO sync, and persistence; it is not a public agent mutation API.
+10. Close with the open-source extension model: the group room is the reference module, and future forks can add proposal-only adapters for bookings, repair appointments, salon reservations, activity signups, and other pre-commitment workflows.
 
 ## Compliance Notes
 
