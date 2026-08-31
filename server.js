@@ -1245,7 +1245,7 @@ async function generateMenuContent(ai, request) {
             config: request.config
           }),
           geminiTimeoutMs,
-          `Gemini 解析超過 ${Math.round(geminiTimeoutMs / 1000)} 秒，請改用較清晰或較小的價格證據圖片再試一次。`
+          `圖片讀取超過 ${Math.round(geminiTimeoutMs / 1000)} 秒，請改用較清晰或較小的價格圖片再試一次。`
         );
         return {
           response,
@@ -1274,7 +1274,7 @@ async function generateMenuContent(ai, request) {
   }
 
   const info = extractGeminiErrorInfo(lastError);
-  const error = new Error(`Gemini 目前高流量或暫時不可用，已重試並切換備援模型仍失敗。請稍後再按「確定上傳」。最後錯誤：${info.message}`);
+  const error = new Error(`圖片讀取服務暫時忙碌，請稍後再按「確定上傳」，或先貼上圖片中的文字。`);
   error.statusCode = info.code === 429 ? 429 : 503;
   throw error;
 }
@@ -3550,7 +3550,7 @@ function buildOpenAiInput(imageFiles, prompt) {
 async function parseMenuImagesWithGemini(imageFiles, options = {}) {
   const { apiKey } = getGeminiApiKeyConfig();
   if (!apiKey) {
-    const error = new Error(`目前執行環境尚未設定可用 Gemini API Key。Zeabur 請到 Variables 設定其中一個變數名：${geminiApiKeyNames.join('、')}。不要把金鑰寫進程式碼。`);
+    const error = new Error('這個部署尚未開啟圖片讀取服務。請先貼上圖片中的文字，或由部署者在主機環境設定辨識服務。');
     error.statusCode = 500;
     throw error;
   }
@@ -3572,14 +3572,14 @@ async function parseMenuImagesWithGemini(imageFiles, options = {}) {
 
   const rawText = response.text;
   if (!rawText) {
-    throw new Error('Gemini 未回傳可解析內容');
+    throw new Error('圖片讀取服務沒有回傳可用內容，請貼上圖片中的文字或換一張更清楚的圖片。');
   }
 
   let parsed;
   try {
     parsed = JSON.parse(rawText);
   } catch (error) {
-    const wrapped = new Error('Gemini 回傳內容不是合法 JSON');
+    const wrapped = new Error('圖片讀取服務回傳格式異常，請貼上圖片中的文字或稍後再試。');
     wrapped.cause = error;
     throw wrapped;
   }
@@ -3616,7 +3616,7 @@ async function parseMenuImagesWithGemini(imageFiles, options = {}) {
 async function parseMenuImagesWithOpenAi(imageFiles, options = {}) {
   const { apiKey } = getOpenAiApiKeyConfig();
   if (!apiKey) {
-    const error = new Error(`目前執行環境尚未設定可用 OpenAI API Key。Zeabur 請到 Variables 設定 ${openAiApiKeyNames.join('、')}。不要把金鑰寫進程式碼。`);
+    const error = new Error('這個部署尚未開啟備用圖片讀取服務。請先貼上圖片中的文字，或由部署者在主機環境設定辨識服務。');
     error.statusCode = 500;
     throw error;
   }
@@ -3628,14 +3628,14 @@ async function parseMenuImagesWithOpenAi(imageFiles, options = {}) {
 
   const rawText = extractOpenAiOutputText(generated.response);
   if (!rawText) {
-    throw new Error('OpenAI 未回傳可解析內容');
+    throw new Error('備用圖片讀取服務沒有回傳可用內容，請貼上圖片中的文字或換一張更清楚的圖片。');
   }
 
   let parsed;
   try {
     parsed = JSON.parse(rawText);
   } catch (error) {
-    const wrapped = new Error('OpenAI 回傳內容不是合法 JSON');
+    const wrapped = new Error('備用圖片讀取服務回傳格式異常，請貼上圖片中的文字或稍後再試。');
     wrapped.cause = error;
     throw wrapped;
   }
@@ -3694,7 +3694,7 @@ async function parseMenuImages(files, options = {}) {
       menuType: localOcr.menuType,
       provider: 'local_ocr',
       modelUsed: 'deterministic-ocr-text-parser',
-      warnings: ['已使用本地 OCR 文字候選開房，請人工確認品名、價格與規格。'],
+      warnings: ['已先用你貼上的文字建立房間，請確認品名、價格與規格。'],
       parseQuality: localQuality,
       localOcr: localOcr.metrics,
       taskRouter: initialTaskRouter
@@ -3708,7 +3708,7 @@ async function parseMenuImages(files, options = {}) {
   ) {
     return Object.assign({}, localFallback, {
       warnings: localQuality.issueCount > 0
-        ? ['本地 OCR 已完成初步結構化，部分欄位請快速檢查。']
+        ? ['已先用你貼上的文字整理項目，部分內容請快速檢查。']
         : []
     });
   }
@@ -3717,7 +3717,7 @@ async function parseMenuImages(files, options = {}) {
     if (localFallback && localFallback.items.length >= localOcrMinItems) {
       return localFallback;
     }
-    const error = new Error(`目前執行環境尚未設定可用 AI Key，且本地 OCR 文字候選不足。免費優先請設定 ${geminiApiKeyNames.join('、')}；OpenAI 備援請設定 ${openAiApiKeyNames.join('、')}。不要把金鑰寫進程式碼。`);
+    const error = new Error('這張圖片暫時讀不出足夠項目。請貼上圖片中的文字，或由部署者開啟圖片讀取服務後再試。');
     error.statusCode = 500;
     throw error;
   }
@@ -3857,7 +3857,7 @@ app.post('/api/rooms/:roomId/agent-proposals', (req, res) => {
   }
   const requesterId = String(req.body?.participantId || '');
   if (!requesterId || room.ownerParticipantId !== requesterId) {
-    res.status(403).json({ error: '只有發起者可以建立 Agent 草稿' });
+    res.status(403).json({ error: '只有發起者可以建立建議草稿' });
     return;
   }
 
@@ -4367,7 +4367,7 @@ io.on('connection', (socket) => {
 
     const reviewerId = String(payload?.participantId || '');
     if (!reviewerId || room.ownerParticipantId !== reviewerId) {
-      ack?.({ ok: false, error: '只有發起者可以審核 Agent 草稿' });
+      ack?.({ ok: false, error: '只有發起者可以決定建議草稿' });
       return;
     }
 
@@ -4386,11 +4386,11 @@ io.on('connection', (socket) => {
     const proposals = Array.isArray(room.agentProposals) ? room.agentProposals : [];
     const proposal = proposals.find((candidate) => candidate.id === proposalId);
     if (!proposal) {
-      ack?.({ ok: false, error: '找不到 Agent 草稿' });
+      ack?.({ ok: false, error: '找不到建議草稿' });
       return;
     }
     if (proposal.status !== 'pending_host_confirmation') {
-      ack?.({ ok: false, error: '此 Agent 草稿已審核' });
+      ack?.({ ok: false, error: '這份建議草稿已處理' });
       return;
     }
 

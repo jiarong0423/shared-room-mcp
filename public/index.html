@@ -1344,7 +1344,7 @@
     <header class="topbar">
       <div class="title-block">
         <h1 data-i18n="appTitle">Shared Room</h1>
-        <p data-i18n="appSubtitle">Upload price evidence so everyone can pick items, audit claims, and review split totals in one room.</p>
+        <p data-i18n="appSubtitle">Upload a price photo or paste copied text so everyone can pick items and confirm the final split in one room.</p>
       </div>
       <div class="status-row">
         <div class="language-toggle" id="languageToggle" aria-label="Language">
@@ -1352,14 +1352,14 @@
           <button class="language-button" type="button" data-lang="zh">中文</button>
         </div>
         <span class="chip" id="connectionChip" data-i18n="connecting">Connecting</span>
-        <span class="chip" id="menuChip" data-i18n="evidenceNotParsed">No evidence parsed</span>
+        <span class="chip" id="menuChip" data-i18n="evidenceNotParsed">No price photo yet</span>
       </div>
     </header>
 
     <section class="layout">
       <div class="panel">
         <div class="panel-header">
-          <h2 class="panel-title" data-i18n="evidenceAndItems">Evidence And Items</h2>
+          <h2 class="panel-title" data-i18n="evidenceAndItems">Price Photo And Items</h2>
           <button class="button secondary" id="copyOrderButton" type="button" disabled data-i18n="copySettlement">Copy Summary</button>
         </div>
         <div class="panel-body">
@@ -1374,30 +1374,30 @@
             <button class="button" id="saveNameButton" type="button" data-i18n="applyName">Apply Name</button>
           </div>
 
-          <div class="contract-strip" id="contractStrip" aria-label="Six WebMCP contract lines" data-i18n-aria-label="contractStripLabel">
+          <div class="contract-strip" id="contractStrip" aria-label="Six safe workflow steps" data-i18n-aria-label="contractStripLabel">
             <div class="contract-pill">
-              <strong data-i18n="contractTaskRouter">Task Router</strong>
-              <span data-i18n="contractTaskRouterHint">atomic one-way gate</span>
+              <strong data-i18n="contractTaskRouter">Choose the Plan</strong>
+              <span data-i18n="contractTaskRouterHint">the room stays on one path</span>
             </div>
             <div class="contract-pill">
-              <strong data-i18n="contractEvidence">Evidence / OCR</strong>
-              <span data-i18n="contractEvidenceHint">atomic one-way gate</span>
+              <strong data-i18n="contractEvidence">Read the Price List</strong>
+              <span data-i18n="contractEvidenceHint">photo or pasted text first</span>
             </div>
             <div class="contract-pill">
-              <strong data-i18n="contractFormula">Formula Engine</strong>
-              <span data-i18n="contractFormulaHint">atomic one-way gate</span>
+              <strong data-i18n="contractFormula">Keep Math Local</strong>
+              <span data-i18n="contractFormulaHint">totals are calculated here</span>
             </div>
             <div class="contract-pill">
-              <strong data-i18n="contractRepairGate">AI Repair Gate</strong>
-              <span data-i18n="contractRepairGateHint">atomic one-way gate</span>
+              <strong data-i18n="contractRepairGate">Ask Only If Needed</strong>
+              <span data-i18n="contractRepairGateHint">unclear text needs review</span>
             </div>
             <div class="contract-pill">
-              <strong data-i18n="contractClaimAudit">Claim Audit</strong>
-              <span data-i18n="contractClaimAuditHint">atomic one-way gate</span>
+              <strong data-i18n="contractClaimAudit">Check Everyone</strong>
+              <span data-i18n="contractClaimAuditHint">no one is confirmed for them</span>
             </div>
             <div class="contract-pill">
-              <strong data-i18n="contractAgentGuard">Agent Drift Guard</strong>
-              <span data-i18n="contractAgentGuardHint">atomic one-way gate</span>
+              <strong data-i18n="contractAgentGuard">Assistant Only Drafts</strong>
+              <span data-i18n="contractAgentGuardHint">the host makes the call</span>
             </div>
           </div>
 
@@ -1406,12 +1406,12 @@
               <input id="fileInput" type="file" accept="image/*">
               <span class="upload-stack">
                 <span class="upload-mark">＋</span>
-                <strong data-i18n="priceEvidenceImage">Price Evidence Image</strong>
-                <span class="upload-copy" data-i18n="uploadCopy">Choose, drop, or paste one price-evidence image for meals, KTV, sports, tickets, rentals, events, or group buys.</span>
+                <strong data-i18n="priceEvidenceImage">Price Photo</strong>
+                <span class="upload-copy" data-i18n="uploadCopy">Choose, drop, or paste one price photo for meals, KTV, sports, tickets, rentals, events, or group buys.</span>
                 <button class="button" id="selectImageButton" type="button" data-i18n="selectImage">Select Image</button>
-                <img class="preview-image" id="previewImage" alt="Evidence preview" data-i18n-alt="evidencePreview">
+                <img class="preview-image" id="previewImage" alt="Price photo preview" data-i18n-alt="evidencePreview">
                 <span class="task-selector">
-                  <label for="taskTypeSelect" data-i18n="taskType">Task Type</label>
+                  <label for="taskTypeSelect" data-i18n="taskType">Room Purpose</label>
                   <select id="taskTypeSelect">
                     <option value="auto" data-i18n="taskAuto">Auto Detect</option>
                     <option value="group_buy" data-i18n="taskGroupBuy">Group Buy / Free Shipping</option>
@@ -1424,14 +1424,14 @@
                     <option value="generic_split" data-i18n="taskGenericSplit">Generic Split</option>
                   </select>
                 </span>
-                <textarea class="ocr-field" id="localOcrTextInput" maxlength="12000" placeholder="Optional: paste local OCR text. The app extracts candidates first, then asks the model only for repair. With no API key, enough local candidates can still open the room." data-i18n-placeholder="localOcrPlaceholder"></textarea>
+                <textarea class="ocr-field" id="localOcrTextInput" maxlength="12000" placeholder="Optional: paste text copied from the image. The room can start when enough items are found." data-i18n-placeholder="localOcrPlaceholder"></textarea>
                 <span class="upload-actions" id="uploadActions">
-                  <button class="button" id="confirmUploadButton" type="button" disabled data-i18n="confirmUpload">Upload Evidence</button>
+                  <button class="button" id="confirmUploadButton" type="button" disabled data-i18n="confirmUpload">Use This Photo</button>
                   <button class="button secondary" id="cancelUploadButton" type="button" disabled data-i18n="cancelUpload">Cancel Upload</button>
                 </span>
               </span>
             </label>
-            <div class="loading-bar" id="loadingBar" data-i18n="aiParsing">AI repair is running. Keep this page open.</div>
+            <div class="loading-bar" id="loadingBar" data-i18n="aiParsing">Reading the price photo. Keep this page open.</div>
           </div>
 
           <div class="message" id="messageBox"></div>
@@ -1440,24 +1440,24 @@
             <div class="quality-panel" id="qualityPanel"></div>
             <div class="source-menu-card" id="sourceMenuCard" hidden>
               <div class="source-menu-header">
-                <span data-i18n="compressedEvidence">Compressed Evidence</span>
-                <div class="source-menu-tools" aria-label="Price evidence image tools" data-i18n-aria-label="imageTools">
+                <span data-i18n="compressedEvidence">Saved Price Photo</span>
+                <div class="source-menu-tools" aria-label="Price photo tools" data-i18n-aria-label="imageTools">
                   <button class="image-tool-button" id="sourceMenuToggleButton" type="button" data-i18n="collapse">Collapse</button>
-                  <button class="image-tool-button" id="downloadCompressedImageButton" type="button" data-i18n="downloadEvidence">Download Evidence</button>
+                  <button class="image-tool-button" id="downloadCompressedImageButton" type="button" data-i18n="downloadEvidence">Download Photo</button>
                   <button class="image-tool-button" id="imageZoomOutButton" type="button">−</button>
                   <button class="image-tool-button" id="imageResetButton" type="button" data-i18n="resetZoom">Reset</button>
                   <button class="image-tool-button" id="imageZoomInButton" type="button">＋</button>
                 </div>
               </div>
-              <div class="source-menu-viewer" id="sourceMenuViewer" aria-label="Draggable and zoomable compressed evidence" data-i18n-aria-label="draggableEvidence">
-                <img id="sourceMenuImage" alt="Compressed Evidence" draggable="false" data-i18n-alt="compressedEvidence">
+              <div class="source-menu-viewer" id="sourceMenuViewer" aria-label="Draggable and zoomable saved price photo" data-i18n-aria-label="draggableEvidence">
+                <img id="sourceMenuImage" alt="Saved Price Photo" draggable="false" data-i18n-alt="compressedEvidence">
               </div>
-              <div class="source-menu-hint" data-i18n="sourceMenuHint">Drag to inspect. Use wheel or pinch to zoom. This is the server-compressed evidence image, not cropped item thumbnails.</div>
+              <div class="source-menu-hint" data-i18n="sourceMenuHint">Drag to inspect. Use wheel or pinch to zoom. This is the saved copy, not a cropped item thumbnail.</div>
             </div>
             <div class="menu-mode-row">
               <div class="mode-copy">
                 <span data-i18n="itemMode">Item Mode</span>
-                <span id="menuModeHint">AI auto detect</span>
+                <span id="menuModeHint">Auto selected</span>
               </div>
               <div class="mode-toggle" id="menuModeToggle" aria-label="Item mode switch" data-i18n-aria-label="itemModeToggle">
                 <button class="mode-button" type="button" data-menu-mode="auto" data-i18n="modeAuto">Auto</button>
@@ -1488,19 +1488,19 @@
         <div class="summary-metric">
           <span data-i18n="grandTotalLabel">Group Total</span>
           <strong id="grandTotal">NT$ 0</strong>
-          <small id="shareAverageText">Shared average: NT$ 0 / person; personal claims NT$ 0</small>
+          <small id="shareAverageText">Shared average: NT$ 0 / person; personal add-ons NT$ 0</small>
           <div class="threshold-box">
-            <input id="thresholdInput" type="number" min="0" step="1" inputmode="numeric" placeholder="Free shipping / minimum / group threshold" data-i18n-placeholder="thresholdPlaceholder">
+            <input id="thresholdInput" type="number" min="0" step="1" inputmode="numeric" placeholder="Goal amount" data-i18n-placeholder="thresholdPlaceholder">
             <small id="thresholdText" data-i18n="thresholdUnset">No threshold set</small>
           </div>
         </div>
         <div class="proposal-panel" id="proposalPanel">
           <div class="proposal-heading">
-            <span data-i18n="agentDrafts">Agent Drafts</span>
+            <span data-i18n="agentDrafts">Suggested Drafts</span>
             <span class="chip" id="proposalCountChip">0</span>
           </div>
           <div class="proposal-list" id="proposalList">
-            <div class="empty-state" data-i18n="noAgentDrafts">No agent drafts yet</div>
+            <div class="empty-state" data-i18n="noAgentDrafts">No suggestions yet</div>
           </div>
         </div>
         <div class="panel-header">
@@ -1600,12 +1600,12 @@
     const translations = {
       zh: {
         appTitle: '揪團分帳房',
-        appSubtitle: '上傳現場價格證據，房間內所有人同步選項、均分試算與個人費用。',
+        appSubtitle: '上傳價格照片或貼上圖片文字，大家在同一個房間選項目、確認分帳。',
         connecting: '連線中',
         connected: '已連線',
         disconnected: '連線中斷',
-        evidenceNotParsed: '尚未解析證據',
-        evidenceAndItems: '價格證據與項目',
+        evidenceNotParsed: '尚未加入價格照片',
+        evidenceAndItems: '價格照片與項目',
         copySettlement: '複製結算摘要',
         creatingRoom: '建立房間中',
         roomLabel: '房間',
@@ -1613,11 +1613,11 @@
         copyRoomLink: '複製房間連結',
         yourName: '你的名稱',
         applyName: '套用名稱',
-        priceEvidenceImage: '價格證據圖片',
-        uploadCopy: '選擇、拖放或貼上單張價格證據圖片。可用於吃飯、唱歌、運動、票券、租借或活動分帳。',
+        priceEvidenceImage: '價格照片',
+        uploadCopy: '選擇、拖放或貼上一張價格照片。可用於吃飯、唱歌、運動、票券、租借或活動分帳。',
         selectImage: '選擇圖片',
-        evidencePreview: '價格證據預覽',
-        taskType: '任務類型',
+        evidencePreview: '價格照片預覽',
+        taskType: '房間用途',
         taskAuto: '自動判別',
         taskGroupBuy: '團購 / 免運門檻',
         taskDrinkOrder: '飲料揪團',
@@ -1627,20 +1627,20 @@
         taskTicketActivity: '票券 / 活動報名',
         taskRentalShare: '租借 / 押金',
         taskGenericSplit: '一般分帳',
-        localOcrPlaceholder: '可選：貼上本地 OCR 文字，系統會先抓候選項目，再交給模型修正；沒有 API key 時也可用候選項目開房。',
-        confirmUpload: '確定上傳',
+        localOcrPlaceholder: '可選：貼上從圖片複製出的文字。只要找到足夠品項，就能先開房整理。',
+        confirmUpload: '使用這張照片',
         cancelUpload: '取消上傳',
-        aiParsing: 'AI 解析中，請保持頁面開啟。',
-        compressedEvidence: '壓縮證據圖',
-        imageTools: '價格證據圖片縮放工具',
+        aiParsing: '正在讀取價格照片，請保持頁面開啟。',
+        compressedEvidence: '已保存價格照片',
+        imageTools: '價格照片工具',
         collapse: '收合',
         expand: '展開',
-        downloadEvidence: '下載證據圖',
+        downloadEvidence: '下載照片',
         resetZoom: '重置',
-        draggableEvidence: '可拖移縮放的壓縮證據圖',
-        sourceMenuHint: '可拖移查看，滾輪或雙指可縮放。此圖為後端壓縮後版本，不使用項目裁切縮圖。',
+        draggableEvidence: '可拖移縮放的價格照片',
+        sourceMenuHint: '可拖移查看，滾輪或雙指可縮放。這是保存後的圖片，不是項目裁切縮圖。',
         itemMode: '項目模式',
-        aiAutoDetect: 'AI 自動判斷',
+        aiAutoDetect: '自動選擇',
         itemModeToggle: '項目模式切換',
         modeAuto: '自動',
         modeGeneral: '一般項目',
@@ -1654,7 +1654,7 @@
         downloadPdf: '下載 PDF',
         resetRoom: '清空房間',
         grandTotalLabel: '全體總金額',
-        thresholdPlaceholder: '免運 / 低消 / 成團門檻',
+        thresholdPlaceholder: '目標金額',
         thresholdUnset: '尚未設定門檻',
         memberStats: '成員統計',
         summaryTabs: '統計切換',
@@ -1669,7 +1669,7 @@
         peopleCount: '人',
         perPerson: '人',
         sharedAverage: '共享均分',
-        personalClaims: '額外單點自認',
+        personalClaims: '個人加點',
         targetReached: '已達標，多',
         targetRemaining: '還差',
         qualityPass: '結構品質正常',
@@ -1677,16 +1677,16 @@
         qualityReview: '需要人工確認',
         qualityNone: '尚無品質報告',
         needsReview: '需要確認',
-        localOcrProvided: '本地 OCR',
-        localOcrMissing: '本地 OCR：未提供',
-        auditPending: '認領稽核',
-        auditReady: '認領稽核：可結算',
-        suspicious: '可疑',
-        optionGroups: '選項群',
+        localOcrProvided: '已貼上文字',
+        localOcrMissing: '未貼上文字',
+        auditPending: '還有人未確認',
+        auditReady: '大家都確認了',
+        suspicious: '需看一下',
+        optionGroups: '可選項目',
         quickReview: '需確認',
         converged: '已收斂',
         confidence: '信心',
-        modeHintPrefix: 'AI 判斷',
+        modeHintPrefix: '系統建議',
         currentMode: '目前',
         ownerCanSwitch: '你是發起者，可切換模式',
         ownerOnlySwitch: '只有發起者可切換模式',
@@ -1718,9 +1718,9 @@
         selectedQty: '已選',
         selectedImage: '已選擇 1 張圖片，確認後才會上傳解析。',
         imageOnly: '請選擇圖片檔案。',
-        alreadyLoaded: '此房間已經有價格證據，請先清空房間再選擇新圖片。',
+        alreadyLoaded: '此房間已經有價格照片，請先清空房間再選擇新圖片。',
         uploadCanceled: '已取消上傳。',
-        compressedDownloaded: '壓縮證據圖已下載。',
+        compressedDownloaded: '已下載保存後的價格照片。',
         copiedLink: '房間連結已複製。',
         copiedSettlement: '結算摘要已複製。',
         nameSaved: '名稱已套用。',
@@ -1735,7 +1735,7 @@
         noItems: '尚無品項',
         personalDetails: '個人明細',
         totalAmount: '總金額',
-        claimAudit: '認領稽核',
+        claimAudit: '確認狀態',
         readyToSettle: '可結算',
         notReadyCount: '未確認',
         printPdfOpened: '已開啟列印視窗，請選擇「另存為 PDF」。',
@@ -1745,41 +1745,52 @@
         settledDisplayed: '已結算，分帳單已顯示在下方。',
         modeSwitchFailed: '切換項目模式失敗',
         invalidName: '名稱不能空白，也不能使用「未命名」。',
-        resetConfirm: '清空後可重新上傳價格證據，所有成員數量會歸零。',
+        resetConfirm: '清空後可重新上傳價格照片，所有成員數量會歸零。',
         resetFailed: '清空房間失敗',
-        contractStripLabel: '六個 WebMCP 契約模組',
-        contractTaskRouter: '任務路由',
-        contractTaskRouterHint: '原子性單向閥門',
-        contractEvidence: '證據 / OCR',
-        contractEvidenceHint: '原子性單向閥門',
-        contractFormula: '公式引擎',
-        contractFormulaHint: '原子性單向閥門',
-        contractRepairGate: 'AI 修補閥門',
-        contractRepairGateHint: '原子性單向閥門',
-        contractClaimAudit: '認領稽核',
-        contractClaimAuditHint: '原子性單向閥門',
-        contractAgentGuard: 'Agent 飄移防線',
-        contractAgentGuardHint: '原子性單向閥門',
-        agentDrafts: 'Agent 草稿',
-        noAgentDrafts: '尚無 Agent 草稿',
+        contractStripLabel: '六個安全流程步驟',
+        contractTaskRouter: '先選用途',
+        contractTaskRouterHint: '房間只走一條路線',
+        contractEvidence: '讀取價格內容',
+        contractEvidenceHint: '先看圖片或文字',
+        contractFormula: '金額留在本頁算',
+        contractFormulaHint: '不交給外部亂算',
+        contractRepairGate: '看不清才求助',
+        contractRepairGateHint: '不清楚就請人確認',
+        contractClaimAudit: '確認每個人',
+        contractClaimAuditHint: '不能替別人按確認',
+        contractAgentGuard: '助手只寫建議',
+        contractAgentGuardHint: '最後由主揪決定',
+        agentDrafts: '建議草稿',
+        noAgentDrafts: '尚無建議',
         pendingHostConfirmation: '等待發起者確認',
         acceptedByHost: '發起者已採納',
         rejectedByHost: '發起者已拒絕',
-        proposalOnly: '只存草稿',
+        proposalOnly: '只是一份建議',
         acceptDraft: '採納草稿',
         rejectDraft: '拒絕草稿',
-        ownerOnlyDraftReview: '只有發起者可審核',
+        ownerOnlyDraftReview: '只有發起者可決定',
         draftReviewFailed: '草稿審核失敗',
-        draftCreated: 'Agent 草稿已建立，等待發起者確認。'
+        draftCreated: '建議已儲存，等待發起者確認。',
+        proposalTypeclaim_assignment: '確認誰要負責',
+        proposalTypemissing_confirmation: '提醒尚未確認',
+        proposalTypeevidence_review: '檢查價格內容',
+        proposalTypetask_router_review: '確認用途選擇',
+        proposalTypebooking_draft: '預約草稿',
+        proposalTypeservice_request_draft: '服務需求草稿',
+        proposalTypeactivity_signup_draft: '活動報名草稿',
+        proposalTypegeneric_next_step: '下一步建議',
+        proposalRisklow: '低風險',
+        proposalRiskmedium: '需要看一下',
+        proposalRiskneeds_human_review: '需要人工確認'
       },
       en: {
         appTitle: 'Shared Room',
-        appSubtitle: 'Upload price evidence so everyone can pick items, audit claims, and review split totals in one room.',
+        appSubtitle: 'Upload a price photo or paste copied text so everyone can pick items and confirm the final split in one room.',
         connecting: 'Connecting',
         connected: 'Connected',
         disconnected: 'Disconnected',
-        evidenceNotParsed: 'No evidence parsed',
-        evidenceAndItems: 'Evidence And Items',
+        evidenceNotParsed: 'No price photo yet',
+        evidenceAndItems: 'Price Photo And Items',
         copySettlement: 'Copy Summary',
         creatingRoom: 'Creating room',
         roomLabel: 'Room',
@@ -1787,11 +1798,11 @@
         copyRoomLink: 'Copy Room Link',
         yourName: 'Your name',
         applyName: 'Apply Name',
-        priceEvidenceImage: 'Price Evidence Image',
-        uploadCopy: 'Choose, drop, or paste one price-evidence image for meals, KTV, sports, tickets, rentals, events, or group buys.',
+        priceEvidenceImage: 'Price Photo',
+        uploadCopy: 'Choose, drop, or paste one price photo for meals, KTV, sports, tickets, rentals, events, or group buys.',
         selectImage: 'Select Image',
-        evidencePreview: 'Evidence preview',
-        taskType: 'Task Type',
+        evidencePreview: 'Price photo preview',
+        taskType: 'Room Purpose',
         taskAuto: 'Auto Detect',
         taskGroupBuy: 'Group Buy / Free Shipping',
         taskDrinkOrder: 'Drink Order',
@@ -1801,20 +1812,20 @@
         taskTicketActivity: 'Tickets / Activity Signup',
         taskRentalShare: 'Rental / Deposit',
         taskGenericSplit: 'Generic Split',
-        localOcrPlaceholder: 'Optional: paste local OCR text. The app extracts candidates first, then asks the model only for repair. With no API key, enough local candidates can still open the room.',
-        confirmUpload: 'Upload Evidence',
+        localOcrPlaceholder: 'Optional: paste text copied from the image. The room can start when enough items are found.',
+        confirmUpload: 'Use This Photo',
         cancelUpload: 'Cancel Upload',
-        aiParsing: 'AI repair is running. Keep this page open.',
-        compressedEvidence: 'Compressed Evidence',
-        imageTools: 'Price evidence image tools',
+        aiParsing: 'Reading the price photo. Keep this page open.',
+        compressedEvidence: 'Saved Price Photo',
+        imageTools: 'Price photo tools',
         collapse: 'Collapse',
         expand: 'Expand',
-        downloadEvidence: 'Download Evidence',
+        downloadEvidence: 'Download Photo',
         resetZoom: 'Reset',
-        draggableEvidence: 'Draggable and zoomable compressed evidence',
-        sourceMenuHint: 'Drag to inspect. Use wheel or pinch to zoom. This is the server-compressed evidence image, not cropped item thumbnails.',
+        draggableEvidence: 'Draggable and zoomable saved price photo',
+        sourceMenuHint: 'Drag to inspect. Use wheel or pinch to zoom. This is the saved copy, not a cropped item thumbnail.',
         itemMode: 'Item Mode',
-        aiAutoDetect: 'AI auto detect',
+        aiAutoDetect: 'Auto selected',
         itemModeToggle: 'Item mode switch',
         modeAuto: 'Auto',
         modeGeneral: 'General Items',
@@ -1828,7 +1839,7 @@
         downloadPdf: 'Download PDF',
         resetRoom: 'Reset Room',
         grandTotalLabel: 'Group Total',
-        thresholdPlaceholder: 'Free shipping / minimum / group threshold',
+        thresholdPlaceholder: 'Goal amount',
         thresholdUnset: 'No threshold set',
         memberStats: 'Member Stats',
         summaryTabs: 'Summary tabs',
@@ -1843,7 +1854,7 @@
         peopleCount: 'people',
         perPerson: 'person',
         sharedAverage: 'Shared average',
-        personalClaims: 'personal claims',
+        personalClaims: 'personal add-ons',
         targetReached: 'Reached, over by',
         targetRemaining: 'Remaining',
         qualityPass: 'Structure looks clean',
@@ -1851,16 +1862,16 @@
         qualityReview: 'Human review required',
         qualityNone: 'No quality report yet',
         needsReview: 'Needs review',
-        localOcrProvided: 'Local OCR',
-        localOcrMissing: 'Local OCR: not provided',
-        auditPending: 'Claim audit',
-        auditReady: 'Claim audit: ready',
-        suspicious: 'issues',
-        optionGroups: 'option groups',
+        localOcrProvided: 'Text provided',
+        localOcrMissing: 'No text provided',
+        auditPending: 'People still need to confirm',
+        auditReady: 'Everyone confirmed',
+        suspicious: 'review items',
+        optionGroups: 'choices',
         quickReview: 'Review',
         converged: 'Converged',
         confidence: 'confidence',
-        modeHintPrefix: 'AI detected',
+        modeHintPrefix: 'Suggested',
         currentMode: 'Current',
         ownerCanSwitch: 'You are the owner and can switch modes',
         ownerOnlySwitch: 'Only the owner can switch modes',
@@ -1892,9 +1903,9 @@
         selectedQty: 'Selected',
         selectedImage: 'Selected 1 image. It will upload only after confirmation.',
         imageOnly: 'Please choose an image file.',
-        alreadyLoaded: 'This room already has price evidence. Reset the room before choosing a new image.',
+        alreadyLoaded: 'This room already has a price photo. Reset the room before choosing a new image.',
         uploadCanceled: 'Upload canceled.',
-        compressedDownloaded: 'Compressed evidence image downloaded.',
+        compressedDownloaded: 'Saved price photo downloaded.',
         copiedLink: 'Room link copied.',
         copiedSettlement: 'Settlement summary copied.',
         nameSaved: 'Name applied.',
@@ -1908,7 +1919,7 @@
         noItems: 'No items',
         personalDetails: 'Person details',
         totalAmount: 'Total amount',
-        claimAudit: 'Claim audit',
+        claimAudit: 'Confirmation status',
         readyToSettle: 'ready',
         notReadyCount: 'unconfirmed',
         printPdfOpened: 'Print dialog opened. Choose Save as PDF.',
@@ -1920,30 +1931,41 @@
         invalidName: 'Name cannot be blank or unnamed.',
         resetConfirm: 'Reset the room and clear all member quantities?',
         resetFailed: 'Failed to reset room',
-        contractStripLabel: 'Six WebMCP contract modules',
-        contractTaskRouter: 'Task Router',
-        contractTaskRouterHint: 'atomic one-way gate',
-        contractEvidence: 'Evidence / OCR',
-        contractEvidenceHint: 'atomic one-way gate',
-        contractFormula: 'Formula Engine',
-        contractFormulaHint: 'atomic one-way gate',
-        contractRepairGate: 'AI Repair Gate',
-        contractRepairGateHint: 'atomic one-way gate',
-        contractClaimAudit: 'Claim Audit',
-        contractClaimAuditHint: 'atomic one-way gate',
-        contractAgentGuard: 'Agent Drift Guard',
-        contractAgentGuardHint: 'atomic one-way gate',
-        agentDrafts: 'Agent Drafts',
-        noAgentDrafts: 'No agent drafts yet',
-        pendingHostConfirmation: 'pending host confirmation',
-        acceptedByHost: 'accepted by host',
-        rejectedByHost: 'rejected by host',
-        proposalOnly: 'draft only',
+        contractStripLabel: 'Six safe workflow steps',
+        contractTaskRouter: 'Choose the Plan',
+        contractTaskRouterHint: 'the room stays on one path',
+        contractEvidence: 'Read the Price List',
+        contractEvidenceHint: 'photo or pasted text first',
+        contractFormula: 'Keep Math Local',
+        contractFormulaHint: 'totals are calculated here',
+        contractRepairGate: 'Ask Only If Needed',
+        contractRepairGateHint: 'unclear text needs review',
+        contractClaimAudit: 'Check Everyone',
+        contractClaimAuditHint: 'no one is confirmed for them',
+        contractAgentGuard: 'Assistant Only Drafts',
+        contractAgentGuardHint: 'the host makes the call',
+        agentDrafts: 'Suggested Drafts',
+        noAgentDrafts: 'No suggestions yet',
+        pendingHostConfirmation: 'waiting for host',
+        acceptedByHost: 'accepted',
+        rejectedByHost: 'rejected',
+        proposalOnly: 'suggestion only',
         acceptDraft: 'Accept Draft',
         rejectDraft: 'Reject Draft',
-        ownerOnlyDraftReview: 'owner review only',
+        ownerOnlyDraftReview: 'host decides only',
         draftReviewFailed: 'Failed to review draft',
-        draftCreated: 'Agent draft saved for host confirmation.'
+        draftCreated: 'Suggestion saved for host confirmation.',
+        proposalTypeclaim_assignment: 'who should confirm',
+        proposalTypemissing_confirmation: 'missing confirmation',
+        proposalTypeevidence_review: 'price review',
+        proposalTypetask_router_review: 'room purpose review',
+        proposalTypebooking_draft: 'booking draft',
+        proposalTypeservice_request_draft: 'service request draft',
+        proposalTypeactivity_signup_draft: 'activity signup draft',
+        proposalTypegeneric_next_step: 'next step',
+        proposalRisklow: 'low risk',
+        proposalRiskmedium: 'review needed',
+        proposalRiskneeds_human_review: 'human review needed'
       }
     };
 
@@ -2491,7 +2513,7 @@
           id: 'wait_for_room',
           priority: 'P0',
           label: '等待房間建立完成',
-          reason: '目前沒有可稽核的 room id。'
+          reason: '目前找不到可檢查的房間。'
         });
       }
 
@@ -2499,8 +2521,8 @@
         actions.push({
           id: 'collect_evidence',
           priority: 'P0',
-          label: '請主揪上傳價格證據或貼上本地 OCR 文字',
-          reason: '沒有價格證據時，agent 只能讀取空房間狀態，不能產生分帳草稿。'
+          label: '請主揪上傳價格照片或貼上圖片文字',
+          reason: '沒有價格內容時，助手只能看見空房間，不能產生分帳建議。'
         });
       }
 
@@ -2508,8 +2530,8 @@
         actions.push({
           id: 'resolve_task_conflict',
           priority: 'P0',
-          label: '請主揪確認任務類型',
-          reason: `使用者選擇與證據推論不同：${snapshot.taskRouter.conflictTaskType || 'unknown'}。`
+          label: '請主揪確認房間用途',
+          reason: `目前選到的用途和圖片內容不一致：${snapshot.taskRouter.conflictTaskType || 'unknown'}。`
         });
         humanReview.push('task_conflict');
       }
@@ -2519,8 +2541,8 @@
         actions.push({
           id: 'review_ocr_quality',
           priority: 'P0',
-          label: '請人工確認 OCR 可疑欄位',
-          reason: 'quality gate 已標示需要人工確認，AI 只能做 schema repair。'
+          label: '請人工確認看不清楚的內容',
+          reason: '圖片文字不夠穩，助手只能整理建議，不能直接決定金額或人員。'
         });
         humanReview.push('ocr_quality');
       }
@@ -2529,8 +2551,8 @@
         actions.push({
           id: 'resolve_pending_claims',
           priority: 'P0',
-          label: '請成員確認額外單點或共享候選認領',
-          reason: `目前尚有 ${snapshot.audit.pendingClaimCount} 筆 claim 需要確認。`
+          label: '請成員確認自己的加點或共享項目',
+          reason: `目前尚有 ${snapshot.audit.pendingClaimCount} 筆項目需要確認。`
         });
         humanReview.push('claim_audit');
       }
@@ -2550,7 +2572,7 @@
           id: 'ready_for_human_settlement',
           priority: 'P1',
           label: '可由主揪檢查結算摘要',
-          reason: '目前沒有 WebMCP 可見的 P0 阻塞；仍需人類做最後結算確認。'
+          reason: '目前沒有明顯卡住的地方；最後仍需要主揪確認結算。'
         });
       }
 
@@ -2798,7 +2820,7 @@
         }).join('')
         : '';
       const localOcrText = localOcr?.enabled
-        ? `${t('localOcrProvided')}: ${Number(localOcr.lineCount || 0)} lines / ${Number(localOcr.candidateCount || 0)} candidates`
+        ? t('localOcrProvided')
         : t('localOcrMissing');
       const taskText = getTaskRouterText(room);
       const audit = room.audit || {};
@@ -2826,6 +2848,14 @@
       return t('pendingHostConfirmation');
     }
 
+    function getProposalTypeText(type) {
+      return t(`proposalType${String(type || 'generic_next_step')}`);
+    }
+
+    function getProposalRiskText(riskLevel) {
+      return t(`proposalRisk${String(riskLevel || 'needs_human_review')}`);
+    }
+
     function renderAgentProposals(room) {
       const proposals = Array.isArray(room?.agentProposals) ? room.agentProposals : [];
       const pendingCount = proposals.filter((proposal) => proposal.status === 'pending_host_confirmation').length;
@@ -2843,7 +2873,6 @@
       const owner = isOwner(room);
       elements.proposalList.innerHTML = proposals.slice(0, 12).map((proposal) => {
         const isPending = proposal.status === 'pending_host_confirmation';
-        const payloadText = JSON.stringify(proposal.payload || {}, null, 2);
         const controls = isPending
           ? `
             <div class="proposal-actions">
@@ -2856,14 +2885,13 @@
         return `
           <article class="proposal-card" data-status="${escapeHtml(proposal.status)}">
             <div class="proposal-meta">
-              <span>${escapeHtml(proposal.proposalType || 'generic_next_step')}</span>
+              <span>${escapeHtml(getProposalTypeText(proposal.proposalType))}</span>
               <span>${escapeHtml(getProposalStatusText(proposal.status))}</span>
               <span>${escapeHtml(t('proposalOnly'))}</span>
-              <span>${escapeHtml(proposal.riskLevel || 'needs_human_review')}</span>
+              <span>${escapeHtml(getProposalRiskText(proposal.riskLevel))}</span>
             </div>
             <div class="proposal-summary">${escapeHtml(proposal.summary || '')}</div>
             ${proposal.rationale ? `<div class="proposal-meta">${escapeHtml(proposal.rationale)}</div>` : ''}
-            <pre class="proposal-payload">${escapeHtml(payloadText)}</pre>
             ${controls}
           </article>
         `;
@@ -3487,7 +3515,7 @@
         return;
       }
       if (currentRoom?.menuLoaded) {
-        setMessage('此房間已經有價格證據，請先清空房間再上傳新圖片。', 'warn');
+        setMessage('此房間已經有價格照片，請先清空房間再上傳新圖片。', 'warn');
         return;
       }
 
