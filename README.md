@@ -258,13 +258,15 @@ Expected audit state:
 2. Confirm the UI defaults to English.
 3. Create a room and select a task module.
 4. Paste local OCR text or upload one price-evidence image.
-5. Add participants and claim items.
-6. Mark an item as an extra personal claim.
-7. Ask the agent to call `inspect_room`.
-8. Ask the agent to call `suggest_next_actions`.
-9. Show that the agent can inspect contracts and blockers but cannot calculate money externally or write payment data.
-10. State that WebMCP tools are registered in the browser page with `document.modelContext.registerTool()`; the same-origin backend only supports the app data layer.
-11. Briefly mention future proposal-only extensions for reservations, repair appointments, salon bookings, and other form-draft workflows.
+5. Point out the six atomic one-way gates: Task Router, Evidence / OCR, Formula Engine, AI Repair Gate, Claim Audit, and Agent Drift Guard.
+6. Add participants and claim items.
+7. Mark an item as an extra personal claim.
+8. Ask the agent to call `inspect_room`.
+9. Ask the agent to call `suggest_next_actions`.
+10. Ask the agent to call `create_action_proposal` and show the proposal stays in host review.
+11. Show that the agent can inspect contracts and blockers but cannot calculate money externally, finalize settlement, or write payment data.
+12. State that WebMCP tools are registered in the browser page with `document.modelContext.registerTool()`; the same-origin backend only supports the app data layer.
+13. Briefly mention future proposal-only extensions for reservations, repair appointments, salon bookings, and other form-draft workflows.
 
 ## Compliance Notes
 
@@ -281,6 +283,6 @@ Expected audit state:
 - Rooms use a local JSON store by default. On Zeabur, attach a volume and set `ROOM_STORE_PATH=/data/rooms.json`; otherwise platform filesystem resets can still clear runtime state.
 - The JSON store is intended for a single-instance demo. Concurrent writes or horizontal scaling should move to Redis or PostgreSQL.
 - Production scale should replace the JSON store with Redis or PostgreSQL.
-- Reset room currently has no owner-only management code.
+- Room ownership is demo-grade and based on participant IDs, not a production login system. Production deployments should add signed sessions or account authentication.
 - OCR quality depends on image clarity.
 - Additional P1 formula controls are still needed for shipping split, hourly venue fee, room minimum, deposit include/exclude, and tier discounts.
