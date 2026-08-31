@@ -29,6 +29,10 @@
       box-sizing: border-box;
     }
 
+    [hidden] {
+      display: none !important;
+    }
+
     body {
       min-height: 100vh;
       margin: 0;
@@ -595,6 +599,12 @@
       background: #fffdf9;
       padding: 11px;
       margin-bottom: 14px;
+    }
+
+    .source-menu-card[hidden],
+    .preview-image:not([src]),
+    #sourceMenuImage:not([src]) {
+      display: none !important;
     }
 
     .source-menu-header {
