@@ -288,7 +288,12 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '64kb' }));
 app.use(express.static('public', {
   extensions: ['html'],
-  maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0
+  maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-store');
+    }
+  }
 }));
 app.use('/api', createRateLimitMiddleware('api', apiRateLimitMax));
 

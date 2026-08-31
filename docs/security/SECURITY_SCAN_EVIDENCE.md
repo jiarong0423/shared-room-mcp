@@ -29,6 +29,7 @@ SAST-equivalent local code security evidence:
 - Load Sample Room boundary stress: passed 120/120 localhost cases. Each case verified sample creation, no task conflict, no external calculation, no settlement, no image upload dependency, repeat-load rejection, non-owner rejection, and non-owner proposal rejection.
 - In-app browser WebMCP smoke: local page exposed 7 WebMCP tools, including the proposal-only `create_action_proposal` tool. `Load Sample Room` produced 6 visible items, `No pending costs`, one waiting host-review draft, and a disabled repeat sample button.
 - Hidden-image UI regression smoke: passed on desktop. Empty sample rooms no longer show the saved-photo panel, no visible broken image remains, and the page has no horizontal overflow.
+- HTML cache-control regression smoke: production `index.html` is served with `Cache-Control: no-store` so judges and the in-app browser do not stay on a stale UI after deployment.
 - Live Zeabur sample smoke: passed on `https://shared-room-mcp.zeabur.app/`. `POST /api/rooms/:roomId/sample` returned 201 with 6 items, `restaurant_split`, no task conflict, one `pending_host_confirmation` draft, and `settled=false`.
 - Live Zeabur restart persistence smoke: passed. Room `a288f74b` survived service restart with 6 items and one pending draft after `ROOM_STORE_PATH=/data/rooms.json` was active.
 - GitHub repository smoke: `https://github.com/jiarong0423/shared-room-mcp` showed the expected source repository and `MIT license`.
