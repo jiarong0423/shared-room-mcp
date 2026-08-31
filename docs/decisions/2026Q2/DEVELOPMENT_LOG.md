@@ -91,3 +91,37 @@
 
 - 無 DB、JSON、JSONL、CSV、TSV、雲端推送或 shared data 正式寫入。
 - 無金鑰寫入 repository；僅提供 `.env.example` 變數名稱。
+
+## 2026-09-01
+
+### 已完成
+
+- 將專案重新收斂為英文預設的開源 WebMCP tool-layer template：主軸是 pre-payment social coordination，不主張代付款、代下單或要求部署者提供公開可變更 API。
+- 新增 JSON room persistence，Zeabur 可掛 volume 並設定 `ROOM_STORE_PATH=/data/rooms.json`，避免 MVP room state 因服務重啟直接遺失。
+- 新增 `create_action_proposal` WebMCP proposal-only tool。Agent 可建立 bounded JSON draft，暫存於 `room.agentProposals[]`，狀態固定為 `pending_host_confirmation`。
+- 新增 Host Draft Review UI。只有房間發起者可將 Agent 草稿標記為 `accepted_by_host` 或 `rejected_by_host`；採納草稿不會自動改 orders、claims、formulas、task routing、settlement、payment、Google Sheets、booking 或外部服務。
+- `webMcpToolSurfaceVersion` 升級為 `group-room-webmcp-tools.v2`，並在 README、submission packet、task gap audit 中同步標記 proposal-only tool。
+- Submission packet 已補上 public repository URL：`https://github.com/jiarong0423/group-menu-order`。
+- 已 commit 並 push：`fd26055 Add proposal-only WebMCP draft tool`。
+
+### 驗證證據
+
+- `npm run check` 通過。
+- `npm run audit:tasks` 通過，7/7 checks ready，open gaps 2，partial gaps 2。
+- `public/index.html` inline script syntax check 通過。
+- `git diff --check` 通過。
+- 本地 HTTP smoke 通過：`POST /api/rooms` 回 201，`POST /api/rooms/:roomId/agent-proposals` 回 201，讀回 `proposalCount=1`、`firstProposalStatus=pending_host_confirmation`、`allowedEffect=draft_only`、`moneyTotalUnchanged=true`。
+- 重啟 smoke 通過：同一個 `ROOM_STORE_PATH` 重啟後載入 `loadedCount=1`，同一 room 讀回 `proposalCount=1`、`agentProposalContract=group-room-agent-proposal-contract.v1`、`webMcpVersion=group-room-webmcp-tools.v2`。
+- secret scan 只命中 `.env.example` 與文件 placeholder，沒有真實 API key。
+- `git status --short` 最後為乾淨。
+
+### 剩餘風險
+
+- Zeabur live URL 尚未在本階段重新部署與實機驗證；本次只完成本地 smoke 與 GitHub push。
+- YouTube demo URL 仍是 TODO，需要錄製三分鐘內英文語音 demo 後填入。
+- JSON persistence 是單一服務實例 MVP 解法，不適合水平擴展或高併發；正式版仍建議 Redis 或 PostgreSQL。
+- P1 公式如服務費、時薪制、KTV 低消、折扣階梯仍維持 `manual_input_required`，demo 不應讓 Agent 宣稱已完整自動計算。
+
+### 下一個 resume point
+
+- 部署 Zeabur 最新 commit `fd26055`，確認 live `/healthz`、WebMCP 右側工具列表、`create_action_proposal` 草稿 UI、JSON persistence volume，最後更新 YouTube demo URL。
