@@ -25,7 +25,7 @@
 - 新增飲料店專用功能：只有飲料模式或飲料品項會在數量大於 0 時展開甜度與冰塊選項。
 - 新增發起者結算：只有房間發起者可結算，結算後鎖定數量、確認狀態、甜度冰塊與菜單模式。
 - 新增總單輸出：可複製或列印品項彙總、個人明細、甜度冰塊與總金額。
-- 2026-05-18 已使用 Zeabur CLI 從本地直推部署到 `group-menu-order` service。
+- 2026-05-18 已使用 Zeabur CLI 從本地直推部署到舊 demo service。
 - 2026-05-18 22:23 已重新部署含飲料單切換、發起者結算與總單列印版本；deployment `6a0b205fbbc71468fc746a44` 狀態為 `RUNNING`。
 - 2026-05-18 22:32 將主模型改為 `gemini-2.5-flash-lite`，備援模型改為 `gemini-2.5-flash,gemini-flash-latest`，降低菜單解析成本與等待時間。
 - 2026-05-18 22:40 新增圖片預處理管線：上傳後先轉成壓縮 JPEG、限制最大尺寸，再送 Gemini；前端切圖也使用同一張壓縮圖，避免原圖與 AI 座標不一致。
@@ -101,7 +101,7 @@
 - 新增 `create_action_proposal` WebMCP proposal-only tool。Agent 可建立 bounded JSON draft，暫存於 `room.agentProposals[]`，狀態固定為 `pending_host_confirmation`。
 - 新增 Host Draft Review UI。只有房間發起者可將 Agent 草稿標記為 `accepted_by_host` 或 `rejected_by_host`；採納草稿不會自動改 orders、claims、formulas、task routing、settlement、payment、Google Sheets、booking 或外部服務。
 - `webMcpToolSurfaceVersion` 升級為 `group-room-webmcp-tools.v2`，並在 README、submission packet、task gap audit 中同步標記 proposal-only tool。
-- Submission packet 已補上 public repository URL：`https://github.com/jiarong0423/group-menu-order`。
+- Submission packet public repository URL 已改為 pending，等最終 GitHub repository name 確認後再填。
 - 已 commit 並 push：`fd26055 Add proposal-only WebMCP draft tool`。
 
 ### 驗證證據
@@ -127,6 +127,7 @@
 - `ai-security-rules export-gate` passed with `0` blocking findings after adding the public export manifest.
 - `ai-security-rules history-scan` flagged historical dot-env sample filenames by policy. No actual secret pattern was found by the workspace Git-history secret scanner. Git history rewrite/force-push remains a separate manual approval item.
 - Resolved mutable-artifact risk: generated audit JSON is kept local but removed from tracked public export; public evidence stays in Markdown.
+- Official WebMCP Challenge submission alignment checked on 2026-09-01: source/license/WebMCP markers/English docs are ready; live URL, final public repo name, and YouTube demo URL remain pending.
 - `git status --short` 最後為乾淨。
 
 ### 剩餘風險

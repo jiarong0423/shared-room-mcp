@@ -4,7 +4,7 @@ Project name: Group Room Split MCP
 
 Live URL: pending deployment
 
-Public repository URL: https://github.com/jiarong0423/group-menu-order
+Public repository URL: pending final GitHub repository URL
 
 YouTube demo URL: TODO_YOUTUBE_DEMO_URL
 
@@ -35,6 +35,23 @@ Implemented WebMCP tools:
 The human controls the room, task type, uploaded evidence, OCR text, participant names, claim confirmation, and settlement. The agent helps by reading the current state, identifying task conflicts, explaining missing claims, guiding the next action from the WebMCP tool output, and preparing draft proposals for the host. The `suggest_next_actions` tool is the primary read path. The `create_action_proposal` tool is the primary safe action path: it stores `pending_host_confirmation` JSON under `room.agentProposals[]`, and owner review can mark the draft accepted or rejected without mutating orders, formulas, settlement, payment, Google Sheets, or external services.
 
 Provider AI is optional and limited to OCR/schema repair adapters. It cannot decide who owes money, change formulas, assign cost pools, or settle disputes. Future forks can reuse the same proposal-only contract for booking drafts, repair appointment drafts, salon reservation drafts, activity signup drafts, and other pre-commitment workflows, but final submission and payment should remain human-controlled.
+
+## Official Requirement Alignment
+
+Checked against the WebMCP Challenge page on 2026-09-01.
+
+| Requirement | Local status |
+|---|---|
+| Working live URL accessible in ChatGPT in-app browser or Chrome with WebMCP enabled | Pending final deployment name |
+| Text description explaining WebMCP fit and user experience | Ready in `README.md` and this packet |
+| Public YouTube demo under 3 minutes with audio | Pending `TODO_YOUTUBE_DEMO_URL` |
+| Public code repository | Pending final repository name |
+| All necessary source code, assets, and instructions | Ready |
+| Open-source license visible at repository root | Ready: MIT `LICENSE` |
+| Repository contains `document.modelContext.registerTool(...)` | Ready: `public/index.html` |
+| WebMCP leverage beyond a trivial proof of concept | Ready: read-only tools plus `create_action_proposal` draft-only tool |
+| Complete coherent product experience | Ready for local smoke; live deployment pending |
+| Specific real-world audience/problem | Ready: social group coordination before payment or commitment |
 
 ## What Changed After August 25, 2026
 
@@ -132,7 +149,7 @@ Target length: under 3 minutes.
 
 ## Remaining Submission Checklist
 
-- Public repository URL is set to `https://github.com/jiarong0423/group-menu-order`.
+- Public repository URL remains pending until the final GitHub repository name is chosen.
 - Replace `TODO_YOUTUBE_DEMO_URL` after uploading the public demo video.
 - Set and verify the live Zeabur URL after the final deployment name is chosen.
 - Confirm Zeabur volume is mounted when `ROOM_STORE_PATH=/data/rooms.json` is configured.

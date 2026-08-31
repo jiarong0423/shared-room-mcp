@@ -4,6 +4,8 @@ Generated at: 2026-09-01
 
 Scope: open-source WebMCP tool-layer template for pre-payment social coordination.
 
+WebMCP tool surface version: `group-room-webmcp-tools.v2`.
+
 ## Full Module Overview
 
 ```mermaid
