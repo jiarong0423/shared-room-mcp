@@ -21,6 +21,9 @@ SAST-equivalent local code security evidence:
 - `npm run check`: passed on 2026-09-01.
 - `npm run audit:tasks`: passed on 2026-09-01 with checks ready `8/8`.
 - `npm audit --audit-level=high`: passed on 2026-09-01 with `0` vulnerabilities.
+- `npm audit --audit-level=moderate --omit=dev`: passed on 2026-09-01 with `0` vulnerabilities.
+- `ai-security-rules scan`: passed on 2026-09-01 with critical `0`, high `0`, medium `23`.
+- `ai-security-rules rules-check`: passed on 2026-09-01 with blocking findings `0`.
 - `ai-security-rules agent-review`: passed on 2026-09-01 with blocking findings `0`.
 - `ai-security-rules export-gate`: passed on 2026-09-01 with blocking findings `0`.
 - `ai-security-rules deploy-gate`: passed on 2026-09-01 after this evidence file was added.
@@ -35,6 +38,8 @@ SAST-equivalent local code security evidence:
 - GitHub repository smoke: `https://github.com/jiarong0423/shared-room-mcp` showed the expected source repository and `MIT license`.
 - Owner gate stress check: passed 100/100 blocked non-owner proposal creates and 100/100 blocked non-owner proposal reviews.
 - UI confirmation smoke: desktop approval and mobile rejection both require two clicks and leave no horizontal overflow.
+- Mutual-exclusion scenario matrix B: passed on 2026-09-01 with duplicate IDs `0`, duplicate titles `0`, duplicate OCR texts `0`, internal similarity blocks `0`, and baseline similarity blocks `0`.
+- Split-language scenario matrix B: Chinese 120/120 passed with warnings `0`; English 120/120 passed with warnings `0`; every run left `semantic_repair_draft` in `pending_host_confirmation`.
 
 The current implementation contains no known auto-payment, card storage, order-finalization, or external booking submission path. Agents can inspect state and create bounded host-review drafts only.
 

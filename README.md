@@ -8,6 +8,8 @@ Core claim: we solve the agent overreach problem through strict architectural bo
 
 Operating inside the browser sidebar, an agent calls page-local WebMCP tools, inspects structured room state, and places proposal drafts directly onto the web page. The agent handles context gathering and repetitive draft work, while execution, settlement, payment, booking submission, and final commitment remain behind human confirmation.
 
+The intended loop is WebMCP plus Codex, not a public mutation API. Codex can inspect the room, compare parsed evidence against the current labels, and create a `semantic_repair_draft` when field meaning drifts, for example when quantity columns, subtotal columns, size columns, or add-on notes are confused with item prices. That repair stays as JSON in the room for host review. The app does not silently apply the repair, settle money, submit a booking, or sync an external platform.
+
 ## Why This Fits WebMCP
 
 Most social group coordination happens in temporary chats on LINE, Discord, Instagram, Threads, Facebook groups, Reddit, or local community channels. These flows rarely have stable vendor APIs or structured menu data. The user usually has only a price-list photo, receipt, checkout screenshot, public post screenshot, or local OCR text.
@@ -85,7 +87,7 @@ Implemented tools:
 
 The `suggest_next_actions` tool is the main agent workflow entrypoint. It returns current blockers, human-review requirements, formula boundaries, and forbidden actions. It cannot mutate room state and cannot calculate new money values.
 
-The `create_action_proposal` tool is proposal-only. It can store a bounded JSON draft in `room.agentProposals[]` for the room owner, with status `pending_host_confirmation`. Owner review uses an inline two-step confirmation before marking a draft accepted or rejected. Acceptance does not automatically change orders, claims, formulas, task routing, settlement, payment data, Google Sheets, bookings, or external systems.
+The `create_action_proposal` tool is proposal-only. It can store a bounded JSON draft in `room.agentProposals[]` for the room owner, with status `pending_host_confirmation`. Supported draft types include claim review, missing confirmation, evidence review, task routing review, booking or service drafts, activity signup drafts, and `semantic_repair_draft` for Codex-proposed field or label repairs. Owner review uses an inline two-step confirmation before marking a draft accepted or rejected. Acceptance does not automatically change orders, claims, formulas, task routing, settlement, payment data, Google Sheets, bookings, or external systems.
 
 ## Six Atomic One-Way Gates
 

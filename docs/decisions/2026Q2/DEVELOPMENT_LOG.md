@@ -141,3 +141,50 @@
 ### 下一個 resume point
 
 - 部署 Zeabur 最新 commit `fd26055`，確認 live `/healthz`、WebMCP 右側工具列表、`create_action_proposal` 草稿 UI、JSON persistence volume，最後更新 YouTube demo URL。
+
+## 2026-09-01 WebMCP Codex Loop Scenario Validation
+
+- Added `semantic_repair_draft` as a proposal-only draft type for Codex field/label repair suggestions. Drafts remain `pending_host_confirmation` and do not apply repairs, settle money, submit bookings, write payment data, or sync external systems.
+- Added member-scoped browser identity support through `?member=<name>` so host and participant tabs can be tested in the same browser without sharing the same participant identity.
+- Tightened local OCR number handling so quantity-like numbers such as cups, people, tickets, hours, boxes, and packs are not selected as item prices when a later price exists on the same line.
+- Tightened English and Chinese scenario taxonomy for service fees, parking, shipping gaps, salon/service drafts, ticket activities, sports venues, rentals, and snacks.
+- Added a 12-scenario matrix under `docs/ai-generated/2026Q3/shared_room_demo_scenario_matrix_20260901.md`: 6 Chinese scenarios and 6 English scenarios, all with unique IDs and unique titles.
+
+### 驗證證據
+
+- `npm run check` passed.
+- Final local stress matrix passed on a clean local instance: `BASE_URL=http://127.0.0.1:3146 REPEAT=20 TIMEOUT_MS=20000 node /private/tmp/shared-room-unique-stress.mjs`.
+- Total runs: 240. Passed: 240. Failed: 0.
+- Unique scenario IDs: 12. Unique scenario titles: 12. Duplicate IDs: 0.
+- Language split: 6 Chinese scenarios and 6 English scenarios.
+- Every scenario routed to the expected task type in 20/20 runs.
+- Every generated Codex repair draft stayed as `semantic_repair_draft` with status `pending_host_confirmation`.
+- Remaining expected warning: `drink_without_size_or_addon_options` appeared only for the Chinese office drink fixture because the fixture intentionally omits sweetness, ice, and size options. The app correctly keeps that as a human-review warning instead of inventing options.
+
+### 剩餘風險
+
+- The 12 scenario matrix currently validates unique text/task flows. The available image assets are 4 reusable visual families with 3 variants each, not 12 fully distinct photographed receipts/forms.
+- Long stress runs with hundreds of uploaded image rooms make JSON persistence slower because every room stores processed image data. This is acceptable for MVP/demo volume but should move to Redis/PostgreSQL/object storage before high-concurrency production use.
+
+## 2026-09-01 Additional Mutual-Exclusion Scenario Stress
+
+- Added a second 12-scenario matrix with new cases that do not reuse the original scenario names or source text: breakfast pickup, BBQ group buy, yoga signup, board game room, meeting room, camping rental, pastry box, farmers market bulk order, pottery workshop, airport shuttle, volleyball court, and pet grooming draft.
+- Ran a mutual-exclusion matrix against the original 12 scenarios and the second 12 scenarios. Result: candidate duplicate IDs 0, candidate duplicate titles 0, candidate duplicate OCR texts 0, combined duplicate IDs 0, combined duplicate titles 0, internal similarity blocks 0, baseline similarity blocks 0.
+- Ran split language stress tests instead of mixing languages in one run.
+- Chinese split: 6 scenarios x 20 rounds = 120 runs, 120 passed, 0 failed, 0 warnings.
+- English split: 6 scenarios x 20 rounds = 120 runs, 120 passed, 0 failed, 0 warnings.
+- Combined second-matrix validation: 240 runs, 240 passed, 0 failed, 0 warnings.
+- Every run generated `semantic_repair_draft` and left it in `pending_host_confirmation`.
+
+### 修復項目
+
+- Tightened drink task inference so a single drink-like item no longer overrules a restaurant or shared-cost scenario.
+- Moved ticket/voucher signals before drink signals so voucher lines such as `飲品券` do not force drink-order routing.
+- Added meeting-room, classroom, and studio terms to venue-like routing.
+- Removed generic cleaning fee as a KTV routing trigger; KTV now depends on KTV/room/minimum-spend specific signals.
+- Stopped dropping priced delivery lines before OCR extraction; delivery fees are retained as service-fee evidence.
+
+### 驗證證據
+
+- Evidence file: `docs/ai-generated/2026Q3/shared_room_demo_scenario_matrix_b_20260901.md`.
+- `npm run check` passed before split stress.

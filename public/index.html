@@ -1854,6 +1854,7 @@
         proposalTypeclaim_assignment: '確認誰要負責',
         proposalTypemissing_confirmation: '提醒尚未確認',
         proposalTypeevidence_review: '檢查價格內容',
+        proposalTypesemantic_repair_draft: '修正欄位草稿',
         proposalTypetask_router_review: '確認用途選擇',
         proposalTypebooking_draft: '預約草稿',
         proposalTypeservice_request_draft: '服務需求草稿',
@@ -2065,6 +2066,7 @@
         proposalTypeclaim_assignment: 'who should confirm',
         proposalTypemissing_confirmation: 'missing confirmation',
         proposalTypeevidence_review: 'price review',
+        proposalTypesemantic_repair_draft: 'field repair draft',
         proposalTypetask_router_review: 'room purpose review',
         proposalTypebooking_draft: 'booking draft',
         proposalTypeservice_request_draft: 'service request draft',
@@ -2077,9 +2079,16 @@
       }
     };
 
-    let roomId = new URLSearchParams(window.location.search).get('room');
-    let participantId = localStorage.getItem(storageKeys.participantId);
-    let displayName = localStorage.getItem(storageKeys.displayName) || '';
+    const pageParams = new URLSearchParams(window.location.search);
+    let roomId = pageParams.get('room');
+    const memberParam = String(pageParams.get('member') || '').trim().slice(0, 40);
+    const memberScopedStorageKey = memberParam && roomId
+      ? `${storageKeys.participantId}:${roomId}:${memberParam.toLowerCase()}`
+      : '';
+    let participantId = memberScopedStorageKey
+      ? sessionStorage.getItem(memberScopedStorageKey)
+      : localStorage.getItem(storageKeys.participantId);
+    let displayName = memberParam || localStorage.getItem(storageKeys.displayName) || '';
     let currentLanguage = translations[localStorage.getItem(storageKeys.language)] ? localStorage.getItem(storageKeys.language) : 'en';
     let currentRoom = null;
     let pendingProposalReview = null;
@@ -2243,7 +2252,11 @@
 
     if (!participantId) {
       participantId = crypto.randomUUID();
-      localStorage.setItem(storageKeys.participantId, participantId);
+      if (memberScopedStorageKey) {
+        sessionStorage.setItem(memberScopedStorageKey, participantId);
+      } else {
+        localStorage.setItem(storageKeys.participantId, participantId);
+      }
     }
 
     elements.displayNameInput.value = displayName;
@@ -2448,7 +2461,11 @@
           return;
         }
         participantId = result.participantId || participantId;
-        localStorage.setItem(storageKeys.participantId, participantId);
+        if (memberScopedStorageKey) {
+          sessionStorage.setItem(memberScopedStorageKey, participantId);
+        } else {
+          localStorage.setItem(storageKeys.participantId, participantId);
+        }
         renderRoom(result.room);
       });
     }
@@ -2884,6 +2901,7 @@
                   'claim_assignment',
                   'missing_confirmation',
                   'evidence_review',
+                  'semantic_repair_draft',
                   'task_router_review',
                   'booking_draft',
                   'service_request_draft',

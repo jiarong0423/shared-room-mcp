@@ -16,7 +16,7 @@ Shared Room MCP is a forkable WebMCP template designed for social coordination b
 
 ## Devpost Text Description Draft
 
-Shared Room MCP is a forkable WebMCP template designed for social coordination before payment or commitment. It creates a shared web environment where humans and agents collaborate in real time. Operating inside the browser sidebar, an agent calls page-local WebMCP tools, inspects structured room state, and places proposal drafts directly onto the web page.
+Shared Room MCP is a forkable WebMCP template designed for social coordination before payment or commitment. It creates a shared web environment where humans and agents collaborate in real time. Operating inside the browser sidebar, an agent calls page-local WebMCP tools, inspects structured room state, detects field or label drift, and places proposal drafts directly onto the web page.
 
 We solve the agent overreach problem through strict architectural boundaries, not fragile system prompts. The agent handles context gathering and repetitive draft work, while execution, settlement, payment, booking submission, and final commitment remain behind human confirmation.
 
@@ -24,7 +24,7 @@ This brings WebMCP capability to multi-user web apps, combining agent productivi
 
 Shared Room MCP is an open-source WebMCP room template for messy real-world group coordination: group buys, drink orders, restaurant splits, KTV rooms, sports venues, tickets, rentals, and other temporary shared-cost plans. These workflows usually start from a chat message, price-list photo, receipt, or copied text rather than a clean vendor API.
 
-The project gives the agent a page-local WebMCP tool surface. The agent can inspect the room, read the selected scenario, find missing confirmations, review price-reading quality, and create a proposal-only draft for the host. It cannot calculate money outside the app, assign claimants, submit bookings, write payment data, or finalize settlement.
+The project gives the agent a page-local WebMCP tool surface. The agent can inspect the room, read the selected scenario, find missing confirmations, review price-reading quality, and create a proposal-only draft for the host. Codex can also create a `semantic_repair_draft` when parsed labels or fields drift, such as quantity, subtotal, size, or add-on columns being confused with item prices. It cannot silently apply that repair, calculate money outside the app, assign claimants, submit bookings, write payment data, or finalize settlement.
 
 The core demo works without any paid API key: users can paste copied text from a price image, the local parser creates structured items, and deterministic room logic keeps totals and confirmation state inside the app. Optional model providers are only replaceable adapters for image/text repair, not the required agent workflow.
 
@@ -48,7 +48,7 @@ Implemented WebMCP tools:
 
 ## Human And Agent Collaboration
 
-The human controls the room, task type, uploaded evidence, OCR text, participant names, claim confirmation, and settlement. The agent helps by reading the current state, identifying task conflicts, explaining missing claims, guiding the next action from the WebMCP tool output, and preparing draft proposals for the host. The `suggest_next_actions` tool is the primary read path. The `create_action_proposal` tool is the primary safe action path: it stores `pending_host_confirmation` JSON under `room.agentProposals[]`, and owner review uses an inline two-step confirmation before marking a draft accepted or rejected. Review does not mutate orders, formulas, settlement, payment, Google Sheets, or external services.
+The human controls the room, task type, uploaded evidence, OCR text, participant names, claim confirmation, and settlement. The agent helps by reading the current state, identifying task conflicts, explaining missing claims, guiding the next action from the WebMCP tool output, and preparing draft proposals for the host. The `suggest_next_actions` tool is the primary read path. The `create_action_proposal` tool is the primary safe action path: it stores `pending_host_confirmation` JSON under `room.agentProposals[]`, including semantic repair drafts when Codex detects field drift. Owner review uses an inline two-step confirmation before marking a draft accepted or rejected. Review does not mutate orders, formulas, settlement, payment, Google Sheets, or external services.
 
 Provider AI is optional and limited to OCR/schema repair adapters. It cannot decide who owes money, change formulas, assign cost pools, or settle disputes. Future forks can reuse the same proposal-only contract for booking drafts, repair appointment drafts, salon reservation drafts, activity signup drafts, and other pre-commitment workflows, but final submission and payment should remain human-controlled.
 

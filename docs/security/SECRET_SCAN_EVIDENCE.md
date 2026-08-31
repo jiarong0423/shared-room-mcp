@@ -19,8 +19,9 @@ Status: passed.
 Secret scan evidence:
 
 - Current-file secret scan: passed on 2026-09-01 with no secret or hardcoded credential findings detected.
+- Current-file direct pattern scan: passed on 2026-09-01 with no matches for OpenAI keys, Google API keys, AWS access keys, GitHub tokens, Slack tokens, or private key blocks.
 - Git history scan: passed on 2026-09-01 with no secret patterns or secret filenames found in reachable Git history.
 - `ai-security-rules export-gate`: passed on 2026-09-01 with secret-like filenames `0` and critical findings `0`.
-- `ai-security-rules history-scan`: flagged historical `.env.example` filenames as critical by policy. A separate secret-pattern history scanner found no actual secret patterns in reachable Git history. Rewriting or force-pushing history is a separate destructive operation and was not performed.
+- `ai-security-rules history-scan`: flagged two historical `.env.example` filenames as critical by policy. A separate historical blob pattern check read only the historical sample files and found `0` matches for OpenAI keys, Google API keys, AWS access keys, GitHub tokens, or private key blocks. Rewriting or force-pushing history is a separate destructive operation and was not performed.
 
 No API key is required for the no-key WebMCP demo. Optional OCR/schema repair keys must be set only in deployment environment variables or a provider secret manager.
