@@ -9,6 +9,7 @@ This repository is intended to be public for the WebMCP Challenge. The public ex
 - `LICENSE`
 - `README.md`
 - `SECURITY.md`
+- `THREAT_MODEL.md`
 - `env.sample`
 - `.gitignore`
 - `.zeaburignore`

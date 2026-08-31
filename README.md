@@ -1,10 +1,12 @@
 # Shared Room MCP
 
-Shared Room MCP is a WebMCP-powered social coordination room for group buys, drink orders, restaurant bills, KTV rooms, sports venues, ticket activities, rentals, and generic shared expenses.
+Shared Room MCP is a forkable WebMCP template designed for social coordination before payment or commitment. It creates a shared web environment where humans and agents collaborate in real time.
 
 The app is English-first for judging and demo review. A Chinese UI dictionary remains available for local use, but the default page language, initial HTML, README, and submission packet are English.
 
-Core claim: we solved the agent overreach problem through strict architectural boundaries, not system prompts. AI contextually inspects and drafts; humans hold the final confirmation.
+Core claim: we solve the agent overreach problem through strict architectural boundaries, not fragile system prompts. AI contextually inspects and drafts; humans hold the final confirmation.
+
+Operating inside the browser sidebar, an agent calls page-local WebMCP tools, inspects structured room state, and places proposal drafts directly onto the web page. The agent handles context gathering and repetitive draft work, while execution, settlement, payment, booking submission, and final commitment remain behind human confirmation.
 
 ## Why This Fits WebMCP
 
@@ -83,7 +85,7 @@ Implemented tools:
 
 The `suggest_next_actions` tool is the main agent workflow entrypoint. It returns current blockers, human-review requirements, formula boundaries, and forbidden actions. It cannot mutate room state and cannot calculate new money values.
 
-The `create_action_proposal` tool is proposal-only. It can store a bounded JSON draft in `room.agentProposals[]` for the room owner, with status `pending_host_confirmation`. Owner review can mark the draft accepted or rejected, but acceptance does not automatically change orders, claims, formulas, task routing, settlement, payment data, Google Sheets, bookings, or external systems.
+The `create_action_proposal` tool is proposal-only. It can store a bounded JSON draft in `room.agentProposals[]` for the room owner, with status `pending_host_confirmation`. Owner review uses an inline two-step confirmation before marking a draft accepted or rejected. Acceptance does not automatically change orders, claims, formulas, task routing, settlement, payment data, Google Sheets, bookings, or external systems.
 
 ## Six Atomic One-Way Gates
 
@@ -242,7 +244,10 @@ The expensive endpoint is image/OCR parsing, not WebMCP inspection. Keep `MENU_P
 ```bash
 npm run check
 npm run audit:tasks
+npm run stress:contracts -- --base-url http://127.0.0.1:3000 --rounds 20 --concurrency 4 --output-dir logs/runtime
 ```
+
+The contract stress run covers 20 non-duplicate Traditional Chinese and English scenarios, with 20 rounds per scenario. It checks room creation, local copied-text OCR parsing, stable task selection, proposal draft creation, and the human-confirmation boundary.
 
 Expected audit state:
 
@@ -266,9 +271,10 @@ Expected audit state:
 8. Ask the agent to call `inspect_room`.
 9. Ask the agent to call `suggest_next_actions`.
 10. Ask the agent to call `create_action_proposal` and show the proposal stays in host review.
-11. Show that the agent can inspect contracts and blockers but cannot calculate money externally, finalize settlement, or write payment data.
-12. State that WebMCP tools are registered in the browser page with `document.modelContext.registerTool()`; the same-origin backend only supports the app data layer.
-13. Briefly mention future proposal-only extensions for reservations, repair appointments, salon bookings, and other form-draft workflows.
+11. Click `Approve Draft`, then show the inline second step `Confirm Human Approval`.
+12. Show that the agent can inspect contracts and blockers but cannot calculate money externally, finalize settlement, or write payment data.
+13. State that WebMCP tools are registered in the browser page with `document.modelContext.registerTool()`; the same-origin backend only supports the app data layer.
+14. Briefly mention future proposal-only extensions for reservations, repair appointments, salon bookings, and other form-draft workflows.
 
 ## Compliance Notes
 

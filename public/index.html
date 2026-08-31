@@ -502,6 +502,16 @@
       background: #fffaf4;
     }
 
+    .proposal-card[data-review-stage="accept"] {
+      border-color: rgba(37, 116, 79, 0.42);
+      background: #f3fbf6;
+    }
+
+    .proposal-card[data-review-stage="reject"] {
+      border-color: rgba(142, 142, 147, 0.45);
+      background: #f8f8f8;
+    }
+
     .proposal-meta {
       display: flex;
       flex-wrap: wrap;
@@ -543,6 +553,34 @@
       min-height: 32px;
       padding: 6px 10px;
       font-size: 12px;
+    }
+
+    .proposal-actions .button.confirm-approval {
+      background: var(--good);
+      color: #fff;
+    }
+
+    .proposal-actions .button.confirm-approval:hover:not(:disabled) {
+      background: #1c5c3e;
+    }
+
+    .proposal-actions .button.confirm-reject {
+      border-color: rgba(142, 142, 147, 0.6);
+      background: #f1f1f1;
+      color: #4f4f53;
+    }
+
+    .proposal-actions .button.confirm-reject:hover:not(:disabled) {
+      background: #e4e4e7;
+    }
+
+    .proposal-action-hint {
+      flex-basis: 100%;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 650;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
     }
 
     .source-menu-card {
@@ -1766,11 +1804,32 @@
         acceptedByHost: '發起者已採納',
         rejectedByHost: '發起者已拒絕',
         proposalOnly: '只是一份建議',
-        acceptDraft: '採納草稿',
+        approveDraft: '採納草稿',
+        confirmHumanApproval: '確認由人採納',
         rejectDraft: '拒絕草稿',
+        confirmRejectDraft: '確認拒絕',
+        approveDraftHint: '這只會讓大家看到草稿已被採納，不會付款、預約或送出外部表單。',
+        rejectDraftHint: '這只會把草稿標為已拒絕，不會刪除房間或更改品項。',
         ownerOnlyDraftReview: '只有發起者可決定',
         draftReviewFailed: '草稿審核失敗',
         draftCreated: '建議已儲存，等待發起者確認。',
+        drinkOptionSettledError: '此房間已結算，不能再修改甜度冰塊。',
+        drinkOptionNameError: '請先輸入名稱並套用名稱再選甜度冰塊。',
+        drinkOptionConfirmedError: '個人費用已確認，請先取消確認再修改甜度冰塊。',
+        drinkOptionUpdateFailed: '更新甜度冰塊失敗',
+        itemOptionSettledError: '此房間已結算，不能再修改選項。',
+        itemOptionNameError: '請先輸入名稱並套用名稱再選規格。',
+        itemOptionConfirmedError: '個人費用已確認，請先取消確認再修改選項。',
+        itemOptionUpdateFailed: '更新選項失敗',
+        confirmSettledError: '此房間已結算，不能再修改確認狀態。',
+        confirmNameError: '請先輸入名稱並套用名稱再確認個人費用。',
+        confirmEmptyError: '目前沒有費用項目，不能確認空明細。',
+        confirmCostFailed: '個人費用確認失敗',
+        uploadRoomLoadedError: '此房間已經有價格照片，請先清空房間再上傳新圖片。',
+        parseImageFailed: '圖片解析失敗',
+        newRoomConfirm: '建立新房間會產生新的隨機連結，原房間連結不會清空。確定建立嗎？',
+        newRoomCreated: '已建立新的隨機房間連結。',
+        createRoomFailed: '建立新房間失敗',
         proposalTypeclaim_assignment: '確認誰要負責',
         proposalTypemissing_confirmation: '提醒尚未確認',
         proposalTypeevidence_review: '檢查價格內容',
@@ -1781,7 +1840,8 @@
         proposalTypegeneric_next_step: '下一步建議',
         proposalRisklow: '低風險',
         proposalRiskmedium: '需要看一下',
-        proposalRiskneeds_human_review: '需要人工確認'
+        proposalRiskneeds_human_review: '需要人工確認',
+        draftReviewStepReady: '再點一次完成決定'
       },
       en: {
         appTitle: 'Shared Room',
@@ -1950,11 +2010,32 @@
         acceptedByHost: 'accepted',
         rejectedByHost: 'rejected',
         proposalOnly: 'suggestion only',
-        acceptDraft: 'Accept Draft',
+        approveDraft: 'Approve Draft',
+        confirmHumanApproval: 'Confirm Human Approval',
         rejectDraft: 'Reject Draft',
+        confirmRejectDraft: 'Confirm Reject',
+        approveDraftHint: 'Finalizes this proposal for the team. No payment, booking, or external submission will be made.',
+        rejectDraftHint: 'Marks this proposal as rejected only. Items and room totals stay unchanged.',
         ownerOnlyDraftReview: 'host decides only',
         draftReviewFailed: 'Failed to review draft',
         draftCreated: 'Suggestion saved for host confirmation.',
+        drinkOptionSettledError: 'This room is settled. Drink options cannot be changed.',
+        drinkOptionNameError: 'Enter and apply your name before choosing drink options.',
+        drinkOptionConfirmedError: 'Your cost is already confirmed. Cancel confirmation before changing drink options.',
+        drinkOptionUpdateFailed: 'Failed to update drink options',
+        itemOptionSettledError: 'This room is settled. Item options cannot be changed.',
+        itemOptionNameError: 'Enter and apply your name before choosing item options.',
+        itemOptionConfirmedError: 'Your cost is already confirmed. Cancel confirmation before changing item options.',
+        itemOptionUpdateFailed: 'Failed to update item options',
+        confirmSettledError: 'This room is settled. Confirmation cannot be changed.',
+        confirmNameError: 'Enter and apply your name before confirming your cost.',
+        confirmEmptyError: 'There are no cost items to confirm yet.',
+        confirmCostFailed: 'Failed to confirm your cost',
+        uploadRoomLoadedError: 'This room already has a price photo. Reset the room before uploading a new image.',
+        parseImageFailed: 'Failed to read the price photo',
+        newRoomConfirm: 'Create a new random room link? The current room link will not be cleared.',
+        newRoomCreated: 'New random room link created.',
+        createRoomFailed: 'Failed to create a new room',
         proposalTypeclaim_assignment: 'who should confirm',
         proposalTypemissing_confirmation: 'missing confirmation',
         proposalTypeevidence_review: 'price review',
@@ -1965,7 +2046,8 @@
         proposalTypegeneric_next_step: 'next step',
         proposalRisklow: 'low risk',
         proposalRiskmedium: 'review needed',
-        proposalRiskneeds_human_review: 'human review needed'
+        proposalRiskneeds_human_review: 'human review needed',
+        draftReviewStepReady: 'click again to complete'
       }
     };
 
@@ -1974,6 +2056,7 @@
     let displayName = localStorage.getItem(storageKeys.displayName) || '';
     let currentLanguage = translations[localStorage.getItem(storageKeys.language)] ? localStorage.getItem(storageKeys.language) : 'en';
     let currentRoom = null;
+    let pendingProposalReview = null;
     let isUploading = false;
     let isBootReady = false;
     let isRecoveringRoom = false;
@@ -2025,48 +2108,111 @@
       rental_share: 'taskRentalShare',
       generic_split: 'taskGenericSplit'
     };
-    const menuCategoryLabels = {
-      main: '主餐',
-      side: '配菜',
-      snack: '點心',
-      soup: '湯品',
-      dessert: '甜點',
-      drink: '飲品',
-      set: '套餐',
-      service: '服務',
-      ticket: '票券',
-      rental: '租借',
-      venue: '場地',
-      addon: '加料',
-      other: '其他'
-    };
-    const spiceLevelLabels = {
-      none: '不辣',
-      mild: '微辣',
-      medium: '中辣',
-      hot: '辣',
-      extra_hot: '特辣',
-      unknown: ''
-    };
-    const itemTagLabels = {
-      signature: '招牌',
-      popular: '熱賣',
-      limited: '限定',
-      seasonal: '季節',
-      new: '新品',
-      discount: '優惠',
-      combo: '組合',
-      shareable: '共享',
-      single_serving: '單人',
-      customizable: '可客製',
-      per_person: '人頭',
-      room_package: '包廂',
-      time_limited: '限時',
-      spicy: '辣',
-      vegetarian: '素食',
-      caffeinated: '咖啡因',
-      non_caffeinated: '無咖啡因',
-      manual_review: '待確認'
+    const itemMetaLabels = {
+      zh: {
+        category: {
+          main: '主餐',
+          side: '配菜',
+          snack: '點心',
+          soup: '湯品',
+          dessert: '甜點',
+          drink: '飲品',
+          set: '套餐',
+          service: '服務',
+          ticket: '票券',
+          rental: '租借',
+          venue: '場地',
+          addon: '加料',
+          other: '其他'
+        },
+        spice: {
+          none: '不辣',
+          mild: '微辣',
+          medium: '中辣',
+          hot: '辣',
+          extra_hot: '特辣',
+          unknown: ''
+        },
+        temperature: {
+          '冷': '冷',
+          '熱': '熱',
+          '常溫': '常溫',
+          '冷熱皆可': '冷熱皆可',
+          '未標示': ''
+        },
+        tag: {
+          signature: '招牌',
+          popular: '熱賣',
+          limited: '限定',
+          seasonal: '季節',
+          new: '新品',
+          discount: '優惠',
+          combo: '組合',
+          shareable: '共享',
+          single_serving: '單人',
+          customizable: '可客製',
+          per_person: '人頭',
+          room_package: '包廂',
+          time_limited: '限時',
+          spicy: '辣',
+          vegetarian: '素食',
+          caffeinated: '咖啡因',
+          non_caffeinated: '無咖啡因',
+          manual_review: '待確認'
+        }
+      },
+      en: {
+        category: {
+          main: 'main',
+          side: 'side',
+          snack: 'snack',
+          soup: 'soup',
+          dessert: 'dessert',
+          drink: 'drink',
+          set: 'set',
+          service: 'service',
+          ticket: 'ticket',
+          rental: 'rental',
+          venue: 'venue',
+          addon: 'add-on',
+          other: 'other'
+        },
+        spice: {
+          none: 'not spicy',
+          mild: 'mild',
+          medium: 'medium spice',
+          hot: 'spicy',
+          extra_hot: 'extra spicy',
+          unknown: ''
+        },
+        temperature: {
+          '冷': 'cold',
+          '熱': 'hot',
+          '常溫': 'room temp',
+          '冷熱皆可': 'hot or cold',
+          '未標示': ''
+        },
+        tag: {
+          signature: 'signature',
+          popular: 'popular',
+          limited: 'limited',
+          seasonal: 'seasonal',
+          new: 'new',
+          discount: 'discount',
+          combo: 'combo',
+          shareable: 'shareable',
+          single_serving: 'single serving',
+          customizable: 'customizable',
+          per_person: 'per person',
+          room_package: 'room package',
+          time_limited: 'time limited',
+          spicy: 'spicy',
+          vegetarian: 'vegetarian',
+          caffeinated: 'caffeinated',
+          non_caffeinated: 'non-caffeinated',
+          manual_review: 'needs review'
+        }
+      }
     };
 
     if (!participantId) {
@@ -2756,7 +2902,8 @@
 
     function getItemMetaText(item, drinkOptionsEnabled, itemOptionsEnabled) {
       const parts = [];
-      const category = menuCategoryLabels[item?.category] || '';
+      const labels = itemMetaLabels[currentLanguage] || itemMetaLabels.en;
+      const category = labels.category[item?.category] || '';
       if (category) {
         parts.push(category);
       }
@@ -2766,15 +2913,16 @@
       if (item?.sizeLabel) {
         parts.push(item.sizeLabel);
       }
-      if (item?.temperature && item.temperature !== '未標示') {
-        parts.push(item.temperature);
+      const temperature = labels.temperature[item?.temperature] || '';
+      if (temperature) {
+        parts.push(temperature);
       }
-      const spice = spiceLevelLabels[item?.spiceLevel] || '';
+      const spice = labels.spice[item?.spiceLevel] || '';
       if (spice) {
         parts.push(spice);
       }
       for (const tag of Array.isArray(item?.tags) ? item.tags : []) {
-        const label = itemTagLabels[tag];
+        const label = labels.tag[tag];
         if (label && !parts.includes(label)) {
           parts.push(label);
         }
@@ -2859,6 +3007,9 @@
     function renderAgentProposals(room) {
       const proposals = Array.isArray(room?.agentProposals) ? room.agentProposals : [];
       const pendingCount = proposals.filter((proposal) => proposal.status === 'pending_host_confirmation').length;
+      if (pendingProposalReview && !proposals.some((proposal) => proposal.id === pendingProposalReview.proposalId && proposal.status === 'pending_host_confirmation')) {
+        pendingProposalReview = null;
+      }
       elements.proposalPanel.dataset.visible = proposals.length > 0 ? 'true' : 'false';
       elements.proposalCountChip.textContent = pendingCount > 0
         ? `${pendingCount} ${t('needsReview')}`
@@ -2873,22 +3024,32 @@
       const owner = isOwner(room);
       elements.proposalList.innerHTML = proposals.slice(0, 12).map((proposal) => {
         const isPending = proposal.status === 'pending_host_confirmation';
+        const reviewAction = isPending && pendingProposalReview?.proposalId === proposal.id
+          ? pendingProposalReview.action
+          : '';
+        const acceptArmed = owner && reviewAction === 'accept';
+        const rejectArmed = owner && reviewAction === 'reject';
+        const reviewStage = acceptArmed ? 'accept' : rejectArmed ? 'reject' : '';
+        const acceptButtonClass = rejectArmed ? 'button secondary' : `button ${acceptArmed ? 'confirm-approval' : ''}`;
         const controls = isPending
           ? `
             <div class="proposal-actions">
-              <button class="button" type="button" data-proposal-action="accept" data-proposal-id="${escapeHtml(proposal.id)}" ${owner ? '' : 'disabled'}>${escapeHtml(t('acceptDraft'))}</button>
-              <button class="button secondary" type="button" data-proposal-action="reject" data-proposal-id="${escapeHtml(proposal.id)}" ${owner ? '' : 'disabled'}>${escapeHtml(t('rejectDraft'))}</button>
+              <button class="${escapeHtml(acceptButtonClass)}" type="button" data-proposal-action="accept" data-proposal-confirm="${acceptArmed ? 'true' : 'false'}" data-proposal-id="${escapeHtml(proposal.id)}" ${owner ? '' : 'disabled'}>${escapeHtml(t(acceptArmed ? 'confirmHumanApproval' : 'approveDraft'))}</button>
+              <button class="button secondary ${rejectArmed ? 'confirm-reject' : ''}" type="button" data-proposal-action="reject" data-proposal-confirm="${rejectArmed ? 'true' : 'false'}" data-proposal-id="${escapeHtml(proposal.id)}" ${owner ? '' : 'disabled'}>${escapeHtml(t(rejectArmed ? 'confirmRejectDraft' : 'rejectDraft'))}</button>
+              ${acceptArmed ? `<span class="proposal-action-hint">${escapeHtml(t('approveDraftHint'))}</span>` : ''}
+              ${rejectArmed ? `<span class="proposal-action-hint">${escapeHtml(t('rejectDraftHint'))}</span>` : ''}
               ${owner ? '' : `<span class="proposal-meta">${escapeHtml(t('ownerOnlyDraftReview'))}</span>`}
             </div>
           `
           : '';
         return `
-          <article class="proposal-card" data-status="${escapeHtml(proposal.status)}">
+          <article class="proposal-card" data-status="${escapeHtml(proposal.status)}" data-review-stage="${escapeHtml(reviewStage)}">
             <div class="proposal-meta">
               <span>${escapeHtml(getProposalTypeText(proposal.proposalType))}</span>
               <span>${escapeHtml(getProposalStatusText(proposal.status))}</span>
               <span>${escapeHtml(t('proposalOnly'))}</span>
               <span>${escapeHtml(getProposalRiskText(proposal.riskLevel))}</span>
+              ${reviewStage ? `<span>${escapeHtml(t('draftReviewStepReady'))}</span>` : ''}
             </div>
             <div class="proposal-summary">${escapeHtml(proposal.summary || '')}</div>
             ${proposal.rationale ? `<div class="proposal-meta">${escapeHtml(proposal.rationale)}</div>` : ''}
@@ -3418,16 +3579,16 @@
         return;
       }
       if (currentRoom.settled) {
-        setMessage('此房間已結算，不能再修改甜度冰塊。', 'error');
+        setMessage(t('drinkOptionSettledError'), 'error');
         return;
       }
       if (!hasSavedDisplayName()) {
-        setMessage('請先輸入名稱並套用名稱再選甜度冰塊。', 'error');
+        setMessage(t('drinkOptionNameError'), 'error');
         elements.displayNameInput.focus();
         return;
       }
       if (getOwnParticipant()?.confirmed) {
-        setMessage('個人費用已確認，請先取消確認再修改甜度冰塊。', 'error');
+        setMessage(t('drinkOptionConfirmedError'), 'error');
         return;
       }
 
@@ -3439,7 +3600,7 @@
         value
       }, (result) => {
         if (!result || !result.ok) {
-          setMessage(result?.error || '更新甜度冰塊失敗', 'error');
+          setMessage(result?.error || t('drinkOptionUpdateFailed'), 'error');
         }
       });
     }
@@ -3449,16 +3610,16 @@
         return;
       }
       if (currentRoom.settled) {
-        setMessage('此房間已結算，不能再修改選項。', 'error');
+        setMessage(t('itemOptionSettledError'), 'error');
         return;
       }
       if (!hasSavedDisplayName()) {
-        setMessage('請先輸入名稱並套用名稱再選規格。', 'error');
+        setMessage(t('itemOptionNameError'), 'error');
         elements.displayNameInput.focus();
         return;
       }
       if (getOwnParticipant()?.confirmed) {
-        setMessage('個人費用已確認，請先取消確認再修改選項。', 'error');
+        setMessage(t('itemOptionConfirmedError'), 'error');
         return;
       }
 
@@ -3471,7 +3632,7 @@
         selected
       }, (result) => {
         if (!result || !result.ok) {
-          setMessage(result?.error || '更新選項失敗', 'error');
+          setMessage(result?.error || t('itemOptionUpdateFailed'), 'error');
         }
       });
     }
@@ -3481,11 +3642,11 @@
         return;
       }
       if (currentRoom.settled) {
-        setMessage('此房間已結算，不能再修改確認狀態。', 'error');
+        setMessage(t('confirmSettledError'), 'error');
         return;
       }
       if (!hasSavedDisplayName()) {
-        setMessage('請先輸入名稱並套用名稱再確認個人費用。', 'error');
+        setMessage(t('confirmNameError'), 'error');
         elements.displayNameInput.focus();
         return;
       }
@@ -3493,7 +3654,7 @@
       const ownParticipant = getOwnParticipant();
       const shouldConfirm = !ownParticipant?.confirmed;
       if (shouldConfirm && Number(ownParticipant?.total || 0) <= 0) {
-        setMessage('目前沒有費用項目，不能確認空明細。', 'error');
+        setMessage(t('confirmEmptyError'), 'error');
         return;
       }
 
@@ -3503,7 +3664,7 @@
         confirmed: shouldConfirm
       }, (result) => {
         if (!result || !result.ok) {
-          setMessage(result?.error || '個人費用確認失敗', 'error');
+          setMessage(result?.error || t('confirmCostFailed'), 'error');
           return;
         }
         renderRoom(result.room);
@@ -3515,7 +3676,7 @@
         return;
       }
       if (currentRoom?.menuLoaded) {
-        setMessage('此房間已經有價格照片，請先清空房間再上傳新圖片。', 'warn');
+        setMessage(t('uploadRoomLoadedError'), 'warn');
         return;
       }
 
@@ -3537,7 +3698,7 @@
         });
         const data = await response.json();
         if (!response.ok) {
-          throw new Error(data.error || '圖片解析失敗');
+          throw new Error(data.error || t('parseImageFailed'));
         }
         clearPendingUpload(false);
         renderRoom(data);
@@ -3551,13 +3712,13 @@
     function copyRoomLink() {
       const url = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(roomId)}`;
       navigator.clipboard.writeText(url)
-        .then(() => setMessage('房間連結已複製。', 'info'))
+        .then(() => setMessage(t('copiedLink'), 'info'))
         .catch(() => setMessage(url, 'info'));
     }
 
     async function startNewRoom() {
       const shouldCreate = !currentRoom?.menuLoaded
-        || window.confirm('建立新房間會產生新的隨機連結，原房間連結不會清空。確定建立嗎？');
+        || window.confirm(t('newRoomConfirm'));
       if (!shouldCreate) {
         return;
       }
@@ -3567,10 +3728,10 @@
         isSourceMenuCollapsed = false;
         clearPendingUpload(false);
         renderRoom(room);
-        setMessage('已建立新的隨機房間連結。', 'info');
+        setMessage(t('newRoomCreated'), 'info');
         joinRoom();
       } catch (error) {
-        setMessage(error.message || '建立新房間失敗', 'error');
+        setMessage(error.message || t('createRoomFailed'), 'error');
       }
     }
 
@@ -3705,11 +3866,25 @@
         action
       }, (result) => {
         if (!result || !result.ok) {
+          pendingProposalReview = null;
           setMessage(result?.error || t('draftReviewFailed'), 'error');
+          renderAgentProposals(currentRoom);
           return;
         }
+        pendingProposalReview = null;
         renderRoom(result.room);
       });
+    }
+
+    function prepareProposalReview(proposalId, action) {
+      if (!proposalId || !['accept', 'reject'].includes(action)) {
+        return;
+      }
+      pendingProposalReview = {
+        proposalId,
+        action
+      };
+      renderAgentProposals(currentRoom);
     }
 
     function printOrderText() {
@@ -3844,7 +4019,13 @@
       if (!button) {
         return;
       }
-      reviewAgentProposal(button.dataset.proposalId, button.dataset.proposalAction);
+      const proposalId = button.dataset.proposalId;
+      const action = button.dataset.proposalAction;
+      if (button.dataset.proposalConfirm !== 'true') {
+        prepareProposalReview(proposalId, action);
+        return;
+      }
+      reviewAgentProposal(proposalId, action);
     });
 
     elements.sourceMenuToggleButton.addEventListener('click', toggleSourceMenuCollapse);

@@ -1,6 +1,6 @@
 # Group Room Task Gap Decoupling Audit
 
-Generated at: 2026-08-31T17:32:27.144Z
+Generated at: 2026-08-31T19:25:42.603Z
 
 Owner project: `.`
 
@@ -10,8 +10,8 @@ Owner project: `.`
 
 ## Current Readiness
 
-- Checks ready: 7 / 7
-- Open gaps: 2
+- Checks ready: 8 / 8
+- Open gaps: 1
 - Partial gaps: 2
 
 ## Gap Matrix
@@ -26,7 +26,7 @@ Owner project: `.`
 | P1 | trust-layer | partial | Google Sheets 白名單仍是設計稿 | 建立 Sheets bridge P1；只存短效 hash，不存原始 device id、付款資訊、社群帳號。 |
 | P0 | evidence-ocr | ready | 價格證據與 OCR contract 尚未獨立 | 後續加強可評估 Web OCR/WASM OCR 或裝置端 companion；不影響六線解耦完成。 |
 | P1 | formula-controls | open | 任務特定公式輸入不足 | 依任務模組顯示最少必要公式欄位，不讓 AI 計算金額。 |
-| P1 | testing | open | 測試覆蓋還停在 syntax 與 smoke | 補 deterministic parser、task router、formula、claim audit tests；socket 測試等需要時再加依賴。 |
+| P1 | testing | ready | 本地合約壓測矩陣尚未固定 | 後續若新增公式或任務模組，先擴充壓測情境再提交。 |
 
 ## Contract Markers
 

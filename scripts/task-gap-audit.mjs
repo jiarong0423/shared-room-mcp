@@ -10,7 +10,8 @@ const sourceFiles = {
   license: path.join(projectRoot, 'LICENSE'),
   readme: path.join(projectRoot, 'README.md'),
   submission: path.join(projectRoot, 'docs', 'submission', 'WEBMCP_SUBMISSION.md'),
-  mermaid: path.join(projectRoot, 'docs', 'ai-generated', '2026Q3', 'shared_room_mermaid_module_design_20260831.md')
+  mermaid: path.join(projectRoot, 'docs', 'ai-generated', '2026Q3', 'shared_room_mermaid_module_design_20260831.md'),
+  stressContracts: path.join(projectRoot, 'scripts', 'stress-local-contracts.mjs')
 };
 
 const reportDir = path.join(projectRoot, 'docs', 'ai-generated', '2026Q3');
@@ -188,6 +189,18 @@ const expectedSubmissionPackageFields = [
   'Compliance Notes'
 ];
 
+const expectedTestingFields = [
+  'stress:contracts',
+  'stress-local-contracts.mjs',
+  'scenarioCases',
+  'joinRoomAsOwner',
+  'local copied price text',
+  'pending_host_confirmation',
+  'Proposal creation must not change item count',
+  'Traditional Chinese and English scenarios',
+  '20 rounds per scenario'
+];
+
 function readRequiredFile(filePath) {
   try {
     return fs.readFileSync(filePath, 'utf8');
@@ -273,6 +286,7 @@ function main() {
   const whitelistEvidence = hasAll(allSource, expectedWhitelistFields);
   const webMcpEvidence = hasAll(allSource, requiredWebMcpToolNames);
   const submissionEvidence = hasAll(allSource, expectedSubmissionPackageFields);
+  const testingEvidence = hasAll(allSource, expectedTestingFields);
   const hasFormulaSnapshot = contents.server.includes('function buildRoomFormulaSnapshot')
     && contents.server.includes('formulaResults')
     && contents.server.includes('group-room-formula.v1');
@@ -315,6 +329,8 @@ function main() {
     'trustLayerContract'
   ].every((marker) => allSource.includes(marker));
   const hasEvidenceContract = expectedEvidenceContractFields
+    .every((marker) => allSource.includes(marker));
+  const hasContractStressMatrix = expectedTestingFields
     .every((marker) => allSource.includes(marker));
 
   const checks = [
@@ -380,6 +396,15 @@ function main() {
       expectedSubmissionPackageFields,
       submissionEvidence,
       '保持 LICENSE、README、submission packet 與 env 需求同步；公開 repo、live URL、YouTube 仍需人工提交前確認。'
+    ),
+    buildCheck(
+      'local-contract-stress-matrix',
+      '本地合約壓測矩陣',
+      'testing',
+      'P0',
+      expectedTestingFields,
+      testingEvidence,
+      '保持 20 個中英文情境 x 20 輪壓測可重跑；草稿必須停在發起者人工確認前。'
     )
   ];
 
@@ -494,12 +519,16 @@ function main() {
     ),
     makeGap(
       'GAP-P1-004',
-      '測試覆蓋還停在 syntax 與 smoke',
+      '本地合約壓測矩陣尚未固定',
       'testing',
       'P1',
-      'open',
-      '已有 npm run check 與 API smoke；socket smoke 缺 socket.io-client，公式與 claim mode 沒有獨立 unit tests。',
-      '補 deterministic parser、task router、formula、claim audit tests；socket 測試等需要時再加依賴。',
+      hasContractStressMatrix ? 'ready' : 'open',
+      hasContractStressMatrix
+        ? '已補 scripts/stress-local-contracts.mjs 與 npm run stress:contracts；覆蓋 20 個中英文情境、每情境 20 輪、OCR copied text、任務鎖定、草稿暫存與人工確認前停住。'
+        : '已有 npm run check 與 API smoke；尚未有可重跑的中英文多情境草稿壓測矩陣。',
+      hasContractStressMatrix
+        ? '後續若新增公式或任務模組，先擴充壓測情境再提交。'
+        : '補 deterministic parser、task router、formula、claim audit、proposal-only stress matrix。',
       'low'
     )
   ];
