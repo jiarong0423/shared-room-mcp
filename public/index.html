@@ -2599,8 +2599,7 @@
     }
 
     async function registerWebMcpTools() {
-      const modelContext = document.modelContext;
-      if (!modelContext || typeof modelContext.registerTool !== 'function') {
+      if (!document.modelContext || typeof document.modelContext.registerTool !== 'function') {
         return;
       }
 
@@ -2720,7 +2719,7 @@
 
       for (const tool of tools) {
         try {
-          await modelContext.registerTool({
+          await document.modelContext.registerTool({
             ...tool,
             annotations: tool.annotations || readOnlyAnnotations
           });

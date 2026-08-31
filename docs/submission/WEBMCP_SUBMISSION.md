@@ -129,7 +129,7 @@ Target length: under 3 minutes.
 
 ## Remaining Submission Checklist
 
-- Replace `TODO_PUBLIC_REPO_URL` after publishing the repository.
+- Public repository URL is set to `https://github.com/jiarong0423/group-menu-order`.
 - Replace `TODO_YOUTUBE_DEMO_URL` after uploading the public demo video.
 - Verify the live Zeabur URL after deployment.
 - Confirm Zeabur volume is mounted when `ROOM_STORE_PATH=/data/rooms.json` is configured.
