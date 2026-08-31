@@ -13,11 +13,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: process.env.CORS_ORIGIN || '*'
+const configuredCorsOrigin = String(process.env.CORS_ORIGIN || '').trim();
+const io = new Server(server, configuredCorsOrigin
+  ? {
+    cors: {
+      origin: configuredCorsOrigin
+    }
   }
-});
+  : {});
 
 const port = Number(process.env.PORT || 3000);
 const host = process.env.HOST || '0.0.0.0';
@@ -258,7 +261,11 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: maxImageBytes,
-    files: 1
+    files: 1,
+    fields: 4,
+    fieldNameSize: 64,
+    fieldSize: localOcrMaxChars + 1024,
+    parts: 6
   },
   fileFilter: (req, file, cb) => {
     if (!file.mimetype || !file.mimetype.startsWith('image/')) {
@@ -270,6 +277,14 @@ const upload = multer({
 });
 
 app.set('trust proxy', true);
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'same-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+  next();
+});
+
 app.use(express.json({ limit: '64kb' }));
 app.use(express.static('public', {
   extensions: ['html'],
@@ -3795,6 +3810,11 @@ app.post('/api/rooms/:roomId/agent-proposals', (req, res) => {
     res.status(404).json({ error: '找不到房間，請重新建立揪團分帳房' });
     return;
   }
+  const requesterId = String(req.body?.participantId || '');
+  if (!requesterId || room.ownerParticipantId !== requesterId) {
+    res.status(403).json({ error: '只有發起者可以建立 Agent 草稿' });
+    return;
+  }
 
   const proposal = createAgentProposal(room, req.body || {});
   const state = serializeRoom(room);
@@ -4350,6 +4370,11 @@ io.on('connection', (socket) => {
     const room = getRoom(payload?.roomId);
     if (!room) {
       ack?.({ ok: false, error: '找不到房間' });
+      return;
+    }
+    const participantId = String(payload?.participantId || '');
+    if (!participantId || room.ownerParticipantId !== participantId) {
+      ack?.({ ok: false, error: '只有發起者可以清空此房間' });
       return;
     }
 

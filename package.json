@@ -1,5 +1,5 @@
 {
-  "name": "zeabur-group-menu-order",
+  "name": "group-room-split-mcp",
   "version": "1.0.0",
   "description": "WebMCP-powered social group split room with local-first OCR, deterministic formulas, claim audit, and short-lived trust layer.",
   "license": "MIT",
@@ -13,13 +13,13 @@
     "stress:menu": "node scripts/stress-menu-parser.mjs"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20.9.0"
   },
   "dependencies": {
     "@google/genai": "^1.11.0",
     "express": "^4.19.2",
     "multer": "^2.1.1",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.4",
     "socket.io": "^4.7.5"
   }
 }

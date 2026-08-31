@@ -137,6 +137,7 @@ Required runtime variables:
 ```bash
 HOST=0.0.0.0
 PORT=3000
+CORS_ORIGIN=
 ROOM_TTL_HOURS=12
 ROOM_PERSISTENCE=json
 ROOM_STORE_PATH=data/rooms.json
@@ -155,7 +156,7 @@ Optional AI repair variables:
 
 ```bash
 AI_PROVIDER_ORDER=gemini,openai
-GEMINI_API_KEY=replace_with_zeabur_environment_variable
+GEMINI_API_KEY=
 GOOGLE_API_KEY=
 GOOGLE_GENERATIVE_AI_API_KEY=
 GOOGLE_GEMINI_API_KEY=
@@ -174,6 +175,8 @@ OPENAI_IMAGE_DETAIL=high
 
 Do not commit API keys. Set secrets only in Zeabur environment variables or the hosting provider secret manager.
 
+Runtime requires Node.js `>=20.9.0` because the image normalization pipeline uses `sharp@0.35.x`.
+
 ## Deployment Configuration Guide
 
 The repository provides configuration names only. Each project organizer changes values in the deployment platform, not in source code. Paid provider keys are optional adapters, not part of the required WebMCP demo path.
@@ -181,6 +184,7 @@ The repository provides configuration names only. Each project organizer changes
 | purpose | variable | where to replace | required |
 |---|---|---|---|
 | Server port | `PORT` | Zeabur service variables | yes |
+| Same-origin or allowlisted Socket.IO origin | `CORS_ORIGIN` | Leave empty for same-origin Zeabur deployment; set only for a separate frontend domain | optional |
 | Room JSON store | `ROOM_STORE_PATH` | Zeabur service variables, use `/data/rooms.json` with a mounted volume | yes for restart-safe demo |
 | Trust whitelist/audit sheet | `TRUST_LAYER_SPREADSHEET_ID` | Zeabur service variables | optional |
 | Example Gemini OCR repair adapter | `GEMINI_API_KEY` or supported Google key alias | Zeabur service variables or provider secret manager | optional |
@@ -189,7 +193,7 @@ The repository provides configuration names only. Each project organizer changes
 
 Recommended open-source deployment order:
 
-1. Copy `.env.example` variable names into Zeabur Variables.
+1. Copy `env.sample` variable names into Zeabur Variables.
 2. Mount a Zeabur volume and set `ROOM_STORE_PATH=/data/rooms.json`.
 3. Run the no-key flow first with manual input or local OCR text.
 4. Add a provider key only if the deployment owner wants optional OCR/schema repair.
@@ -206,7 +210,7 @@ npm start
 
 Open `http://localhost:3000`.
 
-The app does not automatically load `.env`. If local AI image parsing is needed, export the key in the shell before starting the server. Without an API key, the room still works with local OCR text when enough candidates are extracted.
+The app does not automatically load `.env`. If local AI image parsing is needed, export the key in the shell before starting the server. Use `env.sample` as the variable-name reference. Without an API key, the room still works with local OCR text when enough candidates are extracted.
 
 ## Zeabur Deployment
 

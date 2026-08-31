@@ -1,8 +1,8 @@
 # Group Room Task Gap Decoupling Audit
 
-Generated at: 2026-08-31T16:57:07.218Z
+Generated at: 2026-08-31T17:18:51.753Z
 
-Owner project: `/Users/sunjiarong/Developer/other/menu`
+Owner project: `.`
 
 ## Decision
 
@@ -22,7 +22,7 @@ Owner project: `/Users/sunjiarong/Developer/other/menu`
 | P0 | claim-audit | ready | 認領稽核仍是房間總量級，缺 per-claim ledger | 下一步在 testing 線補 socket 非空 ledger 測試；不需要改 claim audit contract。 |
 | P0 | webmcp | ready | WebMCP tool surface 尚未落地 | 下一步只需要在瀏覽器支援 WebMCP 的環境做真機 demo；Sheets 寫入 bridge 仍屬 P1。 |
 | P0 | ai-repair-gate | ready | 任務衝突沒有成為獨立 high-risk gate | 下一步在 testing 線補 conflict smoke case，確認手動鎖定錯誤任務時 local-first 不放行。 |
-| P0 | submission | partial | 提交所需 OSS/license/live demo 文件未完整固定 | 部署後驗證 live URL；公開 repo 與 YouTube demo 完成後替換 submission packet 的 TODO URL。 |
+| P0 | submission | partial | 提交所需 OSS/license/live demo 文件未完整固定 | 部署後驗證 live URL；YouTube demo 完成後替換 submission packet 的 TODO URL。 |
 | P1 | trust-layer | partial | Google Sheets 白名單仍是設計稿 | 建立 Sheets bridge P1；只存短效 hash，不存原始 device id、付款資訊、社群帳號。 |
 | P0 | evidence-ocr | ready | 價格證據與 OCR contract 尚未獨立 | 後續加強可評估 Web OCR/WASM OCR 或裝置端 companion；不影響六線解耦完成。 |
 | P1 | formula-controls | open | 任務特定公式輸入不足 | 依任務模組顯示最少必要公式欄位，不讓 AI 計算金額。 |
@@ -194,7 +194,7 @@ Owner project: `/Users/sunjiarong/Developer/other/menu`
 | batch | priority | scope | stop condition |
 |---|---|---|---|
 | A | P0 | formula-engine + claim-audit pure contracts | API response exposes formulaResults and claim ledger without changing settlement behavior. |
-| B | P0 | WebMCP read-only tools | Agent can inspect room, task router, totals, quality issues, and claim audit without browser scraping. |
+| B | P0 | WebMCP read-only + proposal-only tools | Agent can inspect room state and create host-reviewed draft proposals without browser scraping or final-state mutation. |
 | C | P0 | task conflict quality gate + submission checklist | Mismatched evidence routes to manual review; LICENSE/submission checklist present. |
 | D | P1 | Google Sheets short-lived whitelist | check/enroll/revoke tools operate on hash-only rows and expired rows fail closed. |
 | E | P1 | task-specific formula controls | UI emits formula inputs for service fee, hourly rate, deposit, shipping, and group thresholds. |

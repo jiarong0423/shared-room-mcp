@@ -2,7 +2,7 @@
 
 Project name: Group Room Split MCP
 
-Live URL: https://group-menu-order.zeabur.app
+Live URL: pending deployment
 
 Public repository URL: https://github.com/jiarong0423/group-menu-order
 
@@ -66,17 +66,18 @@ MENU_PARSE_RATE_LIMIT_MAX=6
 LOCAL_OCR_FIRST=true
 LOCAL_OCR_MIN_ITEMS=3
 LOCAL_OCR_MAX_CHARS=12000
-TRUST_LAYER_SPREADSHEET_ID=1jWJTduZ-ZalNfBQ_X5PYyEMoa8We0ppaA6Y8QJhiUwM
+CORS_ORIGIN=
+TRUST_LAYER_SPREADSHEET_ID=replace_with_google_sheet_id_for_whitelist_audit_only
 ```
 
 Optional for AI repair:
 
 ```bash
-GEMINI_API_KEY=zeabur_secret_value
-GOOGLE_API_KEY=zeabur_secret_value
-GOOGLE_GENERATIVE_AI_API_KEY=zeabur_secret_value
-GOOGLE_GEMINI_API_KEY=zeabur_secret_value
-GEMINI_KEY=zeabur_secret_value
+GEMINI_API_KEY=
+GOOGLE_API_KEY=
+GOOGLE_GENERATIVE_AI_API_KEY=
+GOOGLE_GEMINI_API_KEY=
+GEMINI_KEY=
 GEMINI_MODEL=gemini-2.5-flash
 GEMINI_MODEL_FALLBACKS=gemini-2.5-flash-lite,gemini-flash-latest
 GEMINI_RETRY_ATTEMPTS=2
@@ -84,11 +85,13 @@ GEMINI_RETRY_ATTEMPTS=2
 
 Do not commit API keys. Set secrets in Zeabur environment variables only.
 
+Runtime requires Node.js `>=20.9.0`. Leave `CORS_ORIGIN` empty for a same-origin Zeabur deployment; set it only when the browser frontend is served from a separate trusted origin.
+
 For Zeabur, attach a persistent volume before using `/data/rooms.json`. Without a volume, the JSON store still works during one runtime session, but platform filesystem resets can clear room state.
 
 The JSON store is a hackathon MVP persistence layer for one running service instance. It should be disclosed as not suitable for horizontal scaling or high-concurrency writes; production should use Redis or PostgreSQL.
 
-Deployment owners should replace secrets only in Zeabur Variables or the hosting provider secret manager. The repository includes variable names in `.env.example`, but no real key values. AI provider keys are optional adapters because manual input and local OCR text can still demonstrate the WebMCP tool workflow.
+Deployment owners should replace secrets only in Zeabur Variables or the hosting provider secret manager. The repository includes variable names in `env.sample`, but no real key values. AI provider keys are optional adapters because manual input and local OCR text can still demonstrate the WebMCP tool workflow.
 
 ## Local Verification
 
@@ -131,6 +134,6 @@ Target length: under 3 minutes.
 
 - Public repository URL is set to `https://github.com/jiarong0423/group-menu-order`.
 - Replace `TODO_YOUTUBE_DEMO_URL` after uploading the public demo video.
-- Verify the live Zeabur URL after deployment.
+- Set and verify the live Zeabur URL after the final deployment name is chosen.
 - Confirm Zeabur volume is mounted when `ROOM_STORE_PATH=/data/rooms.json` is configured.
 - Confirm Devpost description uses the same WebMCP boundary stated here.

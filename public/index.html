@@ -2584,7 +2584,10 @@
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(input || {})
+        body: JSON.stringify({
+          ...(input || {}),
+          participantId
+        })
       });
       const result = await response.json();
       if (result?.room) {
@@ -3331,6 +3334,7 @@
       elements.settleRoomButton.textContent = room.settled
         ? t('settled')
         : owner ? t('ownerSettle') : t('waitingOwnerSettle');
+      elements.resetButton.disabled = !owner;
       elements.printOrderButton.disabled = !hasTotal;
       elements.downloadPdfButton.disabled = !hasTotal;
 
@@ -3726,7 +3730,7 @@
         return;
       }
 
-      socket.emit('resetRoom', { roomId }, (result) => {
+      socket.emit('resetRoom', { roomId, participantId }, (result) => {
         if (!result || !result.ok) {
           setMessage(result?.error || t('resetFailed'), 'error');
           return;

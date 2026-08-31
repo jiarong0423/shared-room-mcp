@@ -1,144 +1,118 @@
 # Group Room Mermaid Module Design
 
-日期：2026-08-31
-範圍：揪團分帳房 WebMCP demo 架構圖
+Generated at: 2026-09-01
 
-## 完整模組總覽
+Scope: open-source WebMCP tool-layer template for pre-payment social coordination.
 
-```mermaid
-flowchart TD
-  A[建立揪團分帳房] --> B{任務模組選擇}
-  B -->|自動判別| C[taskRouter<br/>OCR 訊號 + 使用者選擇]
-  B -->|手動鎖定| C
-  C --> D[本地 OCR / deterministic parser]
-  D --> E[本地 quality gate]
-  E -->|通過| F[formula engine<br/>本地 deterministic math]
-  E -->|候選不足 / 欄位可疑 / 任務衝突| G[AI schema repair<br/>只修 OCR 與欄位]
-  G --> H[人工確認可疑項]
-  H --> F
-  F --> I[同步房間狀態]
-  I --> J[成員選項 / 同款合併]
-  J --> K[總額 / 個人小計 / 均分 / 門檻差額]
-  K --> L[認領稽核<br/>共享候選 / 額外單點 / 未確認人數]
-  L --> M[人工結算輸出]
-
-  C -.不可回頭改任務.-> E
-  G -.不可改公式 / 不碰金流.-> F
-```
-
-## 任務模組與公式總覽
-
-```mermaid
-flowchart LR
-  R[taskRouter<br/>group-room-task-router.v1] --> GB[group_buy]
-  R --> DO[drink_order]
-  R --> RS[restaurant_split]
-  R --> KTV[ktv_room]
-  R --> SP[sports_venue]
-  R --> TA[ticket_activity]
-  R --> RT[rental_share]
-  R --> GS[generic_split]
-
-  GB --> GBF[同款合併<br/>個人小計<br/>門檻差額<br/>運費分攤 P1]
-  DO --> DOF[品項小計<br/>選項加價<br/>最低訂購門檻]
-  RS --> RSF[個人品項<br/>均分<br/>服務費 P1]
-  KTV --> KTVF[包廂費均分<br/>人頭低消 P1<br/>個人飲料]
-  SP --> SPF[場地費均分<br/>時段費率 P1<br/>器材小計]
-  TA --> TAF[人數乘票價<br/>成團人數 P1<br/>團體折扣 P1]
-  RT --> RTF[租借費均分<br/>個人租借<br/>押金標註 P1]
-  GS --> GSF[總額<br/>均分<br/>手動分配]
-
-  GBF --> M[本地公式引擎]
-  DOF --> M
-  RSF --> M
-  KTVF --> M
-  SPF --> M
-  TAF --> M
-  RTF --> M
-  GSF --> M
-
-  M --> Q{需要 AI?}
-  Q -->|否| OUT[房間同步 / 結算摘要]
-  Q -->|是：OCR 失敗、欄位衝突、多欄表格不穩| AI[AI schema repair]
-  AI --> HR[人工確認]
-  HR --> OUT
-```
-
-## 小模組細項
+## Full Module Overview
 
 ```mermaid
 flowchart TD
-  subgraph M1[Module 1 任務判別]
-    A1[使用者選擇任務] --> A2[OCR / 文字訊號補判]
-    A2 --> A3[taskRouter]
-    A3 --> A4[confidenceScore]
-    A4 --> A5{低信心?}
-    A5 -->|否| A6[dry_run_generated]
-    A5 -->|是| A7[needs_human_review]
-  end
+  U[Human user opens live web app] --> R[Create or join group room]
+  R --> T{Task selector}
+  T -->|Manual choice| TR[Task Router Contract]
+  T -->|Auto detect| TR
+  TR --> E[Evidence / OCR Contract]
+  E --> L[Local-first parser]
+  L --> Q{Quality gate}
+  Q -->|Pass| F[Deterministic Formula Engine]
+  Q -->|Low confidence or conflict| AR[AI Repair Gate]
+  AR --> HR[Human review]
+  HR --> F
+  F --> CA[Claim Audit Ledger]
+  CA --> S[Room sync and summary UI]
+  S --> H[Host final confirmation]
 
-  subgraph M2[Module 2 本地證據解析]
-    B1[圖片 / 本地 OCR 文字] --> B2[deterministic parser]
-    B2 --> B3[候選項目]
-    B3 --> B4[category / price / optionGroups]
-    B4 --> B5[quality gate]
-  end
+  A[Right-side Agent] --> WM[Page-side WebMCP tools]
+  WM --> RO[Read-only inspection tools]
+  WM --> PO[Proposal-only draft tool]
+  RO --> S
+  PO --> D[room.agentProposals JSON draft]
+  D --> H
 
-  subgraph M3[Module 3 本地公式引擎]
-    C1[有效品項] --> C2[個人小計]
-    C1 --> C3[同款合併]
-    C1 --> C4[總額]
-    C4 --> C5[均分試算]
-    C4 --> C6[門檻差額]
-  end
+  H -->|Accept draft| AS[accepted_by_host marker only]
+  H -->|Reject draft| RS[rejected_by_host marker only]
+  H -->|Finalize manually| O[Human-owned settlement summary]
 
-  subgraph M4[Module 4 AI 修補閥門]
-    D1{本地可解?}
-    D1 -->|是| D2[不呼叫 AI]
-    D1 -->|否| D3[AI schema repair]
-    D3 --> D4[manual_review 標記]
-  end
-
-  subgraph M5[Module 5 人工確認與結算]
-    E1[成員確認個人費用] --> E2[認領稽核]
-    E2 --> E3{仍有未確認?}
-    E3 -->|是| E4[回到人工確認]
-    E3 -->|否| E5[主揪結算]
-    E5 --> E6[可複製 / 列印 / PDF 摘要]
-  end
-
-  M1 --> M2
-  M2 --> M4
-  M4 --> M3
-  M3 --> M5
+  AR -. cannot change formulas .-> F
+  PO -. cannot mutate final room state .-> S
+  PO -. cannot pay or submit orders .-> H
 ```
 
-## 任務到公式細項
+## Six Atomic One-Way Gates
 
 ```mermaid
 flowchart LR
-  subgraph TaskModules[任務模組]
-    T1[group_buy<br/>團購免運]
-    T2[drink_order<br/>飲料]
-    T3[restaurant_split<br/>吃飯]
-    T4[ktv_room<br/>唱歌包廂]
-    T5[sports_venue<br/>運動場地]
-    T6[ticket_activity<br/>票券活動]
-    T7[rental_share<br/>租借押金]
-    T8[generic_split<br/>一般分帳]
+  G1[Gate 1<br/>Task Router] --> G2[Gate 2<br/>Evidence / OCR]
+  G2 --> G3[Gate 3<br/>Formula Engine]
+  G3 --> G4[Gate 4<br/>AI Repair Gate]
+  G4 --> G5[Gate 5<br/>Claim Audit]
+  G5 --> G6[Gate 6<br/>Agent Drift Guard]
+
+  G1 -. no silent task override .-> X1[Manual review]
+  G2 -. no money calculation .-> X2[Formula contract]
+  G3 -. no external formula target .-> X3[Local formulaResults]
+  G4 -. schema repair only .-> X4[Human review]
+  G5 -. no claimant impersonation .-> X5[Participant confirmation]
+  G6 -. read-only or draft-only .-> X6[Host confirmation]
+```
+
+## WebMCP Tool Surface
+
+```mermaid
+flowchart TD
+  B[Browser page] --> MC[document.modelContext.registerTool]
+  MC --> IR[inspect_room]
+  MC --> RT[get_task_router]
+  MC --> GA[get_claim_audit]
+  MC --> GF[get_formula_contract]
+  MC --> GT[get_trust_layer_contract]
+  MC --> SN[suggest_next_actions]
+  MC --> CP[create_action_proposal]
+
+  IR --> READ[Read current structured state]
+  RT --> READ
+  GA --> READ
+  GF --> READ
+  GT --> READ
+  SN --> READ
+
+  CP --> DRAFT[Create pending_host_confirmation JSON]
+  DRAFT --> HOST[Host Draft Review UI]
+  HOST --> ACCEPT[accepted_by_host marker]
+  HOST --> REJECT[rejected_by_host marker]
+
+  ACCEPT -. does not apply orders .-> SAFE[Final state unchanged]
+  ACCEPT -. does not calculate money .-> SAFE
+  ACCEPT -. does not submit booking or payment .-> SAFE
+```
+
+## Task And Formula Matrix
+
+```mermaid
+flowchart LR
+  subgraph TaskModules[Task modules]
+    T1[group_buy]
+    T2[drink_order]
+    T3[restaurant_split]
+    T4[ktv_room]
+    T5[sports_venue]
+    T6[ticket_activity]
+    T7[rental_share]
+    T8[generic_split]
   end
 
-  subgraph FormulaModules[公式模組]
-    F1[sameItemMerge<br/>同款合併]
-    F2[participantSubtotal<br/>個人小計]
-    F3[grandTotal<br/>全體總額]
-    F4[averageSplit<br/>均分試算]
-    F5[thresholdRemaining<br/>門檻差額]
-    F6[optionDelta<br/>選項加價]
-    F7[sharedFeeSplit P1<br/>包廂 / 場地均分]
-    F8[depositGate P1<br/>押金排除或納入]
-    F9[tierDiscount P1<br/>團體折扣]
-    F10[extraPersonalClaim<br/>額外單點自認]
+  subgraph FormulaModules[Deterministic formula modules]
+    F1[sameItemMerge]
+    F2[participantSubtotal]
+    F3[grandTotal]
+    F4[averageSplit]
+    F5[thresholdRemaining<br/>manual input]
+    F6[optionDelta]
+    F7[sharedFeeSplit<br/>P1 manual input]
+    F8[depositGate<br/>P1 manual input]
+    F9[tierDiscount<br/>P1 manual input]
+    F10[extraPersonalClaim]
   end
 
   T1 --> F1
@@ -146,7 +120,7 @@ flowchart LR
   T1 --> F3
   T1 --> F5
   T1 --> F10
-  T1 -.P1.-> F9
+  T1 -. P1 .-> F9
   T2 --> F2
   T2 --> F3
   T2 --> F5
@@ -159,64 +133,73 @@ flowchart LR
   T4 --> F2
   T4 --> F3
   T4 --> F10
-  T4 -.P1.-> F7
+  T4 -. P1 .-> F7
   T5 --> F2
   T5 --> F3
   T5 --> F10
-  T5 -.P1.-> F7
+  T5 -. P1 .-> F7
   T6 --> F2
   T6 --> F3
   T6 --> F10
-  T6 -.P1.-> F9
+  T6 -. P1 .-> F9
   T7 --> F2
   T7 --> F3
   T7 --> F10
-  T7 -.P1.-> F8
+  T7 -. P1 .-> F8
   T8 --> F2
   T8 --> F3
   T8 --> F4
   T8 --> F10
 ```
 
-## 狀態機
+## State Machine
 
 ```mermaid
 stateDiagram-v2
-  [*] --> TaskLocked
-  TaskLocked --> LocalOcrParsing
-  LocalOcrParsing --> QualityGate
+  [*] --> RoomCreated
+  RoomCreated --> TaskSelected
+  TaskSelected --> EvidenceLoaded
+  EvidenceLoaded --> LocalParser
+  LocalParser --> QualityGate
   QualityGate --> FormulaReady: pass
-  QualityGate --> AiRepairAllowed: too_few_items / high_risk_issue / task_conflict
+  QualityGate --> AiRepairAllowed: insufficient candidates or conflict
   AiRepairAllowed --> HumanReview: schema repaired
   AiRepairAllowed --> HumanReview: repair failed but candidates exist
-  HumanReview --> FormulaReady: user confirms
-  FormulaReady --> RoomSync
-  RoomSync --> ClaimAudit
-  ClaimAudit --> SettlementReady: all claimants confirmed
-  ClaimAudit --> HumanReview: unconfirmed claimant / suspicious field
-  SettlementReady --> [*]
+  HumanReview --> FormulaReady: human accepts structure
+  FormulaReady --> ClaimAudit
+  ClaimAudit --> SettlementReady: all confirmations complete
+  ClaimAudit --> HumanReview: unconfirmed claim or suspicious field
 
-  TaskLocked --> HumanReview: low confidence
-  AiRepairAllowed --> FormulaReady: no task mutation
-  FormulaReady --> SettlementReady: no payment action
+  ClaimAudit --> AgentProposalCreated: right-side agent calls create_action_proposal
+  AgentProposalCreated --> HostDraftReview: pending_host_confirmation
+  HostDraftReview --> ProposalAccepted: host accepts
+  HostDraftReview --> ProposalRejected: host rejects
+  ProposalAccepted --> ClaimAudit: final state unchanged
+  ProposalRejected --> ClaimAudit: final state unchanged
+
+  SettlementReady --> HumanSettlement: host finalizes manually
+  HumanSettlement --> [*]
 ```
 
-## 認領稽核狀態
+## Open-Source Extension Boundary
 
 ```mermaid
-stateDiagram-v2
-  [*] --> ItemSelected
-  ItemSelected --> ClaimModeAssigned
-  ClaimModeAssigned --> PersonalClaim: drink / main / ticket / rental / individual item
-  ClaimModeAssigned --> SharedCandidate: venue / service / shareable set
-  PersonalClaim --> ParticipantConfirmed: claimant confirms own total
-  SharedCandidate --> ParticipantConfirmed: affected participants confirm
-  ParticipantConfirmed --> ClaimAudit
-  ClaimAudit --> OrganizerSettlement: no unconfirmed participants
-  ClaimAudit --> HumanReview: unconfirmed participant / suspicious field
-  HumanReview --> ParticipantConfirmed: corrected
-  OrganizerSettlement --> [*]
+flowchart TD
+  CORE[Group room reference module] --> AD[Adapter interface]
+  AD --> OCR[OCR / vision adapter]
+  AD --> COMM[Community adapter]
+  AD --> BOOK[Booking draft adapter]
+  AD --> TRUST[Trust whitelist adapter]
 
-  PersonalClaim --> ClaimAudit: excluded from shared average
-  SharedCandidate --> ClaimAudit: eligible for shared average
+  OCR --> PROP[Proposal-only JSON draft]
+  COMM --> PROP
+  BOOK --> PROP
+  TRUST --> PROP
+
+  PROP --> HUMAN[Human confirmation]
+  HUMAN --> EXT[External system chosen by deployer]
+
+  EXT -. not included in core .-> PAY[Payment]
+  EXT -. not included in core .-> ORDER[Direct order]
+  EXT -. not included in core .-> CARD[Credit-card handling]
 ```

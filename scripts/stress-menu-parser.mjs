@@ -1,8 +1,8 @@
 import fs from 'fs/promises';
 import path from 'path';
 
-const defaultImageDir = '/Users/sunjiarong/Desktop/圖檔';
-const defaultBaseUrl = 'https://group-menu-order.zeabur.app';
+const defaultImageDir = path.join(process.cwd(), 'fixtures', 'menu-images');
+const defaultBaseUrl = 'http://127.0.0.1:3000';
 const imageExtensions = new Set(['.jpg', '.jpeg', '.png', '.webp']);
 const sizeWords = [
   '小杯', '中杯', '大杯', '特大杯', '分享瓶', '瓶裝', '瓶', '熱', '冰',

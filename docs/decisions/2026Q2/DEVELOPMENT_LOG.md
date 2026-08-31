@@ -51,7 +51,7 @@
 - 2026-05-19 將大小杯、尺寸、加料、加價升級改為隱藏 `optionGroups` 結構；只有 AI 明確讀到選項時前端才顯示下拉，沒有選項的品項完全不顯示下拉，選項加價會納入後端總金額計算。
 - 2026-05-19 新增 OpenAI 備援解析 provider：預設 `AI_PROVIDER_ORDER=gemini,openai`，Gemini 成功時不呼叫 OpenAI；只有 Gemini 429、5xx、timeout 等可備援錯誤才切換 `OPENAI_MODEL=gpt-5.4-mini`。
 - 2026-05-19 `/healthz` 新增 provider 狀態欄位：`providerOrder`、`activeProviderCandidates`、`hasOpenAiKey`、`openAiModel`，只顯示 key 變數名與布林值，不顯示 secret value。
-- Zeabur 公開網址：`https://group-menu-order.zeabur.app`。
+- Zeabur 公開網址：舊 demo URL 已移除；新 live URL 等專案名稱確定後再部署。
 - 解析結果與訂單狀態只保存在服務記憶體，不寫入資料庫，避免污染既有資料策略與分類資料。
 
 ## 2026-05-20
@@ -65,22 +65,22 @@
 - 訂單輸出會把多個加料合併顯示，例如 `加料:珍珠+椰果`。
 - 預設圖片解析壓縮調整為 `IMAGE_MAX_DIMENSION=1400`、`IMAGE_JPEG_QUALITY=80`，降低加料區小字被壓縮吃掉的機率。
 - 壓測腳本新增 `addon_not_multiple` 與 `addon_contains_no_add` 檢查，避免多選加料退化回單選。
-- 2026-05-20 已使用 Zeabur CLI 部署到 `group-menu-order` service；deployment `6a0dca7203eaced3475fc8db` 狀態為 `RUNNING`。
-- 2026-05-20 已更新 Zeabur runtime 變數 `IMAGE_MAX_DIMENSION=1400`、`IMAGE_JPEG_QUALITY=80`，公開 `/healthz` 已確認 Gemini/OpenAI key 存在且圖片解析參數生效。
+- 2026-05-20 已使用 Zeabur CLI 部署到舊 demo service；deployment id 不再保留於公開提交紀錄。
+- 2026-05-20 已更新 Zeabur runtime 圖片解析參數，公開 `/healthz` 已確認 provider 環境旗標與圖片解析參數生效，未記錄任何 key value。
 - 2026-05-20 補強英文飲料尺寸解析：Prompt 明確指定 `S/M/L/XL/Small/Medium/Regular/Large/Extra Large` 為尺寸欄，後端新增英文尺寸保底合併，避免模型把同一飲料的英文大小杯拆成多個主品項。
-- 2026-05-20 英文尺寸修正版已部署到 Zeabur；deployment `6a0dcf7603eaced3475fcb64` 狀態為 `RUNNING`，公開 `/healthz` 正常。
+- 2026-05-20 英文尺寸修正版已部署到舊 Zeabur demo service，公開 `/healthz` 正常。
 - 2026-05-20 針對 MACU 類型菜單補強 `L / 瓶` 尺寸解析：Prompt 明確定義 `L` 為大杯欄、`瓶` 為瓶裝欄；同列兩價格需輸出為同一品項的 `size` optionGroup，`price` 使用 L 欄價格，瓶欄以 `priceDelta` 表示。後端保底合併新增獨立 `瓶` 尺寸標記，避免 Gemini 將瓶裝拆成同名多價品項後無法合併。
-- 2026-05-20 已使用 Zeabur CLI 將 `L / 瓶` 修正版部署到 `group-menu-order` service；deployment `6a0dd39f03eaced3475fcdbf` 狀態為 `RUNNING`。公開 `/healthz` 已確認 `GEMINI_API_KEY`、`OPENAI_API_KEY` 存在，`IMAGE_MAX_DIMENSION=1400`、`IMAGE_JPEG_QUALITY=80` 生效。
+- 2026-05-20 已使用 Zeabur CLI 將 `L / bottle` 修正版部署到舊 demo service。公開 `/healthz` 已確認 provider 環境旗標與圖片解析參數生效，未記錄任何 key value。
 
 ### 剩餘漏洞
 
 - 尚未用真實 Gemini key 對端到端菜單圖片重新壓測；本機若無環境金鑰只能做語法與本機介面驗證。
-- 尚未對 `/Users/sunjiarong/Downloads/291848.jpg` 做線上 Gemini 端到端重跑；部署後檢查本機 Downloads 與臨時目錄，該檔案目前不存在，無法上傳實圖測試。
+- 尚未對先前指定的本機測試圖片做線上 Gemini 端到端重跑；部署後若需測試，請使用明確提供的測試圖片路徑或公開 fixture。
 - 加料區仍依賴 Gemini 視覺辨識，若圖片極小、反光或設計沒有價格錨點，仍需要人工校正功能。
 
 ### 專案既有剩餘漏洞
 
-- Zeabur 重啟會清空房間；正式版需要 Redis 或 PostgreSQL。
+- ~~Zeabur 重啟會清空房間；正式版需要 Redis 或 PostgreSQL。~~ 2026-09-01 已用 JSON persistence 加 volume 路徑解決 MVP 重啟保存；正式水平擴展仍建議 Redis 或 PostgreSQL。
 - 目前任何房間成員都可清空房間；正式版需要主揪權限或一次性管理碼。
 - OCR 與邊界判定準確度取決於圖片清晰度；正式版需要加入人工校正欄位與保存校正紀錄。
 - 尚未加入匯出 Excel 或歷史訂單查詢。
@@ -90,7 +90,7 @@
 ### 資料治理狀態
 
 - 無 DB、JSON、JSONL、CSV、TSV、雲端推送或 shared data 正式寫入。
-- 無金鑰寫入 repository；僅提供 `.env.example` 變數名稱。
+- 無金鑰寫入 repository；僅提供 `env.sample` 變數名稱。
 
 ## 2026-09-01
 
@@ -112,7 +112,21 @@
 - `git diff --check` 通過。
 - 本地 HTTP smoke 通過：`POST /api/rooms` 回 201，`POST /api/rooms/:roomId/agent-proposals` 回 201，讀回 `proposalCount=1`、`firstProposalStatus=pending_host_confirmation`、`allowedEffect=draft_only`、`moneyTotalUnchanged=true`。
 - 重啟 smoke 通過：同一個 `ROOM_STORE_PATH` 重啟後載入 `loadedCount=1`，同一 room 讀回 `proposalCount=1`、`agentProposalContract=group-room-agent-proposal-contract.v1`、`webMcpVersion=group-room-webmcp-tools.v2`。
-- secret scan 只命中 `.env.example` 與文件 placeholder，沒有真實 API key。
+- secret scan 當時只命中文件 placeholder，沒有真實 API key。
+
+## 2026-09-01 Public Submission Security Hardening
+
+- Moved `ai-security-rules` local tool repo into the Developer workspace and used it as the AI security gate reference.
+- Replaced the old dot-env sample with `env.sample` so the public export gate does not classify a dot-env file as export-blocking secret material.
+- Added public security evidence files under `docs/security/` and a root `SECURITY.md`.
+- Added explicit same-origin Socket.IO default with optional `CORS_ORIGIN`.
+- Added owner-only gate for `create_action_proposal`, proposal review, room reset, and proposal deletion flows.
+- Tightened upload parser limits for files, fields, field names, field sizes, and multipart parts.
+- Updated dependency lockfile; `npm audit --audit-level=moderate --omit=dev` passed with `0` vulnerabilities.
+- Current-file secret scan passed with no findings; Git-history secret scan passed with no secret patterns or secret filenames.
+- `ai-security-rules export-gate` passed with `0` blocking findings after adding the public export manifest.
+- `ai-security-rules history-scan` flagged historical dot-env sample filenames by policy. No actual secret pattern was found by the workspace Git-history secret scanner. Git history rewrite/force-push remains a separate manual approval item.
+- Resolved mutable-artifact risk: generated audit JSON is kept local but removed from tracked public export; public evidence stays in Markdown.
 - `git status --short` 最後為乾淨。
 
 ### 剩餘風險

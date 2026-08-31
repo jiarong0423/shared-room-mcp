@@ -16,6 +16,10 @@ const sourceFiles = {
 const reportDir = path.join(projectRoot, 'docs', 'ai-generated', '2026Q3');
 const reportBaseName = 'group_room_task_gap_decoupling_audit_20260831';
 
+function publicPath(filePath) {
+  return path.relative(projectRoot, filePath).replaceAll(path.sep, '/');
+}
+
 const expectedTaskTypes = [
   'auto',
   'group_buy',
@@ -419,11 +423,11 @@ function main() {
       'P0',
       hasWebMcpToolSurface ? 'ready' : statusFromMissing(webMcpEvidence.filter((entry) => !entry.present)),
       hasWebMcpToolSurface
-        ? '前端已使用 document.modelContext.registerTool 註冊 read-only tools，後端 API 已輸出 webMcpToolSurface 與 trustLayerContract。'
-        : 'README 已對齊 WebMCP challenge，但專案還沒有完整 WebMCP read-only tool surface。',
+        ? '前端已使用 document.modelContext.registerTool 註冊 read-only inspection tools 與 proposal-only draft tool，後端 API 已輸出 webMcpToolSurface、agentProposals 與 trustLayerContract。'
+        : 'README 已對齊 WebMCP challenge，但專案還沒有完整 WebMCP tool surface。',
       hasWebMcpToolSurface
         ? '下一步只需要在瀏覽器支援 WebMCP 的環境做真機 demo；Sheets 寫入 bridge 仍屬 P1。'
-        : '先做 read-only tools: inspect_room、get_task_router、get_claim_audit、get_formula_contract、get_trust_layer_contract；避免第一版就碰外部寫入。',
+        : '先做 read-only tools 與 proposal-only draft tool；避免第一版就碰外部寫入。',
       'medium'
     ),
     makeGap(
@@ -447,10 +451,10 @@ function main() {
       'P0',
       statusFromMissing(submissionEvidence.filter((entry) => !entry.present), true),
       submissionEvidence.every((entry) => entry.present)
-        ? '本地已補 LICENSE、package license、英文 submission packet、env 需求、demo script、合規邊界；public repo URL 與 YouTube URL 仍需在 Devpost 提交前填入正式連結。'
+        ? '本地已補 LICENSE、package license、英文 submission packet、env 需求、demo script、合規邊界與 public repo URL；YouTube URL 仍需在 Devpost 提交前填入正式連結。'
         : 'Devpost 需要 live URL、public repo、OSS license、英文說明、三分鐘內 YouTube demo；本地提交包仍有欄位缺口。',
       submissionEvidence.every((entry) => entry.present)
-        ? '部署後驗證 live URL；公開 repo 與 YouTube demo 完成後替換 submission packet 的 TODO URL。'
+        ? '部署後驗證 live URL；YouTube demo 完成後替換 submission packet 的 TODO URL。'
         : '補 LICENSE 與 English submission checklist，並標記既有專案改造範圍。',
       'low'
     ),
@@ -503,8 +507,10 @@ function main() {
   const generatedAt = new Date().toISOString();
   const report = {
     generatedAt,
-    projectRoot,
-    sourceFiles,
+    projectRoot: '.',
+    sourceFiles: Object.fromEntries(
+      Object.entries(sourceFiles).map(([key, filePath]) => [key, publicPath(filePath)])
+    ),
     checks,
     gaps,
     nextDecouplingBatches: [
@@ -517,8 +523,8 @@ function main() {
       {
         batch: 'B',
         priority: 'P0',
-        scope: 'WebMCP read-only tools',
-        stopCondition: 'Agent can inspect room, task router, totals, quality issues, and claim audit without browser scraping.'
+        scope: 'WebMCP read-only + proposal-only tools',
+        stopCondition: 'Agent can inspect room state and create host-reviewed draft proposals without browser scraping or final-state mutation.'
       },
       {
         batch: 'C',
@@ -552,7 +558,7 @@ function main() {
     '',
     `Generated at: ${generatedAt}`,
     '',
-    'Owner project: `/Users/sunjiarong/Developer/other/menu`',
+    'Owner project: `.`',
     '',
     '## Decision',
     '',
