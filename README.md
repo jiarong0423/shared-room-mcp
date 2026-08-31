@@ -128,6 +128,27 @@ OPENAI_IMAGE_DETAIL=high
 
 Do not commit API keys. Set secrets only in Zeabur environment variables or the hosting provider secret manager.
 
+## Deployment Secret Replacement Guide
+
+The repository provides variable names only. Each project organizer replaces values in the deployment platform, not in source code.
+
+| purpose | variable | where to replace | required |
+|---|---|---|---|
+| Server port | `PORT` | Zeabur service variables | yes |
+| Room JSON store | `ROOM_STORE_PATH` | Zeabur service variables, use `/data/rooms.json` with a mounted volume | yes for restart-safe demo |
+| Trust whitelist/audit sheet | `TRUST_LAYER_SPREADSHEET_ID` | Zeabur service variables | optional |
+| Gemini OCR repair | `GEMINI_API_KEY` or supported Google key alias | Zeabur service variables or provider secret manager | optional |
+| OpenAI OCR repair fallback | `OPENAI_API_KEY` | Zeabur service variables or provider secret manager | optional |
+| Public rate limit | `API_RATE_LIMIT_MAX`, `ROOM_CREATE_RATE_LIMIT_MAX`, `MENU_PARSE_RATE_LIMIT_MAX` | Zeabur service variables | yes |
+
+Recommended replacement order:
+
+1. Copy `.env.example` variable names into Zeabur Variables.
+2. Mount a Zeabur volume and set `ROOM_STORE_PATH=/data/rooms.json`.
+3. Add only the AI provider key you actually want to use for OCR/schema repair.
+4. Leave AI keys empty if the demo uses manual input or local OCR text.
+5. Restart the service and verify `/healthz` reports the expected provider and persistence flags without exposing secret values.
+
 ## Local Development
 
 ```bash

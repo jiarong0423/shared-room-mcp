@@ -84,6 +84,8 @@ For Zeabur, attach a persistent volume before using `/data/rooms.json`. Without 
 
 The JSON store is a hackathon MVP persistence layer for one running service instance. It should be disclosed as not suitable for horizontal scaling or high-concurrency writes; production should use Redis or PostgreSQL.
 
+Deployment owners should replace secrets only in Zeabur Variables or the hosting provider secret manager. The repository includes variable names in `.env.example`, but no real key values. AI provider keys are optional because manual input and local OCR text can still demonstrate the WebMCP tool workflow.
+
 ## Local Verification
 
 ```bash
