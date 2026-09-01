@@ -28,7 +28,7 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 | Final open-gate and export recheck | 20/20 passed | `logs/runtime/open-gate-stress-2026-09-01T12-05-44-080Z.md` local run | the official flow now also checks completed-room HTML and PDF exports after host settlement |
 | Final live open-gate and export recheck | 4/4 passed | `logs/runtime/open-gate-stress-2026-09-01T12-10-11-461Z.md` local run against `https://shared-room-mcp.zeabur.app` | live service passed the same host-review, member-confirmation, settlement, HTML export, and PDF export flow |
 | Railway production low-rate flow | 5/5 passed | sequential production browser/API check summarized in `docs/decisions/2026Q2/DEVELOPMENT_LOG.md` | sample load, same-card host review, member join, self-confirmation, finalization, and HTML/PDF export passed without concurrent stress traffic |
-| Same-tab room transition | 2/2 passed locally | isolated browser regressions summarized in `docs/decisions/2026Q2/DEVELOPMENT_LOG.md` | a loaded room can switch to a clean empty room, and a late update from the old room cannot overwrite the new room |
+| Same-tab room transition | 2/2 local and 2/2 production passed | isolated and low-rate production browser regressions summarized in `docs/decisions/2026Q2/DEVELOPMENT_LOG.md` | a loaded room can switch to a clean empty room, and a late update from the old room cannot overwrite the new room |
 
 ## What This Means
 

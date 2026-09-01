@@ -621,8 +621,8 @@ Release scenario matrix:
 | Late fetch or Socket.IO response | A response for A cannot render over B | passed | target-room guards plus isolated local browser regression 2 |
 | Overlapping upload or room switch | New upload/switch actions stop until the active transition ends | passed | transition lock is checked by upload, new-room, reset, and write actions |
 | Backend room/calculation contract | No backend formula, persistence, settlement, or export behavior changes | passed | changed runtime scope is limited to `public/index.html`; existing backend checks passed |
-| Git release | New commit is visible on public `main` | pending | must remain pending until commit and push complete |
-| Cloud runtime | Two locked production E2E cases pass on the deployed commit | pending | no cloud request was sent for this change yet |
+| Git release | New commit is visible on public `main` | passed | commit `bdaab1f` is on `origin/main`; GitHub About uses the custom production URL |
+| Cloud runtime | Two locked production E2E cases pass on the deployed commit | passed | exactly two low-rate browser cases passed after the production HTML exposed the new transition code |
 
 Impact state before release:
 
@@ -633,13 +633,19 @@ Impact state before release:
 | Old-room event isolation | O | second-tab old-room update could not overwrite the new room |
 | Backend calculations and persistence | O | no backend file or data contract changed |
 | Human confirmation and payment boundary | O | proposal, confirmation, settlement, and no-payment rules are unchanged |
-| Git release | △ | commit and push pending |
-| Cloud runtime | △ | exactly two low-rate production checks pending after deployment |
+| Git release | O | commit `bdaab1f` is visible on public `main` |
+| Cloud runtime | O | exactly two low-rate production browser cases passed |
 
-WATCH_LATER:
+PRODUCTION_EVIDENCE:
 
-- Cloud verification remains intentionally limited to two sequential E2E cases after commit and deployment approval. No cloud request was sent in this stage.
+- Production health returned HTTP 200 and reported `/data/rooms.json`, save smoothing `35/120`, and no optional provider keys.
+- Production HTML contained `switchRoom(room)` and `isSwitchingRoom` after Railway deployed commit `bdaab1f`.
+- Case 1 passed: room `2989812c` loaded the sample, switched in the same tab to room `ea7ba1b6`, restored the empty-room sample action, and loaded the sample only into the new room.
+- Case 2 passed: the main tab switched from room `430977f9` to room `24125277`; resetting the old room in a second tab did not change the main URL, sample button, empty-room chip, or item count.
+- Console warning/error lists were empty for the case 1 tab, case 2 main tab, and case 2 old-room tab.
+- Production verification stopped after these two cases. No extra stress or concurrent cloud run was performed.
+- The final impact evidence state gate returned `PASS`; frontend render, room transition, async callbacks, Socket.IO isolation, unchanged backend projection, Git release, and cloud runtime all have evidence-backed `O` states.
 
 Next resume point:
 
-- Review the final diff, then commit and push only after explicit approval. After deployment, run exactly the two locked cloud E2E cases and stop.
+- Use `https://sharedroom.jace0423.com/` for recording and the Devpost Live URL. The next remaining submission artifact is the public demo video URL.
