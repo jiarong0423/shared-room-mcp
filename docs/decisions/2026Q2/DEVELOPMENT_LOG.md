@@ -235,14 +235,16 @@ DONE_CONFIRMED:
   - evidence: live cache-busted HTML returned `Cache-Control: no-store`, old hits `0`, and expected hits for `Shared Room`, `Download HTML`, `Download PDF`, and `Owner Finalizes Summary`.
 - The official open-gate stress flow now verifies export files.
   - evidence: `npm run stress:open-gate -- --base-url http://127.0.0.1:3184 --rounds 5 --output-dir logs/runtime` passed 20/20 and now checks valid HTML/PDF after host settlement.
+- The live service passed the same export-aware open-gate flow.
+  - evidence: `npm run stress:open-gate -- --base-url https://shared-room-mcp.zeabur.app --rounds 1 --output-dir logs/runtime` passed 4/4 and checked host review, member confirmation, settlement, HTML export, and PDF export.
 - Security and submission evidence were updated with the final export recheck.
   - evidence: `docs/testing/VALIDATION_EVIDENCE.md` and `docs/security/SECURITY_SCAN_EVIDENCE.md` include the 20/20 final open-gate export recheck.
 
 PRIORITY_INDEX:
 
-- Push and redeploy the final export-evidence patch.
-  - next action: commit this closeout patch, push `main`, deploy Zeabur service `6a95d639aa6a5ebc1401dcd0`, then recheck GitHub raw files and live HTML.
-  - risk if ignored: GitHub would have the completed metadata but not the updated export-stress evidence script.
+- Zeabur deployment record `6a96c02040c09e36c3eba584` remained in `BUILDING` while the existing live service was already clean and passed live smoke.
+  - next action: recheck Zeabur deployment list before recording; use the current live URL only after smoke remains green.
+  - risk if ignored: the service can be functionally clean while the newest deployment record has not yet finished rotating.
 
 WATCH_LATER:
 
@@ -256,7 +258,7 @@ INTENTIONALLY_NOT_DO:
 
 Next resume point:
 
-- After push/deploy, run live HTML stale-copy scan and one live `stress:open-gate` round to confirm the deployed service matches the repository.
+- Recheck Zeabur deployment list, then use `https://shared-room-mcp.zeabur.app/?v=<timestamp>` for recording if live HTML still has old hits `0` and live `stress:open-gate` remains green.
 
 - Did not claim production-scale capacity.
   - reason: current evidence supports hackathon/demo repeatability, not thousands of concurrent users.

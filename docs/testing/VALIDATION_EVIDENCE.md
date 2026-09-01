@@ -26,6 +26,7 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 | Single draft card regression | 60/60 passed | `logs/runtime/local-contract-stress-2026-09-01T11-24-48-624Z.md` local run | every case creates two same-type assistant drafts and verifies only the latest pending draft remains |
 | Same-card review flow | 20/20 passed | `logs/runtime/open-gate-stress-2026-09-01T11-22-05-897Z.md` local run | host review stays before member claiming; member and settlement boundaries still pass after the draft-card cleanup |
 | Final open-gate and export recheck | 20/20 passed | `logs/runtime/open-gate-stress-2026-09-01T12-05-44-080Z.md` local run | the official flow now also checks completed-room HTML and PDF exports after host settlement |
+| Final live open-gate and export recheck | 4/4 passed | `logs/runtime/open-gate-stress-2026-09-01T12-10-11-461Z.md` local run against `https://shared-room-mcp.zeabur.app` | live service passed the same host-review, member-confirmation, settlement, HTML export, and PDF export flow |
 
 ## What This Means
 
