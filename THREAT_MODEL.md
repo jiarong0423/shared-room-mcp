@@ -37,7 +37,7 @@ This section records the data flow used by the no-key demo and optional deployme
 5. The host may remove bad parsed rows or correct item names, prices, and categories before opening the list.
 6. The host explicitly opens the reviewed list to members.
 7. Participants choose their own items and confirm their own cost.
-8. The host must use the page UI to approve or reject any agent draft through a two-step confirmation.
+8. The host must use the page UI to approve or reject any agent draft through one visible same-card human decision.
 9. Settlement stays inside the room summary. No payment, booking, order, or external submission is triggered.
 
 ## Threats And Controls
@@ -45,7 +45,7 @@ This section records the data flow used by the no-key demo and optional deployme
 | Threat | Control |
 | --- | --- |
 | Agent overreach into final decisions | WebMCP tools are read-only or draft-only. Final review is a host-only UI action. |
-| Agent creates a misleading draft | Drafts are labeled as suggestions, remain pending, and require a two-step human decision. |
+| Agent creates a misleading draft | Drafts are labeled as suggestions, remain pending, and require one visible same-card human decision. |
 | Agent overwrites calculation rules or room type | Calculation rules and room type are owned by the server. Proposal payloads are sanitized and do not mutate totals. |
 | Bad OCR row enters the item list | Host can edit or remove parsed rows before opening the list. Server blocks parsed-item edits after the list is opened, after settlement, after any member confirmation, or when the item is already claimed. |
 | Unauthorized user reviews a draft | Server checks `ownerParticipantId` before accepting or rejecting a proposal. |
