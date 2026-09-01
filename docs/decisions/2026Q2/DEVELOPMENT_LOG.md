@@ -235,7 +235,7 @@ DONE_CONFIRMED:
 - Committed and pushed evidence-version patch.
   - evidence: Git commit `58a77a8 Polish evidence-backed submission flow` pushed to `origin/main`.
 - Deployed to the approved Zeabur target.
-  - evidence: project `69d93c5ce8ec40d5bceadb94`, service `6a95d639aa6a5ebc1401dcd0`, environment `69d93c5c474db8a99d6de959`, deployment `6a9648bc7eb6fd1884fc7f7b`, status `RUNNING`.
+  - evidence: project `69d93c5ce8ec40d5bceadb94`, service `6a95d639aa6a5ebc1401dcd0`, environment `69d93c5c474db8a99d6de959`, deployment reached `RUNNING`.
 - Verified live runtime after cutover.
   - evidence: `https://shared-room-mcp.zeabur.app/healthz` returned `roomStorePath=/data/rooms.json`, `roomPersistDebounceMs=35`, `roomPersistJitterMs=120`, `hasGeminiKey=false`, and `hasOpenAiKey=false`.
 - Verified live flow after cutover.

@@ -19,7 +19,7 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 | Load Sample Room | 120/120 passed | `docs/security/SECURITY_SCAN_EVIDENCE.md` | sample data stays as a draft and does not settle, pay, or call outside services |
 | Frontend review screen | PASS | `logs/runtime/frontend-open-gate-smoke-2026-09-01T00-16-02-550Z.json`, summarized in `docs/security/SECURITY_SCAN_EVIDENCE.md` | sample room shows 6 items, 6 review controls, no horizontal overflow |
 | Live Zeabur flow | 4/4 passed | `logs/runtime/open-gate-stress-2026-09-01T02-46-04-407Z.md` local run against `https://shared-room-mcp.zeabur.app` | deployed app kept the same host-review and member-confirmation flow |
-| Final Zeabur cutover | RUNNING and 4/4 passed | deployment `6a9648bc7eb6fd1884fc7f7b`; `logs/runtime/open-gate-stress-2026-09-01T03-41-27-437Z.md` local run against `https://shared-room-mcp.zeabur.app` | live `/healthz` showed `/data/rooms.json`, save smoothing `35/120`, no provider keys, and the deployed host-review flow still passed |
+| Post-deploy live check | RUNNING and 4/4 passed | live `/healthz`; `logs/runtime/open-gate-stress-2026-09-01T03-45-33-374Z.md` local run against `https://shared-room-mcp.zeabur.app` | live `/healthz` showed `/data/rooms.json`, save smoothing `35/120`, no provider keys, and the deployed host-review flow still passed |
 
 ## What This Means
 
