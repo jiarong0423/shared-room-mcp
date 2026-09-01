@@ -12,23 +12,23 @@ License: MIT
 
 ## One-Line Pitch
 
-Shared Room MCP is an open-source WebMCP room for group decisions before anyone pays, books, or commits. AI helps prepare the work; humans keep the final say.
+Shared Room MCP is an open-source trust boundary layer for the agent-native web. AI prepares the work; humans approve the commitment.
 
 ## Devpost Text Description Draft
 
-Shared Room MCP is an open-source WebMCP room for group decisions before anyone pays, books, or commits. It creates one shared page where people and AI assistants can work together in real time. From the browser sidebar, the assistant uses WebMCP tools from the page itself to read the room, spot missing details, and place draft suggestions directly on the page.
+Shared Room MCP is an open-source trust boundary layer for the agent-native web. It creates one shared page where people and AI assistants can work together before anyone pays, books, signs up, posts publicly, or makes another real-world commitment. From the browser sidebar, the assistant uses WebMCP tools from the page itself to read the room, spot missing details, and place draft suggestions directly on the page.
 
-The core safety idea is simple: AI can prepare, but people decide. The assistant handles context gathering and repetitive draft work, while settlement, payment, booking submission, and final commitment remain behind human confirmation.
+The core safety idea is simple: AI prepares the work; humans approve the commitment. The assistant handles context gathering and repetitive draft work, while settlement, payment, booking submission, signup submission, regulated purchase approval, public posting, and final commitment remain behind human confirmation.
 
-This brings WebMCP capability to multi-user web apps, combining agent productivity with human control.
+This brings WebMCP capability to real-world workflows, combining agent productivity with human control.
 
-Shared Room MCP is built for messy real-world group coordination: group buys, drink orders, restaurant splits, KTV rooms, sports venues, tickets, rentals, and other temporary shared-cost plans. These workflows usually start from a chat message, price-list photo, receipt, or copied text rather than a clean store API.
+Shared Room MCP is built for messy real-world coordination: group buys, drink orders, restaurant splits, KTV rooms, sports venues, tickets, rentals, appointment drafts, service requests, activity signups, and other pre-commitment workflows. These workflows usually start from a chat message, social post, price-list photo, receipt, partial form, or copied text rather than a clean store API.
 
 The project gives the assistant page-local WebMCP tools. The assistant can inspect the room, read the selected scenario, find missing confirmations, review price-reading quality, and create a draft for the host. Codex can also create a field-fix draft when the price list is read incorrectly, such as quantity, subtotal, size, or add-on columns being confused with item prices. It cannot silently apply that repair, calculate money outside the app, assign claimants, submit bookings, write payment data, or finalize settlement.
 
 The core demo works without any paid API key: users can paste copied text from a price image, the app creates structured items, and local room logic keeps totals and confirmation state inside the app. Optional model providers are only replaceable helpers for image/text repair, not the required agent workflow.
 
-The broader idea is an open-source pattern for the agent-native web: tools that are useful enough for AI assistants to operate, but narrow enough that humans keep control over final commitments.
+The broader idea is an open-source pattern for the agent-native web: tools that are useful enough for AI assistants to prepare real work, but narrow enough that humans keep control over final commitments.
 
 ## WebMCP Fit
 
@@ -67,7 +67,7 @@ Checked against the WebMCP Challenge page on 2026-09-01.
 | Repository contains `document.modelContext.registerTool(...)` | Ready: `public/index.html` |
 | WebMCP use beyond a trivial proof of concept | Ready: read-only tools plus a host-reviewed draft tool |
 | Complete coherent product experience | Ready for local and live smoke |
-| Specific real-world audience/problem | Ready: social group coordination before payment or commitment |
+| Specific real-world audience/problem | Ready: messy shared workflows before payment, booking, signup, posting, or commitment |
 
 ## What Changed After August 25, 2026
 
@@ -151,7 +151,7 @@ Target length: under 3 minutes. The recording should show two controlled scenes:
 
 Opening line:
 
-"Agents prepare shared decisions directly on the page. Humans keep the final confirmation button."
+"AI prepares the work directly on the page. Humans approve the commitment."
 
 ### Scene A: English Restaurant Split
 
@@ -183,7 +183,7 @@ Opening line:
 
 Closing line:
 
-"This is not an ordering app. It is a WebMCP collaboration template. The agent prepares the room, drafts the next step, and highlights conflicts directly on the page. Humans approve, claim, and finalize. No payment, booking, or external account action is exposed as a tool."
+"This is not an ordering app. It is a WebMCP trust boundary template. The agent prepares structured drafts and highlights conflicts directly on the page. Humans approve, claim, and finalize. No payment, booking submission, regulated purchase approval, public posting, or external account action is exposed as a tool."
 
 Operator rule for recording:
 

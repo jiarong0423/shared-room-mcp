@@ -1,20 +1,20 @@
 # Shared Room MCP
 
-Shared Room MCP is an open-source WebMCP room for group decisions before anyone pays, books, or commits. It gives people one shared page where an AI assistant can help prepare the work, while humans keep the final say.
+Shared Room MCP is an open-source trust boundary layer for the agent-native web. It gives people and AI assistants one shared page where agents can prepare real-world work, while humans keep final authority over commitments.
 
 The app is English-first for judging and demo review. A Chinese UI dictionary remains available for local use, but the default page language, initial HTML, README, and submission packet are English.
 
-Core claim: AI should help with the busy work, not make final decisions for people. The assistant can read the room, spot missing details, and prepare drafts. The host and members still confirm what is true.
+Core claim: AI prepares the work. Humans approve the commitment. The assistant can read the room, spot missing details, and prepare structured drafts. The host and members still confirm what is true before any final action.
 
-In the browser sidebar, the assistant uses WebMCP tools from the page itself. It can inspect the room and place draft suggestions on the page. It cannot finish a split, submit a booking, make a payment, or confirm for another person.
+In the browser sidebar, the assistant uses WebMCP tools from the page itself. It can inspect the room and place draft suggestions on the page. It cannot finish a split, submit a booking, make a payment, approve regulated purchases, post publicly, or confirm for another person.
 
 The intended loop is WebMCP plus Codex, not a public write API. Codex can inspect the room, compare the price evidence against the current list, and create a field-fix draft when a price list is read incorrectly, for example when quantity, subtotal, size, or add-on notes are confused with item prices. That draft waits for host review. The app does not silently apply it, settle money, submit a booking, or sync an external platform.
 
 ## Why This Fits WebMCP
 
-Most social group coordination happens in temporary chats on LINE, Discord, Instagram, Threads, Facebook groups, Reddit, or local community channels. These flows rarely have stable store APIs or clean menu data. The user usually has only a price-list photo, receipt, checkout screenshot, public post screenshot, or copied text from an image.
+Many real-world commitments now start from messy web or social context: chat threads, creator posts, price images, service forms, booking pages, campaign notes, receipts, or copied text. These flows rarely have stable APIs or clean data. The user often has only a screenshot, a public post, a partial form, or a conversation.
 
-WebMCP is a good fit because the assistant can enter the same browser room as the user, read the current state through page tools, find missing confirmations, and suggest the next human action without scraping the screen or taking over the final decision.
+WebMCP is a good fit because the assistant can enter the same browser room as the user, read the current state through page tools, find missing confirmations, and prepare the next action without scraping the screen or taking over the final decision.
 
 ## How We Checked It
 
@@ -37,7 +37,7 @@ These checks show that the assistant workflow is repeatable and no-key by defaul
 
 ## Core Product Boundary
 
-This is not a vendor ordering app and does not require store integration. It is a generalized group room where humans upload price evidence, confirm personal claims, and settle shared or personal costs.
+This is not a vendor ordering app and does not require store integration. It is a shared action-preparation room where humans provide evidence, review structured drafts, confirm their own claims, and keep control of the final commitment.
 
 AI provider keys are optional:
 
@@ -57,7 +57,7 @@ External developers should be able to fork the template and plug in their own in
 
 ## Future Extension Modules
 
-The group split room is the first reference use case, not the only possible one. The project is best for multi-person decisions where the assistant can prepare a draft and people still need to review it.
+The group split room is the first reference use case, not the product boundary. The project is best for workflows where the assistant can prepare a draft and people still need to review it before an irreversible action.
 
 Core extension examples:
 
@@ -371,11 +371,11 @@ The locked recording flow is:
 
 Use this spoken line near the start:
 
-"Agents prepare shared decisions directly on the page. Humans keep the final confirmation button."
+"AI prepares the work directly on the page. Humans approve the commitment."
 
 Use this closing line:
 
-"This is not an ordering app. It is a WebMCP collaboration template. The agent prepares the room, drafts the next step, and highlights conflicts directly on the page. Humans approve, claim, and finalize. No payment, booking, or external account action is exposed as a tool."
+"This is not an ordering app. It is a WebMCP trust boundary template. The agent prepares structured drafts and highlights conflicts directly on the page. Humans approve, claim, and finalize. No payment, booking submission, regulated purchase approval, public posting, or external account action is exposed as a tool."
 
 The detailed timed runbook is in [`docs/submission/WEBMCP_SUBMISSION.md`](docs/submission/WEBMCP_SUBMISSION.md#locked-demo-runbook).
 

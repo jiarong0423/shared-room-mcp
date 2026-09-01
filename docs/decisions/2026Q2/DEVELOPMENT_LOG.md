@@ -333,3 +333,21 @@ INTENTIONALLY_NOT_DO:
 Next resume point:
 
 - Record from the live page using the locked two-scene runbook: English Restaurant Split, then Chinese Group Buy / Free Shipping or Drink Order.
+
+## 2026-09-01 16:46 Positioning Tightening
+
+Scope:
+
+- Owner project: `shared-room-mcp`
+- Changed artifacts: `README.md`, `docs/submission/WEBMCP_SUBMISSION.md`
+
+DONE_CONFIRMED:
+
+- Raised the public wording from a group-buy or form-filling tool to an open-source trust boundary layer for the agent-native web.
+  - evidence: README and submission packet now open with "AI prepares the work; humans approve the commitment."
+- Kept the demo narrow without shrinking the product claim.
+  - evidence: the recording script still uses one English scene and one Chinese scene, while the closing line states that the pattern applies before payment, booking submission, regulated purchase approval, public posting, or external account action.
+
+Next resume point:
+
+- Run documentation checks and security gate, then push if the tree stays clean.
