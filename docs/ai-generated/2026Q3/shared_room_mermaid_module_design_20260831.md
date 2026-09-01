@@ -9,39 +9,75 @@ WebMCP tool surface version: `group-room-webmcp-tools.v2`.
 ## Full Module Overview
 
 ```mermaid
-flowchart TD
-  U[Human user opens live web app] --> R[Create or join group room]
-  R --> T{Task selector}
-  T -->|Manual choice| TR[Task Router Contract]
-  T -->|Auto detect| TR
-  TR --> E[Evidence / OCR Contract]
-  E --> L[Local-first parser]
-  L --> Q{Quality gate}
-  Q -->|Pass| F[Deterministic Formula Engine]
-  Q -->|Low confidence or conflict| AR[AI Repair Gate]
-  AR --> HR[Human review]
-  HR --> F
-  F --> CA[Claim Audit Ledger]
-  CA --> S[Room sync and summary UI]
-  S --> H[Host final confirmation]
+sequenceDiagram
+  autonumber
+  actor Host as Room Host
+  actor Member as Room Member
+  participant Page as Shared Room Page
+  participant Agent as WebMCP Agent
+  participant Server as Server State
 
-  A[Right-side Agent] --> WM[Page-side WebMCP tools]
-  WM --> RO[Read-only inspection tools]
-  WM --> PO[Proposal-only draft tool]
-  RO --> S
-  PO --> D[room.agentProposals JSON draft]
-  D --> H
+  Host->>Page: Create room and upload price evidence
+  Page->>Server: Parse image or pasted OCR text
+  Server-->>Page: Return item draft plus separated rules
+  Agent->>Page: Inspect room through read-only WebMCP tools
+  Agent->>Page: Create proposal-only draft
+  Host->>Page: Edit parsed items or remove bad rows
+  Page->>Server: Owner-only parsed item update
+  Host->>Server: Open reviewed list to members
+  Server-->>Page: Broadcast reviewed item state
+  Member->>Page: Join room and choose own items
+  Member->>Server: Confirm own cost
+  Host->>Page: Two-step approve or reject agent draft
+  Host->>Server: Finalize room after human confirmations
+  Server-->>Page: Broadcast local settlement summary
 
-  H -->|Accept draft| AS[accepted_by_host marker only]
-  H -->|Reject draft| RS[rejected_by_host marker only]
-  H -->|Finalize manually| O[Human-owned settlement summary]
-
-  AR -. cannot change formulas .-> F
-  PO -. cannot mutate final room state .-> S
-  PO -. cannot pay or submit orders .-> H
+  Note over Agent,Server: Agent cannot edit items, confirm claims, settle, pay, book, or submit external forms.
 ```
 
-## Six Atomic One-Way Gates
+## Permission Matrix
+
+| role | inspect room | create proposal | edit parsed items | edit own claims | review proposal | settle |
+|---|---:|---:|---:|---:|---:|---:|
+| Anonymous viewer | yes | no | no | no | no | no |
+| WebMCP agent | yes | proposal only | no | no | no | no |
+| Room member | yes | no | no | own claims only | no | no |
+| Room host | yes | yes | before member confirmation | own claims only | two-step human review | yes |
+| Server | validates | stores bounded drafts | enforces owner gate | enforces self-claim gate | records review marker | executes local settlement state |
+
+## Priority Design
+
+```mermaid
+flowchart TD
+  P0A[P0<br/>AI draft boundary] --> P0B[P0<br/>Host review boundary]
+  P0B --> P0C[P0<br/>Group access boundary]
+  P0C --> P0D[P0<br/>Member claim boundary]
+  P0D --> P0E[P0<br/>Host final decision boundary]
+  P0E --> DONE[Local room summary]
+
+  P0A -. proposal JSON only .-> B1[No direct item edit]
+  P0A -. proposal JSON only .-> B2[No group open]
+  P0B -. owner only .-> B3[Fix/remove parsed rows before members claim]
+  P0C -. lock after open .-> B4[No late parsed-item mutation]
+  P0D -. self only .-> B5[No claimant impersonation]
+  P0E -. local only .-> B6[No payment, booking, card, or external submit]
+
+  P1[P1 optional adapters<br/>OCR / Sheets / booking draft / trust] -. draft or read-only .-> P0A
+```
+
+## Atomic One-Way Boundaries
+
+The implementation treats each handoff as a one-way step. A later step may stop and ask a human to review, but it may not silently rewrite an earlier step.
+
+| priority | one-way step | allowed actor | next state | rollback rule |
+|---|---|---|---|---|
+| P0 | AI/OCR evidence to draft items | server parser, proposal-only agent | host review | reload or reset room, not agent mutation |
+| P0 | Host-reviewed items to group access | room host only | members may claim | parsed rows lock after opening |
+| P0 | Member claims to confirmation | each member only | confirmed personal cost | member can unconfirm and edit own claim before settlement |
+| P0 | Confirmations to final summary | room host only | settled room | no external payment or booking action |
+| P1 | External adapters to proposal | deployer-owned adapter | pending host review | never applied silently |
+
+## Six Safe Workflow Boundaries
 
 ```mermaid
 flowchart LR

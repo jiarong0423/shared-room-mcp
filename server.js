@@ -200,11 +200,16 @@ const noAddonOptionPattern = /^(不加|不要|無|無加料|不需加料|none|no
 const standaloneBottlePattern = /(?:^|[\s｜|/（(])瓶(?:$|[\s｜|/）)])|瓶$/;
 const drinkSizePattern = /小杯|中杯|大杯|特大杯|分享瓶|瓶裝|加大|小瓶|中瓶|大瓶|\bS\b|\bM\b|\bL\b|\bXL\b|\bSmall\b|\bMedium\b|\bMed\b|\bRegular\b|\bReg\b|\bLarge\b|\bExtra\s*Large\b|\bX-Large\b/i;
 const largeDrinkSizePattern = /大杯|特大杯|分享瓶|瓶裝|加大|大瓶|\bL\b|\bXL\b|\bLarge\b|\bExtra\s*Large\b|\bX-Large\b/i;
-const localOcrPricePattern = /(?:NT\$?\s*)?([0-9]{1,4})(?:\s*(?:元|圓|塊))?/g;
+const localOcrPricePattern = /(?:NT\$?\s*)?([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{1,4})(?:\s*(?:元|圓|塊))?/g;
+const localOcrRuleAmountPattern = /(?:NT\$?\s*)?([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{1,6})(?:\s*(?:元|圓|塊))?/g;
 const localOcrSectionPattern = /^(飯類|麵類|粥品|湯品|湯類|小菜|點心|炸物|主餐|套餐|便當|飲品|飲料|咖啡|茶飲|鮮奶茶|果汁|冰沙|甜點|加料|配料|包廂|場地|場租|票券|門票|活動|課程|器材|租借|低消|服務費|Toppings?|Add-?ons?|Meals?|Drinks?|Coffee|Tea|Rooms?|Tickets?|Rentals?|Activities?|Courts?|Venues?)$/i;
 const localOcrSkipLinePattern = /總糖量|糖量|總熱量|熱量|大卡|卡路里|營養|公克|克數|容量|毫升|ml|ML|電話|地址|營業|回饋|點數|建議表|使用期限|有效期限|統一編號|發票/;
 const localOcrQuantityContextPattern = /^(?:\s*(?:cups?|qty|quantity|count|pcs?|pieces?|orders?|sets?|boxes?|packs?|items?|people|persons?|pax|players?|attendees?|tickets?|hours?|hrs?|days?|人|位|杯|瓶|份|件|個|張|名|小時|鐘|天|組|盒|包|套|桶|次|顆)\b|\s*(?:人|位|杯|瓶|份|件|個|張|名|小時|鐘|天|組|盒|包|套|桶|次|顆))/i;
 const localOcrQuantityPrefixPattern = /(?:^|\s)(?:qty|quantity|count|subtotal|total\s*qty|數量|小計|合計|總杯數|總數|人數)\s*$/i;
+const localOcrSoldOutLinePattern = /售完|完售|缺貨|暫停供應|sold\s*out|out\s*of\s*stock|unavailable/i;
+const localOcrFreeShippingRulePattern = /免運|免物流|免配送|free\s*shipping|free\s*delivery|free\s*shipping\s*gap/i;
+const localOcrMinimumRulePattern = /門檻|滿額|起送|低消|最低消費|minimum\s*(?:order|spend|charge|consume)|min\.?\s*(?:order|spend|charge)|threshold/i;
+const localOcrDiscountRulePattern = /數量優惠|滿件|滿\s*[0-9]+\s*(?:件|個|組|盒|包|pcs?|pieces?|items?)|[0-9.]+\s*折|買\s*[0-9]+\s*送\s*[0-9]+|第\s*[二三四五六七八九十0-9]+\s*件|bulk\s*discount|volume\s*discount|quantity\s*discount|tier(?:ed)?\s*discount|buy\s*[0-9]+\s*get\s*[0-9]+|[0-9]+\s*for\s*[0-9]+|save\s*[0-9]+%|[0-9]+%\s*off|coupon\s*(?:code|discount)|promo(?:tion)?\s*(?:code|discount)|promo\s*code/i;
 const suspiciousMenuNoise = /(總糖量|總熱量|大卡|卡路里|熱量|糖量|建議表|使用期限|外送|回饋|點數|電話|地址|營業|店長推薦|不建議)/;
 const suspiciousAddon = /^(加料|加購|加價|升級|免費升級|飲品免費升級|珍珠|波霸|椰果|仙草|布丁|蘆薈|脆纖果|百年仙草凍|鮮奶酪)$/;
 const menuCategories = new Set([
@@ -785,6 +790,7 @@ function serializeRoomForStore(room) {
   return {
     id: room.id,
     menuLoaded: Boolean(room.menuLoaded),
+    itemsOpenForMembers: Boolean(room.itemsOpenForMembers),
     items: Array.isArray(room.items) ? room.items : [],
     menuType: room.menuType || 'general',
     menuMode: room.menuMode || 'auto',
@@ -810,7 +816,9 @@ function serializeRoomForStore(room) {
       enabled: false,
       lineCount: 0,
       candidateCount: 0,
-      itemCount: 0
+      itemCount: 0,
+      ruleLineCount: 0,
+      ruleHints: []
     },
     menuImages: Array.isArray(room.menuImages)
       ? room.menuImages.map((image, index) => ({
@@ -871,6 +879,7 @@ function hydrateRoomFromStore(record) {
   return {
     id: record.id,
     menuLoaded: Boolean(record.menuLoaded),
+    itemsOpenForMembers: Boolean(record.itemsOpenForMembers),
     items: Array.isArray(record.items) ? record.items : [],
     menuType: menuTypes.has(record.menuType) ? record.menuType : 'general',
     menuMode: menuModes.has(record.menuMode) ? record.menuMode : 'auto',
@@ -896,7 +905,9 @@ function hydrateRoomFromStore(record) {
       enabled: false,
       lineCount: 0,
       candidateCount: 0,
-      itemCount: 0
+      itemCount: 0,
+      ruleLineCount: 0,
+      ruleHints: []
     },
     menuImages,
     menuImageBuffer,
@@ -1407,6 +1418,7 @@ function createRoom() {
   const room = {
     id,
     menuLoaded: false,
+    itemsOpenForMembers: false,
     items: [],
     menuType: 'general',
     menuMode: 'auto',
@@ -1423,7 +1435,9 @@ function createRoom() {
       enabled: false,
       lineCount: 0,
       candidateCount: 0,
-      itemCount: 0
+      itemCount: 0,
+      ruleLineCount: 0,
+      ruleHints: []
     },
     menuImages: [],
     menuImageBuffer: null,
@@ -1533,7 +1547,9 @@ function loadSampleRoom(room, input = {}) {
     enabled: true,
     lineCount: sampleRoomOcrLines.length,
     candidateCount: items.length,
-    itemCount: items.length
+    itemCount: items.length,
+    ruleLineCount: 0,
+    ruleHints: []
   };
   room.menuImages = [];
   room.menuImageBuffer = null;
@@ -1542,6 +1558,7 @@ function loadSampleRoom(room, input = {}) {
   room.menuImageHeight = null;
   room.itemImageCache = new Map();
   room.menuLoaded = true;
+  room.itemsOpenForMembers = false;
   room.settled = false;
   room.settledAt = null;
   room.settledBy = null;
@@ -1934,7 +1951,7 @@ function extractLocalOcrPriceMatches(line) {
   localOcrPricePattern.lastIndex = 0;
   let match;
   while ((match = localOcrPricePattern.exec(line)) !== null) {
-    const price = Number(match[1]);
+    const price = Number(String(match[1] || '').replace(/,/g, ''));
     if (!Number.isInteger(price) || price <= 0 || price > 5000) {
       continue;
     }
@@ -1979,6 +1996,50 @@ function isLikelyLocalOcrQuantityMatch(line, match, nextMatch = null) {
 function getLocalOcrPriceCandidates(line, priceMatches) {
   const candidates = priceMatches.filter((match, index) => !isLikelyLocalOcrQuantityMatch(line, match, priceMatches[index + 1] || null));
   return candidates.length > 0 ? candidates : priceMatches;
+}
+
+function extractLocalOcrRuleAmount(line) {
+  localOcrRuleAmountPattern.lastIndex = 0;
+  let match;
+  while ((match = localOcrRuleAmountPattern.exec(String(line || ''))) !== null) {
+    const amount = Number(String(match[1] || '').replace(/,/g, ''));
+    if (Number.isInteger(amount) && amount > 0 && amount <= 1000000) {
+      return amount;
+    }
+  }
+  return null;
+}
+
+function buildLocalOcrRuleHint(type, line, amount = null) {
+  return {
+    type,
+    amount: Number.isInteger(amount) && amount > 0 ? amount : null,
+    text: normalizeShortText(line, 80)
+  };
+}
+
+function classifyLocalOcrRuleLine(line) {
+  const text = String(line || '').replace(/\s+/g, ' ').trim();
+  if (!text) {
+    return null;
+  }
+
+  if (localOcrSoldOutLinePattern.test(text)) {
+    return buildLocalOcrRuleHint('unavailable_item', text);
+  }
+
+  const amount = extractLocalOcrRuleAmount(text);
+  if (localOcrFreeShippingRulePattern.test(text) && amount) {
+    return buildLocalOcrRuleHint('free_shipping_threshold', text, amount);
+  }
+  if (localOcrMinimumRulePattern.test(text) && amount) {
+    return buildLocalOcrRuleHint('minimum_threshold', text, amount);
+  }
+  if (localOcrDiscountRulePattern.test(text)) {
+    return buildLocalOcrRuleHint('discount_rule', text);
+  }
+
+  return null;
 }
 
 function inferLocalOcrMenuType(items) {
@@ -2175,7 +2236,11 @@ function buildEvidenceContract(room) {
       minItems: localOcrMinItems,
       lineCount: Number(localOcr.lineCount || 0),
       candidateCount: Number(localOcr.candidateCount || 0),
-      itemCount: Number(localOcr.itemCount || 0)
+      itemCount: Number(localOcr.itemCount || 0),
+      ruleLineCount: Number(localOcr.ruleLineCount || 0),
+      ruleTypes: Array.isArray(localOcr.ruleHints)
+        ? Array.from(new Set(localOcr.ruleHints.map((hint) => hint?.type).filter(Boolean))).slice(0, 8)
+        : []
     },
     imageInput: {
       requiredForUpload: true,
@@ -2263,10 +2328,16 @@ function buildEvidenceContract(room) {
 function parseLocalOcrMenuCandidates(localOcrText, imageCount = 1) {
   const lines = splitLocalOcrLines(localOcrText);
   const rawItems = [];
+  const ruleHints = [];
   let currentSection = '';
 
   for (const line of lines) {
     if (localOcrSkipLinePattern.test(line)) {
+      continue;
+    }
+    const ruleHint = classifyLocalOcrRuleLine(line);
+    if (ruleHint) {
+      ruleHints.push(ruleHint);
       continue;
     }
     if (isLikelyLocalOcrSection(line)) {
@@ -2332,7 +2403,9 @@ function parseLocalOcrMenuCandidates(localOcrText, imageCount = 1) {
       enabled: Boolean(normalizeLocalOcrText(localOcrText)),
       lineCount: lines.length,
       candidateCount: rawItems.length,
-      itemCount: items.length
+      itemCount: items.length,
+      ruleLineCount: ruleHints.length,
+      ruleHints: ruleHints.slice(0, 12)
     }
   };
 }
@@ -3177,6 +3250,22 @@ function participantHasOrder(room, participant) {
   return room.items.some((item) => normalizeOrderEntry(participant.order[item.id], item).qty > 0);
 }
 
+function roomHasConfirmedParticipant(room) {
+  return Array.from(room?.participants?.values?.() || [])
+    .some((participant) => Boolean(participant.confirmed));
+}
+
+function getItemClaimQty(room, itemId) {
+  return Array.from(room?.participants?.values?.() || [])
+    .reduce((sum, participant) => {
+      const item = room.items.find((candidate) => candidate.id === itemId);
+      if (!item) {
+        return sum;
+      }
+      return sum + normalizeOrderEntry(participant.order[itemId], item).qty;
+    }, 0);
+}
+
 function removeInactiveParticipant(room, participantId) {
   const participant = participantId ? room.participants.get(participantId) : null;
   if (!participant) {
@@ -3358,7 +3447,9 @@ function buildWebMcpToolSurface(room) {
     registeredWhenSupported: true,
     activeRoomId: room?.id || null,
     readOnlyByDefault: true,
-    draftMutationAllowed: true,
+    proposalDraftCreationAllowed: true,
+    finalStateMutationAllowed: false,
+    parsedItemMutationAllowedForAgent: false,
     moneyCalculationAllowed: false,
     externalCalculationAllowed: false
   };
@@ -3532,6 +3623,7 @@ function serializeRoom(room) {
   return {
     id: room.id,
     menuLoaded: room.menuLoaded,
+    itemsOpenForMembers: Boolean(room.itemsOpenForMembers),
     menuType: room.menuType,
     menuMode: room.menuMode,
     taskRouter: room.taskRouter || { ...defaultTaskRouter },
@@ -4121,6 +4213,7 @@ app.post('/api/rooms/:roomId/menu', createRateLimitMiddleware('menu_parse', menu
     room.menuImageHeight = preparedImages[0].processedHeight;
     room.itemImageCache = new Map();
     room.menuLoaded = true;
+    room.itemsOpenForMembers = false;
     room.settled = false;
     room.settledAt = null;
     room.settledBy = null;
@@ -4258,6 +4351,10 @@ io.on('connection', (socket) => {
       ack?.({ ok: false, error: '此房間已結算，不能再修改數量' });
       return;
     }
+    if (!room.itemsOpenForMembers) {
+      ack?.({ ok: false, error: '發起者尚未開放清單，請先等待確認' });
+      return;
+    }
 
     const participantId = String(payload?.participantId || '');
     const participant = room.participants.get(participantId);
@@ -4311,6 +4408,10 @@ io.on('connection', (socket) => {
     }
     if (room.settled) {
       ack?.({ ok: false, error: '此房間已結算，不能再修改甜度冰塊' });
+      return;
+    }
+    if (!room.itemsOpenForMembers) {
+      ack?.({ ok: false, error: '發起者尚未開放清單，請先等待確認' });
       return;
     }
 
@@ -4372,6 +4473,10 @@ io.on('connection', (socket) => {
     }
     if (room.settled) {
       ack?.({ ok: false, error: '此房間已結算，不能再修改選項' });
+      return;
+    }
+    if (!room.itemsOpenForMembers) {
+      ack?.({ ok: false, error: '發起者尚未開放清單，請先等待確認' });
       return;
     }
 
@@ -4469,6 +4574,175 @@ io.on('connection', (socket) => {
     ack?.({ ok: true, room: state });
   });
 
+  socket.on('openItemsForMembers', (payload, ack) => {
+    const room = getRoom(payload?.roomId);
+    if (!room || !room.menuLoaded) {
+      ack?.({ ok: false, error: '房間尚未建立項目' });
+      return;
+    }
+    if (room.settled) {
+      ack?.({ ok: false, error: '此房間已結算，不能再開放項目' });
+      return;
+    }
+
+    const participantId = String(payload?.participantId || '');
+    if (!participantId || room.ownerParticipantId !== participantId) {
+      ack?.({ ok: false, error: '只有發起者可以開放清單' });
+      return;
+    }
+    if (!Array.isArray(room.items) || room.items.length === 0) {
+      ack?.({ ok: false, error: '沒有可開放的品項' });
+      return;
+    }
+
+    room.itemsOpenForMembers = true;
+    room.parseQuality = evaluateMenuParseQuality({
+      items: room.items,
+      menuType: room.menuType,
+      taskRouter: room.taskRouter
+    });
+    touchRoom(room, 'items_opened_for_members');
+
+    const state = serializeRoom(room);
+    io.to(room.id).emit('roomState', state);
+    writeLog('info', 'items_opened_for_members', {
+      roomId: room.id,
+      openedBy: participantId,
+      itemCount: room.items.length
+    });
+    ack?.({ ok: true, room: state });
+  });
+
+  socket.on('updateParsedItem', (payload, ack) => {
+    const room = getRoom(payload?.roomId);
+    if (!room || !room.menuLoaded) {
+      ack?.({ ok: false, error: '房間尚未建立項目' });
+      return;
+    }
+    if (room.settled) {
+      ack?.({ ok: false, error: '此房間已結算，不能再修正品項' });
+      return;
+    }
+    if (room.itemsOpenForMembers) {
+      ack?.({ ok: false, error: '清單已開放給成員，不能再修正品項' });
+      return;
+    }
+
+    const participantId = String(payload?.participantId || '');
+    if (!participantId || room.ownerParticipantId !== participantId) {
+      ack?.({ ok: false, error: '只有發起者可以修正解析結果' });
+      return;
+    }
+    if (roomHasConfirmedParticipant(room)) {
+      ack?.({ ok: false, error: '已有成員確認費用，請先取消確認再修正品項' });
+      return;
+    }
+
+    const item = room.items.find((candidate) => candidate.id === payload?.itemId);
+    if (!item) {
+      ack?.({ ok: false, error: '找不到品項' });
+      return;
+    }
+    if (getItemClaimQty(room, item.id) > 0) {
+      ack?.({ ok: false, error: '此品項已有人選取，請先歸零再修正' });
+      return;
+    }
+
+    const nextName = normalizeShortText(payload?.name || item.name, 48);
+    const nextPrice = Number(payload?.price);
+    if (!nextName || shouldDropNonMenuPriceName(nextName)) {
+      ack?.({ ok: false, error: '品項名稱不合理，請重新輸入' });
+      return;
+    }
+    if (!Number.isInteger(nextPrice) || nextPrice <= 0 || nextPrice > 100000) {
+      ack?.({ ok: false, error: '金額必須是 1 到 100000 之間的整數' });
+      return;
+    }
+
+    const supportsDrinkOptions = typeof payload?.supportsDrinkOptions === 'boolean'
+      ? payload.supportsDrinkOptions
+      : inferDrinkItem(nextName);
+    item.name = nextName;
+    item.price = nextPrice;
+    item.supportsDrinkOptions = supportsDrinkOptions;
+    item.category = normalizeMenuCategory(payload?.category || item.category, nextName, supportsDrinkOptions);
+    item.sectionName = normalizeShortText(item.sectionName, 32);
+    item.sizeLabel = normalizeShortText(item.sizeLabel, 24);
+    item.temperature = normalizeTemperature(item.temperature, nextName, supportsDrinkOptions);
+    item.spiceLevel = normalizeSpiceLevel(item.spiceLevel, nextName);
+    item.tags = normalizeFlagList(item.tags, allowedItemTags, 8);
+    item.note = normalizeShortText(item.note, 60);
+    room.parseQuality = evaluateMenuParseQuality({
+      items: room.items,
+      menuType: room.menuType,
+      taskRouter: room.taskRouter
+    });
+    touchRoom(room, 'parsed_item_updated');
+
+    const state = serializeRoom(room);
+    io.to(room.id).emit('roomState', state);
+    writeLog('info', 'parsed_item_updated', {
+      roomId: room.id,
+      itemId: item.id,
+      updatedBy: participantId
+    });
+    ack?.({ ok: true, room: state });
+  });
+
+  socket.on('removeParsedItem', (payload, ack) => {
+    const room = getRoom(payload?.roomId);
+    if (!room || !room.menuLoaded) {
+      ack?.({ ok: false, error: '房間尚未建立項目' });
+      return;
+    }
+    if (room.settled) {
+      ack?.({ ok: false, error: '此房間已結算，不能再移除品項' });
+      return;
+    }
+    if (room.itemsOpenForMembers) {
+      ack?.({ ok: false, error: '清單已開放給成員，不能再移除品項' });
+      return;
+    }
+
+    const participantId = String(payload?.participantId || '');
+    if (!participantId || room.ownerParticipantId !== participantId) {
+      ack?.({ ok: false, error: '只有發起者可以移除解析結果' });
+      return;
+    }
+    if (roomHasConfirmedParticipant(room)) {
+      ack?.({ ok: false, error: '已有成員確認費用，請先取消確認再移除品項' });
+      return;
+    }
+
+    const itemId = String(payload?.itemId || '');
+    const item = room.items.find((candidate) => candidate.id === itemId);
+    if (!item) {
+      ack?.({ ok: false, error: '找不到品項' });
+      return;
+    }
+    if (getItemClaimQty(room, itemId) > 0) {
+      ack?.({ ok: false, error: '此品項已有人選取，請先歸零再移除' });
+      return;
+    }
+
+    room.items = room.items.filter((candidate) => candidate.id !== itemId);
+    room.parseQuality = evaluateMenuParseQuality({
+      items: room.items,
+      menuType: room.menuType,
+      taskRouter: room.taskRouter
+    });
+    touchRoom(room, 'parsed_item_removed');
+
+    const state = serializeRoom(room);
+    io.to(room.id).emit('roomState', state);
+    writeLog('info', 'parsed_item_removed', {
+      roomId: room.id,
+      itemId,
+      removedBy: participantId
+    });
+    ack?.({ ok: true, room: state });
+  });
+
   socket.on('confirmOrder', (payload, ack) => {
     const room = getRoom(payload?.roomId);
     if (!room || !room.menuLoaded) {
@@ -4477,6 +4751,10 @@ io.on('connection', (socket) => {
     }
     if (room.settled) {
       ack?.({ ok: false, error: '此房間已結算，不能再修改確認狀態' });
+      return;
+    }
+    if (!room.itemsOpenForMembers) {
+      ack?.({ ok: false, error: '發起者尚未開放清單，請先等待確認' });
       return;
     }
 
@@ -4512,6 +4790,10 @@ io.on('connection', (socket) => {
     const room = getRoom(payload?.roomId);
     if (!room || !room.menuLoaded) {
       ack?.({ ok: false, error: '房間尚未建立項目' });
+      return;
+    }
+    if (!room.itemsOpenForMembers) {
+      ack?.({ ok: false, error: '清單尚未開放給成員，不能結算' });
       return;
     }
 
@@ -4614,6 +4896,7 @@ io.on('connection', (socket) => {
     }
 
     room.menuLoaded = false;
+    room.itemsOpenForMembers = false;
     room.items = [];
     room.menuType = 'general';
     room.menuMode = 'auto';
@@ -4624,7 +4907,9 @@ io.on('connection', (socket) => {
       enabled: false,
       lineCount: 0,
       candidateCount: 0,
-      itemCount: 0
+      itemCount: 0,
+      ruleLineCount: 0,
+      ruleHints: []
     };
     room.menuImages = [];
     room.menuImageBuffer = null;

@@ -11,7 +11,8 @@ const sourceFiles = {
   readme: path.join(projectRoot, 'README.md'),
   submission: path.join(projectRoot, 'docs', 'submission', 'WEBMCP_SUBMISSION.md'),
   mermaid: path.join(projectRoot, 'docs', 'ai-generated', '2026Q3', 'shared_room_mermaid_module_design_20260831.md'),
-  stressContracts: path.join(projectRoot, 'scripts', 'stress-local-contracts.mjs')
+  stressContracts: path.join(projectRoot, 'scripts', 'stress-local-contracts.mjs'),
+  stressOpenGate: path.join(projectRoot, 'scripts', 'stress-open-gate.mjs')
 };
 
 const reportDir = path.join(projectRoot, 'docs', 'ai-generated', '2026Q3');
@@ -192,13 +193,19 @@ const expectedSubmissionPackageFields = [
 const expectedTestingFields = [
   'stress:contracts',
   'stress-local-contracts.mjs',
+  'stress:open-gate',
+  'stress-open-gate.mjs',
   'scenarioCases',
   'joinRoomAsOwner',
   'local copied price text',
   'pending_host_confirmation',
   'Proposal creation must not change item count',
   'Traditional Chinese and English scenarios',
-  '20 rounds per scenario'
+  '20 rounds per scenario',
+  'AI/OCR upload creates a draft list and keeps member claiming closed',
+  'memberClaimBeforeOpenBlocked',
+  'hostParsedItemEditAfterOpenBlocked',
+  'hostOpenAllowed'
 ];
 
 function readRequiredFile(filePath) {
@@ -332,6 +339,17 @@ function main() {
     .every((marker) => allSource.includes(marker));
   const hasContractStressMatrix = expectedTestingFields
     .every((marker) => allSource.includes(marker));
+  const hasOpenGateContract = [
+    'itemsOpenForMembers',
+    'openItemsForMembers',
+    'updateParsedItem',
+    'removeParsedItem',
+    'memberClaimBeforeOpenBlocked',
+    'memberParsedItemEditBlocked',
+    'hostParsedItemEditBeforeOpenAllowed',
+    'memberOpenBlocked',
+    'hostParsedItemEditAfterOpenBlocked'
+  ].every((marker) => allSource.includes(marker));
 
   const checks = [
     buildCheck(
@@ -411,7 +429,7 @@ function main() {
   const gaps = [
     makeGap(
       'GAP-P0-001',
-      '公式引擎尚未從 serializeRoom / 前端 UI 完整抽離',
+      '公式引擎合約狀態',
       'formula-engine',
       'P0',
       hasFormulaSnapshot && hasFormulaContract ? 'ready' : hasFormulaSnapshot ? 'partial' : 'open',
@@ -429,7 +447,7 @@ function main() {
     ),
     makeGap(
       'GAP-P0-002',
-      '認領稽核仍是房間總量級，缺 per-claim ledger',
+      '認領稽核合約狀態',
       'claim-audit',
       'P0',
       hasPerClaimLedger ? 'ready' : 'open',
@@ -443,7 +461,7 @@ function main() {
     ),
     makeGap(
       'GAP-P0-003',
-      'WebMCP tool surface 尚未落地',
+      'WebMCP 工具面狀態',
       'webmcp',
       'P0',
       hasWebMcpToolSurface ? 'ready' : statusFromMissing(webMcpEvidence.filter((entry) => !entry.present)),
@@ -457,7 +475,7 @@ function main() {
     ),
     makeGap(
       'GAP-P0-004',
-      '任務衝突沒有成為獨立 high-risk gate',
+      '任務衝突與 AI 修補閘門狀態',
       'ai-repair-gate',
       'P0',
       hasTaskConflictGate ? 'ready' : 'open',
@@ -495,7 +513,7 @@ function main() {
     ),
     makeGap(
       'GAP-P1-002',
-      '價格證據與 OCR contract 尚未獨立',
+      '價格證據與 OCR contract 狀態',
       'evidence-ocr',
       'P0',
       hasEvidenceContract ? 'ready' : 'open',
@@ -519,15 +537,19 @@ function main() {
     ),
     makeGap(
       'GAP-P1-004',
-      '本地合約壓測矩陣尚未固定',
+      '本地合約與開放順序壓測矩陣狀態',
       'testing',
       'P1',
-      hasContractStressMatrix ? 'ready' : 'open',
+      hasContractStressMatrix && hasOpenGateContract ? 'ready' : 'open',
       hasContractStressMatrix
-        ? '已補 scripts/stress-local-contracts.mjs 與 npm run stress:contracts；覆蓋 20 個中英文情境、每情境 20 輪、OCR copied text、任務鎖定、草稿暫存與人工確認前停住。'
+        ? hasOpenGateContract
+          ? '已補 scripts/stress-local-contracts.mjs 與 scripts/stress-open-gate.mjs；覆蓋 20 個中英文情境合約壓測，以及 AI 草稿、人審核、群組開放、成員確認、主揪結算的順序壓測。'
+          : '已補 scripts/stress-local-contracts.mjs 與 npm run stress:contracts；覆蓋 20 個中英文情境，但尚缺開放順序壓測。'
         : '已有 npm run check 與 API smoke；尚未有可重跑的中英文多情境草稿壓測矩陣。',
       hasContractStressMatrix
-        ? '後續若新增公式或任務模組，先擴充壓測情境再提交。'
+        ? hasOpenGateContract
+          ? '後續若新增公式、任務模組、或成員權限流程，先擴充兩個壓測矩陣再提交。'
+          : '補 open-gate 壓測，驗證成員開放前不能認領、主揪開放後不能改解析清單。'
         : '補 deterministic parser、task router、formula、claim audit、proposal-only stress matrix。',
       'low'
     )

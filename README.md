@@ -89,7 +89,18 @@ The `suggest_next_actions` tool is the main agent workflow entrypoint. It return
 
 The `create_action_proposal` tool is proposal-only. It can store a bounded JSON draft in `room.agentProposals[]` for the room owner, with status `pending_host_confirmation`. Supported draft types include claim review, missing confirmation, evidence review, task routing review, booking or service drafts, activity signup drafts, and `semantic_repair_draft` for Codex-proposed field or label repairs. Owner review uses an inline two-step confirmation before marking a draft accepted or rejected. Acceptance does not automatically change orders, claims, formulas, task routing, settlement, payment data, Google Sheets, bookings, or external systems.
 
-## Six Atomic One-Way Gates
+## Priority And Atomic Boundaries
+
+The UI hides most engineering language, but the repository documents the safety model explicitly for judges and developers. The core rule is atomic and one-way: AI can inspect and draft, the host reviews parsed rows, the host opens the reviewed list to the group, members claim their own costs, and only then can the host settle. Later steps may block or request review, but they cannot silently rewrite earlier decisions.
+
+| priority | boundary | required behavior | blocked behavior |
+|---|---|---|---|
+| P0 | AI draft boundary | Agent stores proposal-only JSON for host review | Agent cannot edit items, open the list, confirm claims, or settle |
+| P0 | Host review boundary | Host fixes or removes parsed rows before group access | Members cannot choose items before the host opens the reviewed list |
+| P0 | Group access boundary | Host explicitly opens the reviewed list | Parsed item editing is locked after opening |
+| P0 | Member claim boundary | Each member confirms only their own costs | Agent and host cannot impersonate member confirmations |
+| P0 | Final decision boundary | Host settles after human confirmations | No payment, booking, external form submission, or card handling |
+| P1 | Adapter boundary | Optional deployer-owned OCR, Sheets, booking, or trust adapters | Core demo must not require paid keys or vendor lock-in |
 
 The UI and API intentionally expose six fixed module boundaries. Each module passes a contract forward. Downstream modules may mark review risk, but they cannot rewrite upstream module decisions. This prevents agent drift.
 
@@ -119,25 +130,60 @@ The matrix below describes supported room branches and their current safe calcul
 
 ## Mermaid Overview
 
+## Permission And Review Order
+
+| role | can inspect | can draft suggestions | can edit parsed items | can edit own claims | can approve drafts | can settle |
+|---|---:|---:|---:|---:|---:|---:|
+| Anonymous viewer | yes | no | no | no | no | no |
+| WebMCP agent | yes | proposal only | no | no | no | no |
+| Room member | yes | no | no | own claims only | no | no |
+| Room host | yes | yes | before member confirmation | own claims only | two-step human review | yes |
+| Server | validates | stores bounded drafts | enforces owner gate | enforces self-claim gate | records review marker | executes local settlement state |
+
+The fixed order is AI/OCR draft first, host review second, group access third, member confirmation fourth, and final settlement last. The host can remove bad OCR rows or fix names, prices, and categories before opening the list to members. After the host opens the list, parsed item editing is locked.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Host as Room Host
+  actor Member as Room Member
+  participant Page as Shared Room Page
+  participant Agent as WebMCP Agent
+  participant Server as Server State
+
+  Host->>Page: Create room and upload price evidence
+  Page->>Server: Parse image or pasted OCR text
+  Server-->>Page: Return item draft plus separated rules
+  Agent->>Page: Inspect room through read-only WebMCP tools
+  Agent->>Page: Create proposal-only draft
+  Host->>Page: Edit parsed items or remove bad rows
+  Page->>Server: Owner-only parsed item update
+  Host->>Server: Open reviewed list to members
+  Server-->>Page: Broadcast reviewed item state
+  Member->>Page: Join room and choose own items
+  Member->>Server: Confirm own cost
+  Host->>Page: Two-step approve or reject agent draft
+  Host->>Server: Finalize room after human confirmations
+  Server-->>Page: Broadcast local settlement summary
+
+  Note over Agent,Server: Agent cannot edit items, confirm claims, settle, pay, book, or submit external forms.
+```
+
 ```mermaid
 flowchart TD
-  A[Create group room] --> B{Task module}
-  B -->|Auto detect| C[taskRouter]
-  B -->|Human locked| C
-  C --> D[Local OCR / deterministic parser]
-  D --> E[Quality gate]
-  E -->|Pass| F[Formula engine]
-  E -->|Low confidence or conflict| G[AI schema repair only]
-  G --> H[Human review]
-  H --> F
-  F --> I[Room state sync]
-  I --> J[Member claims]
-  J --> K[Claim audit ledger]
-  K --> L[Human settlement output]
-  C -. cannot be overwritten by AI .-> E
-  G -. cannot calculate money .-> F
-  I -. read-only WebMCP tools .-> M[Agent workflow]
-  M -. future proposal-only extensions .-> N[Human confirmation]
+  P0A[P0 AI drafts only] --> P0B[P0 Host reviews parsed rows]
+  P0B --> P0C[P0 Host opens reviewed list]
+  P0C --> P0D[P0 Members claim and confirm their own costs]
+  P0D --> P0E[P0 Host finalizes local room summary]
+  P0E --> DONE[Done without payment or external submission]
+
+  P0A -. blocked .-> X1[AI cannot edit rows]
+  P0A -. blocked .-> X2[AI cannot open group access]
+  P0C -. locked .-> X3[Parsed rows cannot be edited after opening]
+  P0D -. blocked .-> X4[No one confirms for another member]
+  P0E -. blocked .-> X5[No payment, booking, or card handling]
+
+  P1[P1 Optional deployer adapters] -. proposal only .-> P0A
 ```
 
 ## Environment Variables

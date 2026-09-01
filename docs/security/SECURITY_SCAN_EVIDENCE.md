@@ -10,7 +10,7 @@ Repository: public WebMCP Challenge submission package.
 
 - Static syntax check: `npm run check` is required before release.
 - AI security scanner: `ai-security-rules export-gate` and `ai-security-rules deploy-gate` are required before public deployment.
-- Manual code review focus: WebMCP tool boundaries, proposal-only writes, owner-only review/reset actions, upload limits, rate limits, CORS configuration, security headers, and no-payment boundary.
+- Manual code review focus: WebMCP tool boundaries, proposal-only writes, owner-only item/proposal review actions, upload limits, rate limits, CORS configuration, security headers, and no-payment boundary.
 
 ## Current Result
 
@@ -22,9 +22,9 @@ SAST-equivalent local code security evidence:
 - `npm run audit:tasks`: passed on 2026-09-01 with checks ready `8/8`.
 - `npm audit --audit-level=high`: passed on 2026-09-01 with `0` vulnerabilities.
 - `npm audit --audit-level=moderate --omit=dev`: passed on 2026-09-01 with `0` vulnerabilities.
-- `ai-security-rules scan`: passed on 2026-09-01 with critical `0`, high `0`, medium `23`.
+- `ai-security-rules scan`: passed on 2026-09-01 with critical `0`, high `0`, medium `31`.
 - `ai-security-rules rules-check`: passed on 2026-09-01 with blocking findings `0`.
-- `ai-security-rules agent-review`: passed on 2026-09-01 with blocking findings `0`.
+- `ai-security-rules agent-review`: passed on 2026-09-01 with blocking findings `0`, P0 `0`, P1 `0`, P2 `31`.
 - `ai-security-rules export-gate`: passed on 2026-09-01 with blocking findings `0`.
 - `ai-security-rules deploy-gate`: passed on 2026-09-01 after this evidence file was added.
 - Current-file secret scan: no committed API keys, private keys, `.env` files, raw Google Sheet IDs, cookies, or payment data found in public source paths.
@@ -40,8 +40,10 @@ SAST-equivalent local code security evidence:
 - UI confirmation smoke: desktop approval and mobile rejection both require two clicks and leave no horizontal overflow.
 - Mutual-exclusion scenario matrix B: passed on 2026-09-01 with duplicate IDs `0`, duplicate titles `0`, duplicate OCR texts `0`, internal similarity blocks `0`, and baseline similarity blocks `0`.
 - Split-language scenario matrix B: Chinese 120/120 passed with warnings `0`; English 120/120 passed with warnings `0`; every run left `semantic_repair_draft` in `pending_host_confirmation`.
+- Parsed-item review gate: `npm run stress:open-gate -- --base-url http://127.0.0.1:3147 --rounds 20 --output-dir logs/runtime` passed 80/80 cases on 2026-09-01. It verified AI/OCR draft stays closed, non-owner edits are blocked, member claims before opening are blocked, host edits before opening are allowed, members cannot open the list, host edits after opening are blocked, members can confirm only after opening, and host settlement remains last.
+- Impact evidence matrix: `output/isolation/current_runs/shared_room_mcp_gate_20260901_pass/impact_evidence_state_gate.md` passed on 2026-09-01. Impacted layers with evidence-backed `O` states: backend contract, frontend render, WebMCP boundary, testing, security, and docs/submission.
 
-The current implementation contains no known auto-payment, card storage, order-finalization, or external booking submission path. Agents can inspect state and create bounded host-review drafts only.
+The current implementation contains no known auto-payment, card storage, order-finalization, or external booking submission path. Agents can inspect state and create bounded host-review drafts only. Parsed-item edits are host UI actions and are not exposed as WebMCP tools.
 
 ## Discussion-Derived Weak-Point Scan
 

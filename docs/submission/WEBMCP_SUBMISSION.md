@@ -48,7 +48,7 @@ Implemented WebMCP tools:
 
 ## Human And Agent Collaboration
 
-The human controls the room, task type, uploaded evidence, OCR text, participant names, claim confirmation, and settlement. The agent helps by reading the current state, identifying task conflicts, explaining missing claims, guiding the next action from the WebMCP tool output, and preparing draft proposals for the host. The `suggest_next_actions` tool is the primary read path. The `create_action_proposal` tool is the primary safe action path: it stores `pending_host_confirmation` JSON under `room.agentProposals[]`, including semantic repair drafts when Codex detects field drift. Owner review uses an inline two-step confirmation before marking a draft accepted or rejected. Review does not mutate orders, formulas, settlement, payment, Google Sheets, or external services.
+The human controls the room, task type, uploaded evidence, OCR text, parsed item review, group opening, participant names, claim confirmation, and settlement. The agent helps by reading the current state, identifying task conflicts, explaining missing claims, guiding the next action from the WebMCP tool output, and preparing draft proposals for the host. The `suggest_next_actions` tool is the primary read path. The `create_action_proposal` tool is the primary safe action path: it stores `pending_host_confirmation` JSON under `room.agentProposals[]`, including semantic repair drafts when Codex detects field drift. The host can edit or remove parsed item rows before opening the list to members. Owner review uses an inline two-step confirmation before marking a draft accepted or rejected. Review does not mutate orders, formulas, settlement, payment, Google Sheets, or external services.
 
 Provider AI is optional and limited to OCR/schema repair adapters. It cannot decide who owes money, change formulas, assign cost pools, or settle disputes. Future forks can reuse the same proposal-only contract for booking drafts, repair appointment drafts, salon reservation drafts, activity signup drafts, and other pre-commitment workflows, but final submission and payment should remain human-controlled.
 
@@ -145,19 +145,19 @@ Open `http://localhost:3000`, create a room, choose a task type, paste OCR text 
 
 Target length: under 3 minutes.
 
-0:00-0:15: Open the live room and Codex or ChatGPT side panel together. Click `Load Sample Room` so judges immediately see structured items and a pending host-reviewed draft. State the product in one sentence: "This is a shared room where people and agents prepare group decisions together, while final confirmation stays human-controlled."
+0:00-0:20: Open the live room and Codex or ChatGPT side panel together. Upload a prepared price image or paste copied OCR text from the image. State the product in one sentence: "This is a shared room where people and agents prepare group decisions together, while final confirmation stays human-controlled." Use `Load Sample Room` only as a backup if the recording environment cannot access the local image file.
 
-0:15-0:45: In the side panel, ask the agent to inspect the room through WebMCP. Show `inspect_room` and `suggest_next_actions` reading the room state and next blockers without scraping the UI.
+0:20-0:45: Show the host item review layer. Remove one bad OCR row or correct one name, price, or category, then click `Open To Members`. This proves that the AI/OCR output is a draft surface, not an automatic final write.
 
-0:45-1:10: Point out that the sample path needs no API key, upload, payment account, vendor integration, or external OCR. Say: "The no-key path still works because local room state and deterministic parsing come first; external OCR or vision adapters are optional."
+0:45-1:10: In the side panel, ask the agent to inspect the room through WebMCP. Show `inspect_room` and `suggest_next_actions` reading the room state and next blockers without scraping the UI.
 
-1:10-1:35: Add or show items, mark one personal add-on, and show the shared total separated from personal add-ons.
+1:10-1:35: Open the same room in a second tab as another member. Claim items in both tabs and show that each person controls only their own choices and confirmation.
 
 1:35-2:05: Ask the agent to create a host-reviewed draft with `create_action_proposal`. Show the Suggested Drafts panel and the waiting-for-host state.
 
 2:05-2:30: Click `Approve Draft`, then show the inline second step `Confirm Human Approval`. Explain that approval reviews the suggestion but does not auto-settle, submit a booking, write payment data, or call an external system.
 
-2:30-2:55: Close with the open-source template angle: the group room is the reference module, and future forks can add proposal-only adapters for repair appointments, salon bookings, local services, activity signups, commerce catalogs, or private community workflows.
+2:30-2:55: After humans confirm their own costs, the host finalizes the local settlement summary. Close with the open-source template angle: the group room is the reference module, and future forks can add proposal-only adapters for repair appointments, salon bookings, local services, activity signups, commerce catalogs, or private community workflows.
 
 Keep this exact spoken line near the start or close:
 

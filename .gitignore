@@ -8,4 +8,5 @@ pnpm-debug.log*
 .DS_Store
 logs/runtime/
 data/
+output/
 docs/ai-generated/**/*.json

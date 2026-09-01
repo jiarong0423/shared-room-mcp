@@ -22,7 +22,7 @@ This section records the trust boundary decisions for the public WebMCP demo.
 
 - Browser UI: trusted only for user interaction and final human review.
 - WebMCP agent: allowed to inspect structured room state and create draft proposals only.
-- Node server: owns room state, rate limits, upload validation, parsing, persistence, and proposal status transitions.
+- Node server: owns room state, rate limits, upload validation, parsing, persistence, parsed-item review gates, and proposal status transitions.
 - Optional OCR or AI providers: fallback-only helpers. The no-key demo path must continue to work without them.
 - Google Sheets or external trust adapters: future optional adapters only. They must not receive raw device ids, payment data, uploaded images, or private room details.
 
@@ -33,10 +33,12 @@ This section records the data flow used by the no-key demo and optional deployme
 1. A user creates a room and shares the room link.
 2. The host uploads a price image or pastes copied text.
 3. The server parses local text first and may use optional fallback OCR only when configured.
-4. Participants choose their own items and confirm their own cost.
-5. A WebMCP-capable agent may inspect the page state and create a proposal draft.
-6. The host must use the page UI to approve or reject the draft through a two-step confirmation.
-7. Settlement stays inside the room summary. No payment, booking, order, or external submission is triggered.
+4. A WebMCP-capable agent may inspect the page state and create a proposal draft.
+5. The host may remove bad parsed rows or correct item names, prices, and categories before opening the list.
+6. The host explicitly opens the reviewed list to members.
+7. Participants choose their own items and confirm their own cost.
+8. The host must use the page UI to approve or reject any agent draft through a two-step confirmation.
+9. Settlement stays inside the room summary. No payment, booking, order, or external submission is triggered.
 
 ## Threats And Controls
 
@@ -45,6 +47,7 @@ This section records the data flow used by the no-key demo and optional deployme
 | Agent overreach into final decisions | WebMCP tools are read-only or draft-only. Final review is a host-only UI action. |
 | Agent creates a misleading draft | Drafts are labeled as suggestions, remain pending, and require a two-step human decision. |
 | Agent overwrites formulas or task routing | Formula and routing state are server-owned contracts. Proposal payloads are sanitized and do not mutate totals. |
+| Bad OCR row enters the item list | Host can edit or remove parsed rows before opening the list. Server blocks parsed-item edits after the list is opened, after settlement, after any member confirmation, or when the item is already claimed. |
 | Unauthorized user reviews a draft | Server checks `ownerParticipantId` before accepting or rejecting a proposal. |
 | Uploaded image abuse | Upload size, file type, rate limits, and image processing limits are enforced server-side. |
 | Provider key exposure | Keys are read only from environment variables. `.env` files are ignored and sample files contain empty placeholders. |

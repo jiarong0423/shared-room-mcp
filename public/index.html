@@ -773,6 +773,43 @@
       font-variant-numeric: tabular-nums;
     }
 
+    .item-review-controls {
+      display: grid;
+      grid-template-columns: minmax(140px, 1.3fr) minmax(88px, 0.6fr) minmax(120px, 0.8fr) auto;
+      gap: 8px;
+      align-items: end;
+      border-top: 1px dashed #ded5c8;
+      padding-top: 10px;
+    }
+
+    .item-review-field {
+      display: grid;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .item-review-input,
+    .item-review-select {
+      width: 100%;
+      min-height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffdf9;
+      color: var(--ink);
+      padding: 6px 8px;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      min-width: 0;
+    }
+
+    .item-review-remove {
+      min-height: 34px;
+      white-space: nowrap;
+    }
+
     .menu-row-side {
       display: grid;
       justify-items: end;
@@ -782,7 +819,7 @@
 
     .menu-mode-row {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) auto auto;
       gap: 12px;
       align-items: center;
       border: 1px solid var(--line);
@@ -1317,6 +1354,10 @@
         grid-template-columns: 1fr;
       }
 
+      .item-review-controls {
+        grid-template-columns: 1fr;
+      }
+
       .menu-item-block {
         grid-template-columns: 76px minmax(0, 1fr);
       }
@@ -1517,6 +1558,7 @@
                 <button class="mode-button" type="button" data-menu-mode="general" data-i18n="modeGeneral">General Items</button>
                 <button class="mode-button" type="button" data-menu-mode="drink" data-i18n="modeDrink">Drink Menu</button>
               </div>
+              <button class="button" id="openItemsButton" type="button" data-i18n="openToMembers">Open To Members</button>
             </div>
             <div class="menu-list" id="menuBody"></div>
             <div class="order-confirm-row">
@@ -1618,6 +1660,7 @@
       imageZoomInButton: document.getElementById('imageZoomInButton'),
       menuModeHint: document.getElementById('menuModeHint'),
       menuModeToggle: document.getElementById('menuModeToggle'),
+      openItemsButton: document.getElementById('openItemsButton'),
       menuBody: document.getElementById('menuBody'),
       ownOrderStatus: document.getElementById('ownOrderStatus'),
       confirmOrderButton: document.getElementById('confirmOrderButton'),
@@ -1700,6 +1743,11 @@
         modeAuto: '自動',
         modeGeneral: '一般項目',
         modeDrink: '飲料單',
+        openToMembers: '開放給成員',
+        openedToMembers: '已開放給成員',
+        reviewBeforeOpen: '請先修正清單，再開放給成員選擇。',
+        waitingHostOpen: '等待發起者開放清單',
+        openItemsFailed: '開放清單失敗',
         noItemsSelected: '尚未選項',
         confirmPersonalCost: '確認個人費用',
         ownerSettle: '發起者結算並產生分帳單',
@@ -1711,6 +1759,7 @@
         grandTotalLabel: '全體總金額',
         thresholdPlaceholder: '目標金額',
         thresholdUnset: '尚未設定門檻',
+        parsedThreshold: '照片中的門檻',
         memberStats: '成員統計',
         summaryTabs: '統計切換',
         itemStats: '項目統計',
@@ -1732,6 +1781,11 @@
         qualityReview: '需要人工確認',
         qualityNone: '尚無品質報告',
         needsReview: '需要確認',
+        rulesKeptSeparate: '已隔離規則',
+        freeShippingRuleFound: '免運門檻',
+        minimumRuleFound: '最低門檻',
+        discountRuleFound: '優惠規則',
+        unavailableRuleFound: '售完或不可用項目',
         localOcrProvided: '已貼上文字',
         localOcrMissing: '未貼上文字',
         auditPending: '還有人未確認',
@@ -1863,7 +1917,17 @@
         proposalRisklow: '低風險',
         proposalRiskmedium: '需要看一下',
         proposalRiskneeds_human_review: '需要人工確認',
-        draftReviewStepReady: '再點一次完成決定'
+        draftReviewStepReady: '再點一次完成決定',
+        reviewParsedItems: '發起者修正清單',
+        reviewParsedItemsHint: '開放前可移除錯列或修正名稱、金額、分類。',
+        itemName: '名稱',
+        itemPrice: '金額',
+        itemCategory: '分類',
+        removeItem: '移除',
+        itemReviewSaved: '項目已修正。',
+        itemRemoved: '項目已移除。',
+        itemUpdateFailed: '項目修正失敗',
+        itemRemoveFailed: '項目移除失敗'
       },
       en: {
         appTitle: 'Shared Room',
@@ -1913,6 +1977,11 @@
         modeAuto: 'Auto',
         modeGeneral: 'General Items',
         modeDrink: 'Drink Menu',
+        openToMembers: 'Open To Members',
+        openedToMembers: 'Opened To Members',
+        reviewBeforeOpen: 'Review the list before opening it to members.',
+        waitingHostOpen: 'Waiting for host to open the list',
+        openItemsFailed: 'Failed to open item list',
         noItemsSelected: 'No items selected',
         confirmPersonalCost: 'Confirm My Cost',
         ownerSettle: 'Owner Finalizes Split Bill',
@@ -1924,6 +1993,7 @@
         grandTotalLabel: 'Group Total',
         thresholdPlaceholder: 'Goal amount',
         thresholdUnset: 'No threshold set',
+        parsedThreshold: 'photo threshold',
         memberStats: 'Member Stats',
         summaryTabs: 'Summary tabs',
         itemStats: 'Item Stats',
@@ -1945,6 +2015,11 @@
         qualityReview: 'Human review required',
         qualityNone: 'No quality report yet',
         needsReview: 'Needs review',
+        rulesKeptSeparate: 'rules kept separate',
+        freeShippingRuleFound: 'free shipping threshold',
+        minimumRuleFound: 'minimum threshold',
+        discountRuleFound: 'discount rule',
+        unavailableRuleFound: 'sold out or unavailable',
         localOcrProvided: 'Text provided',
         localOcrMissing: 'No text provided',
         auditPending: 'People still need to confirm',
@@ -2075,7 +2150,17 @@
         proposalRisklow: 'low risk',
         proposalRiskmedium: 'review needed',
         proposalRiskneeds_human_review: 'human review needed',
-        draftReviewStepReady: 'click again to complete'
+        draftReviewStepReady: 'click again to complete',
+        reviewParsedItems: 'Host item review',
+        reviewParsedItemsHint: 'Before opening, remove bad rows or fix names, prices, and categories.',
+        itemName: 'Name',
+        itemPrice: 'Price',
+        itemCategory: 'Category',
+        removeItem: 'Remove',
+        itemReviewSaved: 'Item updated.',
+        itemRemoved: 'Item removed.',
+        itemUpdateFailed: 'Failed to update item',
+        itemRemoveFailed: 'Failed to remove item'
       }
     };
 
@@ -2143,6 +2228,21 @@
       rental_share: 'taskRentalShare',
       generic_split: 'taskGenericSplit'
     };
+    const itemCategoryOptions = [
+      'main',
+      'side',
+      'snack',
+      'soup',
+      'dessert',
+      'drink',
+      'set',
+      'service',
+      'ticket',
+      'rental',
+      'venue',
+      'addon',
+      'other'
+    ];
     const itemMetaLabels = {
       zh: {
         category: {
@@ -2329,16 +2429,29 @@
     }
 
     function renderThresholdProgress(room) {
-      const target = Math.max(0, Number(thresholdTarget || 0) || 0);
+      const manualTarget = Math.max(0, Number(thresholdTarget || 0) || 0);
+      const parsedTarget = getParsedThresholdTarget(room);
+      const target = manualTarget > 0 ? manualTarget : parsedTarget;
       const total = Number(room?.totals?.grandTotal || 0);
       if (target <= 0) {
         elements.thresholdText.textContent = t('thresholdUnset');
         return;
       }
       const remaining = Math.max(0, target - total);
+      const prefix = manualTarget > 0 ? '' : `${t('parsedThreshold')} · `;
       elements.thresholdText.textContent = remaining <= 0
-        ? `${t('targetReached')} ${formatMoney(total - target)}`
-        : `${t('targetRemaining')} ${formatMoney(remaining)}`;
+        ? `${prefix}${t('targetReached')} ${formatMoney(total - target)}`
+        : `${prefix}${t('targetRemaining')} ${formatMoney(remaining)}`;
+    }
+
+    function getParsedThresholdTarget(room) {
+      const hints = Array.isArray(room?.localOcr?.ruleHints) ? room.localOcr.ruleHints : [];
+      const thresholdHint = hints.find((rule) => {
+        const type = String(rule?.type || '');
+        const amount = Number(rule?.amount || 0);
+        return ['free_shipping_threshold', 'minimum_threshold'].includes(type) && amount > 0;
+      });
+      return Math.max(0, Number(thresholdHint?.amount || 0) || 0);
     }
 
     function setMessage(text, tone) {
@@ -2639,6 +2752,16 @@
       return Boolean(room?.ownerParticipantId && room.ownerParticipantId === participantId);
     }
 
+    function canReviewParsedItems(room = currentRoom) {
+      const participants = Array.isArray(room?.participants) ? room.participants : [];
+      const hasConfirmedParticipant = participants.some((participant) => Boolean(participant.confirmed));
+      return Boolean(isOwner(room) && room?.menuLoaded && !room?.itemsOpenForMembers && !room?.settled && !hasConfirmedParticipant);
+    }
+
+    function canMembersClaimItems(room = currentRoom) {
+      return Boolean(room?.menuLoaded && room?.itemsOpenForMembers && !room?.settled);
+    }
+
     function shouldShowDrinkOptions(item, room = currentRoom) {
       const mode = room?.menuMode || 'auto';
       if (mode === 'drink') {
@@ -2678,6 +2801,7 @@
         parseQuality: currentRoom?.parseQuality || null,
         localOcr: currentRoom?.localOcr || null,
         totals: currentRoom?.totals || null,
+        itemsOpenForMembers: Boolean(currentRoom?.itemsOpenForMembers),
         agentProposalContract: currentRoom?.agentProposalContract || null,
         agentProposals: currentRoom?.agentProposals || [],
         participantCount: Array.isArray(currentRoom?.participants) ? currentRoom.participants.length : 0,
@@ -2716,6 +2840,16 @@
         });
       }
 
+      if (snapshot.menuLoaded && !snapshot.itemsOpenForMembers) {
+        actions.push({
+          id: 'host_review_then_open',
+          priority: 'P0',
+          label: '請主揪先修正清單，確認後開放給成員',
+          reason: '目前還在清單審核階段，成員不能開始選項目。'
+        });
+        humanReview.push('host_item_review');
+      }
+
       if (snapshot.taskRouter?.hasTaskConflict) {
         actions.push({
           id: 'resolve_task_conflict',
@@ -2737,7 +2871,7 @@
         humanReview.push('ocr_quality');
       }
 
-      if (snapshot.audit?.pendingClaimCount > 0) {
+      if (snapshot.itemsOpenForMembers && snapshot.audit?.pendingClaimCount > 0) {
         actions.push({
           id: 'resolve_pending_claims',
           priority: 'P0',
@@ -2747,7 +2881,7 @@
         humanReview.push('claim_audit');
       }
 
-      if (snapshot.audit?.unconfirmedParticipantCount > 0) {
+      if (snapshot.itemsOpenForMembers && snapshot.audit?.unconfirmedParticipantCount > 0) {
         actions.push({
           id: 'confirm_participants',
           priority: 'P0',
@@ -2997,6 +3131,25 @@
       return t('qualityNone');
     }
 
+    function getRuleHintText(rule) {
+      const type = String(rule?.type || '');
+      const amount = Number(rule?.amount || 0);
+      const amountText = amount > 0 ? ` ${formatMoney(amount)}` : '';
+      if (type === 'free_shipping_threshold') {
+        return `${t('freeShippingRuleFound')}${amountText}`;
+      }
+      if (type === 'minimum_threshold') {
+        return `${t('minimumRuleFound')}${amountText}`;
+      }
+      if (type === 'discount_rule') {
+        return t('discountRuleFound');
+      }
+      if (type === 'unavailable_item') {
+        return t('unavailableRuleFound');
+      }
+      return t('rulesKeptSeparate');
+    }
+
     function renderParseQuality(room) {
       const quality = room.parseQuality || null;
       const localOcr = room.localOcr || null;
@@ -3012,9 +3165,16 @@
           return `<div>${escapeHtml(`${issue.detail || issue.type || t('needsReview')}${target}`)}</div>`;
         }).join('')
         : '';
+      const ruleHints = Array.isArray(localOcr?.ruleHints) ? localOcr.ruleHints : [];
+      const ruleRows = ruleHints.slice(0, 4).map((rule) => {
+        const sourceText = rule?.text ? `：${rule.text}` : '';
+        return `<div>${escapeHtml(`${getRuleHintText(rule)}${sourceText}`)}</div>`;
+      }).join('');
       const localOcrText = localOcr?.enabled
         ? t('localOcrProvided')
         : t('localOcrMissing');
+      const ruleCount = Number(localOcr?.ruleLineCount || ruleHints.length || 0);
+      const ruleText = ruleCount > 0 ? ` · ${t('rulesKeptSeparate')} ${ruleCount}` : '';
       const taskText = getTaskRouterText(room);
       const audit = room.audit || {};
       const auditText = Number(audit.claimLedgerCount || 0) === 0
@@ -3027,8 +3187,9 @@
       elements.qualityPanel.innerHTML = `
         <div class="quality-title">
           ${escapeHtml(getQualityStatusLabel(quality?.status))}
-          <span>${escapeHtml(taskText)} · ${escapeHtml(localOcrText)} · ${escapeHtml(auditText)} · ${t('suspicious')} ${Number(quality?.issueCount || 0)} · ${t('optionGroups')} ${Number(quality?.optionGroupCount || 0)}</span>
+          <span>${escapeHtml(`${taskText} · ${localOcrText} · ${auditText} · ${t('suspicious')} ${Number(quality?.issueCount || 0)} · ${t('optionGroups')} ${Number(quality?.optionGroupCount || 0)}${ruleText}`)}</span>
         </div>
+        ${ruleRows ? `<div class="quality-issues">${ruleRows}</div>` : ''}
         ${issueRows ? `<div class="quality-issues">${issueRows}</div>` : ''}
       `;
     }
@@ -3167,6 +3328,11 @@
         button.dataset.active = mode === (room.menuMode || 'auto') ? 'true' : 'false';
         button.disabled = !isOwner(room) || room.settled;
       });
+      const owner = isOwner(room);
+      const isOpen = Boolean(room.itemsOpenForMembers);
+      elements.openItemsButton.textContent = isOpen ? t('openedToMembers') : t('openToMembers');
+      elements.openItemsButton.disabled = !owner || isOpen || room.settled || !Array.isArray(room.items) || room.items.length === 0;
+      elements.openItemsButton.dataset.tone = isOpen ? 'good' : 'warn';
     }
 
     function renderSourceMenu(room) {
@@ -3260,7 +3426,8 @@
 
     function renderMenu(room) {
       const ownParticipant = getOwnParticipant();
-      const isLocked = Boolean(ownParticipant?.confirmed) || Boolean(room.settled);
+      const isLocked = Boolean(ownParticipant?.confirmed) || !canMembersClaimItems(room);
+      const canReviewItems = canReviewParsedItems(room);
       const visibleItems = Array.from(room.items || []);
       const rows = visibleItems.map((item) => {
         const ownEntry = getOwnOrderEntry(item.id);
@@ -3271,6 +3438,7 @@
           ? renderDrinkCustomizer(item, ownEntry, isLocked)
           : '';
         const itemTags = getItemMetaText(item, drinkOptionsEnabled, itemOptionsEnabled);
+        const reviewControls = canReviewItems ? renderItemReviewControls(item, itemTotal) : '';
         return `
           <div class="menu-row" data-item-id="${escapeHtml(item.id)}">
             <div class="menu-row-main">
@@ -3290,12 +3458,41 @@
                 <div class="menu-item-stats">${t('totalAll')} ${itemTotal.qty} ${t('units')} · ${formatMoney(itemTotal.subtotal)}</div>
               </div>
             </div>
+            ${reviewControls}
             ${customizer}
           </div>
         `;
       }).join('');
 
       elements.menuBody.innerHTML = rows || `<div class="empty-state">${t('noUsableItems')}</div>`;
+    }
+
+    function renderItemReviewControls(item, itemTotal = null) {
+      const labels = itemMetaLabels[currentLanguage] || itemMetaLabels.en;
+      const category = String(item?.category || 'other');
+      const claimed = Number(itemTotal?.qty || 0) > 0;
+      const disabled = claimed ? 'disabled' : '';
+      const options = itemCategoryOptions.map((value) => {
+        const selected = value === category ? 'selected' : '';
+        return `<option value="${escapeHtml(value)}" ${selected}>${escapeHtml(labels.category[value] || value)}</option>`;
+      }).join('');
+      return `
+        <div class="item-review-controls" aria-label="${escapeHtml(t('reviewParsedItems'))}">
+          <label class="item-review-field">
+            <span>${escapeHtml(t('itemName'))}</span>
+            <input class="item-review-input" type="text" maxlength="48" value="${escapeHtml(item.name)}" data-action="edit-parsed-item" data-item-field="name" data-item-id="${escapeHtml(item.id)}" ${disabled}>
+          </label>
+          <label class="item-review-field">
+            <span>${escapeHtml(t('itemPrice'))}</span>
+            <input class="item-review-input" type="number" min="1" max="100000" step="1" inputmode="numeric" value="${Number(item.price) || 0}" data-action="edit-parsed-item" data-item-field="price" data-item-id="${escapeHtml(item.id)}" ${disabled}>
+          </label>
+          <label class="item-review-field">
+            <span>${escapeHtml(t('itemCategory'))}</span>
+            <select class="item-review-select" data-action="edit-parsed-item" data-item-field="category" data-item-id="${escapeHtml(item.id)}" ${disabled}>${options}</select>
+          </label>
+          <button class="button secondary item-review-remove" type="button" data-action="remove-parsed-item" data-item-id="${escapeHtml(item.id)}" ${disabled}>${escapeHtml(t('removeItem'))}</button>
+        </div>
+      `;
     }
 
     function renderDrinkCustomizer(item, entry, disabled) {
@@ -3434,6 +3631,16 @@
         return;
       }
 
+      if (!room.itemsOpenForMembers) {
+        elements.ownOrderStatus.textContent = isOwner(room) ? t('reviewBeforeOpen') : t('waitingHostOpen');
+        elements.ownOrderStatus.dataset.tone = 'warn';
+        elements.confirmOrderButton.textContent = t('confirmPersonalCost');
+        elements.confirmOrderButton.disabled = true;
+        elements.confirmOrderButton.className = 'button';
+        updateMobileOrderBar(room);
+        return;
+      }
+
       if (isConfirmed) {
         elements.ownOrderStatus.textContent = `${t('confirmed')} · ${formatMoney(total)}`;
         elements.ownOrderStatus.dataset.tone = 'good';
@@ -3475,12 +3682,15 @@
         .reduce((sum, entry) => sum + normalizeOrderEntry(entry).qty, 0);
       const isConfirmed = Boolean(ownParticipant?.confirmed);
       const label = qty > 0 ? `${t('selectedQty')} ${qty} ${t('units')} · ${formatMoney(total)}` : t('noItemsSelected');
-      const detail = room.settled ? t('roomSettled') : `${t('totalAll')} ${formatMoney(room.totals?.grandTotal || 0)}`;
+      const detail = room.settled
+        ? t('roomSettled')
+        : room.itemsOpenForMembers ? `${t('totalAll')} ${formatMoney(room.totals?.grandTotal || 0)}` : t('waitingHostOpen');
       elements.mobileOrderText.innerHTML = `${escapeHtml(label)}<span>${escapeHtml(detail)}</span>`;
       elements.mobileConfirmOrderButton.textContent = room.settled
         ? t('settled')
         : isConfirmed ? t('cancel') : t('confirm');
       elements.mobileConfirmOrderButton.disabled = room.settled
+        || !room.itemsOpenForMembers
         || !hasSavedDisplayName()
         || (!isConfirmed && total <= 0);
       elements.mobileOrderBar.dataset.visible = 'true';
@@ -3566,7 +3776,7 @@
 
       const hasTotal = Number(room.totals?.grandTotal || 0) > 0;
       const owner = isOwner(room);
-      elements.settleRoomButton.disabled = room.settled || !owner || !hasSavedDisplayName() || !hasTotal;
+      elements.settleRoomButton.disabled = room.settled || !owner || !room.itemsOpenForMembers || !hasSavedDisplayName() || !hasTotal;
       elements.settleRoomButton.textContent = room.settled
         ? t('settled')
         : owner ? t('ownerSettle') : t('waitingOwnerSettle');
@@ -3599,6 +3809,10 @@
         setMessage('此房間已結算，不能再修改數量。', 'error');
         return;
       }
+      if (!currentRoom.itemsOpenForMembers) {
+        setMessage(isOwner(currentRoom) ? t('reviewBeforeOpen') : t('waitingHostOpen'), 'error');
+        return;
+      }
       if (!hasSavedDisplayName()) {
         setMessage('請先輸入名稱並套用名稱再選擇項目。', 'error');
         elements.displayNameInput.focus();
@@ -3627,6 +3841,10 @@
       }
       if (currentRoom.settled) {
         setMessage(t('drinkOptionSettledError'), 'error');
+        return;
+      }
+      if (!currentRoom.itemsOpenForMembers) {
+        setMessage(isOwner(currentRoom) ? t('reviewBeforeOpen') : t('waitingHostOpen'), 'error');
         return;
       }
       if (!hasSavedDisplayName()) {
@@ -3660,6 +3878,10 @@
         setMessage(t('itemOptionSettledError'), 'error');
         return;
       }
+      if (!currentRoom.itemsOpenForMembers) {
+        setMessage(isOwner(currentRoom) ? t('reviewBeforeOpen') : t('waitingHostOpen'), 'error');
+        return;
+      }
       if (!hasSavedDisplayName()) {
         setMessage(t('itemOptionNameError'), 'error');
         elements.displayNameInput.focus();
@@ -3690,6 +3912,10 @@
       }
       if (currentRoom.settled) {
         setMessage(t('confirmSettledError'), 'error');
+        return;
+      }
+      if (!currentRoom.itemsOpenForMembers) {
+        setMessage(isOwner(currentRoom) ? t('reviewBeforeOpen') : t('waitingHostOpen'), 'error');
         return;
       }
       if (!hasSavedDisplayName()) {
@@ -4012,6 +4238,68 @@
       });
     }
 
+    function updateParsedItem(itemId, patch) {
+      if (!currentRoom?.menuLoaded || !canReviewParsedItems(currentRoom)) {
+        return;
+      }
+      const item = currentRoom.items.find((candidate) => candidate.id === itemId);
+      if (!item) {
+        return;
+      }
+      socket.emit('updateParsedItem', {
+        roomId,
+        participantId,
+        itemId,
+        name: patch.name ?? item.name,
+        price: patch.price ?? item.price,
+        category: patch.category ?? item.category
+      }, (result) => {
+        if (!result || !result.ok) {
+          setMessage(result?.error || t('itemUpdateFailed'), 'error');
+          renderRoom(currentRoom);
+          return;
+        }
+        setMessage(t('itemReviewSaved'), 'info');
+        renderRoom(result.room);
+      });
+    }
+
+    function removeParsedItem(itemId) {
+      if (!currentRoom?.menuLoaded || !canReviewParsedItems(currentRoom)) {
+        return;
+      }
+      socket.emit('removeParsedItem', {
+        roomId,
+        participantId,
+        itemId
+      }, (result) => {
+        if (!result || !result.ok) {
+          setMessage(result?.error || t('itemRemoveFailed'), 'error');
+          renderRoom(currentRoom);
+          return;
+        }
+        setMessage(t('itemRemoved'), 'info');
+        renderRoom(result.room);
+      });
+    }
+
+    function openItemsForMembers() {
+      if (!currentRoom?.menuLoaded || !isOwner(currentRoom) || currentRoom.itemsOpenForMembers) {
+        return;
+      }
+      socket.emit('openItemsForMembers', {
+        roomId,
+        participantId
+      }, (result) => {
+        if (!result || !result.ok) {
+          setMessage(result?.error || t('openItemsFailed'), 'error');
+          return;
+        }
+        setMessage(t('openedToMembers'), 'info');
+        renderRoom(result.room);
+      });
+    }
+
     function saveDisplayName() {
       const nextName = elements.displayNameInput.value.trim().slice(0, 24);
       if (!hasValidDisplayName(nextName)) {
@@ -4068,6 +4356,10 @@
       if (!button) {
         return;
       }
+      if (button.dataset.action === 'remove-parsed-item') {
+        removeParsedItem(button.dataset.itemId);
+        return;
+      }
       if (button.dataset.action === 'set-option') {
         setDrinkOption(button.dataset.itemId, button.dataset.optionType, button.dataset.optionValue);
         return;
@@ -4077,6 +4369,24 @@
     });
 
     elements.menuBody.addEventListener('change', (event) => {
+      const itemEdit = event.target.closest('[data-action="edit-parsed-item"]');
+      if (itemEdit) {
+        const itemId = itemEdit.dataset.itemId;
+        const field = itemEdit.dataset.itemField;
+        if (field === 'name') {
+          updateParsedItem(itemId, { name: itemEdit.value });
+          return;
+        }
+        if (field === 'price') {
+          updateParsedItem(itemId, { price: Math.floor(Number(itemEdit.value) || 0) });
+          return;
+        }
+        if (field === 'category') {
+          updateParsedItem(itemId, { category: itemEdit.value });
+          return;
+        }
+      }
+
       const select = event.target.closest('select[data-action="set-item-option"]');
       if (select) {
         setItemOption(select.dataset.itemId, select.dataset.optionGroupId, select.value);
@@ -4102,6 +4412,8 @@
       }
       setMenuMode(button.dataset.menuMode);
     });
+
+    elements.openItemsButton.addEventListener('click', openItemsForMembers);
 
     elements.summaryTabs.addEventListener('click', (event) => {
       const button = event.target.closest('button[data-summary-tab]');

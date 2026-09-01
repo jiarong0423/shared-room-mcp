@@ -5,6 +5,7 @@
 This repository is a hackathon MVP and open-source WebMCP template. The supported security boundary is:
 
 - browser-side WebMCP tools are read-only or proposal-only;
+- parsed item review is host-only and only allowed before member confirmation;
 - humans keep final control over claims, settlement, payment, bookings, and external submissions;
 - provider keys are optional deployment-owner secrets and are never required for the no-key WebMCP demo;
 - room persistence is local JSON for a single demo instance, or a host-mounted volume when deployed.
@@ -23,4 +24,3 @@ If a secret is accidentally committed:
 ## Reporting
 
 Open a GitHub issue with a minimal reproduction and no secret values. Do not include private room data, payment data, personal contact details, or provider credentials in reports.
-

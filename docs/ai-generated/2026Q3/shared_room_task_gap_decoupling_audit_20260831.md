@@ -1,6 +1,6 @@
 # Group Room Task Gap Decoupling Audit
 
-Generated at: 2026-08-31T22:44:30.072Z
+Generated at: 2026-09-01T00:18:33.055Z
 
 Owner project: `.`
 
@@ -18,15 +18,15 @@ Owner project: `.`
 
 | priority | layer | status | gap | next action |
 |---|---|---|---|---|
-| P0 | formula-engine | ready | 公式引擎尚未從 serializeRoom / 前端 UI 完整抽離 | 下一步在 formula-controls 線補 UI manual inputs；不需要更動 formula engine contract。 |
-| P0 | claim-audit | ready | 認領稽核仍是房間總量級，缺 per-claim ledger | 下一步在 testing 線補 socket 非空 ledger 測試；不需要改 claim audit contract。 |
-| P0 | webmcp | ready | WebMCP tool surface 尚未落地 | 下一步只需要在瀏覽器支援 WebMCP 的環境做真機 demo；Sheets 寫入 bridge 仍屬 P1。 |
-| P0 | ai-repair-gate | ready | 任務衝突沒有成為獨立 high-risk gate | 下一步在 testing 線補 conflict smoke case，確認手動鎖定錯誤任務時 local-first 不放行。 |
+| P0 | formula-engine | ready | 公式引擎合約狀態 | 下一步在 formula-controls 線補 UI manual inputs；不需要更動 formula engine contract。 |
+| P0 | claim-audit | ready | 認領稽核合約狀態 | 下一步在 testing 線補 socket 非空 ledger 測試；不需要改 claim audit contract。 |
+| P0 | webmcp | ready | WebMCP 工具面狀態 | 下一步只需要在瀏覽器支援 WebMCP 的環境做真機 demo；Sheets 寫入 bridge 仍屬 P1。 |
+| P0 | ai-repair-gate | ready | 任務衝突與 AI 修補閘門狀態 | 下一步在 testing 線補 conflict smoke case，確認手動鎖定錯誤任務時 local-first 不放行。 |
 | P0 | submission | partial | 提交所需 OSS/license/live demo 文件未完整固定 | 部署後驗證 live URL；YouTube demo 完成後替換 submission packet 的 TODO URL。 |
 | P1 | trust-layer | partial | Google Sheets 白名單仍是設計稿 | 建立 Sheets bridge P1；只存短效 hash，不存原始 device id、付款資訊、社群帳號。 |
-| P0 | evidence-ocr | ready | 價格證據與 OCR contract 尚未獨立 | 後續加強可評估 Web OCR/WASM OCR 或裝置端 companion；不影響六線解耦完成。 |
+| P0 | evidence-ocr | ready | 價格證據與 OCR contract 狀態 | 後續加強可評估 Web OCR/WASM OCR 或裝置端 companion；不影響六線解耦完成。 |
 | P1 | formula-controls | open | 任務特定公式輸入不足 | 依任務模組顯示最少必要公式欄位，不讓 AI 計算金額。 |
-| P1 | testing | ready | 本地合約壓測矩陣尚未固定 | 後續若新增公式或任務模組，先擴充壓測情境再提交。 |
+| P1 | testing | ready | 本地合約與開放順序壓測矩陣狀態 | 後續若新增公式、任務模組、或成員權限流程，先擴充兩個壓測矩陣再提交。 |
 
 ## Contract Markers
 
