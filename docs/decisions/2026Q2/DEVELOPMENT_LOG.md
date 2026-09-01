@@ -227,3 +227,25 @@ INTENTIONALLY_NOT_DO:
 Next resume point:
 
 - Run `npm run check`, frontend visible-text scan, `npm run audit:tasks`, and `git diff --check`; then inspect `git status --short` before any push or Zeabur deployment.
+
+## 2026-09-01 11:42 GitHub And Zeabur Deployment Closeout
+
+DONE_CONFIRMED:
+
+- Committed and pushed evidence-version patch.
+  - evidence: Git commit `58a77a8 Polish evidence-backed submission flow` pushed to `origin/main`.
+- Deployed to the approved Zeabur target.
+  - evidence: project `69d93c5ce8ec40d5bceadb94`, service `6a95d639aa6a5ebc1401dcd0`, environment `69d93c5c474db8a99d6de959`, deployment `6a9648bc7eb6fd1884fc7f7b`, status `RUNNING`.
+- Verified live runtime after cutover.
+  - evidence: `https://shared-room-mcp.zeabur.app/healthz` returned `roomStorePath=/data/rooms.json`, `roomPersistDebounceMs=35`, `roomPersistJitterMs=120`, `hasGeminiKey=false`, and `hasOpenAiKey=false`.
+- Verified live flow after cutover.
+  - evidence: `npm run stress:open-gate -- --base-url https://shared-room-mcp.zeabur.app --rounds 1 --output-dir logs/runtime` passed 4/4.
+
+WATCH_LATER:
+
+- The live service currently has no provider API keys configured.
+  - trigger to revisit: add optional provider keys only if the demo must show image repair through an external model instead of no-key sample/pasted-text flow.
+
+Next resume point:
+
+- Use the live room for recording. The intended demo flow is: Codex inspects and drafts through WebMCP, the host reviews the list, a second tab joins as a member, and the human clicks the final confirmation.
