@@ -1,6 +1,6 @@
-# Group Room Task Gap Decoupling Audit
+# Shared Room MCP Task Gap Decoupling Audit
 
-Generated at: 2026-09-01T03:59:05.176Z
+Generated at: 2026-09-01T09:33:20.523Z
 
 Owner project: `.`
 

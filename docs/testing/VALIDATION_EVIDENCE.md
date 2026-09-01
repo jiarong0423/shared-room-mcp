@@ -20,6 +20,7 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 | Frontend review screen | PASS | `logs/runtime/frontend-open-gate-smoke-2026-09-01T00-16-02-550Z.json`, summarized in `docs/security/SECURITY_SCAN_EVIDENCE.md` | sample room shows 6 items, 6 review controls, no horizontal overflow |
 | Live Zeabur flow | 4/4 passed | `logs/runtime/open-gate-stress-2026-09-01T02-46-04-407Z.md` local run against `https://shared-room-mcp.zeabur.app` | deployed app kept the same host-review and member-confirmation flow |
 | Post-deploy live check | RUNNING and 4/4 passed | live `/healthz`; `logs/runtime/open-gate-stress-2026-09-01T03-45-33-374Z.md` local run against `https://shared-room-mcp.zeabur.app` | live `/healthz` showed `/data/rooms.json`, save smoothing `35/120`, no provider keys, and the deployed host-review flow still passed |
+| Export records | 160/160 passed | local run against `http://127.0.0.1:3162` on 2026-09-01 | 80 completed rooms exported once as HTML and once as PDF; HTML returned `text/html`, PDF returned `%PDF-1.4` and `%%EOF` |
 
 ## What This Means
 
@@ -27,6 +28,7 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 - The assistant can inspect the room and create drafts, but cannot open the list, confirm for members, finalize the room, pay, or submit bookings.
 - The host can review and fix parsed rows before members enter the claim step.
 - Members can claim and confirm only their own costs.
+- Reviewed rooms can be exported as local HTML or PDF records.
 - The default JSON save layer is suitable for a single demo service and short write bursts, not production-scale traffic.
 
 ## What This Does Not Claim
@@ -34,4 +36,5 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 - This is not a claim of production database capacity.
 - This is not a benchmark for thousands of users.
 - This is not a payment, booking, banking, or vendor-ordering system.
+- Exported records are local review summaries. They do not submit forms or change external systems.
 - Production deployments should add real authentication and replace the JSON save layer with Redis or PostgreSQL.

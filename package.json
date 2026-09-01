@@ -1,7 +1,7 @@
 {
   "name": "shared-room-mcp",
   "version": "1.0.0",
-  "description": "Open-source WebMCP room where AI prepares group decision drafts and humans keep final control.",
+  "description": "Open-source WebMCP shared workspace where AI prepares drafts and humans approve final actions.",
   "license": "MIT",
   "type": "module",
   "main": "server.js",

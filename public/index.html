@@ -1437,7 +1437,7 @@
     <header class="topbar">
       <div class="title-block">
         <h1 data-i18n="appTitle">Shared Room</h1>
-        <p data-i18n="appSubtitle">Upload a price photo or paste copied text so everyone can pick items and confirm the final split in one room.</p>
+        <p data-i18n="appSubtitle">AI prepares structured drafts from messy inputs. People review, join, and approve the final action.</p>
       </div>
       <div class="status-row">
         <div class="language-toggle" id="languageToggle" aria-label="Language">
@@ -1445,14 +1445,14 @@
           <button class="language-button" type="button" data-lang="zh">中文</button>
         </div>
         <span class="chip" id="connectionChip" data-i18n="connecting">Connecting</span>
-        <span class="chip" id="menuChip" data-i18n="evidenceNotParsed">No price photo yet</span>
+        <span class="chip" id="menuChip" data-i18n="evidenceNotParsed">No evidence photo yet</span>
       </div>
     </header>
 
     <section class="layout">
       <div class="panel">
         <div class="panel-header">
-          <h2 class="panel-title" data-i18n="evidenceAndItems">Price Photo And Items</h2>
+          <h2 class="panel-title" data-i18n="evidenceAndItems">Evidence And Items</h2>
           <button class="button secondary" id="copyOrderButton" type="button" disabled data-i18n="copySettlement">Copy Summary</button>
         </div>
         <div class="panel-body">
@@ -1499,10 +1499,10 @@
               <input id="fileInput" type="file" accept="image/*">
               <span class="upload-stack">
                 <span class="upload-mark">＋</span>
-                <strong data-i18n="priceEvidenceImage">Price Photo</strong>
-                <span class="upload-copy" data-i18n="uploadCopy">Choose, drop, or paste one price photo for meals, KTV, sports, tickets, rentals, events, or group buys.</span>
+                <strong data-i18n="priceEvidenceImage">Evidence Photo</strong>
+                <span class="upload-copy" data-i18n="uploadCopy">Choose, drop, or paste one evidence photo for meals, KTV, sports, tickets, rentals, events, group buys, or service drafts.</span>
                 <button class="button" id="selectImageButton" type="button" data-i18n="selectImage">Select Image</button>
-                <img class="preview-image" id="previewImage" alt="Price photo preview" data-i18n-alt="evidencePreview">
+                <img class="preview-image" id="previewImage" alt="Evidence photo preview" data-i18n-alt="evidencePreview">
                 <span class="task-selector">
                   <label for="taskTypeSelect" data-i18n="taskType">Room Purpose</label>
                   <select id="taskTypeSelect">
@@ -1525,7 +1525,7 @@
                 </span>
               </span>
             </label>
-            <div class="loading-bar" id="loadingBar" data-i18n="aiParsing">Reading the price photo. Keep this page open.</div>
+            <div class="loading-bar" id="loadingBar" data-i18n="aiParsing">Reading the evidence photo. Keep this page open.</div>
           </div>
 
           <div class="message" id="messageBox"></div>
@@ -1534,8 +1534,8 @@
             <div class="quality-panel" id="qualityPanel"></div>
             <div class="source-menu-card" id="sourceMenuCard" hidden>
               <div class="source-menu-header">
-                <span data-i18n="compressedEvidence">Saved Price Photo</span>
-                <div class="source-menu-tools" aria-label="Price photo tools" data-i18n-aria-label="imageTools">
+                <span data-i18n="compressedEvidence">Saved Evidence Photo</span>
+                <div class="source-menu-tools" aria-label="Evidence photo tools" data-i18n-aria-label="imageTools">
                   <button class="image-tool-button" id="sourceMenuToggleButton" type="button" data-i18n="collapse">Collapse</button>
                   <button class="image-tool-button" id="downloadCompressedImageButton" type="button" data-i18n="downloadEvidence">Download Photo</button>
                   <button class="image-tool-button" id="imageZoomOutButton" type="button">−</button>
@@ -1543,10 +1543,10 @@
                   <button class="image-tool-button" id="imageZoomInButton" type="button">＋</button>
                 </div>
               </div>
-              <div class="source-menu-viewer" id="sourceMenuViewer" aria-label="Draggable and zoomable saved price photo" data-i18n-aria-label="draggableEvidence">
-                <img id="sourceMenuImage" alt="Saved Price Photo" draggable="false" data-i18n-alt="compressedEvidence">
+              <div class="source-menu-viewer" id="sourceMenuViewer" aria-label="Draggable and zoomable saved evidence photo" data-i18n-aria-label="draggableEvidence">
+                <img id="sourceMenuImage" alt="Saved Evidence Photo" draggable="false" data-i18n-alt="compressedEvidence">
               </div>
-              <div class="source-menu-hint" data-i18n="sourceMenuHint">Drag to inspect. Use wheel or pinch to zoom. This is the saved copy, not a cropped item thumbnail.</div>
+              <div class="source-menu-hint" data-i18n="sourceMenuHint">Drag to inspect. Use wheel or pinch to zoom. This is the saved evidence copy, not a cropped item thumbnail.</div>
             </div>
             <div class="menu-mode-row">
               <div class="mode-copy">
@@ -1566,8 +1566,9 @@
               <button class="button" id="confirmOrderButton" type="button" disabled data-i18n="confirmPersonalCost">Confirm My Cost</button>
             </div>
             <div class="settlement-row">
-              <button class="button" id="settleRoomButton" type="button" disabled data-i18n="ownerSettle">Owner Finalizes Split Bill</button>
-              <button class="button secondary" id="printOrderButton" type="button" disabled data-i18n="printBill">Print Bill</button>
+              <button class="button" id="settleRoomButton" type="button" disabled data-i18n="ownerSettle">Owner Finalizes Summary</button>
+              <button class="button secondary" id="printOrderButton" type="button" disabled data-i18n="printBill">Print Summary</button>
+              <button class="button secondary" id="downloadHtmlButton" type="button" disabled data-i18n="downloadHtml">Download HTML</button>
               <button class="button secondary" id="downloadPdfButton" type="button" disabled data-i18n="downloadPdf">Download PDF</button>
             </div>
             <pre class="settlement-output" id="settlementOutput"></pre>
@@ -1666,6 +1667,7 @@
       confirmOrderButton: document.getElementById('confirmOrderButton'),
       settleRoomButton: document.getElementById('settleRoomButton'),
       printOrderButton: document.getElementById('printOrderButton'),
+      downloadHtmlButton: document.getElementById('downloadHtmlButton'),
       downloadPdfButton: document.getElementById('downloadPdfButton'),
       settlementOutput: document.getElementById('settlementOutput'),
       mobileOrderBar: document.getElementById('mobileOrderBar'),
@@ -1696,13 +1698,13 @@
 
     const translations = {
       zh: {
-        appTitle: '揪團分帳房',
-        appSubtitle: '上傳價格照片或貼上圖片文字，大家在同一個房間選項目、確認分帳。',
+        appTitle: '智慧共享空間',
+        appSubtitle: 'AI 先整理草稿，成員確認自己的部分，最後動作由人決定。',
         connecting: '連線中',
         connected: '已連線',
         disconnected: '連線中斷',
-        evidenceNotParsed: '尚未加入價格照片',
-        evidenceAndItems: '價格照片與項目',
+        evidenceNotParsed: '尚未加入證據照片',
+        evidenceAndItems: '證據與項目',
         copySettlement: '複製結算摘要',
         creatingRoom: '建立房間中',
         roomLabel: '房間',
@@ -1710,10 +1712,10 @@
         copyRoomLink: '複製房間連結',
         yourName: '你的名稱',
         applyName: '套用名稱',
-        priceEvidenceImage: '價格照片',
-        uploadCopy: '選擇、拖放或貼上一張價格照片。可用於吃飯、唱歌、運動、票券、租借或活動分帳。',
+        priceEvidenceImage: '證據照片',
+        uploadCopy: '選擇、拖放或貼上一張證據照片。可用於吃飯、唱歌、運動、票券、租借、活動或服務草稿。',
         selectImage: '選擇圖片',
-        evidencePreview: '價格照片預覽',
+        evidencePreview: '證據照片預覽',
         taskType: '房間用途',
         taskAuto: '自動判別',
         taskGroupBuy: '團購 / 免運門檻',
@@ -1728,15 +1730,15 @@
         loadSampleRoom: '載入示範房間',
         confirmUpload: '使用這張照片',
         cancelUpload: '取消上傳',
-        aiParsing: '正在讀取價格照片，請保持頁面開啟。',
-        compressedEvidence: '已保存價格照片',
-        imageTools: '價格照片工具',
+        aiParsing: '正在讀取證據照片，請保持頁面開啟。',
+        compressedEvidence: '已保存證據照片',
+        imageTools: '證據照片工具',
         collapse: '收合',
         expand: '展開',
         downloadEvidence: '下載照片',
         resetZoom: '重置',
-        draggableEvidence: '可拖移縮放的價格照片',
-        sourceMenuHint: '可拖移查看，滾輪或雙指可縮放。這是保存後的圖片，不是項目裁切縮圖。',
+        draggableEvidence: '可拖移縮放的證據照片',
+        sourceMenuHint: '可拖移查看，滾輪或雙指可縮放。這是保存後的證據圖片，不是項目裁切縮圖。',
         itemMode: '清單類型',
         aiAutoDetect: '自動建議',
         itemModeToggle: '清單類型切換',
@@ -1750,10 +1752,11 @@
         openItemsFailed: '開放清單失敗',
         noItemsSelected: '尚未選項',
         confirmPersonalCost: '確認個人費用',
-        ownerSettle: '發起者結算並產生分帳單',
+        ownerSettle: '發起者產生最終摘要',
         waitingOwnerSettle: '等待發起者結算',
         settled: '已結算',
-        printBill: '列印分帳單',
+        printBill: '列印摘要',
+        downloadHtml: '下載 HTML',
         downloadPdf: '下載 PDF',
         resetRoom: '清空房間',
         grandTotalLabel: '全體總金額',
@@ -1828,9 +1831,9 @@
         selectedQty: '已選',
         selectedImage: '已選擇 1 張圖片，確認後才會上傳解析。',
         imageOnly: '請選擇圖片檔案。',
-        alreadyLoaded: '此房間已經有價格照片，請先清空房間再選擇新圖片。',
+        alreadyLoaded: '此房間已經有證據照片，請先清空房間再選擇新圖片。',
         uploadCanceled: '已取消上傳。',
-        compressedDownloaded: '已下載保存後的價格照片。',
+        compressedDownloaded: '已下載保存後的證據照片。',
         copiedLink: '房間連結已複製。',
         copiedSettlement: '結算摘要已複製。',
         nameSaved: '名稱已套用。',
@@ -1838,7 +1841,7 @@
         roomMissingNew: '原房間已不存在，已建立新房間。'
         ,
         reconnecting: '重新連線中',
-        billTitle: '揪團分帳總單',
+        billTitle: '行動審核摘要',
         status: '狀態',
         unsettled: '未結算',
         itemSummary: '品項彙總',
@@ -1849,13 +1852,15 @@
         readyToSettle: '可結算',
         notReadyCount: '未確認',
         printPdfOpened: '已開啟列印視窗，請選擇「另存為 PDF」。',
-        billCopied: '分帳單已複製並顯示在下方。',
+        htmlDownloaded: 'HTML 摘要已下載。',
+        pdfDownloaded: 'PDF 摘要已下載。',
+        billCopied: '摘要已複製並顯示在下方。',
         settleFailed: '結算失敗',
-        settledCopied: '已結算，分帳單已複製並顯示在下方。',
-        settledDisplayed: '已結算，分帳單已顯示在下方。',
+        settledCopied: '已完成，摘要已複製並顯示在下方。',
+        settledDisplayed: '已完成，摘要已顯示在下方。',
         modeSwitchFailed: '切換清單類型失敗',
         invalidName: '名稱不能空白，也不能使用「未命名」。',
-        resetConfirm: '清空後可重新上傳價格照片，所有成員數量會歸零。',
+        resetConfirm: '清空後可重新上傳證據照片，所有成員數量會歸零。',
         resetFailed: '清空房間失敗',
         contractStripLabel: '六個安全流程步驟',
         contractTaskRouter: '先選用途',
@@ -1869,7 +1874,7 @@
         contractClaimAudit: '確認每個人',
         contractClaimAuditHint: '不能替別人按確認',
         contractAgentGuard: '助手先寫草稿',
-        contractAgentGuardHint: '最後由主揪決定',
+        contractAgentGuardHint: '最後由發起者決定',
         agentDrafts: '建議草稿',
         noAgentDrafts: '尚無建議',
         pendingHostConfirmation: '等待發起者確認',
@@ -1897,7 +1902,7 @@
         confirmNameError: '請先輸入名稱並套用名稱再確認個人費用。',
         confirmEmptyError: '目前沒有費用項目，不能確認空明細。',
         confirmCostFailed: '個人費用確認失敗',
-        uploadRoomLoadedError: '此房間已經有價格照片，請先清空房間再上傳新圖片。',
+        uploadRoomLoadedError: '此房間已經有證據照片，請先清空房間再上傳新圖片。',
         sampleRoomLoaded: '示範房間已載入，草稿等待發起者確認。',
         sampleRoomLoadFailed: '載入示範房間失敗',
         sampleRoomNeedsEmpty: '此房間已有資料，請建立新房間再載入示範。',
@@ -1931,12 +1936,12 @@
       },
       en: {
         appTitle: 'Shared Room',
-        appSubtitle: 'Upload a price photo or paste copied text so everyone can pick items and confirm the final split in one room.',
+        appSubtitle: 'AI prepares structured drafts from messy inputs. People review, join, and approve the final action.',
         connecting: 'Connecting',
         connected: 'Connected',
         disconnected: 'Disconnected',
-        evidenceNotParsed: 'No price photo yet',
-        evidenceAndItems: 'Price Photo And Items',
+        evidenceNotParsed: 'No evidence photo yet',
+        evidenceAndItems: 'Evidence And Items',
         copySettlement: 'Copy Summary',
         creatingRoom: 'Creating room',
         roomLabel: 'Room',
@@ -1944,10 +1949,10 @@
         copyRoomLink: 'Copy Room Link',
         yourName: 'Your name',
         applyName: 'Apply Name',
-        priceEvidenceImage: 'Price Photo',
-        uploadCopy: 'Choose, drop, or paste one price photo for meals, KTV, sports, tickets, rentals, events, or group buys.',
+        priceEvidenceImage: 'Evidence Photo',
+        uploadCopy: 'Choose, drop, or paste one evidence photo for meals, KTV, sports, tickets, rentals, events, group buys, or service drafts.',
         selectImage: 'Select Image',
-        evidencePreview: 'Price photo preview',
+        evidencePreview: 'Evidence photo preview',
         taskType: 'Room Purpose',
         taskAuto: 'Auto Detect',
         taskGroupBuy: 'Group Buy / Free Shipping',
@@ -1962,15 +1967,15 @@
         loadSampleRoom: 'Load Sample Room',
         confirmUpload: 'Use This Photo',
         cancelUpload: 'Cancel Upload',
-        aiParsing: 'Reading the price photo. Keep this page open.',
-        compressedEvidence: 'Saved Price Photo',
-        imageTools: 'Price photo tools',
+        aiParsing: 'Reading the evidence photo. Keep this page open.',
+        compressedEvidence: 'Saved Evidence Photo',
+        imageTools: 'Evidence photo tools',
         collapse: 'Collapse',
         expand: 'Expand',
         downloadEvidence: 'Download Photo',
         resetZoom: 'Reset',
-        draggableEvidence: 'Draggable and zoomable saved price photo',
-        sourceMenuHint: 'Drag to inspect. Use wheel or pinch to zoom. This is the saved copy, not a cropped item thumbnail.',
+        draggableEvidence: 'Draggable and zoomable saved evidence photo',
+        sourceMenuHint: 'Drag to inspect. Use wheel or pinch to zoom. This is the saved evidence copy, not a cropped item thumbnail.',
         itemMode: 'List Type',
         aiAutoDetect: 'Suggested automatically',
         itemModeToggle: 'List type switch',
@@ -1984,10 +1989,11 @@
         openItemsFailed: 'Failed to open item list',
         noItemsSelected: 'No items selected',
         confirmPersonalCost: 'Confirm My Cost',
-        ownerSettle: 'Owner Finalizes Split Bill',
+        ownerSettle: 'Owner Finalizes Summary',
         waitingOwnerSettle: 'Waiting for owner',
         settled: 'Settled',
-        printBill: 'Print Bill',
+        printBill: 'Print Summary',
+        downloadHtml: 'Download HTML',
         downloadPdf: 'Download PDF',
         resetRoom: 'Reset Room',
         grandTotalLabel: 'Group Total',
@@ -2062,16 +2068,16 @@
         selectedQty: 'Selected',
         selectedImage: 'Selected 1 image. It will upload only after confirmation.',
         imageOnly: 'Please choose an image file.',
-        alreadyLoaded: 'This room already has a price photo. Reset the room before choosing a new image.',
+        alreadyLoaded: 'This room already has an evidence photo. Reset the room before choosing a new image.',
         uploadCanceled: 'Upload canceled.',
-        compressedDownloaded: 'Saved price photo downloaded.',
+        compressedDownloaded: 'Saved evidence photo downloaded.',
         copiedLink: 'Room link copied.',
         copiedSettlement: 'Settlement summary copied.',
         nameSaved: 'Name applied.',
         missingName: 'Enter your name first.',
         roomMissingNew: 'The original room no longer exists. A new room was created.',
         reconnecting: 'Reconnecting',
-        billTitle: 'Group Split Bill',
+        billTitle: 'Action Review Summary',
         status: 'Status',
         unsettled: 'not settled',
         itemSummary: 'Item summary',
@@ -2082,10 +2088,12 @@
         readyToSettle: 'ready',
         notReadyCount: 'unconfirmed',
         printPdfOpened: 'Print dialog opened. Choose Save as PDF.',
-        billCopied: 'Split bill copied and shown below.',
+        htmlDownloaded: 'HTML summary downloaded.',
+        pdfDownloaded: 'PDF summary downloaded.',
+        billCopied: 'Summary copied and shown below.',
         settleFailed: 'Settlement failed',
-        settledCopied: 'Settled. Split bill copied and shown below.',
-        settledDisplayed: 'Settled. Split bill shown below.',
+        settledCopied: 'Finalized. Summary copied and shown below.',
+        settledDisplayed: 'Finalized. Summary shown below.',
         modeSwitchFailed: 'Failed to switch item mode',
         invalidName: 'Name cannot be blank or unnamed.',
         resetConfirm: 'Reset the room and clear all member quantities?',
@@ -2130,11 +2138,11 @@
         confirmNameError: 'Enter and apply your name before confirming your cost.',
         confirmEmptyError: 'There are no cost items to confirm yet.',
         confirmCostFailed: 'Failed to confirm your cost',
-        uploadRoomLoadedError: 'This room already has a price photo. Reset the room before uploading a new image.',
+        uploadRoomLoadedError: 'This room already has an evidence photo. Reset the room before uploading a new image.',
         sampleRoomLoaded: 'Sample room loaded. The draft is waiting for host confirmation.',
         sampleRoomLoadFailed: 'Failed to load sample room',
         sampleRoomNeedsEmpty: 'This room already has data. Create a new room before loading the sample.',
-        parseImageFailed: 'Failed to read the price photo',
+        parseImageFailed: 'Failed to read the evidence photo',
         newRoomConfirm: 'Create a new random room link? The current room link will not be cleared.',
         newRoomCreated: 'New random room link created.',
         createRoomFailed: 'Failed to create a new room',
@@ -2364,7 +2372,7 @@
     elements.taskTypeSelect.value = taskTypeLabelKeys[selectedTaskType] ? selectedTaskType : 'auto';
 
     function t(key) {
-      return translations[currentLanguage]?.[key] || translations.zh[key] || key;
+      return translations[currentLanguage]?.[key] || translations.en[key] || key;
     }
 
     function applyLanguage() {
@@ -2826,8 +2834,8 @@
         actions.push({
           id: 'wait_for_room',
           priority: 'required',
-          label: '等待房間建立完成',
-          reason: '目前找不到可檢查的房間。'
+          label: 'Wait for the room to finish loading',
+          reason: 'No room is available for review yet.'
         });
       }
 
@@ -2835,8 +2843,8 @@
         actions.push({
           id: 'collect_evidence',
           priority: 'required',
-          label: '請主揪上傳價格照片或貼上圖片文字',
-          reason: '沒有價格內容時，助手只能看見空房間，不能產生分帳建議。'
+          label: 'Ask the host to add an evidence photo or copied text',
+          reason: 'Without evidence, the assistant can only see an empty room and cannot prepare a useful draft.'
         });
       }
 
@@ -2844,8 +2852,8 @@
         actions.push({
           id: 'host_review_then_open',
           priority: 'required',
-          label: '請主揪先修正清單，確認後開放給成員',
-          reason: '目前還在清單審核階段，成員不能開始選項目。'
+          label: 'Host reviews the list, then opens it to members',
+          reason: 'The list is still in review. Members cannot choose items until the host opens it.'
         });
         humanReview.push('Host reviews the item list.');
       }
@@ -2854,8 +2862,8 @@
         actions.push({
           id: 'resolve_task_conflict',
           priority: 'required',
-          label: '請主揪確認房間用途',
-          reason: `目前選到的用途和圖片內容不一致：${snapshot.taskRouter.conflictTaskType || 'unknown'}。`
+          label: 'Host checks the selected room purpose',
+          reason: `The selected purpose does not match the evidence: ${snapshot.taskRouter.conflictTaskType || 'unknown'}.`
         });
         humanReview.push('Host checks whether the room purpose is correct.');
       }
@@ -2865,8 +2873,8 @@
         actions.push({
           id: 'review_ocr_quality',
           priority: 'required',
-          label: '請人工確認看不清楚的內容',
-          reason: '圖片文字不夠穩，助手只能整理建議，不能直接決定金額或人員。'
+          label: 'Human reviews unclear evidence text',
+          reason: 'The evidence is not stable enough. The assistant may prepare a draft but cannot decide amounts or people.'
         });
         humanReview.push('Human checks unclear price text.');
       }
@@ -2875,8 +2883,8 @@
         actions.push({
           id: 'resolve_pending_claims',
           priority: 'required',
-          label: '請成員確認自己的加點或共享項目',
-          reason: `目前尚有 ${snapshot.audit.pendingClaimCount} 筆項目需要確認。`
+          label: 'Members confirm their own shared or personal items',
+          reason: `${snapshot.audit.pendingClaimCount} item(s) still need confirmation.`
         });
         humanReview.push('Members confirm their own items.');
       }
@@ -2885,8 +2893,8 @@
         actions.push({
           id: 'confirm_participants',
           priority: 'required',
-          label: '請未確認成員確認自己的項目',
-          reason: `目前尚有 ${snapshot.audit.unconfirmedParticipantCount} 位成員未確認。`
+          label: 'Unconfirmed members review their own items',
+          reason: `${snapshot.audit.unconfirmedParticipantCount} member(s) have not confirmed yet.`
         });
         humanReview.push('Unconfirmed members review their own costs.');
       }
@@ -2895,8 +2903,8 @@
         actions.push({
           id: 'ready_for_human_settlement',
           priority: 'ready',
-          label: '可由主揪檢查結算摘要',
-          reason: '目前沒有明顯卡住的地方；最後仍需要主揪確認結算。'
+          label: 'Host can review the final summary',
+          reason: 'No blocker is visible. The host still makes the final decision.'
         });
       }
 
@@ -3770,6 +3778,7 @@
       if (!room?.menuLoaded) {
         elements.settleRoomButton.disabled = true;
         elements.printOrderButton.disabled = true;
+        elements.downloadHtmlButton.disabled = true;
         elements.downloadPdfButton.disabled = true;
         return;
       }
@@ -3782,6 +3791,7 @@
         : owner ? t('ownerSettle') : t('waitingOwnerSettle');
       elements.resetButton.disabled = !owner;
       elements.printOrderButton.disabled = !hasTotal;
+      elements.downloadHtmlButton.disabled = !hasTotal;
       elements.downloadPdfButton.disabled = !hasTotal;
 
       if (room.settled) {
@@ -4134,15 +4144,64 @@
       return lines.join('\n');
     }
 
-    function downloadPdf() {
+    function sanitizeFileToken(value) {
+      return String(value || 'room')
+        .replace(/[^a-zA-Z0-9_-]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 48) || 'room';
+    }
+
+    function downloadBlob(filename, mimeType, content) {
+      const blob = content instanceof Blob
+        ? content
+        : new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+    }
+
+    async function downloadRoomExport(format) {
+      if (!currentRoom?.menuLoaded) {
+        return;
+      }
       const text = buildOrderText();
       if (!text) {
         return;
       }
       elements.settlementOutput.textContent = text;
       elements.settlementOutput.dataset.visible = 'true';
-      setMessage(t('printPdfOpened'), 'info');
-      window.print();
+      const roomToken = sanitizeFileToken(currentRoom.id);
+      const isPdf = format === 'pdf';
+      const extension = isPdf ? 'pdf' : 'html';
+      const response = await fetch(`/api/rooms/${encodeURIComponent(currentRoom.id)}/export.${extension}?lang=${encodeURIComponent(currentLanguage)}`);
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.error || t('settleFailed'));
+      }
+      const blob = await response.blob();
+      downloadBlob(
+        `shared-room-${roomToken}.${extension}`,
+        isPdf ? 'application/pdf' : 'text/html;charset=utf-8',
+        blob
+      );
+      setMessage(isPdf ? t('pdfDownloaded') : t('htmlDownloaded'), 'info');
+    }
+
+    function downloadHtmlBill() {
+      downloadRoomExport('html').catch((error) => {
+        setMessage(error.message || t('settleFailed'), 'error');
+      });
+    }
+
+    function downloadPdf() {
+      downloadRoomExport('pdf').catch((error) => {
+        setMessage(error.message || t('settleFailed'), 'error');
+      });
     }
 
     function copyOrderText() {
@@ -4568,6 +4627,7 @@
     elements.mobileConfirmOrderButton.addEventListener('click', toggleOrderConfirmation);
     elements.settleRoomButton.addEventListener('click', settleRoom);
     elements.printOrderButton.addEventListener('click', printOrderText);
+    elements.downloadHtmlButton.addEventListener('click', downloadHtmlBill);
     elements.downloadPdfButton.addEventListener('click', downloadPdf);
     elements.saveNameButton.addEventListener('click', saveDisplayName);
     elements.loadSampleButton.addEventListener('click', loadSampleRoom);

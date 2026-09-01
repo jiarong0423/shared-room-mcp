@@ -14,7 +14,7 @@ const scenarios = [
     id: 'zh_group_buy_threshold_review',
     lang: 'zh',
     taskType: 'group_buy',
-    hostName: '主揪',
+    hostName: '發起者',
     memberName: '小美',
     text: [
       '社區團購優惠 滿 NT$1,500 免運',
@@ -31,7 +31,7 @@ const scenarios = [
     id: 'zh_drink_order_review',
     lang: 'zh',
     taskType: 'drink_order',
-    hostName: '下午茶主揪',
+    hostName: '下午茶發起者',
     memberName: '阿倫',
     text: [
       '辦公室手搖飲',

@@ -545,13 +545,13 @@ function main() {
       hasContractStressMatrix && hasOpenGateContract ? 'ready' : 'open',
       hasContractStressMatrix
         ? hasOpenGateContract
-          ? '已補 scripts/stress-local-contracts.mjs 與 scripts/stress-open-gate.mjs；覆蓋 20 個中英文情境合約壓測，以及 AI 草稿、人審核、群組開放、成員確認、主揪結算的順序壓測。'
+          ? '已補 scripts/stress-local-contracts.mjs 與 scripts/stress-open-gate.mjs；覆蓋 20 個中英文情境合約壓測，以及 AI 草稿、人審核、群組開放、成員確認、發起者結算的順序壓測。'
           : '已補 scripts/stress-local-contracts.mjs 與 npm run stress:contracts；覆蓋 20 個中英文情境，但尚缺開放順序壓測。'
         : '已有 npm run check 與 API smoke；尚未有可重跑的中英文多情境草稿壓測矩陣。',
       hasContractStressMatrix
         ? hasOpenGateContract
           ? '後續若新增公式、任務模組、或成員權限流程，先擴充兩個壓測矩陣再提交。'
-          : '補 open-gate 壓測，驗證成員開放前不能認領、主揪開放後不能改解析清單。'
+          : '補 open-gate 壓測，驗證成員開放前不能認領、發起者開放後不能改解析清單。'
         : '補 deterministic parser、task router、formula、claim audit、proposal-only stress matrix。',
       'low'
     )
@@ -607,7 +607,7 @@ function main() {
 
   const readyChecks = checks.filter((check) => check.status === 'ready').length;
   const markdown = [
-    '# Group Room Task Gap Decoupling Audit',
+    '# Shared Room MCP Task Gap Decoupling Audit',
     '',
     `Generated at: ${generatedAt}`,
     '',

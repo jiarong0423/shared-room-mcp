@@ -22,11 +22,13 @@ The core safety idea is simple: AI prepares the work; humans approve the commitm
 
 This brings WebMCP capability to real-world workflows, combining agent productivity with human control.
 
-Shared Room MCP is built for messy real-world coordination: group buys, drink orders, restaurant splits, KTV rooms, sports venues, tickets, rentals, appointment drafts, service requests, activity signups, and other pre-commitment workflows. These workflows usually start from a chat message, social post, price-list photo, receipt, partial form, or copied text rather than a clean store API.
+Shared Room MCP is built for messy real-world coordination: group buys, drink orders, restaurant splits, KTV rooms, sports venues, tickets, rentals, appointment drafts, service requests, activity signups, and other pre-commitment workflows. These workflows usually start from a chat message, social post, evidence photo, receipt, partial form, or copied text rather than a clean store API.
 
 The project gives the assistant page-local WebMCP tools. The assistant can inspect the room, read the selected scenario, find missing confirmations, review price-reading quality, and create a draft for the host. Codex can also create a field-fix draft when the price list is read incorrectly, such as quantity, subtotal, size, or add-on columns being confused with item prices. It cannot silently apply that repair, calculate money outside the app, assign claimants, submit bookings, write payment data, or finalize settlement.
 
 The core demo works without any paid API key: users can paste copied text from a price image, the app creates structured items, and local room logic keeps totals and confirmation state inside the app. Optional model providers are only replaceable helpers for image/text repair, not the required agent workflow.
+
+After human review, the room can export a local HTML or PDF review record. Export is read-only: it does not submit a form, call a payment provider, change Google Sheets, or write to external services.
 
 The broader idea is an open-source pattern for the agent-native web: tools that are useful enough for AI assistants to prepare real work, but narrow enough that humans keep control over final commitments.
 
@@ -68,6 +70,7 @@ Checked against the WebMCP Challenge page on 2026-09-01.
 | WebMCP use beyond a trivial proof of concept | Ready: read-only tools plus a host-reviewed draft tool |
 | Complete coherent product experience | Ready for local and live smoke |
 | Specific real-world audience/problem | Ready: messy shared workflows before payment, booking, signup, posting, or commitment |
+| Local record export | Ready: reviewed rooms can export HTML and PDF summaries |
 
 ## What Changed After August 25, 2026
 
@@ -167,7 +170,7 @@ Opening line:
 
 1:05-1:25: Open the same room in a second tab with another member name, such as `Jamie`. Show that Jamie is in the same room, claims one item, and confirms only Jamie's own cost.
 
-1:25-1:40: Return to the host tab. Show the member confirmation state. Stop before finalization until the agent says: "You can press Owner Finalizes Split Bill now."
+1:25-1:40: Return to the host tab. Show the member confirmation state. Stop before finalization until the agent says: "You can press Owner Finalizes Summary now." After finalization, click `Download HTML` or `Download PDF` once to show that the reviewed record can be exported locally.
 
 ### Scene B: Chinese Group Buy Or Drink Order
 

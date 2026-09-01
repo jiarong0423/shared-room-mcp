@@ -2,9 +2,13 @@
 
 Shared Room MCP is an open-source trust boundary layer for the agent-native web. It gives people and AI assistants one shared page where agents can prepare real-world work, while humans keep final authority over commitments.
 
+Live demo: https://shared-room-mcp.zeabur.app/
+
 The app is English-first for judging and demo review. A Chinese UI dictionary remains available for local use, but the default page language, initial HTML, README, and submission packet are English.
 
 Core claim: AI prepares the work. Humans approve the commitment. The assistant can read the room, spot missing details, and prepare structured drafts. The host and members still confirm what is true before any final action.
+
+Language boundary: WebMCP tool names, schemas, descriptions, and JSON keys stay in English so the browser/sidebar agent receives a stable tool contract. User-provided evidence keeps its original language, so a Chinese group-buy post can still produce Chinese item names in the room.
 
 In the browser sidebar, the assistant uses WebMCP tools from the page itself. It can inspect the room and place draft suggestions on the page. It cannot finish a split, submit a booking, make a payment, approve regulated purchases, post publicly, or confirm for another person.
 
@@ -55,9 +59,11 @@ Deployment owners can keep the default no-key flow, remove the optional provider
 
 External developers should be able to fork the template and plug in their own integrations without asking for access to a central service. High-risk actions such as booking submission, payment, account access, claims, and settlement should stay behind explicit human confirmation.
 
+Reviewed rooms can export a local HTML or PDF review record. Exporting a record does not submit a form, call a payment provider, change Google Sheets, or write to an external service.
+
 ## Future Extension Modules
 
-The group split room is the first reference use case, not the product boundary. The project is best for workflows where the assistant can prepare a draft and people still need to review it before an irreversible action.
+The group cost room is the first reference use case, not the product boundary. The project is best for workflows where the assistant can prepare a draft and people still need to review it before an irreversible action.
 
 Core extension examples:
 
@@ -189,6 +195,8 @@ sequenceDiagram
   Host->>Server: Finalize room after human confirmations
   Server-->>Page: Broadcast local settlement summary
   Server->>Store: Save final room summary
+  Host->>Page: Export HTML or PDF review record
+  Page-->>Host: Download a local file from the reviewed summary
 
   Note over Agent,Server: Agent cannot edit items, confirm claims, settle, pay, book, or submit external forms.
   Note over Store: On Zeabur, use ROOM_STORE_PATH=/data/rooms.json with a mounted volume.
@@ -200,15 +208,20 @@ flowchart TD
   B --> C[Host opens reviewed list]
   C --> D[Members claim and confirm their own costs]
   D --> E[Host finalizes local room summary]
-  E --> DONE[Done without payment or external submission]
+  E --> F[Human exports review record]
+  F --> DONE[Done without payment or external submission]
 
   A -. blocked .-> X1[AI cannot edit rows]
   A -. blocked .-> X2[AI cannot open group access]
   C -. locked .-> X3[Parsed rows cannot be edited after opening]
   D -. blocked .-> X4[No one confirms for another member]
   E -. blocked .-> X5[No payment, booking, or card handling]
+  F -. blocked .-> X6[Exports do not submit forms or change external systems]
 
   E --> SAVE[Save room state to JSON store]
+  F --> HTML[Download HTML]
+  F --> PDF[Download PDF]
+  F --> PRINT[Print summary]
   SAVE --> VOL[Zeabur volume keeps demo rooms after restart]
 
   OPTIONAL[Optional deployer integrations] -. draft only .-> A

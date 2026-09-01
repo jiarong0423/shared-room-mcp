@@ -57,7 +57,7 @@ const scenarios = [
     lang: 'zh',
     taskType: 'ktv_room',
     label: '週五夜唱包廂試算',
-    conflict: '晚到成員的人頭費是否能折抵，需要主揪向店家確認。',
+    conflict: '晚到成員的人頭費是否能折抵，需要發起者向店家確認。',
     text: [
       '週五夜唱試算',
       '大包廂費用三小時 2400',
@@ -113,7 +113,7 @@ const scenarios = [
     lang: 'zh',
     taskType: 'generic_split',
     label: '畢業旅行租車與油資',
-    conflict: '群組總額和明細加總不同，需要主揪確認是否漏掉停車費。',
+    conflict: '群組總額和明細加總不同，需要發起者確認是否漏掉停車費。',
     text: [
       '花蓮行租車費用結算',
       '租車三天訂金 3200',

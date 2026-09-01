@@ -22,11 +22,11 @@ SAST-equivalent local code security evidence:
 - `npm run audit:tasks`: passed on 2026-09-01 with checks ready `8/8`.
 - `npm audit --audit-level=high`: passed on 2026-09-01 with `0` vulnerabilities.
 - `npm audit --audit-level=moderate --omit=dev`: passed on 2026-09-01 with `0` vulnerabilities.
-- `ai-security-rules scan`: passed on 2026-09-01 with critical `0`, high `0`, medium `31`.
-- `ai-security-rules rules-check`: passed on 2026-09-01 with blocking findings `0`.
+- `ai-security-rules scan`: passed on 2026-09-01 with critical `0`, high `0`, medium `37`.
+- `ai-security-rules rules-check`: passed on 2026-09-01 after the naming and export cleanup with blocking findings `0`; latest report: `/private/tmp/ai_security_rules_shared_room_mcp_20260901_post_export_rules`.
 - `ai-security-rules agent-review`: passed on 2026-09-01 with blocking findings `0`, P0 `0`, P1 `0`, P2 `31`.
-- `ai-security-rules export-gate`: passed on 2026-09-01 with blocking findings `0`.
-- `ai-security-rules deploy-gate`: passed on 2026-09-01 after this evidence file was added.
+- `ai-security-rules export-gate`: passed on 2026-09-01 after the naming and export cleanup with blocking findings `0`; latest report: `/private/tmp/ai_security_rules_shared_room_mcp_20260901_post_export_gate`.
+- `ai-security-rules deploy-gate`: passed on 2026-09-01 after the naming and export cleanup with blocking findings `0`; latest report: `/private/tmp/ai_security_rules_shared_room_mcp_20260901_post_export_deploy`.
 - Current-file secret scan: no committed API keys, private keys, `.env` files, raw Google Sheet IDs, cookies, or payment data found in public source paths.
 - Local repeated room flow: passed 400/400 cases across 20 non-duplicate Chinese and English scenarios after the hidden-image UI fix.
 - Load Sample Room repeat check: passed 120/120 localhost cases. Each case verified sample creation, no task conflict, no external calculation, no settlement, no image upload dependency, repeat-load rejection, non-owner rejection, and non-owner proposal rejection.
@@ -45,6 +45,8 @@ SAST-equivalent local code security evidence:
 - Short save-burst check: 25 simultaneous room creates were all present in the saved JSON file on 2026-09-01; missing created rooms `0`.
 - Post-deploy live smoke: the Zeabur service reached `RUNNING` on 2026-09-01. Live `/healthz` showed `roomStorePath=/data/rooms.json`, `roomPersistDebounceMs=35`, `roomPersistJitterMs=120`, `hasGeminiKey=false`, and `hasOpenAiKey=false`. Live `npm run stress:open-gate -- --base-url https://shared-room-mcp.zeabur.app --rounds 1 --output-dir logs/runtime` passed 4/4.
 - Impact check: `output/isolation/current_runs/shared_room_mcp_gate_20260901_pass/impact_evidence_state_gate.md` passed on 2026-09-01. Checked areas with evidence-backed `O` states: backend rules, frontend render, WebMCP tool limits, testing, security, and docs/submission.
+- Local export smoke after wording cleanup: completed room `068b78ef` returned HTML 200 with `text/html; charset=utf-8`, PDF 200 with `application/pdf`, `%PDF-1.4`, and `%%EOF`; empty room export returned 409 for both HTML and PDF.
+- Local export stress after backend export route: 80/80 complete-room flows passed, then 80/80 HTML exports and 80/80 PDF exports passed against `http://127.0.0.1:3162`.
 
 The current implementation contains no known auto-payment, card storage, order-finalization, or external booking submission path. Agents can inspect state and create bounded host-review drafts only. Parsed-item edits are host UI actions and are not exposed as WebMCP tools.
 

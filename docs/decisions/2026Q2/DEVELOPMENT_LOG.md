@@ -81,7 +81,7 @@
 ### 專案既有剩餘漏洞
 
 - ~~Zeabur 重啟會清空房間；正式版需要 Redis 或 PostgreSQL。~~ 2026-09-01 已用 JSON persistence 加 volume 路徑解決 MVP 重啟保存；正式水平擴展仍建議 Redis 或 PostgreSQL。
-- 目前任何房間成員都可清空房間；正式版需要主揪權限或一次性管理碼。
+- 目前任何房間成員都可清空房間；正式版需要發起者權限或一次性管理碼。
 - OCR 與邊界判定準確度取決於圖片清晰度；正式版需要加入人工校正欄位與保存校正紀錄。
 - 尚未加入匯出 Excel 或歷史訂單查詢。
 - 本機未讀取 `.env`，因此沒有系統環境 key 時無法驗證 Gemini 圖片解析；部署到 Zeabur 並設定 `GEMINI_API_KEY` 後再做端到端圖片測試。
@@ -96,7 +96,7 @@
 
 ### 已完成
 
-- 將專案重新收斂為英文預設的開源 WebMCP tool-layer template：主軸是 pre-payment social coordination，不主張代付款、代下單或要求部署者提供公開可變更 API。
+- 將專案重新收斂為英文預設的開源 WebMCP tool-layer template：主軸是 pre-commitment social coordination，不主張 AI 執行付款、正式送單或要求部署者提供公開可變更 API。
 - 新增 JSON room persistence，Zeabur 可掛 volume 並設定 `ROOM_STORE_PATH=/data/rooms.json`，避免 MVP room state 因服務重啟直接遺失。
 - 新增 `create_action_proposal` WebMCP proposal-only tool。Agent 可建立 bounded JSON draft，暫存於 `room.agentProposals[]`，狀態固定為 `pending_host_confirmation`。
 - 新增 Host Draft Review UI。只有房間發起者可將 Agent 草稿標記為 `accepted_by_host` 或 `rejected_by_host`；採納草稿不會自動改 orders、claims、formulas、task routing、settlement、payment、Google Sheets、booking 或外部服務。
@@ -195,7 +195,7 @@ Scope:
 
 - Owner project: `shared-room-mcp`
 - Changed artifacts: `README.md`, `docs/submission/WEBMCP_SUBMISSION.md`, `docs/security/SECURITY_SCAN_EVIDENCE.md`, `docs/security/PACKAGE_REPUTATION_EVIDENCE.md`, `docs/testing/VALIDATION_EVIDENCE.md`, `server.js`, `public/index.html`, `package.json`, `env.sample`
-- Latest validation evidence: `npm run check` passed; `git diff --check` passed; public wording scan found no hype terms such as `Top 10`, `ultimate`, `Unbreakable`, or Chinese hype wording.
+- Latest validation evidence: `npm run check` passed; `git diff --check` passed; public wording scan found no hype or overclaiming terms.
 
 DONE_CONFIRMED:
 
@@ -351,3 +351,30 @@ DONE_CONFIRMED:
 Next resume point:
 
 - Run documentation checks and security gate, then push if the tree stays clean.
+
+## 2026-09-01 17:36 Naming And Export Route Closeout
+
+Scope:
+
+- Owner project: `shared-room-mcp`
+- Changed artifacts: `README.md`, `docs/submission/WEBMCP_SUBMISSION.md`, `docs/security/SECURITY_SCAN_EVIDENCE.md`, `docs/testing/VALIDATION_EVIDENCE.md`, `server.js`, `public/index.html`, `package.json`, `scripts/stress-local-contracts.mjs`, `scripts/stress-open-gate.mjs`, `scripts/task-gap-audit.mjs`
+
+DONE_CONFIRMED:
+
+- Locked public UI naming.
+  - evidence: English title remains `Shared Room`; Chinese UI title is `智慧共享空間`; repository and submission name remain `Shared Room MCP`.
+- Removed stale public-facing wording.
+  - evidence: stale-term scan returned no matches for old room names, hype claims, browser-replacement claims, or payment automation claims.
+- Added backend HTML and PDF review-record export routes.
+  - evidence: `/api/rooms/:roomId/export.html` and `/api/rooms/:roomId/export.pdf` are read-only routes and return 409 until the room has reviewed items and a positive total.
+- Re-ran the affected flow under stress settings.
+  - evidence: `scripts/stress-open-gate.mjs --rounds 20` passed 80/80 local cases against `http://127.0.0.1:3162`; then 80 HTML exports and 80 PDF exports passed.
+
+WATCH_LATER:
+
+- Export records are local review summaries only.
+  - trigger to revisit: add signed export metadata or stronger participant identity before business or private-community production use.
+
+Next resume point:
+
+- Run `npm run check`, `npm run audit:tasks`, security gates, and live smoke after GitHub push and Zeabur redeploy.

@@ -3703,6 +3703,218 @@ function serializeRoom(room) {
   };
 }
 
+function getExportLanguage(value) {
+  return String(value || '').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+}
+
+function serverMoney(value) {
+  return `NT$ ${Number(value || 0).toLocaleString('en-US')}`;
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function sanitizeExportFilename(value) {
+  return String(value || 'room')
+    .replace(/[^a-zA-Z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48) || 'room';
+}
+
+function buildRoomExportText(room, language = 'en') {
+  const state = serializeRoom(room);
+  const zh = language === 'zh';
+  const lines = [
+    zh ? '行動審核摘要' : 'Action Review Summary',
+    `${zh ? '房間' : 'Room'} ${state.id}`,
+    `${zh ? '狀態' : 'Status'} ${state.settled ? (zh ? '已完成' : 'finalized') : (zh ? '未完成' : 'not finalized')}`,
+    ''
+  ];
+
+  lines.push(zh ? '品項彙總' : 'Item summary');
+  if (Array.isArray(state.items) && state.items.length > 0) {
+    for (const item of state.items) {
+      const total = state.totals?.itemTotals?.[item.id] || { qty: 0, subtotal: 0 };
+      lines.push(`${item.name} x ${Number(total.qty || 0)} = ${serverMoney(total.subtotal)}`);
+    }
+  } else {
+    lines.push(zh ? '尚無品項' : 'No items');
+  }
+
+  lines.push('');
+  lines.push(zh ? '每人明細' : 'People');
+  const activeParticipants = Array.isArray(state.participants)
+    ? state.participants.filter((participant) => Number(participant.total || 0) > 0 || participant.confirmed)
+    : [];
+  if (activeParticipants.length > 0) {
+    for (const participant of activeParticipants) {
+      lines.push(`${participant.displayName}: ${serverMoney(participant.total)} ${participant.confirmed || state.settled ? (zh ? '已確認' : 'confirmed') : (zh ? '未確認' : 'unconfirmed')}`);
+      for (const [itemId, entry] of Object.entries(participant.order || {})) {
+        const item = state.items.find((candidate) => candidate.id === itemId);
+        if (!item) {
+          continue;
+        }
+        const qty = Number(entry?.qty || 0);
+        if (qty <= 0) {
+          continue;
+        }
+        const subtotal = Number(item.price || 0) * qty;
+        lines.push(`  ${item.name} x ${qty} = ${serverMoney(subtotal)}`);
+      }
+    }
+  } else {
+    lines.push(zh ? '尚無成員費用' : 'No member costs');
+  }
+
+  lines.push('');
+  lines.push(`${zh ? '總金額' : 'Total'} ${serverMoney(state.totals?.grandTotal || 0)}`);
+  lines.push(`${zh ? '可一起分' : 'Shared candidate'} ${serverMoney(state.totals?.sharedCandidateTotal || 0)}`);
+  lines.push(`${zh ? '個人加點' : 'Personal add-ons'} ${serverMoney(state.totals?.personalClaimTotal || 0)}`);
+  lines.push(`${zh ? '確認狀態' : 'Claim audit'} ${state.audit?.settlementReady ? (zh ? '可完成' : 'ready') : `${zh ? '未確認' : 'unconfirmed'} ${Number(state.audit?.unconfirmedParticipantCount || 0)}`}`);
+  return lines.join('\n');
+}
+
+function buildRoomExportHtml(room, language = 'en') {
+  const title = language === 'zh' ? '行動審核摘要' : 'Action Review Summary';
+  const text = buildRoomExportText(room, language);
+  const generatedAt = new Date().toISOString();
+  return `<!doctype html>
+<html lang="${language === 'zh' ? 'zh-Hant' : 'en'}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escapeHtml(title)} - ${escapeHtml(room.id)}</title>
+  <style>
+    body {
+      margin: 32px;
+      color: #222;
+      background: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
+      line-height: 1.55;
+    }
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .meta {
+      margin: 0 0 24px;
+      color: #666;
+      font-size: 13px;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      font: 14px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 18px;
+      background: #fafafa;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>${escapeHtml(title)}</h1>
+    <p class="meta">${escapeHtml(generatedAt)}</p>
+    <pre>${escapeHtml(text)}</pre>
+  </main>
+</body>
+</html>`;
+}
+
+function splitPdfLine(line, maxLength = 58) {
+  const chars = Array.from(String(line || ''));
+  if (chars.length <= maxLength) {
+    return [String(line || '')];
+  }
+  const result = [];
+  for (let index = 0; index < chars.length; index += maxLength) {
+    result.push(chars.slice(index, index + maxLength).join(''));
+  }
+  return result;
+}
+
+function toPdfTextHex(value) {
+  let hex = 'FEFF';
+  for (const char of Array.from(String(value || ''))) {
+    let codePoint = char.codePointAt(0);
+    if (codePoint > 0xffff) {
+      codePoint = 0x003f;
+    }
+    hex += codePoint.toString(16).padStart(4, '0').toUpperCase();
+  }
+  return hex;
+}
+
+function buildRoomExportPdf(room, language = 'en') {
+  const title = language === 'zh' ? '行動審核摘要' : 'Action Review Summary';
+  const lines = [
+    `${title} - ${room.id}`,
+    new Date().toISOString(),
+    '',
+    ...buildRoomExportText(room, language).split('\n')
+  ].flatMap((line) => splitPdfLine(line));
+  const linesPerPage = 42;
+  const pages = [];
+  for (let index = 0; index < lines.length; index += linesPerPage) {
+    pages.push(lines.slice(index, index + linesPerPage));
+  }
+
+  const objects = [];
+  objects[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+  objects[3] = '<< /Type /Font /Subtype /Type0 /BaseFont /MSung-Light /Encoding /UniCNS-UCS2-H /DescendantFonts [4 0 R] >>';
+  objects[4] = '<< /Type /Font /Subtype /CIDFontType0 /BaseFont /MSung-Light /CIDSystemInfo << /Registry (Adobe) /Ordering (CNS1) /Supplement 0 >> >>';
+
+  const pageObjectIds = [];
+  let nextObjectId = 5;
+  for (const pageLines of pages.length > 0 ? pages : [[]]) {
+    const pageId = nextObjectId;
+    const contentId = nextObjectId + 1;
+    nextObjectId += 2;
+    pageObjectIds.push(pageId);
+    const streamLines = ['BT', '/F1 11 Tf', '50 790 Td', '15 TL'];
+    for (const line of pageLines) {
+      streamLines.push(`<${toPdfTextHex(line)}> Tj`);
+      streamLines.push('T*');
+    }
+    streamLines.push('ET');
+    const stream = streamLines.join('\n');
+    objects[pageId] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentId} 0 R >>`;
+    objects[contentId] = `<< /Length ${Buffer.byteLength(stream)} >>\nstream\n${stream}\nendstream`;
+  }
+  objects[2] = `<< /Type /Pages /Kids [${pageObjectIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pageObjectIds.length} >>`;
+
+  let body = '%PDF-1.4\n';
+  const offsets = [0];
+  for (let id = 1; id < objects.length; id += 1) {
+    if (!objects[id]) {
+      continue;
+    }
+    offsets[id] = Buffer.byteLength(body);
+    body += `${id} 0 obj\n${objects[id]}\nendobj\n`;
+  }
+  const xrefOffset = Buffer.byteLength(body);
+  body += `xref\n0 ${objects.length}\n`;
+  body += '0000000000 65535 f \n';
+  for (let id = 1; id < objects.length; id += 1) {
+    const offset = offsets[id] || 0;
+    body += `${String(offset).padStart(10, '0')} 00000 ${objects[id] ? 'n' : 'f'} \n`;
+  }
+  body += `trailer\n<< /Size ${objects.length} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
+  return Buffer.from(body, 'utf8');
+}
+
 function buildMenuParsePrompt(options = {}) {
   const localOcrText = normalizeLocalOcrText(options.localOcrText);
   const localOcrCandidates = Array.isArray(options.localOcrCandidates) ? options.localOcrCandidates : [];
@@ -3746,7 +3958,7 @@ function buildMenuParsePrompt(options = {}) {
     '每個品項請輸出 name、price、supportsDrinkOptions、sourceImageIndex、category、sectionName、sizeLabel、temperature、spiceLevel、dietaryFlags、tags、note、optionGroups。全域加料只放 addonSection。不要輸出座標、圖片框、角度或其他欄位。',
     '若菜單是純文字飲料價目表，也照樣解析品名與價格，不需要判斷商品圖片。',
     '如果圖片有模糊、遮擋或無法確定的價格，請跳過該品項。',
-    'warnings 請只在嚴重無法解析整張菜單時才輸出繁體中文短句；不要輸出英文解釋，不要說明你如何假設大小杯價格。'
+    'warnings 只在嚴重無法解析整張證據圖片時輸出短句；英文來源用英文，中文來源用繁體中文。不要說明你如何假設大小杯價格。'
   ];
 
   if (localOcrText) {
@@ -4132,17 +4344,53 @@ app.post('/api/rooms', createRateLimitMiddleware('room_create', roomCreateRateLi
 app.get('/api/rooms/:roomId', (req, res) => {
   const room = getRoom(req.params.roomId);
   if (!room) {
-    res.status(404).json({ error: '找不到房間，請重新建立揪團分帳房' });
+    res.status(404).json({ error: '找不到房間，請重新建立共享空間' });
     return;
   }
   touchRoom(room, 'room_read', false);
   res.json(serializeRoom(room));
 });
 
+app.get('/api/rooms/:roomId/export.html', (req, res) => {
+  const room = getRoom(req.params.roomId);
+  if (!room) {
+    res.status(404).json({ error: 'Room not found. Create a new shared room first.' });
+    return;
+  }
+  const state = serializeRoom(room);
+  if (!state.menuLoaded || Number(state.totals?.grandTotal || 0) <= 0) {
+    res.status(409).json({ error: 'The room needs reviewed items and at least one confirmed cost before export.' });
+    return;
+  }
+  const language = getExportLanguage(req.query?.lang);
+  const filename = `shared-room-${sanitizeExportFilename(room.id)}.html`;
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(buildRoomExportHtml(room, language));
+});
+
+app.get('/api/rooms/:roomId/export.pdf', (req, res) => {
+  const room = getRoom(req.params.roomId);
+  if (!room) {
+    res.status(404).json({ error: 'Room not found. Create a new shared room first.' });
+    return;
+  }
+  const state = serializeRoom(room);
+  if (!state.menuLoaded || Number(state.totals?.grandTotal || 0) <= 0) {
+    res.status(409).json({ error: 'The room needs reviewed items and at least one confirmed cost before export.' });
+    return;
+  }
+  const language = getExportLanguage(req.query?.lang);
+  const filename = `shared-room-${sanitizeExportFilename(room.id)}.pdf`;
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(buildRoomExportPdf(room, language));
+});
+
 app.post('/api/rooms/:roomId/agent-proposals', (req, res) => {
   const room = getRoom(req.params.roomId);
   if (!room) {
-    res.status(404).json({ error: '找不到房間，請重新建立揪團分帳房' });
+    res.status(404).json({ error: '找不到房間，請重新建立共享空間' });
     return;
   }
   const requesterId = String(req.body?.participantId || '');
@@ -4211,7 +4459,7 @@ app.post('/api/rooms/:roomId/menu', createRateLimitMiddleware('menu_parse', menu
   try {
     const room = getRoom(req.params.roomId);
     if (!room) {
-      res.status(404).json({ error: '找不到房間，請重新建立揪團分帳房' });
+      res.status(404).json({ error: '找不到房間，請重新建立共享空間' });
       return;
     }
     if (room.menuLoaded) {
@@ -4349,7 +4597,7 @@ io.on('connection', (socket) => {
   socket.on('joinRoom', (payload, ack) => {
     const room = getRoom(payload?.roomId);
     if (!room) {
-      ack?.({ ok: false, error: '找不到房間，請重新建立揪團分帳房' });
+      ack?.({ ok: false, error: '找不到房間，請重新建立共享空間' });
       return;
     }
 
