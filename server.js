@@ -64,7 +64,11 @@ const trustLayerSpreadsheetUrl = trustLayerSpreadsheetId
 const roomPersistenceEnabled = String(process.env.ROOM_PERSISTENCE || 'json').toLowerCase() !== 'memory';
 const roomStorePath = path.resolve(__dirname, process.env.ROOM_STORE_PATH || 'data/rooms.json');
 const roomStoreVersion = 'group-room-json-store.v1';
+const roomPersistDebounceMs = Math.max(0, Math.min(1000, Number(process.env.ROOM_PERSIST_DEBOUNCE_MS || 35)));
+const roomPersistJitterMs = Math.max(0, Math.min(2000, Number(process.env.ROOM_PERSIST_JITTER_MS || 120)));
 const rooms = new Map();
+let roomPersistTimer = null;
+let roomPersistPendingReason = '';
 const geminiApiKeyNames = [
   'GEMINI_API_KEY',
   'GOOGLE_API_KEY',
@@ -921,17 +925,21 @@ function hydrateRoomFromStore(record) {
   };
 }
 
-function persistRooms(reason = 'room_state_changed') {
-  if (!roomPersistenceEnabled) {
-    return;
-  }
-
-  const payload = {
+function buildRoomStorePayload() {
+  return {
     storeVersion: roomStoreVersion,
     savedAt: nowIso(),
     roomTtlHours: roomTtlMs / 60 / 60 / 1000,
     rooms: Array.from(rooms.values()).map((room) => serializeRoomForStore(room))
   };
+}
+
+function writeRoomsToDisk(reason = 'room_state_changed') {
+  if (!roomPersistenceEnabled) {
+    return;
+  }
+
+  const payload = buildRoomStorePayload();
   const tempPath = `${roomStorePath}.tmp`;
 
   try {
@@ -950,6 +958,34 @@ function persistRooms(reason = 'room_state_changed') {
       error: error.message
     });
   }
+}
+
+function flushRoomPersistQueue(reasonOverride = '') {
+  if (roomPersistTimer) {
+    clearTimeout(roomPersistTimer);
+    roomPersistTimer = null;
+  }
+  const reason = reasonOverride || roomPersistPendingReason || 'room_state_changed';
+  roomPersistPendingReason = '';
+  writeRoomsToDisk(reason);
+}
+
+function persistRooms(reason = 'room_state_changed') {
+  if (!roomPersistenceEnabled) {
+    return;
+  }
+
+  const nextReason = roomPersistPendingReason ? `${roomPersistPendingReason},${reason}` : reason;
+  roomPersistPendingReason = nextReason.length > 240 ? `${nextReason.slice(0, 220)},more_changes` : nextReason;
+
+  if (roomPersistTimer) {
+    return;
+  }
+
+  const jitterMs = roomPersistJitterMs > 0 ? Math.floor(Math.random() * roomPersistJitterMs) : 0;
+  roomPersistTimer = setTimeout(() => {
+    flushRoomPersistQueue();
+  }, roomPersistDebounceMs + jitterMs);
 }
 
 function loadPersistedRooms() {
@@ -4063,6 +4099,8 @@ app.get('/healthz', (req, res) => {
     roomPersistenceEnabled,
     roomStorePath,
     roomStoreVersion,
+    roomPersistDebounceMs,
+    roomPersistJitterMs,
     evidenceContractVersion,
     trustLayerConfigured: Boolean(trustLayerSpreadsheetId),
     trustLayerContractVersion,
@@ -4073,6 +4111,16 @@ app.get('/healthz', (req, res) => {
     openAiKeyName,
     time: nowIso()
   });
+});
+
+process.on('SIGINT', () => {
+  flushRoomPersistQueue('process_sigint');
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  flushRoomPersistQueue('process_sigterm');
+  process.exit(0);
 });
 
 app.post('/api/rooms', createRateLimitMiddleware('room_create', roomCreateRateLimitMax), (req, res) => {

@@ -1,7 +1,7 @@
 {
   "name": "shared-room-mcp",
   "version": "1.0.0",
-  "description": "WebMCP-powered social group split room with local-first OCR, deterministic formulas, claim audit, and short-lived trust layer.",
+  "description": "Open-source WebMCP room where AI prepares group decision drafts and humans keep final control.",
   "license": "MIT",
   "type": "module",
   "main": "server.js",

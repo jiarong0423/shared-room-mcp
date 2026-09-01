@@ -188,3 +188,42 @@
 
 - Evidence file: `docs/ai-generated/2026Q3/shared_room_demo_scenario_matrix_b_20260901.md`.
 - `npm run check` passed before split stress.
+
+## 2026-09-01 11:21 Closeout Governance
+
+Scope:
+
+- Owner project: `shared-room-mcp`
+- Changed artifacts: `README.md`, `docs/submission/WEBMCP_SUBMISSION.md`, `docs/security/SECURITY_SCAN_EVIDENCE.md`, `docs/security/PACKAGE_REPUTATION_EVIDENCE.md`, `docs/testing/VALIDATION_EVIDENCE.md`, `server.js`, `public/index.html`, `package.json`, `env.sample`
+- Latest validation evidence: `npm run check` passed; `git diff --check` passed; public wording scan found no hype terms such as `Top 10`, `ultimate`, `Unbreakable`, or Chinese hype wording.
+
+DONE_CONFIRMED:
+
+- Rewrote the public README opening into an evidence version instead of a hype version.
+  - evidence: `README.md` now has `How We Checked It` with actual run counts and a clear non-production disclaimer.
+- Added a tracked validation summary.
+  - evidence: `docs/testing/VALIDATION_EVIDENCE.md` records local repeated room flows, host-only draft review, Load Sample Room, live Zeabur smoke, and short JSON save-burst checks.
+- Synchronized submission and security evidence wording.
+  - evidence: `docs/submission/WEBMCP_SUBMISSION.md` points to the validation summary; `docs/security/SECURITY_SCAN_EVIDENCE.md` includes JSON save queue and 25-room save-burst evidence.
+
+PRIORITY_INDEX:
+
+- Push and redeploy the evidence-version patch after human review.
+  - next action: run final local validation, then commit, push, and deploy to Zeabur only after explicit approval.
+  - risk if ignored: GitHub and the live app may still show the older wording or older behavior.
+
+WATCH_LATER:
+
+- JSON save layer remains a demo/single-service choice.
+  - trigger to revisit: move to Redis or PostgreSQL before real multi-instance traffic.
+
+INTENTIONALLY_NOT_DO:
+
+- Did not claim production-scale capacity.
+  - reason: current evidence supports hackathon/demo repeatability, not thousands of concurrent users.
+- Did not expose payment, booking submission, or external write APIs.
+  - reason: the product boundary keeps final decisions with humans.
+
+Next resume point:
+
+- Run `npm run check`, frontend visible-text scan, `npm run audit:tasks`, and `git diff --check`; then inspect `git status --short` before any push or Zeabur deployment.
