@@ -23,7 +23,7 @@ Keep one visible pending draft card per draft type. If the assistant creates a n
 | Host review | behavior clarified | human remains the final reviewer | one card, same-card confirmation | README and submission packet updated |
 | Member flow | unchanged | members should not be affected by host draft UI | member claim still opens only after host opens list | open-gate stress 20/20 |
 | Settlement/payment/export | unchanged | draft review must not settle, pay, book, or submit | final state remains human-controlled | security export gate passed |
-| Zeabur deployment | not changed in this pass | local must pass before deployment | live app still waits for next deploy | impact matrix marks git/deploy as pending |
+| Deployment state in this historical pass | not changed in this pass | local had to pass before deployment | deployment was still pending at the time of this matrix | superseded by the completed 2026-09-02 Git and Railway evidence in `docs/testing/VALIDATION_EVIDENCE.md` |
 
 ## Boundary Check
 

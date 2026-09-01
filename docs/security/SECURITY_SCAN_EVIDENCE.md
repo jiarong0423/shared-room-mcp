@@ -62,7 +62,7 @@ SAST-equivalent local code security evidence:
 - Production room-transition regression: passed exactly 2/2 low-rate cases on `https://sharedroom.jace0423.com/` after commit `bdaab1f` deployed. The same-tab room switch restored clean controls, and resetting the old room from a second tab did not overwrite the new room. Browser console errors and warnings were empty. No additional production stress run was performed.
 - Room-transition impact gate: `output/isolation/current_runs/shared_room_transition_20260902/impact_evidence_state_gate.md` marked frontend render, room transition, async callback boundary, Socket.IO boundary, and unchanged backend projection as evidence-backed `O`. Git release and cloud runtime remained `△` before push and deployment.
 - Final room-transition impact gate: `output/isolation/current_runs/shared_room_transition_20260902_final/impact_evidence_state_gate.md` returned `PASS` after Git and the two production cases were recorded; all affected layers were evidence-backed `O`.
-- Proposal UI impact matrix: `output/isolation/current_runs/shared_room_proposal_ui_dedupe_20260901_final_latest/impact_evidence_state_gate.md` marked backend contract, frontend render, WebMCP draft, claim flow, and docs/submission as evidence-backed `O`; git release remained pending because this pass was not committed or deployed yet.
+- Proposal UI impact matrix: `output/isolation/current_runs/shared_room_proposal_ui_dedupe_20260901_final_latest/impact_evidence_state_gate.md` marked backend contract, frontend render, WebMCP draft, claim flow, and docs/submission as evidence-backed `O`; Git release was pending in that historical pass and was superseded by the completed 2026-09-02 release evidence above.
 
 The current implementation contains no known auto-payment, card storage, order-finalization, or external booking submission path. Agents can inspect state and create bounded host-review drafts only. Parsed-item edits are host UI actions and are not exposed as WebMCP tools.
 
@@ -72,7 +72,7 @@ Checked against visible Devpost requirements and discussion topics on 2026-09-01
 
 | weak point | local mitigation | evidence state |
 |---|---|---|
-| Hosted room state can reset after a platform restart | JSON persistence supports `ROOM_STORE_PATH=/data/rooms.json`; Zeabur volume is mounted for live judging | Live restart smoke passed after deployment |
+| Hosted room state can reset after a platform restart | JSON persistence supports `ROOM_STORE_PATH=/data/rooms.json`; the current Railway service mounts `/data` | Railway health reports the `/data` store path; the earlier Zeabur restart smoke remains historical evidence |
 | Judges may test in ChatGPT in-app browser or Chrome WebMCP mode | UI remains usable without WebMCP; WebMCP registration is progressive through `document.modelContext` when available | Local in-app browser detected all 7 tools; ordinary UI smoke passed |
 | Repository license must be visible in GitHub About | Root `LICENSE` file is MIT; README and submission packet state MIT | GitHub repository page shows `MIT license` |
 | First 30 seconds of demo needs immediate visible value | `Load Sample Room` creates structured sample data and a pending draft without API keys or uploads | Local API stress and browser smoke passed |

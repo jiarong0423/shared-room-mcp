@@ -208,7 +208,7 @@ Operator rule for recording:
 
 - Public repository URL is set to `https://github.com/jiarong0423/shared-room-mcp`.
 - Replace `TODO_YOUTUBE_DEMO_URL` after uploading the public demo video.
-- Live URL is set to `https://sharedroom.jace0423.com/` and should be rechecked after the final push.
+- Live URL `https://sharedroom.jace0423.com/` was rechecked after the final functional push; production health, WebMCP tools, and the two locked room-transition cases passed.
 - Confirm the Railway `/data` volume remains mounted when `ROOM_STORE_PATH=/data/rooms.json` is configured.
 - Disclose that the current room ownership model is demo-grade; production deployments should add signed sessions or a real login system.
 - Confirm Devpost description uses the same WebMCP safety rule stated here.
