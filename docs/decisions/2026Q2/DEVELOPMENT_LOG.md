@@ -279,3 +279,57 @@ WATCH_LATER:
 Next resume point:
 
 - Commit and push the submission diff sweep so GitHub no longer lacks the README/Mermaid persistence diagram and manifest entries.
+
+## 2026-09-01 16:28 Locked Demo Runbook
+
+Scope:
+
+- Owner project: `shared-room-mcp`
+- Changed artifacts: `README.md`, `docs/submission/WEBMCP_SUBMISSION.md`
+
+DONE_CONFIRMED:
+
+- Locked the recording flow into two scenes instead of an open-ended demo.
+  - Scene A: English Restaurant Split.
+  - Scene B: Chinese Group Buy / Free Shipping or Drink Order.
+- Locked the operator rhythm for recording.
+  - Agent opens/inspects/drafts.
+  - Agent pauses before every approval, member confirmation, and finalization.
+  - Human clicks only after the agent explicitly says it is ready.
+- Synchronized the README demo summary with the detailed submission runbook.
+  - evidence: `README.md` links to `docs/submission/WEBMCP_SUBMISSION.md#locked-demo-runbook`.
+
+Next resume point:
+
+- Use the locked runbook for the next recording pass. Do not approve all drafts together; approve one visible draft, wait for the state change, then continue to second-member confirmation.
+
+## 2026-09-01 16:33 Closeout Governance
+
+Scope:
+
+- Owner project: `shared-room-mcp`
+- Changed artifacts: `README.md`, `docs/submission/WEBMCP_SUBMISSION.md`, `docs/decisions/2026Q2/DEVELOPMENT_LOG.md`
+- Latest validation evidence: `git diff --check` passed; old demo-script scan returned no stale timed-script matches.
+
+DONE_CONFIRMED:
+
+- Demo flow is now locked in the public submission packet.
+  - evidence: `docs/submission/WEBMCP_SUBMISSION.md` contains `Locked Demo Runbook`.
+- GitHub README points to the same flow instead of carrying a separate older script.
+  - evidence: `README.md` links to `docs/submission/WEBMCP_SUBMISSION.md#locked-demo-runbook`.
+- Operator rule is written down for recording.
+  - evidence: the runbook requires the agent to pause before approval, member confirmation, and finalization.
+
+WATCH_LATER:
+
+- The locked runbook should be followed during the next recording pass.
+  - trigger to revisit: if the live UI labels change or the second-member flow is adjusted before recording.
+
+INTENTIONALLY_NOT_DO:
+
+- Did not redeploy Zeabur for this change.
+  - reason: this pass changes documentation and recording flow only, not runtime files.
+
+Next resume point:
+
+- Record from the live page using the locked two-scene runbook: English Restaurant Split, then Chinese Group Buy / Free Shipping or Drink Order.

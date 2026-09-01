@@ -145,31 +145,52 @@ The public evidence summary is tracked in `docs/testing/VALIDATION_EVIDENCE.md`.
 
 Open `http://localhost:3000`, create a room, choose a task type, paste OCR text or upload an image, add participants, claim items, and inspect the audit panel.
 
-## Demo Script
+## Locked Demo Runbook
 
-Target length: under 3 minutes.
+Target length: under 3 minutes. The recording should show two controlled scenes: one English scene and one Chinese scene. The point is not to show every feature. The point is to show the same safety loop twice: agent prepares, humans confirm.
 
-0:00-0:20: Open the live room and Codex or ChatGPT side panel together. Upload a prepared price image or paste copied OCR text from the image. State the product in one sentence: "This is a shared room where people and agents prepare group decisions together, while final confirmation stays human-controlled." Use `Load Sample Room` only as a backup if the recording environment cannot access the local image file.
+Opening line:
 
-0:20-0:45: Show the host item review layer. Remove one bad OCR row or correct one name, price, or category, then click `Open To Members`. This proves that the AI/OCR output is a draft surface, not an automatic final write.
+"Agents prepare shared decisions directly on the page. Humans keep the final confirmation button."
 
-0:45-1:10: In the side panel, ask the agent to inspect the room through WebMCP. Show `inspect_room` and `suggest_next_actions` reading the room state and next blockers without scraping the UI.
+### Scene A: English Restaurant Split
 
-1:10-1:35: Open the same room in a second tab as another member. Claim items in both tabs and show that each person controls only their own choices and confirmation.
+0:00-0:05: Start directly on the live Shared Room page with the Codex or ChatGPT side panel visible. Do not start from setup screens.
 
-1:35-2:05: Ask the agent to create a host-reviewed draft with `create_action_proposal`. Show the Suggested Drafts panel and the waiting-for-host state.
+0:05-0:15: Keep the UI in English. Use the Restaurant Split scene. Click `Load Sample Room` if the recording environment cannot reliably upload a prepared image. Pause on `Connected`, `6 items`, `Suggested Drafts`, and `Needs review`.
 
-2:05-2:30: Click `Approve Draft`, then show the inline second step `Confirm Human Approval`. Explain that approval reviews the suggestion but does not auto-settle, submit a booking, write payment data, or call an external system.
+0:15-0:35: In the side panel, have the agent call `inspect_room` and `suggest_next_actions`. The page should show that the agent reads the room state and blockers through WebMCP tools, not through manual screen guessing.
 
-2:30-2:55: After humans confirm their own costs, the host finalizes the local settlement summary. Close with the open-source template angle: the group room is the reference module, and future forks can add proposal-only adapters for repair appointments, salon bookings, local services, activity signups, commerce catalogs, or private community workflows.
+0:35-0:50: Have the agent call `create_action_proposal`. Pause on the new host draft in `Suggested Drafts`. The visible state must remain waiting for host review.
 
-Keep this exact spoken line near the start or close:
+0:50-1:05: The agent tells the host: "You can press Approve Draft now." The human clicks `Approve Draft`, then stops. If a second-step approval appears, the agent tells the host when to press it.
 
-"AI helps prepare the room, but people make the final decision. Codex can inspect, compare, and draft through WebMCP; the host and members still confirm before anything becomes final."
+1:05-1:25: Open the same room in a second tab with another member name, such as `Jamie`. Show that Jamie is in the same room, claims one item, and confirms only Jamie's own cost.
 
-Optional closing line:
+1:25-1:40: Return to the host tab. Show the member confirmation state. Stop before finalization until the agent says: "You can press Owner Finalizes Split Bill now."
 
-"Codex handles the repetitive inspection and drafting work inside the sidebar; the web app keeps the final audit gate in human hands."
+### Scene B: Chinese Group Buy Or Drink Order
+
+1:40-1:50: Open a new room or reset the current room. Switch the UI to Chinese. Use a different scene from Scene A: Group Buy / Free Shipping or Drink Order.
+
+1:50-2:05: Load or paste a Chinese sample that includes a threshold, menu option, or ambiguous non-item line. Pause when the page shows the parsed list and any review notice.
+
+2:05-2:25: Have the agent inspect the room and create a host draft. The draft should explain what needs human review, such as a threshold line that is not a purchasable item.
+
+2:25-2:40: The agent tells the host when to approve. The human performs the approval step, then stops.
+
+2:40-2:55: Open the same Chinese room as a second member, such as `小明`. The second member claims or confirms only their own item. Return to the host and stop before any final irreversible action.
+
+Closing line:
+
+"This is not an ordering app. It is a WebMCP collaboration template. The agent prepares the room, drafts the next step, and highlights conflicts directly on the page. Humans approve, claim, and finalize. No payment, booking, or external account action is exposed as a tool."
+
+Operator rule for recording:
+
+- The agent performs page setup, WebMCP inspection, and draft creation.
+- The agent must pause before every host approval, member confirmation, and finalization.
+- The human clicks approval or confirmation only after the agent explicitly says it is ready.
+- Do not approve all drafts at once. Approve one visible draft, wait for the state change, then continue.
 
 ## Compliance Notes
 

@@ -354,18 +354,30 @@ Expected audit state:
 
 ## Demo Script
 
-1. Open the live URL.
-2. Confirm the UI defaults to English.
-3. Click `Load Sample Room` to create a no-key demo room with structured items and a draft waiting for host review.
-4. Ask the agent to call `inspect_room`.
-5. Ask the agent to call `suggest_next_actions`.
-6. Ask the agent to call `create_action_proposal` and show the proposal stays in host review.
-7. Click `Approve Draft`, then show the inline second step `Confirm Human Approval`.
-8. Add or claim one item manually to show human control.
-9. Point out the six plain-language safety steps in the UI.
-10. Show that the agent can inspect room rules and missing confirmations but cannot calculate money externally, finalize settlement, or write payment data.
-11. State that WebMCP tools are registered in the browser page with `document.modelContext.registerTool()`; the same-origin backend only supports the app data layer.
-12. Briefly mention future proposal-only extensions for reservations, repair appointments, salon bookings, and other form-draft workflows.
+The locked recording flow is:
+
+1. Open the live Shared Room page with the agent side panel visible.
+2. Run one English Restaurant Split scene.
+3. Load or paste price evidence, then pause on `Connected`, parsed items, `Suggested Drafts`, and `Needs review`.
+4. Have the agent call `inspect_room`, `suggest_next_actions`, and `create_action_proposal`.
+5. The agent pauses and tells the host when to press `Approve Draft`.
+6. The host approves one draft at a time and waits for the visible state change.
+7. Open the same room in a second tab as another member, such as `Jamie`.
+8. The second member claims one item and confirms only their own cost.
+9. Return to the host tab and stop before finalization until the agent says it is ready.
+10. Run one Chinese scene with a different purpose, such as Group Buy / Free Shipping or Drink Order.
+11. Show the same loop again: agent inspects, agent drafts, human approves, second member confirms.
+12. Close by stating that no payment, booking submission, or external account action is exposed as a tool.
+
+Use this spoken line near the start:
+
+"Agents prepare shared decisions directly on the page. Humans keep the final confirmation button."
+
+Use this closing line:
+
+"This is not an ordering app. It is a WebMCP collaboration template. The agent prepares the room, drafts the next step, and highlights conflicts directly on the page. Humans approve, claim, and finalize. No payment, booking, or external account action is exposed as a tool."
+
+The detailed timed runbook is in [`docs/submission/WEBMCP_SUBMISSION.md`](docs/submission/WEBMCP_SUBMISSION.md#locked-demo-runbook).
 
 ## Compliance Notes
 
