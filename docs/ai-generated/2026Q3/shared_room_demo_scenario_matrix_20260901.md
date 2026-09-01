@@ -146,8 +146,7 @@ Last validated: 2026-09-01 05:53 Asia/Taipei.
 Command shape:
 
 ```text
-PORT=3146 HOST=127.0.0.1 ROOM_STORE_PATH=/private/tmp/shared-room-mcp-unique-closed-loop-3146.json npm start
-BASE_URL=http://127.0.0.1:3146 REPEAT=20 TIMEOUT_MS=20000 node /private/tmp/shared-room-unique-stress.mjs
+Start a local server with a temporary JSON room store, then run the local unique-scenario stress runner against that server for 20 repeats per scenario.
 ```
 
 Result summary:

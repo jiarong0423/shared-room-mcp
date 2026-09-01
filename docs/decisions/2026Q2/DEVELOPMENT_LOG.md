@@ -153,7 +153,7 @@
 ### 驗證證據
 
 - `npm run check` passed.
-- Final local stress matrix passed on a clean local instance: `BASE_URL=http://127.0.0.1:3146 REPEAT=20 TIMEOUT_MS=20000 node /private/tmp/shared-room-unique-stress.mjs`.
+- Final local stress matrix passed on a clean local instance using a temporary JSON room store and the local unique-scenario stress runner.
 - Total runs: 240. Passed: 240. Failed: 0.
 - Unique scenario IDs: 12. Unique scenario titles: 12. Duplicate IDs: 0.
 - Language split: 6 Chinese scenarios and 6 English scenarios.
@@ -426,8 +426,32 @@ DONE_CONFIRMED:
 - Public wording and private-data scans passed after the recheck.
   - evidence: tracked-file scans returned no stale public wording, local file paths, Codex attachment paths, Google Sheet URLs, common token prefixes, private keys, or raw media references.
 - Public export gate passed after the recheck.
-  - evidence: `/private/tmp/ai_security_rules_shared_room_mcp_20260901_after_readability_patch`, blocking `0`, P0 `0`, P1 `0`, P2 `0`.
+  - evidence: local ai-security-rules export-gate output outside the repository, blocking `0`, P0 `0`, P1 `0`, P2 `0`.
 
 Next resume point:
 
 - Commit, push, and redeploy this small architecture/download-name cleanup before recording.
+
+## 2026-09-01 18:03 Public Path And Private Algorithm Recheck
+
+Scope:
+
+- Owner project: `shared-room-mcp`
+- Changed artifacts: `docs/ai-generated/2026Q3/shared_room_demo_scenario_matrix_20260901.md`, `docs/ai-generated/2026Q3/shared_room_demo_scenario_matrix_b_20260901.md`, `docs/security/SECURITY_SCAN_EVIDENCE.md`, `docs/testing/VALIDATION_EVIDENCE.md`, `docs/decisions/2026Q2/DEVELOPMENT_LOG.md`
+
+DONE_CONFIRMED:
+
+- Removed local scratch paths from public evidence documents.
+  - evidence: tracked-file scan returned no local machine paths, desktop media references, Codex attachment paths, pasted attachment paths, or spreadsheet document links.
+- Checked whether the public repo contains private algorithm material.
+  - evidence: no sensitive scoring weights, non-public topology notes, restricted notes, or private business rules were found. Broad keyword hits were limited to embedded 1x1 PNG test fixtures.
+- Public export gate still passed after the path scrub.
+  - evidence: local ai-security-rules export-gate output outside the repository, blocking `0`, P0 `0`, P1 `0`, P2 `0`.
+
+Decision:
+
+- No private algorithm extraction is required for the current open-source submission. The repository exposes the intended template logic and WebMCP boundary contract, while optional commercial integrations remain outside the core.
+
+Next resume point:
+
+- Commit, push, and redeploy the path-scrub evidence update if runtime files changed; otherwise push documentation only.

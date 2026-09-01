@@ -7,7 +7,7 @@ Generated on 2026-09-01. This second matrix is separate from the original 12-sce
 Command shape:
 
 ```text
-node /private/tmp/shared-room-mutual-exclusion.mjs
+Run the local mutual-exclusion checker against the original scenario matrix and this second matrix.
 ```
 
 Result summary:
@@ -49,15 +49,13 @@ Result summary:
 Chinese command shape:
 
 ```text
-PORT=3149 HOST=127.0.0.1 ROOM_STORE_PATH=/private/tmp/shared-room-mcp-scenarios-b-zh-3149.json npm start
-BASE_URL=http://127.0.0.1:3149 SCENARIO_PATH=/private/tmp/shared-room-mcp-demo-assets/unique-12-scenarios-b.json LANG_FILTER=zh REPEAT=20 TIMEOUT_MS=20000 node /private/tmp/shared-room-unique-stress.mjs
+Start a local server with a temporary JSON room store, then run the local unique-scenario stress runner with the Chinese scenario filter for 20 repeats per scenario.
 ```
 
 English command shape:
 
 ```text
-PORT=3151 HOST=127.0.0.1 ROOM_STORE_PATH=/private/tmp/shared-room-mcp-scenarios-b-en-3151.json npm start
-BASE_URL=http://127.0.0.1:3151 SCENARIO_PATH=/private/tmp/shared-room-mcp-demo-assets/unique-12-scenarios-b.json LANG_FILTER=en REPEAT=20 TIMEOUT_MS=20000 node /private/tmp/shared-room-unique-stress.mjs
+Start a local server with a temporary JSON room store, then run the local unique-scenario stress runner with the English scenario filter for 20 repeats per scenario.
 ```
 
 Result summary:

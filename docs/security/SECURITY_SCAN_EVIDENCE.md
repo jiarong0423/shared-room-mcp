@@ -23,11 +23,13 @@ SAST-equivalent local code security evidence:
 - `npm audit --audit-level=high`: passed on 2026-09-01 with `0` vulnerabilities.
 - `npm audit --audit-level=moderate --omit=dev`: passed on 2026-09-01 with `0` vulnerabilities.
 - `ai-security-rules scan`: passed on 2026-09-01 with critical `0`, high `0`, medium `37`.
-- `ai-security-rules rules-check`: passed on 2026-09-01 after the naming and export cleanup with blocking findings `0`; latest report: `/private/tmp/ai_security_rules_shared_room_mcp_20260901_post_export_rules`.
+- `ai-security-rules rules-check`: passed on 2026-09-01 after the naming and export cleanup with blocking findings `0`; report was written outside the repository.
 - `ai-security-rules agent-review`: passed on 2026-09-01 with blocking findings `0`, P0 `0`, P1 `0`, P2 `31`.
-- `ai-security-rules export-gate`: passed on 2026-09-01 after the naming and export cleanup with blocking findings `0`; latest report: `/private/tmp/ai_security_rules_shared_room_mcp_20260901_after_readability_patch`.
-- `ai-security-rules deploy-gate`: passed on 2026-09-01 after the naming and export cleanup with blocking findings `0`; latest report: `/private/tmp/ai_security_rules_shared_room_mcp_20260901_post_export_deploy`.
+- `ai-security-rules export-gate`: passed on 2026-09-01 after the naming and export cleanup with blocking findings `0`; report was written outside the repository.
+- `ai-security-rules deploy-gate`: passed on 2026-09-01 after the naming and export cleanup with blocking findings `0`; report was written outside the repository.
 - Current-file secret scan: no committed API keys, private keys, `.env` files, raw Google Sheet IDs, cookies, or payment data found in public source paths.
+- Public path scrub: passed on 2026-09-01 with no tracked local machine paths, desktop media references, Codex attachment paths, spreadsheet document links, private-key blocks, or common token prefixes.
+- Private-algorithm review: no sensitive scoring weights, non-public topology notes, restricted notes, or private business rules were found. Two broad keyword hits were false positives from embedded 1x1 PNG test fixtures in stress scripts.
 - Local repeated room flow: passed 400/400 cases across 20 non-duplicate Chinese and English scenarios after the hidden-image UI fix.
 - Load Sample Room repeat check: passed 120/120 localhost cases. Each case verified sample creation, no task conflict, no external calculation, no settlement, no image upload dependency, repeat-load rejection, non-owner rejection, and non-owner proposal rejection.
 - In-app browser WebMCP smoke: local page exposed 7 WebMCP tools, including the proposal-only `create_action_proposal` tool. `Load Sample Room` produced 6 visible items, `No pending costs`, one waiting host-review draft, and a disabled repeat sample button.
