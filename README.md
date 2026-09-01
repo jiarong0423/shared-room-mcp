@@ -247,7 +247,7 @@ MAX_IMAGE_MB=8
 RATE_LIMIT_WINDOW_MS=60000
 API_RATE_LIMIT_MAX=180
 ROOM_CREATE_RATE_LIMIT_MAX=20
-MENU_PARSE_RATE_LIMIT_MAX=6
+MENU_PARSE_RATE_LIMIT_MAX=30
 LOCAL_OCR_FIRST=true
 LOCAL_OCR_MIN_ITEMS=3
 LOCAL_OCR_MAX_CHARS=12000
@@ -343,10 +343,10 @@ Recommended public-demo limits:
 RATE_LIMIT_WINDOW_MS=60000
 API_RATE_LIMIT_MAX=180
 ROOM_CREATE_RATE_LIMIT_MAX=20
-MENU_PARSE_RATE_LIMIT_MAX=6
+MENU_PARSE_RATE_LIMIT_MAX=30
 ```
 
-The expensive endpoint is image/OCR parsing, not WebMCP inspection. Keep `MENU_PARSE_RATE_LIMIT_MAX` low for public demos.
+The expensive endpoint is image/OCR parsing, not WebMCP inspection. The public demo allows 30 parse requests per client per minute while retaining basic abuse protection.
 
 ## Verification
 
@@ -372,18 +372,16 @@ Expected audit state:
 
 The locked recording flow is:
 
-1. Open the live Shared Room page with the agent side panel visible.
-2. Run one English Restaurant Split scene.
-3. Load or paste price evidence, then pause on `Connected`, parsed items, `Suggested Drafts`, and `Needs review`.
-4. Have the agent call `inspect_room`, `suggest_next_actions`, and `create_action_proposal`.
-5. The agent pauses and tells the host when to press `Approve Draft`.
-6. The host approves the visible draft card and waits for the visible state change.
-7. Open the same room in a second tab as another member, such as `Jamie`.
-8. The second member claims one item and confirms only their own cost.
-9. Return to the host tab and stop before finalization until the agent says it is ready.
-10. Run one Chinese scene with a different purpose, such as Group Buy / Free Shipping or Drink Order.
-11. Show the same loop again: agent inspects, agent drafts, human approves, second member confirms.
-12. Close by stating that no payment, booking submission, or external account action is exposed as a tool.
+1. Start on the live Shared Room page with the agent side panel visible.
+2. Upload the prepared English `Community Workshop Signup` image through the visible file picker. Do not use `Load Sample Room` in the recording.
+3. The agent reads the visible evidence, enters only the visible price lines, and calls `inspect_room`, `suggest_next_actions`, and `create_action_proposal`.
+4. The agent moves the pointer to the single draft card and tells the host when to click. The host clicks the same card twice: first to mark it reviewed, then to confirm the green approval state.
+5. The agent opens the same room in a second tab as `Jamie`, selects one item, and pauses. Jamie clicks the personal confirmation button once.
+6. The agent immediately returns to the owner tab, verifies the member state, and pauses. The owner clicks `Owner Finalizes Summary` once.
+7. The owner clicks `Download PDF`, then `Download HTML`. Both files must open successfully before the recording continues.
+8. Open a new room, switch to Chinese, and upload the prepared `社區水果免運團購` image. The threshold and shipping lines must remain review context rather than purchasable items.
+9. Repeat the same controlled loop quickly: agent prepares, the human approves on one card, a second member confirms their own item, and the owner finalizes.
+10. Close by stating that payment, booking submission, and external account actions remain outside the exposed tool set.
 
 Use this spoken line near the start:
 
@@ -391,7 +389,7 @@ Use this spoken line near the start:
 
 Use this closing line:
 
-"This is not an ordering app. It is a WebMCP trust boundary template. The agent prepares structured drafts and highlights conflicts directly on the page. Humans approve, claim, and finalize. No payment, booking submission, regulated purchase approval, public posting, or external account action is exposed as a tool."
+"WebMCP lets the agent handle the repetitive work on the page while people keep every commitment. The same pattern can support shared orders, registrations, bookings, and other collaborative tasks without exposing final payment or external submission as an agent tool."
 
 The detailed timed runbook is in [`docs/submission/WEBMCP_SUBMISSION.md`](docs/submission/WEBMCP_SUBMISSION.md#locked-demo-runbook).
 

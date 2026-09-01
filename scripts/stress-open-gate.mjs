@@ -86,7 +86,8 @@ function parseArgs(argv) {
     baseUrl: defaultBaseUrl,
     rounds: 20,
     timeoutMs: 20000,
-    outputDir: defaultOutputDir
+    outputDir: defaultOutputDir,
+    failFast: true
   };
 
   for (let index = 2; index < argv.length; index += 1) {
@@ -104,6 +105,8 @@ function parseArgs(argv) {
     } else if (arg === '--output-dir' && next) {
       args.outputDir = next;
       index += 1;
+    } else if (arg === '--continue-on-failure') {
+      args.failFast = false;
     }
   }
 
@@ -465,6 +468,8 @@ async function runScenarioRound(baseUrl, scenario, round, timeoutMs) {
   assertCondition(pdfHeader.startsWith('%PDF-'), `PDF export header mismatch: ${pdfHeader}`);
   assertCondition(pdfTail.includes('%%EOF'), 'PDF export missing EOF marker');
   assertCondition(pdfExport.buffer.length > 500, `PDF export too small: ${pdfExport.buffer.length} bytes`);
+  assertCondition(pdfExport.buffer.includes(Buffer.from('/BaseFont /Helvetica')), 'PDF export missing readable Latin font');
+  assertCondition(pdfExport.buffer.includes(Buffer.from('/BaseFont /MSung-Light')), 'PDF export missing readable CJK font');
 
   return {
     ok: true,
@@ -489,7 +494,9 @@ async function runScenarioRound(baseUrl, scenario, round, timeoutMs) {
       memberConfirmAllowed: true,
       hostSettleAllowed: true,
       htmlExportReadable: true,
-      pdfExportReadable: true
+      pdfExportReadable: true,
+      pdfLatinFontPresent: true,
+      pdfCjkFontPresent: true
     },
     exports: {
       htmlStatus: htmlExport.status,
@@ -527,16 +534,18 @@ function summarize(results) {
   };
 }
 
-function renderMarkdown(args, summary, results) {
+function renderMarkdown(args, summary, results, plannedTotal) {
   const lines = [
     '# Open Gate Stress Evidence',
     '',
     `- Target: ${args.baseUrl}`,
     `- Rounds per scenario: ${args.rounds}`,
     `- Scenarios: ${scenarios.length}`,
-    `- Total cases: ${summary.total}`,
+    `- Planned cases: ${plannedTotal}`,
+    `- Attempted cases: ${summary.total}`,
     `- Passed: ${summary.passed}`,
     `- Failed: ${summary.failed}`,
+    `- Stopped early: ${summary.total < plannedTotal ? 'yes' : 'no'}`,
     `- Generated at: ${new Date().toISOString()}`,
     '',
     '## Scenario Summary',
@@ -617,6 +626,10 @@ async function main() {
       };
       results.push(result);
       console.log(`[${index + 1}/${tasks.length}] ${scenario.id} round ${round} FAIL ${result.error}`);
+      if (args.failFast) {
+        console.log(`Stopped after first failure at case ${index + 1}/${tasks.length}.`);
+        break;
+      }
     }
     await sleep(15);
   }
@@ -626,12 +639,14 @@ async function main() {
     args,
     health: health.data,
     scenarios,
+    plannedTotal: tasks.length,
+    stoppedEarly: results.length < tasks.length,
     summary,
     results
   };
 
   await fs.writeFile(jsonPath, `${JSON.stringify(payload, null, 2)}\n`);
-  await fs.writeFile(mdPath, `${renderMarkdown(args, summary, results)}\n`);
+  await fs.writeFile(mdPath, `${renderMarkdown(args, summary, results, tasks.length)}\n`);
 
   console.log(JSON.stringify({
     summary,

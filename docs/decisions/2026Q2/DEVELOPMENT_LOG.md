@@ -649,3 +649,37 @@ PRODUCTION_EVIDENCE:
 Next resume point:
 
 - Use `https://sharedroom.jace0423.com/` for recording and the Devpost Live URL. The next remaining submission artifact is the public demo video URL.
+
+## 2026-09-02 Bilingual Export And Recording Lock
+
+Scope:
+
+- Owner project: `shared-room-mcp`
+- Changed runtime artifacts: `server.js`, `scripts/stress-open-gate.mjs`
+- Changed public artifacts: `README.md`, `docs/submission/WEBMCP_SUBMISSION.md`, `env.sample`
+
+Direct cause:
+
+- The PDF route used one CJK font for every character, which made English text appear widely spaced even though the file was technically valid.
+
+Root cause:
+
+- Export checks verified PDF structure and extracted text, but did not verify the font resources or rendered bilingual appearance.
+
+DONE_CONFIRMED:
+
+- PDF output now uses Helvetica for Latin runs and MSung-Light for Chinese runs, with wider mixed-language spacing.
+- The open-gate check now requires both font resources in every completed PDF export.
+- One local round passed all four Chinese and English room scenarios, including draft boundary, second-member confirmation, owner finalization, HTML export, and PDF export.
+- The English PDF was rendered and visually inspected; its text is compact and readable.
+- The Chinese PDF was rendered and visually inspected after mixed-language spacing was widened; Chinese labels, room IDs, quantities, and totals no longer overlap.
+- The recording script now assigns all routine page work to the agent and lists the human clicks in order: same-card review twice, member confirmation once, owner finalization once, PDF download, then HTML download.
+- The recording uses a synthetic English activity signup image and a synthetic Chinese free-shipping group-buy image. It does not use private customer or payment data.
+
+Release rule:
+
+- The bilingual render check, security export gate, and deployment gate passed before commit. Both security gates reported blocking findings `0`, P0 `0`, P1 `0`, and P2 `0`.
+
+Next resume point:
+
+- Commit and push only after the final Chinese render and both security gates pass, then verify one low-rate production download without running cloud stress.

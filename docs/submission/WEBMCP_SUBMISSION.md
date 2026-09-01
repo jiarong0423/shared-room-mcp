@@ -101,7 +101,7 @@ MAX_IMAGE_MB=8
 RATE_LIMIT_WINDOW_MS=60000
 API_RATE_LIMIT_MAX=180
 ROOM_CREATE_RATE_LIMIT_MAX=20
-MENU_PARSE_RATE_LIMIT_MAX=6
+MENU_PARSE_RATE_LIMIT_MAX=30
 LOCAL_OCR_FIRST=true
 LOCAL_OCR_MIN_ITEMS=3
 LOCAL_OCR_MAX_CHARS=12000
@@ -150,50 +150,87 @@ Open `http://localhost:3000`, create a room, choose a task type, paste OCR text 
 
 ## Locked Demo Runbook
 
-Target length: under 3 minutes. The recording should show two controlled scenes: one English scene and one Chinese scene. The point is not to show every feature. The point is to show the same safety loop twice: agent prepares, humans confirm.
+Target length: 2 minutes 20 seconds to 2 minutes 45 seconds. The recording shows one complete English workflow followed by one faster Chinese contrast workflow. The agent directs and performs every routine page action. The human only performs the explicit approval, personal confirmation, finalization, and download clicks listed below.
+
+Prepared synthetic evidence:
+
+- English: `Community Workshop Signup`, containing ticket, material-kit, locker, and meal-voucher prices.
+- Chinese: `社區水果免運團購`, containing purchasable fruit items plus a free-shipping threshold and shipping-review lines.
+- Both images are synthetic recording assets. They contain no customer, vendor, social-account, or payment data.
 
 Opening line:
 
 "AI prepares the work directly on the page. Humans approve the commitment."
 
-### Scene A: English Restaurant Split
+### Scene A: English Activity Signup
 
-0:00-0:05: Start directly on the live Shared Room page with the Codex or ChatGPT side panel visible. Do not start from setup screens.
+0:00-0:05: Start on a dark screen, then reveal the live Shared Room page with the Codex side panel on the right. Keep the UI in English.
 
-0:05-0:15: Keep the UI in English. Use the Restaurant Split scene. Click `Load Sample Room` if the recording environment cannot reliably upload a prepared image. Pause on `Connected`, `6 items`, `Suggested Drafts`, and `Needs review`.
+Spoken line:
 
-0:15-0:35: In the side panel, have the agent call `inspect_room` and `suggest_next_actions`. The page should show that the agent reads the room state and blockers through WebMCP tools, not through manual screen guessing.
+"AI prepares the work directly on the page. Humans approve the commitment."
 
-0:35-0:50: Have the agent call `create_action_proposal`. Pause on the new host draft in `Suggested Drafts`. The visible state must remain waiting for host review.
+0:05-0:18: **Agent action.** Click the visible evidence-photo area, open the system file picker, choose the prepared `Community Workshop Signup` image, and return to the page. Keep the selected image preview visible briefly so the evidence source is clear.
 
-0:50-1:05: The agent tells the host: "You can press Approve Draft now." The human clicks the single visible draft card button and waits for the card state to change.
+0:18-0:35: **Agent action.** Read the visible English evidence, enter only its visible price lines, and start the room. Call `inspect_room` and `suggest_next_actions`, then call `create_action_proposal`. Pause with one draft card visible under `Suggested Drafts`.
 
-1:05-1:25: Open the same room in a second tab with another member name, such as `Jamie`. Show that Jamie is in the same room, claims one item, and confirms only Jamie's own cost.
+Agent cue:
 
-1:25-1:40: Return to the host tab. Show the member confirmation state. Stop before finalization until the agent says: "You can press Owner Finalizes Summary now." After finalization, click `Download HTML` or `Download PDF` once to show that the reviewed record can be exported locally.
+"The draft matches the visible evidence. Please click the highlighted button once to mark it reviewed."
 
-### Scene B: Chinese Group Buy Or Drink Order
+0:35-0:43: **Human click 1.** Click the highlighted button on the single draft card. Do not move to another card.
 
-1:40-1:50: Open a new room or reset the current room. Switch the UI to Chinese. Use a different scene from Scene A: Group Buy / Free Shipping or Drink Order.
+Agent cue after the button changes:
 
-1:50-2:05: Load or paste a Chinese sample that includes a threshold, menu option, or ambiguous non-item line. Pause when the page shows the parsed list and any review notice.
+"The same card is now ready for approval. Please click the green button once."
 
-2:05-2:25: Have the agent inspect the room and create a host draft. The draft should explain what needs human review, such as a threshold line that is not a purchasable item.
+0:43-0:50: **Human click 2.** Click the green button on the same card. The card must visibly leave the waiting state. If a second equivalent card appears, stop the recording.
 
-2:25-2:40: The agent tells the host when to approve. The human performs the approval step, then stops.
+0:50-1:05: **Agent action.** Open the copied room link in a second tab as `Jamie`, select one item for Jamie, and move the pointer to Jamie's personal confirmation button.
 
-2:40-2:55: Open the same Chinese room as a second member, such as `小明`. The second member claims or confirms only their own item. Return to the host and stop before any final irreversible action.
+Agent cue:
+
+"Jamie is confirming only Jamie's own item. Please click the highlighted confirmation button once."
+
+1:05-1:12: **Human click 3.** Click Jamie's personal confirmation button once.
+
+1:12-1:22: **Agent action.** Immediately return to the owner tab, verify that Jamie is present and confirmed, then move the pointer to `Owner Finalizes Summary`.
+
+Agent cue:
+
+"The room now includes the member's own confirmation. Please click Owner Finalizes Summary once."
+
+1:22-1:28: **Human click 4.** Click `Owner Finalizes Summary` once.
+
+1:28-1:40: **Human clicks 5 and 6.** Click `Download PDF`, then `Download HTML`. The agent verifies that both files were downloaded and can be opened. Stop immediately if either file is missing, blank, corrupted, or unreadable.
+
+### Scene B: Chinese Free-Shipping Group Buy
+
+1:40-1:48: **Agent action.** Open a new room, switch the UI to Chinese, and upload the prepared `社區水果免運團購` image through the visible file picker.
+
+1:48-2:02: **Agent action.** Read the visible Chinese evidence and prepare the room. Show that `滿額 1500 免運`, `冷藏運費`, and `免運差額` are treated as conditions requiring review, not as member-selectable products.
+
+2:02-2:12: **Agent action.** Call the same WebMCP inspection and proposal tools. Pause on one Chinese draft card and state:
+
+"AI separated the purchasable items from the shipping conditions, but the organizer still owns the decision."
+
+2:12-2:32: **Same human pattern.** The agent positions each target. The human clicks the same draft card twice, the second member clicks one personal confirmation, and the owner clicks finalization once. Do not pause between routine agent actions.
+
+2:32-2:42: Hold on the completed Chinese room and its separated review context.
 
 Closing line:
 
-"This is not an ordering app. It is a WebMCP trust boundary template. The agent prepares structured drafts and highlights conflicts directly on the page. Humans approve, claim, and finalize. No payment, booking submission, regulated purchase approval, public posting, or external account action is exposed as a tool."
+"WebMCP lets the agent handle the repetitive work on the page while people keep every commitment. The same pattern can support shared orders, registrations, bookings, and other collaborative tasks without exposing final payment or external submission as an agent tool."
 
 Operator rule for recording:
 
-- The agent performs page setup, WebMCP inspection, and draft creation.
-- The agent must pause before every host approval, member confirmation, and finalization.
-- The human clicks approval or confirmation only after the agent explicitly says it is ready.
-- Do not approve all drafts at once. Approve one visible draft, wait for the state change, then continue.
+- The agent performs all navigation, language switching, file selection, evidence entry, WebMCP inspection, draft creation, item selection, tab switching, and pointer placement.
+- The human clicks only after the agent gives an explicit cue.
+- Draft review uses one visible card in one position: first review click, then green approval click on that same card.
+- The second member confirms only their own selection. The agent then returns to the owner tab immediately.
+- The owner finalizes only after the second member state is visible.
+- The human downloads PDF first and HTML second. Both files must open before the take is accepted.
+- Any missing image preview, duplicate draft card, failed room join, wrong-language text, stale member state, broken download, or unreadable export stops the take immediately.
 
 ## Compliance Notes
 

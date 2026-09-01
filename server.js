@@ -50,7 +50,7 @@ const maxImageBytes = maxImageMb * 1024 * 1024;
 const rateLimitWindowMs = Math.max(1000, Math.min(15 * 60 * 1000, Number(process.env.RATE_LIMIT_WINDOW_MS || 60 * 1000)));
 const apiRateLimitMax = Math.max(10, Math.min(3000, Number(process.env.API_RATE_LIMIT_MAX || 180)));
 const roomCreateRateLimitMax = Math.max(2, Math.min(300, Number(process.env.ROOM_CREATE_RATE_LIMIT_MAX || 20)));
-const menuParseRateLimitMax = Math.max(1, Math.min(120, Number(process.env.MENU_PARSE_RATE_LIMIT_MAX || 6)));
+const menuParseRateLimitMax = Math.max(1, Math.min(120, Number(process.env.MENU_PARSE_RATE_LIMIT_MAX || 30)));
 const imageMaxDimension = Math.max(640, Math.min(1800, Number(process.env.IMAGE_MAX_DIMENSION || 1400)));
 const imageJpegQuality = Math.max(50, Math.min(86, Number(process.env.IMAGE_JPEG_QUALITY || 80)));
 const itemThumbSize = Math.max(96, Math.min(360, Number(process.env.ITEM_THUMB_SIZE || 160)));
@@ -3862,6 +3862,51 @@ function toPdfTextHex(value) {
   return hex;
 }
 
+function escapePdfLiteral(value) {
+  return String(value || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/\(/g, '\\(')
+    .replace(/\)/g, '\\)')
+    .replace(/[\r\n\t]/g, ' ');
+}
+
+function isPdfWideCharacter(char) {
+  return Number(char.codePointAt(0) || 0) > 0x7f;
+}
+
+function splitPdfTextRuns(value) {
+  const runs = [];
+  for (const char of Array.from(String(value || ''))) {
+    const wide = isPdfWideCharacter(char);
+    const previous = runs[runs.length - 1];
+    if (previous && previous.wide === wide) {
+      previous.text += char;
+    } else {
+      runs.push({ text: char, wide });
+    }
+  }
+  return runs;
+}
+
+function estimatePdfRunWidth(run, fontSize) {
+  if (run.wide) {
+    return Array.from(run.text).length * fontSize * 1.45;
+  }
+  let units = 0;
+  for (const char of Array.from(run.text)) {
+    if (char === ' ') {
+      units += 0.55;
+    } else if (/[A-Z0-9$]/.test(char)) {
+      units += 0.62;
+    } else if (/[a-z]/.test(char)) {
+      units += 0.5;
+    } else {
+      units += 0.36;
+    }
+  }
+  return units * fontSize;
+}
+
 function buildRoomExportPdf(room, language = 'en') {
   const title = language === 'zh' ? '行動審核摘要' : 'Action Review Summary';
   const lines = [
@@ -3878,24 +3923,34 @@ function buildRoomExportPdf(room, language = 'en') {
 
   const objects = [];
   objects[1] = '<< /Type /Catalog /Pages 2 0 R >>';
-  objects[3] = '<< /Type /Font /Subtype /Type0 /BaseFont /MSung-Light /Encoding /UniCNS-UCS2-H /DescendantFonts [4 0 R] >>';
-  objects[4] = '<< /Type /Font /Subtype /CIDFontType0 /BaseFont /MSung-Light /CIDSystemInfo << /Registry (Adobe) /Ordering (CNS1) /Supplement 0 >> >>';
+  objects[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+  objects[4] = '<< /Type /Font /Subtype /Type0 /BaseFont /MSung-Light /Encoding /UniCNS-UCS2-H /DescendantFonts [5 0 R] >>';
+  objects[5] = '<< /Type /Font /Subtype /CIDFontType0 /BaseFont /MSung-Light /CIDSystemInfo << /Registry (Adobe) /Ordering (CNS1) /Supplement 0 >> >>';
 
   const pageObjectIds = [];
-  let nextObjectId = 5;
+  let nextObjectId = 6;
   for (const pageLines of pages.length > 0 ? pages : [[]]) {
     const pageId = nextObjectId;
     const contentId = nextObjectId + 1;
     nextObjectId += 2;
     pageObjectIds.push(pageId);
-    const streamLines = ['BT', '/F1 11 Tf', '50 790 Td', '15 TL'];
-    for (const line of pageLines) {
-      streamLines.push(`<${toPdfTextHex(line)}> Tj`);
-      streamLines.push('T*');
+    const fontSize = 11;
+    const streamLines = ['BT'];
+    for (let lineIndex = 0; lineIndex < pageLines.length; lineIndex += 1) {
+      let x = 50;
+      const y = 790 - (lineIndex * 15);
+      for (const run of splitPdfTextRuns(pageLines[lineIndex])) {
+        streamLines.push(`${run.wide ? '/F2' : '/F1'} ${fontSize} Tf`);
+        streamLines.push(`1 0 0 1 ${x.toFixed(2)} ${y} Tm`);
+        streamLines.push(run.wide
+          ? `<${toPdfTextHex(run.text)}> Tj`
+          : `(${escapePdfLiteral(run.text)}) Tj`);
+        x += estimatePdfRunWidth(run, fontSize);
+      }
     }
     streamLines.push('ET');
     const stream = streamLines.join('\n');
-    objects[pageId] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentId} 0 R >>`;
+    objects[pageId] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${contentId} 0 R >>`;
     objects[contentId] = `<< /Length ${Buffer.byteLength(stream)} >>\nstream\n${stream}\nendstream`;
   }
   objects[2] = `<< /Type /Pages /Kids [${pageObjectIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pageObjectIds.length} >>`;

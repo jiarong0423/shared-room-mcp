@@ -29,6 +29,7 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 | Final live open-gate and export recheck | 4/4 passed | `logs/runtime/open-gate-stress-2026-09-01T12-10-11-461Z.md` local run against `https://shared-room-mcp.zeabur.app` | live service passed the same host-review, member-confirmation, settlement, HTML export, and PDF export flow |
 | Railway production low-rate flow | 5/5 passed | sequential production browser/API check summarized in `docs/decisions/2026Q2/DEVELOPMENT_LOG.md` | sample load, same-card host review, member join, self-confirmation, finalization, and HTML/PDF export passed without concurrent stress traffic |
 | Same-tab room transition | 2/2 local and 2/2 production passed | isolated and low-rate production browser regressions summarized in `docs/decisions/2026Q2/DEVELOPMENT_LOG.md` | a loaded room can switch to a clean empty room, and a late update from the old room cannot overwrite the new room |
+| Final bilingual export repair | 4/4 local flows passed | isolated local run on 2026-09-02, summarized in the development log | Chinese and English flows finalized, HTML/PDF exports passed, and PDFs include separate readable Latin and CJK fonts |
 
 ## What This Means
 
@@ -42,6 +43,7 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 - Room identity changes clear room-only temporary UI state while preserving language and display-name preferences.
 - Asynchronous responses and Socket.IO events are applied only when they still belong to the room shown in the URL.
 - The default JSON save layer is suitable for a single demo service and short write bursts, not production-scale traffic.
+- The recording runbook now fixes the human/agent handoff: the agent handles routine page actions, while the human performs the same-card two-click review, personal confirmation, owner finalization, and final downloads.
 
 ## What This Does Not Claim
 
