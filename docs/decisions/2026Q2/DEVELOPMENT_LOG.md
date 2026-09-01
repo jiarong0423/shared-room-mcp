@@ -682,4 +682,13 @@ Release rule:
 
 Next resume point:
 
-- Commit and push only after the final Chinese render and both security gates pass, then verify one low-rate production download without running cloud stress.
+- Record the demo video with the locked script. Do not run another production stress pass before recording.
+
+PRODUCTION_EVIDENCE:
+
+- GitHub `main` received commit `4d133f2`.
+- Railway automatically deployed the change; production `/healthz` returned HTTP 200, retained `/data/rooms.json`, and reported `menuParseRateLimitMax=30`.
+- The in-app browser detected all seven WebMCP tools on the production page.
+- One existing finalized room was used for a low-rate frontend check. The visible `Download PDF` and `Download HTML` controls each produced a file.
+- `file`, `pdfinfo`, `pdftotext`, and a rendered-page inspection confirmed that the production PDF is a readable one-page PDF 1.4 file and that the HTML is readable UTF-8.
+- No new production room stress, concurrency test, or repeated OCR upload was run after deployment.
