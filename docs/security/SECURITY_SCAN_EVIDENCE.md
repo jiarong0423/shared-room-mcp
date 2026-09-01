@@ -39,7 +39,7 @@ SAST-equivalent local code security evidence:
 - Live Zeabur restart persistence smoke: passed. Room `a288f74b` survived service restart with 6 items and one pending draft after `ROOM_STORE_PATH=/data/rooms.json` was active.
 - GitHub repository smoke: `https://github.com/jiarong0423/shared-room-mcp` showed the expected source repository and `MIT license`.
 - Owner-only check: passed 100/100 blocked non-owner proposal creates and 100/100 blocked non-owner proposal reviews.
-- UI confirmation smoke: desktop approval and mobile rejection both require two clicks and leave no horizontal overflow.
+- UI confirmation smoke: desktop approval and mobile rejection stay on one visible draft card, use the same-card confirmation button, and leave no horizontal overflow.
 - Mutual-exclusion scenario matrix B: passed on 2026-09-01 with duplicate IDs `0`, duplicate titles `0`, duplicate OCR texts `0`, internal similarity blocks `0`, and baseline similarity blocks `0`.
 - Split-language scenario matrix B: Chinese 120/120 passed with warnings `0`; English 120/120 passed with warnings `0`; every run left `semantic_repair_draft` in `pending_host_confirmation`.
 - Parsed-item review check: `npm run stress:open-gate -- --base-url http://127.0.0.1:3147 --rounds 20 --output-dir logs/runtime` passed 80/80 cases on 2026-09-01. It verified AI/OCR draft stays closed, non-owner edits are blocked, member claims before opening are blocked, host edits before opening are allowed, members cannot open the list, host edits after opening are blocked, members can confirm only after opening, and host settlement remains last.
@@ -51,6 +51,9 @@ SAST-equivalent local code security evidence:
 - Impact check: `output/isolation/current_runs/shared_room_mcp_gate_20260901_pass/impact_evidence_state_gate.md` passed on 2026-09-01. Checked areas with evidence-backed `O` states: backend rules, frontend render, WebMCP tool limits, testing, security, and docs/submission.
 - Local export smoke after wording cleanup: completed room `068b78ef` returned HTML 200 with `text/html; charset=utf-8`, PDF 200 with `application/pdf`, `%PDF-1.4`, and `%%EOF`; empty room export returned 409 for both HTML and PDF.
 - Local export stress after backend export route: 80/80 complete-room flows passed, then 80/80 HTML exports and 80/80 PDF exports passed against `http://127.0.0.1:3162`.
+- Single draft card cleanup: local contract stress passed 60/60 against `http://127.0.0.1:3178`. Each case now creates two same-type assistant drafts and verifies that only the latest pending draft remains for the host.
+- Same-card flow recheck: local open-gate stress passed 20/20 against `http://127.0.0.1:3178`. The host review UI stays on one visible card, while member claiming and settlement order remain unchanged.
+- Proposal UI impact matrix: `output/isolation/current_runs/shared_room_proposal_ui_dedupe_20260901_final_latest/impact_evidence_state_gate.md` marked backend contract, frontend render, WebMCP draft, claim flow, and docs/submission as evidence-backed `O`; git release remained pending because this pass was not committed or deployed yet.
 
 The current implementation contains no known auto-payment, card storage, order-finalization, or external booking submission path. Agents can inspect state and create bounded host-review drafts only. Parsed-item edits are host UI actions and are not exposed as WebMCP tools.
 

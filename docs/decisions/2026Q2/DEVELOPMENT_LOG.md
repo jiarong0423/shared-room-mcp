@@ -455,3 +455,40 @@ Decision:
 Next resume point:
 
 - Commit, push, and redeploy the path-scrub evidence update if runtime files changed; otherwise push documentation only.
+
+## 2026-09-01 19:24 Single Draft Card Cleanup
+
+Scope:
+
+- Owner project: `shared-room-mcp`
+- Changed artifacts: `server.js`, `public/index.html`, `scripts/stress-local-contracts.mjs`, `scripts/stress-open-gate.mjs`, `README.md`, `docs/submission/WEBMCP_SUBMISSION.md`, `docs/ai-generated/2026Q3/shared_room_mermaid_module_design_20260831.md`, `docs/ai-generated/2026Q3/shared_room_proposal_ui_relationship_matrix_20260901.md`, `docs/testing/VALIDATION_EVIDENCE.md`, `docs/security/SECURITY_SCAN_EVIDENCE.md`, `docs/decisions/2026Q2/DEVELOPMENT_LOG.md`
+
+Direct cause:
+
+- The UI could show two pending draft cards for one host decision, and the first approval click added extra copy that looked like another confirmation dialog.
+
+Root cause:
+
+- Backend draft storage allowed same-type pending drafts to stack, while the frontend rendered all pending drafts without collapsing equivalent decisions.
+
+DONE_CONFIRMED:
+
+- Backend proposal creation now replaces older pending proposals with the same proposal type.
+- Frontend proposal rendering now hides duplicate same-type pending cards from older persisted rooms.
+- Extra approval/rejection hint copy was removed, so the human sees one visible draft card and one same-card review path.
+- Public docs and Mermaid architecture now describe same-card host review instead of the older ambiguous review wording.
+- Local stress evidence passed after the cleanup.
+  - evidence: `logs/runtime/local-contract-stress-2026-09-01T11-24-48-624Z.md` passed 60/60 and checks same-type draft replacement.
+  - evidence: `logs/runtime/open-gate-stress-2026-09-01T11-22-05-897Z.md` passed 20/20.
+- Security export gate passed after the cleanup.
+  - evidence: security report written outside the repository, blocking `0`, P0 `0`, P1 `0`, P2 `0`.
+- Impact matrix was rerun.
+  - evidence: `output/isolation/current_runs/shared_room_proposal_ui_dedupe_20260901_final_latest/impact_evidence_state_gate.md`.
+
+WATCH_LATER:
+
+- GitHub and Zeabur still need an explicit push/deploy pass for this cleanup. The local gate is ready; live has not received this change yet.
+
+Next resume point:
+
+- Run `git diff --check`, inspect the final diff, then commit, push, and redeploy only after approval.

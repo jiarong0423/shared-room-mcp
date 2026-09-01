@@ -582,15 +582,6 @@
       background: #e4e4e7;
     }
 
-    .proposal-action-hint {
-      flex-basis: 100%;
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 650;
-      line-height: 1.35;
-      overflow-wrap: anywhere;
-    }
-
     .source-menu-card {
       display: grid;
       gap: 10px;
@@ -1885,8 +1876,6 @@
         confirmHumanApproval: '確認由人採納',
         rejectDraft: '拒絕草稿',
         confirmRejectDraft: '確認拒絕',
-        approveDraftHint: '這只會讓大家看到草稿已被採納，不會付款、預約或送出外部表單。',
-        rejectDraftHint: '這只會把草稿標為已拒絕，不會刪除房間或更改品項。',
         ownerOnlyDraftReview: '只有發起者可決定',
         draftReviewFailed: '草稿審核失敗',
         draftCreated: '建議已儲存，等待發起者確認。',
@@ -1922,7 +1911,6 @@
         proposalRisklow: '低風險',
         proposalRiskmedium: '需要看一下',
         proposalRiskneeds_human_review: '需要人工確認',
-        draftReviewStepReady: '再點一次完成決定',
         reviewParsedItems: '檢查品項清單',
         reviewParsedItemsHint: '開放前可移除錯列或修正名稱、金額、分類。',
         itemName: '名稱',
@@ -2121,8 +2109,6 @@
         confirmHumanApproval: 'Confirm Human Approval',
         rejectDraft: 'Reject Draft',
         confirmRejectDraft: 'Confirm Reject',
-        approveDraftHint: 'Finalizes this proposal for the team. No payment, booking, or external submission will be made.',
-        rejectDraftHint: 'Marks this proposal as rejected only. Items and room totals stay unchanged.',
         ownerOnlyDraftReview: 'host decides only',
         draftReviewFailed: 'Failed to review draft',
         draftCreated: 'Suggestion saved for host confirmation.',
@@ -2158,7 +2144,6 @@
         proposalRisklow: 'low risk',
         proposalRiskmedium: 'review needed',
         proposalRiskneeds_human_review: 'human review needed',
-        draftReviewStepReady: 'click again to complete',
         reviewParsedItems: 'Review Item List',
         reviewParsedItemsHint: 'Before opening, remove bad rows or fix names, prices, and categories.',
         itemName: 'Name',
@@ -3222,23 +3207,35 @@
 
     function renderAgentProposals(room) {
       const proposals = Array.isArray(room?.agentProposals) ? room.agentProposals : [];
-      const pendingCount = proposals.filter((proposal) => proposal.status === 'pending_host_confirmation').length;
+      const seenPendingTypes = new Set();
+      const visibleProposals = proposals.filter((proposal) => {
+        if (proposal.status !== 'pending_host_confirmation') {
+          return true;
+        }
+        const proposalType = String(proposal.proposalType || 'generic_next_step');
+        if (seenPendingTypes.has(proposalType)) {
+          return false;
+        }
+        seenPendingTypes.add(proposalType);
+        return true;
+      });
+      const pendingCount = visibleProposals.filter((proposal) => proposal.status === 'pending_host_confirmation').length;
       if (pendingProposalReview && !proposals.some((proposal) => proposal.id === pendingProposalReview.proposalId && proposal.status === 'pending_host_confirmation')) {
         pendingProposalReview = null;
       }
-      elements.proposalPanel.dataset.visible = proposals.length > 0 ? 'true' : 'false';
+      elements.proposalPanel.dataset.visible = visibleProposals.length > 0 ? 'true' : 'false';
       elements.proposalCountChip.textContent = pendingCount > 0
         ? `${pendingCount} ${t('needsReview')}`
-        : String(proposals.length);
+        : String(visibleProposals.length);
       elements.proposalCountChip.dataset.tone = pendingCount > 0 ? 'warn' : 'good';
 
-      if (proposals.length === 0) {
+      if (visibleProposals.length === 0) {
         elements.proposalList.innerHTML = `<div class="empty-state">${escapeHtml(t('noAgentDrafts'))}</div>`;
         return;
       }
 
       const owner = isOwner(room);
-      elements.proposalList.innerHTML = proposals.slice(0, 12).map((proposal) => {
+      elements.proposalList.innerHTML = visibleProposals.slice(0, 12).map((proposal) => {
         const isPending = proposal.status === 'pending_host_confirmation';
         const reviewAction = isPending && pendingProposalReview?.proposalId === proposal.id
           ? pendingProposalReview.action
@@ -3252,8 +3249,6 @@
             <div class="proposal-actions">
               <button class="${escapeHtml(acceptButtonClass)}" type="button" data-proposal-action="accept" data-proposal-confirm="${acceptArmed ? 'true' : 'false'}" data-proposal-id="${escapeHtml(proposal.id)}" ${owner ? '' : 'disabled'}>${escapeHtml(t(acceptArmed ? 'confirmHumanApproval' : 'approveDraft'))}</button>
               <button class="button secondary ${rejectArmed ? 'confirm-reject' : ''}" type="button" data-proposal-action="reject" data-proposal-confirm="${rejectArmed ? 'true' : 'false'}" data-proposal-id="${escapeHtml(proposal.id)}" ${owner ? '' : 'disabled'}>${escapeHtml(t(rejectArmed ? 'confirmRejectDraft' : 'rejectDraft'))}</button>
-              ${acceptArmed ? `<span class="proposal-action-hint">${escapeHtml(t('approveDraftHint'))}</span>` : ''}
-              ${rejectArmed ? `<span class="proposal-action-hint">${escapeHtml(t('rejectDraftHint'))}</span>` : ''}
               ${owner ? '' : `<span class="proposal-meta">${escapeHtml(t('ownerOnlyDraftReview'))}</span>`}
             </div>
           `
@@ -3265,7 +3260,6 @@
               <span>${escapeHtml(getProposalStatusText(proposal.status))}</span>
               <span>${escapeHtml(t('proposalOnly'))}</span>
               <span>${escapeHtml(getProposalRiskText(proposal.riskLevel))}</span>
-              ${reviewStage ? `<span>${escapeHtml(t('draftReviewStepReady'))}</span>` : ''}
             </div>
             <div class="proposal-summary">${escapeHtml(proposal.summary || '')}</div>
             ${proposal.rationale ? `<div class="proposal-meta">${escapeHtml(proposal.rationale)}</div>` : ''}

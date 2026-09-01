@@ -23,12 +23,15 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 | Export records | 160/160 passed | local run against `http://127.0.0.1:3162` on 2026-09-01 | 80 completed rooms exported once as HTML and once as PDF; HTML returned `text/html`, PDF returned `%PDF-1.4` and `%%EOF` |
 | Live export records | 8/8 passed | local command against `https://shared-room-mcp.zeabur.app` on 2026-09-01 after deployment `6a969dab5158a7aaa4e61476` reached `RUNNING` | 4 live completed rooms exported once as HTML and once as PDF; HTML returned `text/html`, PDF returned `%PDF-1.4` and `%%EOF` |
 | Export file readability | PASS | downloaded live room `191fd8c3` to a local scratch directory | `file` identified UTF-8 HTML and PDF 1.4; `pdftotext` extracted room status, item summary, total, and confirmation text |
+| Single draft card regression | 60/60 passed | `logs/runtime/local-contract-stress-2026-09-01T11-24-48-624Z.md` local run | every case creates two same-type assistant drafts and verifies only the latest pending draft remains |
+| Same-card review flow | 20/20 passed | `logs/runtime/open-gate-stress-2026-09-01T11-22-05-897Z.md` local run | host review stays before member claiming; member and settlement boundaries still pass after the draft-card cleanup |
 
 ## What This Means
 
 - The demo does not depend on a paid OCR or model API.
 - The assistant can inspect the room and create drafts, but cannot open the list, confirm for members, finalize the room, pay, or submit bookings.
 - The host can review and fix parsed rows before members enter the claim step.
+- Duplicate assistant drafts for the same topic collapse into one visible host decision.
 - Members can claim and confirm only their own costs.
 - Reviewed rooms can be exported as local HTML or PDF records.
 - The default JSON save layer is suitable for a single demo service and short write bursts, not production-scale traffic.

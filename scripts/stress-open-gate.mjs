@@ -325,7 +325,7 @@ async function createProposal(baseUrl, room, ownerParticipantId, scenario, timeo
 
   const after = await readRoom(baseUrl, room.id, timeoutMs);
   const afterItemCount = Array.isArray(after.items) ? after.items.length : 0;
-  const latestProposal = Array.isArray(after.agentProposals) ? after.agentProposals.at(-1) : null;
+  const latestProposal = Array.isArray(after.agentProposals) ? after.agentProposals[0] : null;
   assertCondition(afterItemCount === beforeItemCount, `proposal changed item count: ${beforeItemCount} -> ${afterItemCount}`);
   assertCondition(latestProposal?.status === 'pending_host_confirmation', `proposal status mismatch: ${latestProposal?.status}`);
   assertCondition(after.itemsOpenForMembers === false, 'proposal opened items unexpectedly');

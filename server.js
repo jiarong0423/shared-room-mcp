@@ -785,7 +785,12 @@ function createAgentProposal(room, input = {}) {
     ...normalized
   });
 
-  room.agentProposals = [proposal, ...proposals].slice(0, 24);
+  const dedupedProposals = proposals.filter((candidate) => {
+    const serialized = serializeAgentProposal(candidate);
+    return serialized.status !== 'pending_host_confirmation'
+      || serialized.proposalType !== proposal.proposalType;
+  });
+  room.agentProposals = [proposal, ...dedupedProposals].slice(0, 24);
   touchRoom(room, 'agent_proposal_created');
   return proposal;
 }

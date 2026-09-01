@@ -32,7 +32,7 @@ sequenceDiagram
   Member->>Page: Join room and choose own items
   Member->>Server: Confirm own cost
   Server->>Store: Save member confirmation
-  Host->>Page: Two-step approve or reject agent draft
+  Host->>Page: Review one visible draft card
   Host->>Server: Finalize room after human confirmations
   Server-->>Page: Broadcast local settlement summary
   Server->>Store: Save final room summary
@@ -51,7 +51,7 @@ sequenceDiagram
 | Anonymous viewer | yes | no | no | no | no | no |
 | WebMCP agent | yes | proposal only | no | no | no | no |
 | Room member | yes | no | no | own claims only | no | no |
-| Room host | yes | yes | before member confirmation | own claims only | two-step human review | yes |
+| Room host | yes | yes | before member confirmation | own claims only | same-card human review | yes |
 | Server | validates | stores limited drafts | checks room owner | checks each member only confirms themself | records review result | saves local room summary |
 
 ## Review Flow
@@ -132,7 +132,9 @@ flowchart TD
   SN --> READ
 
   CP --> DRAFT[Create pending_host_confirmation JSON]
+  DRAFT --> DEDUPE[One pending card per draft type]
   DRAFT --> HOST[Host Draft Review UI]
+  DEDUPE --> HOST
   HOST --> ACCEPT[accepted_by_host marker]
   HOST --> REJECT[rejected_by_host marker]
 

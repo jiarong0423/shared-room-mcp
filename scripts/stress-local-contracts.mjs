@@ -536,42 +536,67 @@ async function createProposal(baseUrl, room, scenario, timeoutMs) {
   const beforeMenuLoaded = Boolean(room.menuLoaded);
   const beforeProposalCount = Array.isArray(room.agentProposals) ? room.agentProposals.length : 0;
 
+  const proposalBody = {
+    participantId: ownerParticipantId,
+    proposalType: 'missing_confirmation',
+    summary: `Review ${scenario.label} items and ask participants to confirm their own selections.`,
+    rationale: `The assistant can prepare a review draft, but the host remains responsible for the final confirmation. Scenario note: ${scenario.conflict}`,
+    riskLevel: 'needs_human_review',
+    payload: {
+      taskType: scenario.taskType,
+      nextStep: 'host_review'
+    }
+  };
   const response = await fetchJson(`${baseUrl}/api/rooms/${encodeURIComponent(room.id)}/agent-proposals`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json'
     },
-    body: JSON.stringify({
-      participantId: ownerParticipantId,
-      proposalType: 'missing_confirmation',
-      summary: `Review ${scenario.label} items and ask participants to confirm their own selections.`,
-      rationale: `The assistant can prepare a review draft, but the host remains responsible for the final confirmation. Scenario note: ${scenario.conflict}`,
-      riskLevel: 'needs_human_review',
-      payload: {
-        taskType: scenario.taskType,
-        nextStep: 'host_review'
-      }
-    })
+    body: JSON.stringify(proposalBody)
   }, timeoutMs);
 
   assertCondition(response.ok, `proposal failed: HTTP ${response.status} ${response.data?.error || ''}`);
 
+  const duplicateResponse = await fetchJson(`${baseUrl}/api/rooms/${encodeURIComponent(room.id)}/agent-proposals`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify({
+      ...proposalBody,
+      summary: `Replacement review draft for ${scenario.label}.`,
+      payload: {
+        ...proposalBody.payload,
+        replacementCheck: true
+      }
+    })
+  }, timeoutMs);
+
+  assertCondition(duplicateResponse.ok, `replacement proposal failed: HTTP ${duplicateResponse.status} ${duplicateResponse.data?.error || ''}`);
+
   const after = await readRoom(baseUrl, room.id, timeoutMs);
   const afterItemCount = Array.isArray(after.items) ? after.items.length : 0;
   const afterProposalCount = Array.isArray(after.agentProposals) ? after.agentProposals.length : 0;
-  const latestProposal = Array.isArray(after.agentProposals) ? after.agentProposals.at(-1) : null;
+  const latestProposal = Array.isArray(after.agentProposals) ? after.agentProposals[0] : null;
+  const pendingSameTypeCount = Array.isArray(after.agentProposals)
+    ? after.agentProposals.filter((proposal) => proposal.status === 'pending_host_confirmation' && proposal.proposalType === 'missing_confirmation').length
+    : 0;
 
   assertCondition(afterItemCount === beforeItemCount, `proposal changed item count: ${beforeItemCount} -> ${afterItemCount}`);
   assertCondition(Boolean(after.menuLoaded) === beforeMenuLoaded, 'proposal changed menuLoaded state');
   assertCondition(afterProposalCount === beforeProposalCount + 1, `proposal count mismatch: ${beforeProposalCount} -> ${afterProposalCount}`);
   assertCondition(latestProposal?.status === 'pending_host_confirmation', `proposal status mismatch: ${latestProposal?.status}`);
+  assertCondition(latestProposal?.summary === `Replacement review draft for ${scenario.label}.`, 'latest same-type draft was not replaced');
+  assertCondition(pendingSameTypeCount === 1, `pending same-type proposal count mismatch: ${pendingSameTypeCount}`);
 
   return {
     beforeItemCount,
     afterItemCount,
     beforeProposalCount,
     afterProposalCount,
-    latestProposalStatus: latestProposal.status
+    latestProposalStatus: latestProposal.status,
+    pendingSameTypeCount,
+    replacementKeptLatest: true
   };
 }
 
@@ -677,8 +702,9 @@ function renderMarkdown(args, summary, results) {
   lines.push('- Each case uploads a small image plus local copied price text.');
   lines.push('- Each case must parse at least three items without provider keys.');
   lines.push('- Each case must keep the selected task scenario stable.');
-  lines.push('- Each case creates one proposal-only host review draft.');
-  lines.push('- Each proposal must remain `pending_host_confirmation`.');
+  lines.push('- Each case creates two same-type proposal-only drafts.');
+  lines.push('- Same-type pending drafts must collapse to one latest visible decision.');
+  lines.push('- The kept proposal must remain `pending_host_confirmation`.');
   lines.push('- Proposal creation must not change item count or loaded-room state.');
   lines.push('', '## Failed Cases', '');
 

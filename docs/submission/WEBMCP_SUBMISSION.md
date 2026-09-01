@@ -50,7 +50,7 @@ Implemented WebMCP tools:
 
 ## Human And Agent Collaboration
 
-The human controls the room, task type, uploaded evidence, copied text, parsed item review, group opening, participant names, claim confirmation, and settlement. The assistant helps by reading the current state, identifying conflicts, explaining missing claims, guiding the next action from the WebMCP tool output, and preparing drafts for the host. The `suggest_next_actions` tool is the main read path. The `create_action_proposal` tool is the safe draft path: it stores a waiting-for-host JSON proposal under `room.agentProposals[]`, including field-fix drafts when Codex detects a reading mistake. The host can edit or remove parsed item rows before opening the list to members. Owner review uses an inline two-step confirmation before marking a draft accepted or rejected. Review does not change orders, formulas, settlement, payment, Google Sheets, or external services.
+The human controls the room, task type, uploaded evidence, copied text, parsed item review, group opening, participant names, claim confirmation, and settlement. The assistant helps by reading the current state, identifying conflicts, explaining missing claims, guiding the next action from the WebMCP tool output, and preparing drafts for the host. The `suggest_next_actions` tool is the main read path. The `create_action_proposal` tool is the safe draft path: it stores a waiting-for-host JSON proposal under `room.agentProposals[]`, including field-fix drafts when Codex detects a reading mistake. The host can edit or remove parsed item rows before opening the list to members. Owner review stays on one visible draft card; repeated same-type drafts replace the previous pending card instead of stacking duplicate decisions. Review does not change orders, formulas, settlement, payment, Google Sheets, or external services.
 
 Provider AI is optional and limited to image/text repair helpers. It cannot decide who owes money, change calculation rules, assign cost pools, or settle disputes. Future forks can reuse the same draft-first pattern for booking drafts, repair appointment drafts, salon reservation drafts, activity signup drafts, and other pre-commitment workflows, but final submission and payment should remain human-controlled.
 
@@ -166,7 +166,7 @@ Opening line:
 
 0:35-0:50: Have the agent call `create_action_proposal`. Pause on the new host draft in `Suggested Drafts`. The visible state must remain waiting for host review.
 
-0:50-1:05: The agent tells the host: "You can press Approve Draft now." The human clicks `Approve Draft`, then stops. If a second-step approval appears, the agent tells the host when to press it.
+0:50-1:05: The agent tells the host: "You can press Approve Draft now." The human clicks the single visible draft card button and waits for the card state to change.
 
 1:05-1:25: Open the same room in a second tab with another member name, such as `Jamie`. Show that Jamie is in the same room, claims one item, and confirms only Jamie's own cost.
 

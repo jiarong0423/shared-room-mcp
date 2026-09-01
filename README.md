@@ -112,7 +112,7 @@ Implemented tools:
 
 The `suggest_next_actions` tool is the main way for the assistant to read the room and suggest what should happen next. It can point out missing reviews or confirmations. It cannot change the room and cannot invent new money values.
 
-The `create_action_proposal` tool only creates a draft for the host. Supported drafts include claim review, missing confirmation, evidence review, room type review, booking or service drafts, activity signup drafts, and field-fix drafts when Codex notices a reading mistake. The host uses a two-step review before accepting or rejecting a draft. Accepting a draft does not automatically change orders, claims, calculation rules, settlement, payment data, Google Sheets, bookings, or external systems.
+The `create_action_proposal` tool only creates a draft for the host. Supported drafts include claim review, missing confirmation, evidence review, room type review, booking or service drafts, activity signup drafts, and field-fix drafts when Codex notices a reading mistake. The page keeps only one pending draft per draft type, so the host sees one clear card for one decision. The host presses the same card button to arm and confirm the review. Accepting a draft does not automatically change orders, claims, calculation rules, settlement, payment data, Google Sheets, bookings, or external systems.
 
 ## Safety Flow
 
@@ -162,7 +162,7 @@ The table below describes the room types and what the app can safely calculate t
 | Anonymous viewer | yes | no | no | no | no | no |
 | WebMCP agent | yes | proposal only | no | no | no | no |
 | Room member | yes | no | no | own claims only | no | no |
-| Room host | yes | yes | before member confirmation | own claims only | two-step human review | yes |
+| Room host | yes | yes | before member confirmation | own claims only | same-card human review | yes |
 | Server | validates | stores limited drafts | checks room owner | checks each member only confirms themself | records review result | saves local room summary |
 
 The fixed order is AI/OCR draft first, host review second, group access third, member confirmation fourth, and final settlement last. The host can remove bad OCR rows or fix names, prices, and categories before opening the list to members. After the host opens the list, parsed item editing is locked.
@@ -308,7 +308,7 @@ The sample path is intentionally no-key and no-upload:
 - It does not call Gemini, OpenAI, Google Sheets, payment, booking, commerce, or social APIs.
 - It does not overwrite a room that already has data.
 - It creates a draft that waits for host review.
-- The host must still click the two-step review buttons before the draft status changes.
+- The host must still confirm the same draft card before the draft status changes.
 - Accepting the draft does not settle the bill, submit an external form, write payment data, or change formula rules.
 
 ## Local Development
@@ -374,7 +374,7 @@ The locked recording flow is:
 3. Load or paste price evidence, then pause on `Connected`, parsed items, `Suggested Drafts`, and `Needs review`.
 4. Have the agent call `inspect_room`, `suggest_next_actions`, and `create_action_proposal`.
 5. The agent pauses and tells the host when to press `Approve Draft`.
-6. The host approves one draft at a time and waits for the visible state change.
+6. The host approves the visible draft card and waits for the visible state change.
 7. Open the same room in a second tab as another member, such as `Jamie`.
 8. The second member claims one item and confirms only their own cost.
 9. Return to the host tab and stop before finalization until the agent says it is ready.
