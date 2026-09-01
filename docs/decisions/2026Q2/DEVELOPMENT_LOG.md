@@ -244,7 +244,7 @@ DONE_CONFIRMED:
 WATCH_LATER:
 
 - The live service currently has no provider API keys configured.
-  - trigger to revisit: add optional provider keys only if the demo must show image repair through an external model instead of no-key sample/pasted-text flow.
+  - trigger to revisit: add optional provider keys only if the demo must show image repair through an external model instead of no-key sample/copied-text flow.
 
 Next resume point:
 
@@ -407,3 +407,27 @@ WATCH_LATER:
 Next resume point:
 
 - Recording can start from `https://shared-room-mcp.zeabur.app/` using one English scene and one Chinese scene. The agent should stop before final confirmation and tell the human which button to press.
+
+## 2026-09-01 17:54 Architecture And Export Readability Recheck
+
+Scope:
+
+- Owner project: `shared-room-mcp`
+- Changed artifacts: `docs/ai-generated/2026Q3/shared_room_mermaid_module_design_20260831.md`, `public/index.html`, `docs/testing/VALIDATION_EVIDENCE.md`, `docs/security/SECURITY_SCAN_EVIDENCE.md`, `docs/decisions/2026Q2/DEVELOPMENT_LOG.md`
+
+DONE_CONFIRMED:
+
+- Standalone Mermaid architecture was updated to match the README export boundary.
+  - evidence: `shared_room_mermaid_module_design_20260831.md` now includes human export, HTML download, PDF download, print summary, and the rule that exports do not submit forms or change external systems.
+- Visible evidence-photo download naming no longer uses the old menu wording.
+  - evidence: `public/index.html` downloads saved evidence as `evidence-photo-<room>.jpg`.
+- Exported files are readable.
+  - evidence: live room `191fd8c3` HTML/PDF exports downloaded successfully; `file` identified UTF-8 HTML and PDF 1.4; `pdftotext` extracted readable room status, item summary, total, and confirmation text.
+- Public wording and private-data scans passed after the recheck.
+  - evidence: tracked-file scans returned no stale public wording, local file paths, Codex attachment paths, Google Sheet URLs, common token prefixes, private keys, or raw media references.
+- Public export gate passed after the recheck.
+  - evidence: `/private/tmp/ai_security_rules_shared_room_mcp_20260901_after_readability_patch`, blocking `0`, P0 `0`, P1 `0`, P2 `0`.
+
+Next resume point:
+
+- Commit, push, and redeploy this small architecture/download-name cleanup before recording.

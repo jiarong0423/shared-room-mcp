@@ -22,6 +22,7 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 | Post-deploy live check | RUNNING and 4/4 passed | live `/healthz`; `logs/runtime/open-gate-stress-2026-09-01T03-45-33-374Z.md` local run against `https://shared-room-mcp.zeabur.app` | live `/healthz` showed `/data/rooms.json`, save smoothing `35/120`, no provider keys, and the deployed host-review flow still passed |
 | Export records | 160/160 passed | local run against `http://127.0.0.1:3162` on 2026-09-01 | 80 completed rooms exported once as HTML and once as PDF; HTML returned `text/html`, PDF returned `%PDF-1.4` and `%%EOF` |
 | Live export records | 8/8 passed | local command against `https://shared-room-mcp.zeabur.app` on 2026-09-01 after deployment `6a969dab5158a7aaa4e61476` reached `RUNNING` | 4 live completed rooms exported once as HTML and once as PDF; HTML returned `text/html`, PDF returned `%PDF-1.4` and `%%EOF` |
+| Export file readability | PASS | downloaded live room `191fd8c3` to `/private/tmp/shared-room-export-readable.html` and `/private/tmp/shared-room-export-readable.pdf` | `file` identified UTF-8 HTML and PDF 1.4; `pdftotext` extracted room status, item summary, total, and confirmation text |
 
 ## What This Means
 

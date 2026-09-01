@@ -36,8 +36,11 @@ sequenceDiagram
   Host->>Server: Finalize room after human confirmations
   Server-->>Page: Broadcast local settlement summary
   Server->>Store: Save final room summary
+  Host->>Page: Export HTML or PDF review record
+  Page-->>Host: Download local review file
 
   Note over Agent,Server: Agent cannot edit items, confirm claims, settle, pay, book, or submit external forms.
+  Note over Page: Exports are local records and do not submit forms or change external systems.
   Note over Store: On Zeabur, use ROOM_STORE_PATH=/data/rooms.json with a mounted volume.
 ```
 
@@ -59,15 +62,20 @@ flowchart TD
   B --> C[Host opens reviewed list]
   C --> D[Members claim and confirm their own costs]
   D --> E[Host finalizes local room summary]
-  E --> DONE[Done without payment or external submission]
+  E --> F[Human exports review record]
+  F --> DONE[Done without payment or external submission]
 
   A -. blocked .-> X1[AI cannot edit rows]
   A -. blocked .-> X2[AI cannot open group access]
   C -. locked .-> X3[Parsed rows cannot be edited after opening]
   D -. blocked .-> X4[No one confirms for another member]
   E -. blocked .-> X5[No payment, booking, or card handling]
+  F -. blocked .-> X6[Exports do not submit forms or change external systems]
 
   E --> SAVE[Save room state to JSON store]
+  F --> HTML[Download HTML]
+  F --> PDF[Download PDF]
+  F --> PRINT[Print summary]
   SAVE --> VOL[Zeabur volume keeps demo rooms after restart]
 
   OPTIONAL[Optional deployer integrations] -. draft only .-> A
@@ -224,7 +232,8 @@ stateDiagram-v2
   ProposalRejected --> ClaimAudit: final state unchanged
 
   SettlementReady --> HumanSettlement: host finalizes manually
-  HumanSettlement --> [*]
+  HumanSettlement --> ReviewExport: human requests HTML or PDF
+  ReviewExport --> [*]: local file only
 ```
 
 ## Open-Source Extension Boundary
