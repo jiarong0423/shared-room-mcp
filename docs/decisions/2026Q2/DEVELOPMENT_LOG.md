@@ -378,3 +378,32 @@ WATCH_LATER:
 Next resume point:
 
 - Run `npm run check`, `npm run audit:tasks`, security gates, and live smoke after GitHub push and Zeabur redeploy.
+
+## 2026-09-01 17:44 Post-Deploy Export Closeout
+
+Scope:
+
+- Owner project: `shared-room-mcp`
+- Changed artifacts: `docs/testing/VALIDATION_EVIDENCE.md`, `docs/security/SECURITY_SCAN_EVIDENCE.md`, `docs/decisions/2026Q2/DEVELOPMENT_LOG.md`
+- Deployed commit: `f806d69`
+- Zeabur deployment: `6a969dab5158a7aaa4e61476`
+
+DONE_CONFIRMED:
+
+- GitHub main received the naming and export commit.
+  - evidence: `git push origin main` updated `main` to `f806d69`.
+- Zeabur was redeployed to the approved service and reached `RUNNING`.
+  - evidence: project `69d93c5ce8ec40d5bceadb94`, service `6a95d639aa6a5ebc1401dcd0`, environment `69d93c5c474db8a99d6de959`, deployment `6a969dab5158a7aaa4e61476`.
+- Live page served the current wording and export controls.
+  - evidence: live HTML contained `Evidence And Items`, `Owner Finalizes Summary`, `Download HTML`, and `智慧共享空間`.
+- Live backend export routes worked.
+  - evidence: 4 live completed rooms exported once as HTML and once as PDF; 8/8 exports passed with HTML `text/html` and PDF `%PDF-1.4` plus `%%EOF`.
+
+WATCH_LATER:
+
+- The next recording pass should use the live page after cache-busting reload.
+  - trigger to revisit: if the browser still shows the old title or lacks `Download HTML`, reload with a fresh `?v=` query.
+
+Next resume point:
+
+- Recording can start from `https://shared-room-mcp.zeabur.app/` using one English scene and one Chinese scene. The agent should stop before final confirmation and tell the human which button to press.
