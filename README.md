@@ -191,7 +191,7 @@ sequenceDiagram
   Member->>Page: Join room and choose own items
   Member->>Server: Confirm own cost
   Server->>Store: Save member confirmation
-  Host->>Page: Two-step approve or reject agent draft
+  Host->>Page: Same-card approve or reject agent draft
   Host->>Server: Finalize room after human confirmations
   Server-->>Page: Broadcast local settlement summary
   Server->>Store: Save final room summary
