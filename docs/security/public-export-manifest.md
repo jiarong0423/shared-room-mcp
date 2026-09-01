@@ -19,8 +19,13 @@ This repository is intended to be public for the WebMCP Challenge. The public ex
 - `public/index.html`
 - `scripts/task-gap-audit.mjs`
 - `scripts/stress-menu-parser.mjs`
+- `scripts/stress-local-contracts.mjs`
+- `scripts/stress-open-gate.mjs`
 - `docs/submission/WEBMCP_SUBMISSION.md`
 - `docs/security/`
+- `docs/testing/VALIDATION_EVIDENCE.md`
+- `docs/ai-generated/2026Q3/shared_room_demo_scenario_matrix_20260901.md`
+- `docs/ai-generated/2026Q3/shared_room_demo_scenario_matrix_b_20260901.md`
 - `docs/ai-generated/2026Q3/shared_room_mermaid_module_design_20260831.md`
 - `docs/ai-generated/2026Q3/shared_room_task_gap_decoupling_audit_20260831.md`
 - `docs/decisions/2026Q2/DEVELOPMENT_LOG.md`

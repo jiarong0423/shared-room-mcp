@@ -169,23 +169,29 @@ sequenceDiagram
   participant Page as Shared Room Page
   participant Agent as WebMCP Agent
   participant Server as Server State
+  participant Store as JSON Store
 
   Host->>Page: Create room and upload price evidence
   Page->>Server: Parse image or pasted OCR text
   Server-->>Page: Return item draft plus separated rules
+  Server->>Store: Save room state with short write smoothing
   Agent->>Page: Inspect room through read-only WebMCP tools
   Agent->>Page: Create proposal-only draft
   Host->>Page: Edit parsed items or remove bad rows
   Page->>Server: Owner-only parsed item update
+  Server->>Store: Save reviewed draft state
   Host->>Server: Open reviewed list to members
   Server-->>Page: Broadcast reviewed item state
   Member->>Page: Join room and choose own items
   Member->>Server: Confirm own cost
+  Server->>Store: Save member confirmation
   Host->>Page: Two-step approve or reject agent draft
   Host->>Server: Finalize room after human confirmations
   Server-->>Page: Broadcast local settlement summary
+  Server->>Store: Save final room summary
 
   Note over Agent,Server: Agent cannot edit items, confirm claims, settle, pay, book, or submit external forms.
+  Note over Store: On Zeabur, use ROOM_STORE_PATH=/data/rooms.json with a mounted volume.
 ```
 
 ```mermaid
@@ -201,6 +207,9 @@ flowchart TD
   C -. locked .-> X3[Parsed rows cannot be edited after opening]
   D -. blocked .-> X4[No one confirms for another member]
   E -. blocked .-> X5[No payment, booking, or card handling]
+
+  E --> SAVE[Save room state to JSON store]
+  SAVE --> VOL[Zeabur volume keeps demo rooms after restart]
 
   OPTIONAL[Optional deployer integrations] -. draft only .-> A
 ```

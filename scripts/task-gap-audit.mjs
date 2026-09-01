@@ -178,6 +178,7 @@ const expectedSubmissionPackageFields = [
   'Live URL',
   'Public repository URL',
   'YouTube demo URL',
+  'docs/testing/VALIDATION_EVIDENCE.md',
   'What Changed After August 25, 2026',
   'document.modelContext.registerTool()',
   'Environment Variables',
@@ -195,6 +196,7 @@ const expectedTestingFields = [
   'stress-local-contracts.mjs',
   'stress:open-gate',
   'stress-open-gate.mjs',
+  'VALIDATION_EVIDENCE.md',
   'scenarioCases',
   'joinRoomAsOwner',
   'local copied price text',
@@ -260,7 +262,7 @@ function makeGap(id, title, layer, priority, status, evidence, nextAction, write
 
 function renderTable(rows) {
   const lines = [
-    '| priority | layer | status | gap | next action |',
+    '| importance | area | status | finding | next action |',
     '|---|---|---|---|---|'
   ];
   for (const row of rows) {
@@ -489,15 +491,15 @@ function main() {
     ),
     makeGap(
       'GAP-P0-005',
-      '提交所需 OSS/license/live demo 文件未完整固定',
+      '提交包狀態',
       'submission',
       'P0',
       statusFromMissing(submissionEvidence.filter((entry) => !entry.present), true),
       submissionEvidence.every((entry) => entry.present)
-        ? '本地已補 LICENSE、package license、英文 submission packet、env 需求、demo script、合規邊界與 public repo URL；YouTube URL 仍需在 Devpost 提交前填入正式連結。'
+        ? '本地已補 LICENSE、package license、英文 submission packet、env 需求、demo script、合規邊界、public repo URL、live URL 與驗證證據；YouTube URL 仍需在 Devpost 提交前填入正式連結。'
         : 'Devpost 需要 live URL、public repo、OSS license、英文說明、三分鐘內 YouTube demo；本地提交包仍有欄位缺口。',
       submissionEvidence.every((entry) => entry.present)
-        ? '部署後驗證 live URL；YouTube demo 完成後替換 submission packet 的 TODO URL。'
+        ? 'YouTube demo 完成後替換 submission packet 的 TODO URL。'
         : '補 LICENSE 與 English submission checklist，並標記既有專案改造範圍。',
       'low'
     ),
@@ -613,7 +615,7 @@ function main() {
     '',
     '## Decision',
     '',
-    '目前可以參賽的核心方向成立：社群揪團分帳房比單純點餐更貼合 WebMCP。下一步不是再擴張情境，而是把 task router、formula engine、AI repair gate、claim audit、WebMCP tools 分成固定契約。',
+    '目前可以參賽的核心方向成立：這是用 WebMCP 讓 AI 幫忙準備草稿、人類保留最後確認的共享房間。下一步不是再擴張情境，而是保持現有房間流程、驗證證據、Live URL、GitHub README 與 Demo 腳本一致。',
     '',
     '## Current Readiness',
     '',
@@ -625,17 +627,17 @@ function main() {
     '',
     renderTable(gaps),
     '',
-    '## Contract Markers',
+    '## Evidence Markers',
     '',
     renderMarkerList('Task modules', taskEvidence),
     '',
-    renderMarkerList('Task router contract', taskRouterContractEvidence),
+    renderMarkerList('Room type rules', taskRouterContractEvidence),
     '',
-    renderMarkerList('Evidence/OCR contract', evidenceContractEvidence),
+    renderMarkerList('Evidence/OCR rules', evidenceContractEvidence),
     '',
     renderMarkerList('Formula modules', formulaEvidence),
     '',
-    renderMarkerList('Formula contract', formulaContractEvidence),
+    renderMarkerList('Local calculation rules', formulaContractEvidence),
     '',
     renderMarkerList('Claim audit fields', claimAuditEvidence),
     '',
@@ -645,7 +647,7 @@ function main() {
     '',
     renderMarkerList('Submission package', submissionEvidence),
     '',
-    '## Decoupling Batches',
+    '## Work Batches',
     '',
     '| batch | priority | scope | stop condition |',
     '|---|---|---|---|',
@@ -653,9 +655,9 @@ function main() {
     '',
     '## Stop Conditions',
     '',
-    '- AI 只可進行 OCR/schema repair，不可計算金額、指定認領者、覆寫任務模組或仲裁爭議。',
-    '- 公式、門檻、均分、額外單點自認必須留在 deterministic formula layer。',
-    '- WebMCP 第一版只做 read-only inspection；Sheets 白名單是 P1 trust layer，不碰金流。',
+    '- AI 只可協助整理 OCR/文字欄位，不可計算金額、指定認領者、改房間類型或仲裁爭議。',
+    '- 公式、門檻、均分、額外單點自認必須留在本地頁面與伺服器規則內。',
+    '- WebMCP 工具維持讀取與草稿；Sheets 白名單是選配信任層，不碰金流。',
     '- 每一批解耦完成後都要重跑 `npm run check` 與 `npm run audit:tasks`。',
     ''
   ].join('\n');

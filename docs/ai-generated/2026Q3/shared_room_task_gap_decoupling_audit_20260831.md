@@ -1,12 +1,12 @@
 # Group Room Task Gap Decoupling Audit
 
-Generated at: 2026-09-01T03:22:29.791Z
+Generated at: 2026-09-01T03:59:05.176Z
 
 Owner project: `.`
 
 ## Decision
 
-目前可以參賽的核心方向成立：社群揪團分帳房比單純點餐更貼合 WebMCP。下一步不是再擴張情境，而是把 task router、formula engine、AI repair gate、claim audit、WebMCP tools 分成固定契約。
+目前可以參賽的核心方向成立：這是用 WebMCP 讓 AI 幫忙準備草稿、人類保留最後確認的共享房間。下一步不是再擴張情境，而是保持現有房間流程、驗證證據、Live URL、GitHub README 與 Demo 腳本一致。
 
 ## Current Readiness
 
@@ -16,19 +16,19 @@ Owner project: `.`
 
 ## Gap Matrix
 
-| priority | layer | status | gap | next action |
+| importance | area | status | finding | next action |
 |---|---|---|---|---|
 | P0 | formula-engine | ready | 公式引擎合約狀態 | 下一步在 formula-controls 線補 UI manual inputs；不需要更動 formula engine contract。 |
 | P0 | claim-audit | ready | 認領稽核合約狀態 | 下一步在 testing 線補 socket 非空 ledger 測試；不需要改 claim audit contract。 |
 | P0 | webmcp | ready | WebMCP 工具面狀態 | 下一步只需要在瀏覽器支援 WebMCP 的環境做真機 demo；Sheets 寫入 bridge 仍屬 P1。 |
 | P0 | ai-repair-gate | ready | 任務衝突與 AI 修補閘門狀態 | 下一步在 testing 線補 conflict smoke case，確認手動鎖定錯誤任務時 local-first 不放行。 |
-| P0 | submission | partial | 提交所需 OSS/license/live demo 文件未完整固定 | 部署後驗證 live URL；YouTube demo 完成後替換 submission packet 的 TODO URL。 |
+| P0 | submission | partial | 提交包狀態 | YouTube demo 完成後替換 submission packet 的 TODO URL。 |
 | P1 | trust-layer | partial | Google Sheets 白名單仍是設計稿 | 建立 Sheets bridge P1；只存短效 hash，不存原始 device id、付款資訊、社群帳號。 |
 | P0 | evidence-ocr | ready | 價格證據與 OCR contract 狀態 | 後續加強可評估 Web OCR/WASM OCR 或裝置端 companion；不影響六線解耦完成。 |
 | P1 | formula-controls | open | 任務特定公式輸入不足 | 依任務模組顯示最少必要公式欄位，不讓 AI 計算金額。 |
 | P1 | testing | ready | 本地合約與開放順序壓測矩陣狀態 | 後續若新增公式、任務模組、或成員權限流程，先擴充兩個壓測矩陣再提交。 |
 
-## Contract Markers
+## Evidence Markers
 
 ### Task modules
 - OK: `auto`
@@ -41,7 +41,7 @@ Owner project: `.`
 - OK: `rental_share`
 - OK: `generic_split`
 
-### Task router contract
+### Room type rules
 - OK: `taskRouterContract`
 - OK: `group-room-task-router-contract.v1`
 - OK: `contractVersion`
@@ -63,7 +63,7 @@ Owner project: `.`
 - OK: `aiRepairScope`
 - OK: `forbiddenAiActions`
 
-### Evidence/OCR contract
+### Evidence/OCR rules
 - OK: `evidenceContract`
 - OK: `group-room-evidence-ocr-contract.v1`
 - OK: `evidenceLine`
@@ -96,7 +96,7 @@ Owner project: `.`
 - OK: `tierDiscount`
 - OK: `extraPersonalClaim`
 
-### Formula contract
+### Local calculation rules
 - OK: `formulaContract`
 - OK: `group-room-formula-contract.v1`
 - OK: `group-room-formula.v1`
@@ -178,6 +178,7 @@ Owner project: `.`
 - OK: `Live URL`
 - OK: `Public repository URL`
 - OK: `YouTube demo URL`
+- OK: `docs/testing/VALIDATION_EVIDENCE.md`
 - OK: `What Changed After August 25, 2026`
 - OK: `document.modelContext.registerTool()`
 - OK: `Environment Variables`
@@ -189,7 +190,7 @@ Owner project: `.`
 - OK: `Demo Script`
 - OK: `Compliance Notes`
 
-## Decoupling Batches
+## Work Batches
 
 | batch | priority | scope | stop condition |
 |---|---|---|---|
@@ -201,7 +202,7 @@ Owner project: `.`
 
 ## Stop Conditions
 
-- AI 只可進行 OCR/schema repair，不可計算金額、指定認領者、覆寫任務模組或仲裁爭議。
-- 公式、門檻、均分、額外單點自認必須留在 deterministic formula layer。
-- WebMCP 第一版只做 read-only inspection；Sheets 白名單是 P1 trust layer，不碰金流。
+- AI 只可協助整理 OCR/文字欄位，不可計算金額、指定認領者、改房間類型或仲裁爭議。
+- 公式、門檻、均分、額外單點自認必須留在本地頁面與伺服器規則內。
+- WebMCP 工具維持讀取與草稿；Sheets 白名單是選配信任層，不碰金流。
 - 每一批解耦完成後都要重跑 `npm run check` 與 `npm run audit:tasks`。

@@ -6,7 +6,7 @@ Scope: open-source WebMCP tool-layer template for pre-payment social coordinatio
 
 WebMCP tool surface version: `group-room-webmcp-tools.v2`.
 
-## Full Module Overview
+## Full Room Flow
 
 ```mermaid
 sequenceDiagram
@@ -16,23 +16,29 @@ sequenceDiagram
   participant Page as Shared Room Page
   participant Agent as WebMCP Agent
   participant Server as Server State
+  participant Store as JSON Store
 
   Host->>Page: Create room and upload price evidence
   Page->>Server: Parse image or pasted OCR text
   Server-->>Page: Return item draft plus separated rules
+  Server->>Store: Save room state with short write smoothing
   Agent->>Page: Inspect room through read-only WebMCP tools
   Agent->>Page: Create proposal-only draft
   Host->>Page: Edit parsed items or remove bad rows
   Page->>Server: Owner-only parsed item update
+  Server->>Store: Save reviewed draft state
   Host->>Server: Open reviewed list to members
   Server-->>Page: Broadcast reviewed item state
   Member->>Page: Join room and choose own items
   Member->>Server: Confirm own cost
+  Server->>Store: Save member confirmation
   Host->>Page: Two-step approve or reject agent draft
   Host->>Server: Finalize room after human confirmations
   Server-->>Page: Broadcast local settlement summary
+  Server->>Store: Save final room summary
 
   Note over Agent,Server: Agent cannot edit items, confirm claims, settle, pay, book, or submit external forms.
+  Note over Store: On Zeabur, use ROOM_STORE_PATH=/data/rooms.json with a mounted volume.
 ```
 
 ## Permission Matrix
@@ -43,56 +49,58 @@ sequenceDiagram
 | WebMCP agent | yes | proposal only | no | no | no | no |
 | Room member | yes | no | no | own claims only | no | no |
 | Room host | yes | yes | before member confirmation | own claims only | two-step human review | yes |
-| Server | validates | stores bounded drafts | enforces owner gate | enforces self-claim gate | records review marker | executes local settlement state |
+| Server | validates | stores limited drafts | checks room owner | checks each member only confirms themself | records review result | saves local room summary |
 
-## Priority Design
+## Review Flow
 
 ```mermaid
 flowchart TD
-  P0A[P0<br/>AI draft boundary] --> P0B[P0<br/>Host review boundary]
-  P0B --> P0C[P0<br/>Group access boundary]
-  P0C --> P0D[P0<br/>Member claim boundary]
-  P0D --> P0E[P0<br/>Host final decision boundary]
-  P0E --> DONE[Local room summary]
+  A[AI drafts only] --> B[Host reviews parsed rows]
+  B --> C[Host opens reviewed list]
+  C --> D[Members claim and confirm their own costs]
+  D --> E[Host finalizes local room summary]
+  E --> DONE[Done without payment or external submission]
 
-  P0A -. proposal JSON only .-> B1[No direct item edit]
-  P0A -. proposal JSON only .-> B2[No group open]
-  P0B -. owner only .-> B3[Fix/remove parsed rows before members claim]
-  P0C -. lock after open .-> B4[No late parsed-item mutation]
-  P0D -. self only .-> B5[No claimant impersonation]
-  P0E -. local only .-> B6[No payment, booking, card, or external submit]
+  A -. blocked .-> X1[AI cannot edit rows]
+  A -. blocked .-> X2[AI cannot open group access]
+  C -. locked .-> X3[Parsed rows cannot be edited after opening]
+  D -. blocked .-> X4[No one confirms for another member]
+  E -. blocked .-> X5[No payment, booking, or card handling]
 
-  P1[P1 optional adapters<br/>OCR / Sheets / booking draft / trust] -. draft or read-only .-> P0A
+  E --> SAVE[Save room state to JSON store]
+  SAVE --> VOL[Zeabur volume keeps demo rooms after restart]
+
+  OPTIONAL[Optional deployer integrations] -. draft only .-> A
 ```
 
-## Atomic One-Way Boundaries
+## Fixed Review Steps
 
 The implementation treats each handoff as a one-way step. A later step may stop and ask a human to review, but it may not silently rewrite an earlier step.
 
-| priority | one-way step | allowed actor | next state | rollback rule |
+| importance | step | allowed actor | next state | rollback rule |
 |---|---|---|---|---|
-| P0 | AI/OCR evidence to draft items | server parser, proposal-only agent | host review | reload or reset room, not agent mutation |
-| P0 | Host-reviewed items to group access | room host only | members may claim | parsed rows lock after opening |
-| P0 | Member claims to confirmation | each member only | confirmed personal cost | member can unconfirm and edit own claim before settlement |
-| P0 | Confirmations to final summary | room host only | settled room | no external payment or booking action |
-| P1 | External adapters to proposal | deployer-owned adapter | pending host review | never applied silently |
+| required | AI/OCR evidence to draft items | server parser, proposal-only agent | host review | reload or reset room, not agent mutation |
+| required | Host-reviewed items to group access | room host only | members may claim | parsed rows lock after opening |
+| required | Member claims to confirmation | each member only | confirmed personal cost | member can unconfirm and edit own claim before settlement |
+| required | Confirmations to final summary | room host only | settled room | no external payment or booking action |
+| optional | External adapters to proposal | deployment owner adapter | pending host review | never applied silently |
 
-## Six Safe Workflow Boundaries
+## Six Safe Workflow Steps
 
 ```mermaid
 flowchart LR
-  G1[Gate 1<br/>Task Router] --> G2[Gate 2<br/>Evidence / OCR]
-  G2 --> G3[Gate 3<br/>Formula Engine]
-  G3 --> G4[Gate 4<br/>AI Repair Gate]
-  G4 --> G5[Gate 5<br/>Claim Audit]
-  G5 --> G6[Gate 6<br/>Agent Drift Guard]
+  G1[Choose the room type] --> G2[Read price evidence]
+  G2 --> G3[Calculate locally]
+  G3 --> G4[Repair unclear fields]
+  G4 --> G5[Check confirmations]
+  G5 --> G6[Keep AI in draft mode]
 
-  G1 -. no silent task override .-> X1[Manual review]
-  G2 -. no money calculation .-> X2[Formula contract]
-  G3 -. no external formula target .-> X3[Local formulaResults]
-  G4 -. schema repair only .-> X4[Human review]
-  G5 -. no claimant impersonation .-> X5[Participant confirmation]
-  G6 -. read-only or draft-only .-> X6[Host confirmation]
+  G1 -. no silent room-type switch .-> X1[Manual review]
+  G2 -. no money calculation .-> X2[Local calculation rules]
+  G3 -. no external calculator .-> X3[Local totals]
+  G4 -. review draft only .-> X4[Human review]
+  G5 -. no confirming for others .-> X5[Participant confirmation]
+  G6 -. read or draft only .-> X6[Host confirmation]
 ```
 
 ## WebMCP Tool Surface
@@ -125,7 +133,7 @@ flowchart TD
   ACCEPT -. does not submit booking or payment .-> SAFE
 ```
 
-## Task And Formula Matrix
+## Room Type And Calculation Matrix
 
 ```mermaid
 flowchart LR
@@ -140,16 +148,16 @@ flowchart LR
     T8[generic_split]
   end
 
-  subgraph FormulaModules[Deterministic formula modules]
+  subgraph FormulaModules[Local calculation modules]
     F1[sameItemMerge]
     F2[participantSubtotal]
     F3[grandTotal]
     F4[averageSplit]
     F5[thresholdRemaining<br/>manual input]
     F6[optionDelta]
-    F7[sharedFeeSplit<br/>P1 manual input]
-    F8[depositGate<br/>P1 manual input]
-    F9[tierDiscount<br/>P1 manual input]
+    F7[sharedFeeSplit<br/>manual input]
+    F8[depositGate<br/>manual input]
+    F9[tierDiscount<br/>manual input]
     F10[extraPersonalClaim]
   end
 
@@ -158,7 +166,7 @@ flowchart LR
   T1 --> F3
   T1 --> F5
   T1 --> F10
-  T1 -. P1 .-> F9
+  T1 -. needs review .-> F9
   T2 --> F2
   T2 --> F3
   T2 --> F5
@@ -171,19 +179,19 @@ flowchart LR
   T4 --> F2
   T4 --> F3
   T4 --> F10
-  T4 -. P1 .-> F7
+  T4 -. needs review .-> F7
   T5 --> F2
   T5 --> F3
   T5 --> F10
-  T5 -. P1 .-> F7
+  T5 -. needs review .-> F7
   T6 --> F2
   T6 --> F3
   T6 --> F10
-  T6 -. P1 .-> F9
+  T6 -. needs review .-> F9
   T7 --> F2
   T7 --> F3
   T7 --> F10
-  T7 -. P1 .-> F8
+  T7 -. needs review .-> F8
   T8 --> F2
   T8 --> F3
   T8 --> F4

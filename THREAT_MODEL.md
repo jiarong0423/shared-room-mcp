@@ -46,7 +46,7 @@ This section records the data flow used by the no-key demo and optional deployme
 | --- | --- |
 | Agent overreach into final decisions | WebMCP tools are read-only or draft-only. Final review is a host-only UI action. |
 | Agent creates a misleading draft | Drafts are labeled as suggestions, remain pending, and require a two-step human decision. |
-| Agent overwrites formulas or task routing | Formula and routing state are server-owned contracts. Proposal payloads are sanitized and do not mutate totals. |
+| Agent overwrites calculation rules or room type | Calculation rules and room type are owned by the server. Proposal payloads are sanitized and do not mutate totals. |
 | Bad OCR row enters the item list | Host can edit or remove parsed rows before opening the list. Server blocks parsed-item edits after the list is opened, after settlement, after any member confirmation, or when the item is already claimed. |
 | Unauthorized user reviews a draft | Server checks `ownerParticipantId` before accepting or rejecting a proposal. |
 | Uploaded image abuse | Upload size, file type, rate limits, and image processing limits are enforced server-side. |
@@ -70,6 +70,6 @@ Before public deployment or repo submission:
 - Run `npm run check`.
 - Run `npm run audit:tasks`.
 - Run `npm audit --audit-level=high`.
-- Run the local contract stress matrix with at least 20 rounds.
+- Run the local repeated room-flow check with at least 20 rounds.
 - Run the local AI security review.
 - Confirm that no `.env`, room data, runtime logs, or generated JSON reports are staged for commit.
