@@ -219,6 +219,45 @@ WATCH_LATER:
 
 INTENTIONALLY_NOT_DO:
 
+## 2026-09-01 20:06 Closeout Governance
+
+Scope:
+
+- Owner project: `shared-room-mcp`
+- Changed artifacts: `scripts/stress-open-gate.mjs`, `docs/testing/VALIDATION_EVIDENCE.md`, `docs/security/SECURITY_SCAN_EVIDENCE.md`, `docs/ai-generated/2026Q3/shared_room_task_gap_decoupling_audit_20260831.md`
+- Latest validation evidence: `npm run check` passed; `node --check scripts/stress-open-gate.mjs` passed; `git diff --check` passed; public wording scan found no stale double-confirmation, hype, overclaiming, payment, or browser-replacement terms; public path and secret pattern scan found no local paths or key-like values; `npm audit --audit-level=moderate --omit=dev` passed with `0` vulnerabilities; `ai-security-rules export-gate` and `deploy-gate` passed with blocking `0`.
+
+DONE_CONFIRMED:
+
+- GitHub repository metadata was completed.
+  - evidence: `gh repo view jiarong0423/shared-room-mcp` shows description, homepage `https://shared-room-mcp.zeabur.app/`, MIT license, public visibility, and topics `webmcp`, `codex`, `agent-native-web`, `human-in-the-loop`, and `open-source`.
+- Zeabur live HTML no longer serves the old duplicate-review copy.
+  - evidence: live cache-busted HTML returned `Cache-Control: no-store`, old hits `0`, and expected hits for `Shared Room`, `Download HTML`, `Download PDF`, and `Owner Finalizes Summary`.
+- The official open-gate stress flow now verifies export files.
+  - evidence: `npm run stress:open-gate -- --base-url http://127.0.0.1:3184 --rounds 5 --output-dir logs/runtime` passed 20/20 and now checks valid HTML/PDF after host settlement.
+- Security and submission evidence were updated with the final export recheck.
+  - evidence: `docs/testing/VALIDATION_EVIDENCE.md` and `docs/security/SECURITY_SCAN_EVIDENCE.md` include the 20/20 final open-gate export recheck.
+
+PRIORITY_INDEX:
+
+- Push and redeploy the final export-evidence patch.
+  - next action: commit this closeout patch, push `main`, deploy Zeabur service `6a95d639aa6a5ebc1401dcd0`, then recheck GitHub raw files and live HTML.
+  - risk if ignored: GitHub would have the completed metadata but not the updated export-stress evidence script.
+
+WATCH_LATER:
+
+- JSON persistence remains a single-service demo storage layer.
+  - trigger to revisit: production or multi-instance use should move rooms and uploaded image data to Redis/PostgreSQL/object storage.
+
+INTENTIONALLY_NOT_DO:
+
+- No new payment, booking, browser-control, or external vendor submission path was added.
+  - reason: the competition demo boundary remains assistant draft plus human final approval.
+
+Next resume point:
+
+- After push/deploy, run live HTML stale-copy scan and one live `stress:open-gate` round to confirm the deployed service matches the repository.
+
 - Did not claim production-scale capacity.
   - reason: current evidence supports hackathon/demo repeatability, not thousands of concurrent users.
 - Did not expose payment, booking submission, or external write APIs.

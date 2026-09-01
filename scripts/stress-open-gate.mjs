@@ -165,6 +165,26 @@ async function fetchText(url, options = {}, timeoutMs = 20000) {
   }
 }
 
+async function fetchBuffer(url, options = {}, timeoutMs = 20000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    const buffer = Buffer.from(await response.arrayBuffer());
+    return {
+      ok: response.ok,
+      status: response.status,
+      headers: response.headers,
+      buffer
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function makeSocketIoUrl(baseUrl, sid = '') {
   const url = new URL('/socket.io/', baseUrl);
   url.searchParams.set('EIO', '4');
@@ -430,6 +450,22 @@ async function runScenarioRound(baseUrl, scenario, round, timeoutMs) {
   assertCondition(hostSettle?.ok, `host settle failed: ${hostSettle?.error || 'unknown error'}`);
   assertCondition(hostSettle.room?.settled === true, 'host settlement did not mark room settled');
 
+  const htmlExport = await fetchText(`${baseUrl}/api/rooms/${encodeURIComponent(room.id)}/export.html`, {}, timeoutMs);
+  assertCondition(htmlExport.ok, `HTML export failed: HTTP ${htmlExport.status} ${htmlExport.text}`);
+  assertCondition(htmlExport.text.includes('Action Review Summary'), 'HTML export missing action review title');
+  assertCondition(htmlExport.text.includes(room.id), 'HTML export missing room id');
+  assertCondition(htmlExport.text.includes('Total'), 'HTML export missing total line');
+
+  const pdfExport = await fetchBuffer(`${baseUrl}/api/rooms/${encodeURIComponent(room.id)}/export.pdf`, {}, timeoutMs);
+  const pdfType = pdfExport.headers.get('content-type') || '';
+  const pdfHeader = pdfExport.buffer.subarray(0, 8).toString('utf8');
+  const pdfTail = pdfExport.buffer.subarray(-32).toString('utf8');
+  assertCondition(pdfExport.ok, `PDF export failed: HTTP ${pdfExport.status}`);
+  assertCondition(pdfType.includes('application/pdf'), `PDF export content type mismatch: ${pdfType}`);
+  assertCondition(pdfHeader.startsWith('%PDF-'), `PDF export header mismatch: ${pdfHeader}`);
+  assertCondition(pdfTail.includes('%%EOF'), 'PDF export missing EOF marker');
+  assertCondition(pdfExport.buffer.length > 500, `PDF export too small: ${pdfExport.buffer.length} bytes`);
+
   return {
     ok: true,
     scenario: scenario.id,
@@ -451,7 +487,14 @@ async function runScenarioRound(baseUrl, scenario, round, timeoutMs) {
       hostParsedItemEditAfterOpenBlocked: true,
       memberClaimAfterOpenAllowed: true,
       memberConfirmAllowed: true,
-      hostSettleAllowed: true
+      hostSettleAllowed: true,
+      htmlExportReadable: true,
+      pdfExportReadable: true
+    },
+    exports: {
+      htmlStatus: htmlExport.status,
+      pdfStatus: pdfExport.status,
+      pdfBytes: pdfExport.buffer.length
     }
   };
 }
@@ -516,6 +559,7 @@ function renderMarkdown(args, summary, results) {
   lines.push('- After the host opens the list, parsed item editing is locked again.');
   lines.push('- Members can claim and confirm only after the host opens the list.');
   lines.push('- The host can settle only after the group-facing flow is open and confirmed.');
+  lines.push('- Completed rooms export readable HTML and valid PDF files after final human settlement.');
   lines.push('', '## Failed Cases', '');
 
   const failed = results.filter((result) => !result.ok);

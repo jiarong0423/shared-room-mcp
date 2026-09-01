@@ -25,6 +25,7 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 | Export file readability | PASS | downloaded live room `191fd8c3` to a local scratch directory | `file` identified UTF-8 HTML and PDF 1.4; `pdftotext` extracted room status, item summary, total, and confirmation text |
 | Single draft card regression | 60/60 passed | `logs/runtime/local-contract-stress-2026-09-01T11-24-48-624Z.md` local run | every case creates two same-type assistant drafts and verifies only the latest pending draft remains |
 | Same-card review flow | 20/20 passed | `logs/runtime/open-gate-stress-2026-09-01T11-22-05-897Z.md` local run | host review stays before member claiming; member and settlement boundaries still pass after the draft-card cleanup |
+| Final open-gate and export recheck | 20/20 passed | `logs/runtime/open-gate-stress-2026-09-01T12-05-44-080Z.md` local run | the official flow now also checks completed-room HTML and PDF exports after host settlement |
 
 ## What This Means
 
@@ -34,6 +35,7 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 - Duplicate assistant drafts for the same topic collapse into one visible host decision.
 - Members can claim and confirm only their own costs.
 - Reviewed rooms can be exported as local HTML or PDF records.
+- The same open-gate stress script now verifies the export buttons' backend files after the room is finalized.
 - The default JSON save layer is suitable for a single demo service and short write bursts, not production-scale traffic.
 
 ## What This Does Not Claim
