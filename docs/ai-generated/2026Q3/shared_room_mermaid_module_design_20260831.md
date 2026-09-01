@@ -41,7 +41,7 @@ sequenceDiagram
 
   Note over Agent,Server: Agent cannot edit items, confirm claims, settle, pay, book, or submit external forms.
   Note over Page: Exports are local records and do not submit forms or change external systems.
-  Note over Store: On Zeabur, use ROOM_STORE_PATH=/data/rooms.json with a mounted volume.
+  Note over Store: On a hosted demo, use ROOM_STORE_PATH=/data/rooms.json with a mounted volume.
 ```
 
 ## Permission Matrix
@@ -76,10 +76,32 @@ flowchart TD
   F --> HTML[Download HTML]
   F --> PDF[Download PDF]
   F --> PRINT[Print summary]
-  SAVE --> VOL[Zeabur volume keeps demo rooms after restart]
+  SAVE --> VOL[Mounted volume keeps demo rooms after restart]
 
   OPTIONAL[Optional deployer integrations] -. draft only .-> A
 ```
+
+## Room Transition Isolation
+
+```mermaid
+flowchart TD
+  A[Current room A] --> LOCK[Lock room transition]
+  LOCK --> CLEAR[Clear room-only temporary UI state]
+  CLEAR --> SET[Set room B identity and URL]
+  SET --> RENDER[Render room B and derive controls from B]
+  RENDER --> UNLOCK[Unlock room actions]
+
+  PREF[Language and display name] -. preserved .-> RENDER
+  FETCH[Fetch or Socket.IO callback] --> MATCH{Target room still matches B?}
+  MATCH -->|yes| APPLY[Render response]
+  MATCH -->|no| DROP[Ignore stale response]
+
+  LOCK -. blocks .-> UPLOAD[Overlapping upload]
+  LOCK -. blocks .-> NEWROOM[Overlapping room switch]
+  LOCK -. blocks .-> WRITE[Room write actions]
+```
+
+Room changes use one transition boundary for initial load, `New Room`, missing-room recovery, and same-room reset. Room-only upload previews, draft-review staging, source-image transforms, copied OCR text, and summary-tab state are cleared. User language and display-name preferences remain local to the browser.
 
 ## Fixed Review Steps
 

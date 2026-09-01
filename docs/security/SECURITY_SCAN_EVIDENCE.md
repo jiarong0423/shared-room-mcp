@@ -1,6 +1,6 @@
 # Security Scan Evidence
 
-Evidence date: 2026-09-01
+Evidence date: 2026-09-02
 
 ## Scope
 
@@ -27,6 +27,9 @@ SAST-equivalent local code security evidence:
 - `ai-security-rules agent-review`: passed on 2026-09-01 with blocking findings `0`, P0 `0`, P1 `0`, P2 `31`.
 - `ai-security-rules export-gate`: passed on 2026-09-01 after the naming and export cleanup with blocking findings `0`; report was written outside the repository.
 - `ai-security-rules deploy-gate`: passed on 2026-09-01 after the naming and export cleanup with blocking findings `0`; report was written outside the repository.
+- `ai-security-rules rules-check`: passed again on 2026-09-02 after the room-transition fix with critical `0`, high `0`, blocking findings `0`, P0 `0`, and P1 `0`; report was written outside the repository.
+- `ai-security-rules export-gate`: passed again on 2026-09-02 with blocking findings `0`, P0 `0`, P1 `0`, and P2 `0`; report was written outside the repository.
+- `ai-security-rules deploy-gate`: passed again on 2026-09-02 with blocking findings `0`, P0 `0`, P1 `0`, and P2 `0`; report was written outside the repository.
 - Current-file secret scan: no committed API keys, private keys, `.env` files, raw Google Sheet IDs, cookies, or payment data found in public source paths.
 - Public path scrub: passed on 2026-09-01 with no tracked local machine paths, desktop media references, Codex attachment paths, spreadsheet document links, private-key blocks, or common token prefixes.
 - Private-algorithm review: no sensitive scoring weights, non-public topology notes, restricted notes, or private business rules were found. Two broad keyword hits were false positives from embedded 1x1 PNG test fixtures in stress scripts.
@@ -46,7 +49,7 @@ SAST-equivalent local code security evidence:
 - JSON save queue follow-up: `npm run stress:open-gate -- --base-url http://127.0.0.1:3151 --rounds 5 --output-dir logs/runtime` passed 20/20 cases after `ROOM_PERSIST_DEBOUNCE_MS=35` and `ROOM_PERSIST_JITTER_MS=120` were added.
 - Short save-burst check: 25 simultaneous room creates were all present in the saved JSON file on 2026-09-01; missing created rooms `0`.
 - Post-deploy live smoke: the Zeabur service reached `RUNNING` on 2026-09-01. Live `/healthz` showed `roomStorePath=/data/rooms.json`, `roomPersistDebounceMs=35`, `roomPersistJitterMs=120`, `hasGeminiKey=false`, and `hasOpenAiKey=false`. Live `npm run stress:open-gate -- --base-url https://shared-room-mcp.zeabur.app --rounds 1 --output-dir logs/runtime` passed 4/4.
-- Post-export live smoke: Zeabur deployment `6a969dab5158a7aaa4e61476` reached `RUNNING` on 2026-09-01. The live home page showed `Evidence And Items`, `Owner Finalizes Summary`, `Download HTML`, and `智慧共享空間`. A live 4/4 room-flow smoke passed, then 4 HTML exports and 4 PDF exports returned valid files.
+- Post-export live smoke: the Zeabur export deployment reached `RUNNING` on 2026-09-01. The live home page showed `Evidence And Items`, `Owner Finalizes Summary`, `Download HTML`, and `智慧共享空間`. A live 4/4 room-flow smoke passed, then 4 HTML exports and 4 PDF exports returned valid files.
 - Export readability recheck: downloaded live room `191fd8c3` HTML and PDF exports on 2026-09-01. `file` identified UTF-8 HTML and PDF 1.4; `pdftotext` extracted readable room status, item summary, total, and confirmation text.
 - Impact check: `output/isolation/current_runs/shared_room_mcp_gate_20260901_pass/impact_evidence_state_gate.md` passed on 2026-09-01. Checked areas with evidence-backed `O` states: backend rules, frontend render, WebMCP tool limits, testing, security, and docs/submission.
 - Local export smoke after wording cleanup: completed room `068b78ef` returned HTML 200 with `text/html; charset=utf-8`, PDF 200 with `application/pdf`, `%PDF-1.4`, and `%%EOF`; empty room export returned 409 for both HTML and PDF.
@@ -55,6 +58,8 @@ SAST-equivalent local code security evidence:
 - Same-card flow recheck: local open-gate stress passed 20/20 against `http://127.0.0.1:3178`. The host review UI stays on one visible card, while member claiming and settlement order remain unchanged.
 - Final open-gate export recheck: local open-gate stress passed 20/20 against `http://127.0.0.1:3184` on 2026-09-01 after the export assertion was added to the script. The same flow verifies AI/OCR draft boundaries, host-only edits, member claim timing, member confirmation, host settlement, readable HTML export, and valid PDF export.
 - Final live open-gate export recheck: live open-gate stress passed 4/4 against `https://shared-room-mcp.zeabur.app` on 2026-09-01 with the same HTML/PDF export assertions. Live HTML also returned `Cache-Control: no-store`, old duplicate-review copy hits `0`, and expected hits for `Shared Room`, `Download HTML`, `Download PDF`, and `Owner Finalizes Summary`.
+- Same-tab room-transition regression: passed 2/2 locally on 2026-09-02. A loaded room switched to a clean empty room with `Load Sample Room` enabled, and a late second-tab update from the old room could not overwrite the new room. Browser console errors and warnings were empty.
+- Room-transition impact gate: `output/isolation/current_runs/shared_room_transition_20260902/impact_evidence_state_gate.md` marked frontend render, room transition, async callback boundary, Socket.IO boundary, and unchanged backend projection as evidence-backed `O`. Git release and cloud runtime remained `△` before push and deployment.
 - Proposal UI impact matrix: `output/isolation/current_runs/shared_room_proposal_ui_dedupe_20260901_final_latest/impact_evidence_state_gate.md` marked backend contract, frontend render, WebMCP draft, claim flow, and docs/submission as evidence-backed `O`; git release remained pending because this pass was not committed or deployed yet.
 
 The current implementation contains no known auto-payment, card storage, order-finalization, or external booking submission path. Agents can inspect state and create bounded host-review drafts only. Parsed-item edits are host UI actions and are not exposed as WebMCP tools.

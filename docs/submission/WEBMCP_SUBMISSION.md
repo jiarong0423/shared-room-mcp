@@ -2,7 +2,7 @@
 
 Project name: Shared Room MCP
 
-Live URL: https://shared-room-mcp.zeabur.app/
+Live URL: https://sharedroom.jace0423.com/
 
 Public repository URL: https://github.com/jiarong0423/shared-room-mcp
 
@@ -60,7 +60,7 @@ Checked against the WebMCP Challenge page on 2026-09-01.
 
 | Requirement | Local status |
 |---|---|
-| Working live URL accessible in ChatGPT in-app browser or Chrome with WebMCP enabled | Ready: https://shared-room-mcp.zeabur.app/ |
+| Working live URL accessible in ChatGPT in-app browser or Chrome with WebMCP enabled | Ready: https://sharedroom.jace0423.com/ |
 | Text description explaining WebMCP fit and user experience | Ready in `README.md` and this packet |
 | Public YouTube demo under 3 minutes with audio | Pending `TODO_YOUTUBE_DEMO_URL` |
 | Public code repository | Ready: https://github.com/jiarong0423/shared-room-mcp |
@@ -87,7 +87,7 @@ This project existed earlier as a group menu ordering room. The WebMCP hackathon
 
 ## Environment Variables
 
-Required for normal Zeabur runtime:
+Required for a normal single-instance hosted runtime:
 
 ```bash
 HOST=0.0.0.0
@@ -122,15 +122,15 @@ GEMINI_MODEL_FALLBACKS=gemini-2.5-flash-lite,gemini-flash-latest
 GEMINI_RETRY_ATTEMPTS=2
 ```
 
-Do not commit API keys. Set secrets in Zeabur environment variables only.
+Do not commit API keys. Set secrets in the hosting provider's secret manager only.
 
-Runtime requires Node.js `>=20.9.0`. Leave `CORS_ORIGIN` empty for a same-origin Zeabur deployment; set it only when the browser frontend is served from a separate trusted origin.
+Runtime requires Node.js `>=20.9.0`. Leave `CORS_ORIGIN` empty for a same-origin deployment; set it only when the browser frontend is served from a separate trusted origin.
 
-For Zeabur, attach a persistent volume before using `/data/rooms.json`. Without a volume, room data can still work during one runtime session, but a platform restart can clear it.
+For a hosted demo, attach a persistent volume before using `/data/rooms.json`. Without a volume, room data can still work during one runtime session, but a platform restart can clear it. The current Railway service mounts `/data` and uses this path.
 
 The current save layer is a hackathon MVP choice for one running service instance. It smooths short write bursts by merging nearby room changes and adding a small millisecond delay before saving, but a hard crash can still lose the latest tiny write window. Production traffic should still use Redis or PostgreSQL.
 
-Deployment owners should replace secrets only in Zeabur Variables or the hosting provider secret manager. The repository includes variable names in `env.sample`, but no real key values. AI provider keys are optional adapters because manual input and local OCR text can still demonstrate the WebMCP tool workflow.
+Deployment owners should replace secrets only in the hosting provider secret manager. The repository includes variable names in `env.sample`, but no real key values. AI provider keys are optional adapters because manual input and local OCR text can still demonstrate the WebMCP tool workflow.
 
 ## Local Verification
 
@@ -144,7 +144,7 @@ npm start
 
 The repeated room-flow check covers 20 non-duplicate Traditional Chinese and English scenarios, with 20 rounds per scenario. It checks room creation, local copied-text OCR parsing, stable room-type selection, draft creation, and the final human approval rule.
 
-The public evidence summary is tracked in `docs/testing/VALIDATION_EVIDENCE.md`. It records only checks that were actually run: local repeated flows, host-only draft review, Load Sample Room, live Zeabur smoke, and short JSON save-burst checks.
+The public evidence summary is tracked in `docs/testing/VALIDATION_EVIDENCE.md`. It records only checks that were actually run: local repeated flows, host-only draft review, Load Sample Room, hosted smoke checks, and short JSON save-burst checks.
 
 Open `http://localhost:3000`, create a room, choose a task type, paste OCR text or upload an image, add participants, claim items, and inspect the audit panel.
 
@@ -208,7 +208,7 @@ Operator rule for recording:
 
 - Public repository URL is set to `https://github.com/jiarong0423/shared-room-mcp`.
 - Replace `TODO_YOUTUBE_DEMO_URL` after uploading the public demo video.
-- Set and verify the live Zeabur URL after the final deployment name is chosen.
-- Confirm Zeabur volume is mounted when `ROOM_STORE_PATH=/data/rooms.json` is configured.
+- Live URL is set to `https://sharedroom.jace0423.com/` and should be rechecked after the final push.
+- Confirm the Railway `/data` volume remains mounted when `ROOM_STORE_PATH=/data/rooms.json` is configured.
 - Disclose that the current room ownership model is demo-grade; production deployments should add signed sessions or a real login system.
 - Confirm Devpost description uses the same WebMCP safety rule stated here.

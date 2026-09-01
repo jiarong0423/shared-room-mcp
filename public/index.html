@@ -2183,6 +2183,7 @@
     let currentRoom = null;
     let pendingProposalReview = null;
     let isUploading = false;
+    let isSwitchingRoom = false;
     let isBootReady = false;
     let isRecoveringRoom = false;
     let pendingMenuFiles = [];
@@ -2471,16 +2472,18 @@
     function setUploading(uploading) {
       isUploading = uploading;
       elements.loadingBar.style.display = uploading ? 'block' : 'none';
-      elements.fileInput.disabled = uploading;
-      elements.selectImageButton.disabled = uploading;
-      elements.loadSampleButton.disabled = uploading || Boolean(currentRoom?.menuLoaded);
-      elements.confirmUploadButton.disabled = uploading || pendingMenuFiles.length === 0;
-      elements.cancelUploadButton.disabled = uploading || pendingMenuFiles.length === 0;
+      elements.newRoomButton.disabled = uploading || isSwitchingRoom;
+      elements.fileInput.disabled = uploading || isSwitchingRoom;
+      elements.selectImageButton.disabled = uploading || isSwitchingRoom;
+      elements.loadSampleButton.disabled = uploading || isSwitchingRoom || Boolean(currentRoom?.menuLoaded);
+      elements.confirmUploadButton.disabled = uploading || isSwitchingRoom || pendingMenuFiles.length === 0;
+      elements.cancelUploadButton.disabled = uploading || isSwitchingRoom || pendingMenuFiles.length === 0;
+      elements.resetButton.disabled = uploading || isSwitchingRoom || !isOwner(currentRoom);
     }
 
     function setPendingUpload(files) {
       const incomingFiles = Array.from(files || []).filter(Boolean);
-      if (incomingFiles.length === 0 || isUploading) {
+      if (incomingFiles.length === 0 || isUploading || isSwitchingRoom) {
         return;
       }
       if (incomingFiles.some((file) => !file.type.startsWith('image/'))) {
@@ -2535,11 +2538,50 @@
       if (!response.ok) {
         throw new Error(data.error || '建立房間失敗');
       }
-      roomId = data.id;
+      return data;
+    }
+
+    function isSameRoomTarget(targetRoomId, room = null) {
+      if (!targetRoomId || String(targetRoomId) !== String(roomId)) {
+        return false;
+      }
+      return !room?.id || String(room.id) === String(roomId);
+    }
+
+    function isCurrentRoomTarget(targetRoomId, room = null) {
+      return !isSwitchingRoom && isSameRoomTarget(targetRoomId, room);
+    }
+
+    function renderRoomForTarget(room, targetRoomId) {
+      if (!isCurrentRoomTarget(targetRoomId, room)) {
+        return false;
+      }
+      renderRoom(room);
+      return true;
+    }
+
+    function clearRoomScopedUiState() {
+      pendingProposalReview = null;
+      activeSummaryTab = 'items';
+      isSourceMenuCollapsed = false;
+      clearPendingUpload(false);
+      elements.localOcrTextInput.value = '';
+      resetSourceImageTransform();
+      setMessage('', 'warn');
+    }
+
+    function switchRoom(room) {
+      if (!room?.id) {
+        throw new Error(t('createRoomFailed'));
+      }
+      clearRoomScopedUiState();
+      roomId = room.id;
+      currentRoom = room;
+      isUploading = false;
       const url = new URL(window.location.href);
       url.searchParams.set('room', roomId);
       window.history.replaceState({}, '', url.toString());
-      return data;
+      renderRoom(room);
     }
 
     async function loadExistingRoom() {
@@ -2561,15 +2603,20 @@
     }
 
     function joinRoom() {
-      if (!roomId || !socket.connected || !isBootReady) {
+      if (!roomId || !socket.connected || !isBootReady || isSwitchingRoom) {
         return;
       }
 
+      const targetRoomId = roomId;
+
       socket.emit('joinRoom', {
-        roomId,
+        roomId: targetRoomId,
         participantId,
         displayName: displayName || elements.displayNameInput.value
       }, (result) => {
+        if (!isCurrentRoomTarget(targetRoomId, result?.room)) {
+          return;
+        }
         if (!result || !result.ok) {
           if (String(result?.error || '').includes('找不到房間')) {
             recoverMissingRoom();
@@ -2584,7 +2631,7 @@
         } else {
           localStorage.setItem(storageKeys.participantId, participantId);
         }
-        renderRoom(result.room);
+        renderRoomForTarget(result.room, targetRoomId);
       });
     }
 
@@ -2593,25 +2640,31 @@
         return;
       }
       isRecoveringRoom = true;
+      isSwitchingRoom = true;
+      setUploading(isUploading);
+      let shouldJoinRoom = false;
       try {
         const room = await createRoom();
-        roomId = room.id;
-        renderRoom(room);
+        switchRoom(room);
         setMessage(t('roomMissingNew'), 'info');
-        joinRoom();
+        shouldJoinRoom = true;
       } catch (error) {
         setMessage(error.message || '建立新房間失敗', 'error');
       } finally {
         isRecoveringRoom = false;
+        isSwitchingRoom = false;
+        setUploading(isUploading);
+        if (shouldJoinRoom) {
+          joinRoom();
+        }
       }
     }
 
     async function boot() {
       try {
         const room = await loadExistingRoom();
-        roomId = room.id;
         isBootReady = true;
-        renderRoom(room);
+        switchRoom(room);
         joinRoom();
       } catch (error) {
         isBootReady = true;
@@ -2930,7 +2983,8 @@
         });
       }
 
-      const response = await fetch(`/api/rooms/${encodeURIComponent(currentRoom.id)}/agent-proposals`, {
+      const targetRoomId = currentRoom.id;
+      const response = await fetch(`/api/rooms/${encodeURIComponent(targetRoomId)}/agent-proposals`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -2941,8 +2995,16 @@
         })
       });
       const result = await response.json();
-      if (result?.room) {
-        renderRoom(result.room);
+      const responseIsCurrent = isCurrentRoomTarget(targetRoomId, result?.room);
+      if (result?.room && responseIsCurrent) {
+        renderRoomForTarget(result.room, targetRoomId);
+      }
+      if (!responseIsCurrent) {
+        return JSON.stringify({
+          ok: false,
+          error: 'room_changed_before_proposal_returned',
+          boundary: 'draft_only_pending_host_confirmation'
+        });
       }
       return JSON.stringify({
         ok: response.ok && result?.ok === true,
@@ -3328,6 +3390,7 @@
       renderSummaryTabs();
       renderSettlement(room);
       renderAgentProposals(room);
+      setUploading(isUploading);
 
       if (!isUploading) {
         setMessage('', 'warn');
@@ -3835,7 +3898,7 @@
     }
 
     function changeQty(itemId, delta) {
-      if (!currentRoom?.menuLoaded) {
+      if (isSwitchingRoom || !currentRoom?.menuLoaded) {
         return;
       }
       if (currentRoom.settled) {
@@ -3856,12 +3919,16 @@
         return;
       }
       const nextQty = Math.max(0, Math.min(99, getOwnQty(itemId) + delta));
+      const targetRoomId = roomId;
       socket.emit('setItemQty', {
-        roomId,
+        roomId: targetRoomId,
         participantId,
         itemId,
         qty: nextQty
       }, (result) => {
+        if (!isCurrentRoomTarget(targetRoomId, result?.room)) {
+          return;
+        }
         if (!result || !result.ok) {
           setMessage(result?.error || '更新數量失敗', 'error');
         }
@@ -3869,7 +3936,7 @@
     }
 
     function setDrinkOption(itemId, optionType, value) {
-      if (!currentRoom?.menuLoaded) {
+      if (isSwitchingRoom || !currentRoom?.menuLoaded) {
         return;
       }
       if (currentRoom.settled) {
@@ -3890,13 +3957,17 @@
         return;
       }
 
+      const targetRoomId = roomId;
       socket.emit('setDrinkOption', {
-        roomId,
+        roomId: targetRoomId,
         participantId,
         itemId,
         optionType,
         value
       }, (result) => {
+        if (!isCurrentRoomTarget(targetRoomId, result?.room)) {
+          return;
+        }
         if (!result || !result.ok) {
           setMessage(result?.error || t('drinkOptionUpdateFailed'), 'error');
         }
@@ -3904,7 +3975,7 @@
     }
 
     function setItemOption(itemId, groupId, optionId, selected = true) {
-      if (!currentRoom?.menuLoaded) {
+      if (isSwitchingRoom || !currentRoom?.menuLoaded) {
         return;
       }
       if (currentRoom.settled) {
@@ -3925,14 +3996,18 @@
         return;
       }
 
+      const targetRoomId = roomId;
       socket.emit('setItemOption', {
-        roomId,
+        roomId: targetRoomId,
         participantId,
         itemId,
         groupId,
         optionId,
         selected
       }, (result) => {
+        if (!isCurrentRoomTarget(targetRoomId, result?.room)) {
+          return;
+        }
         if (!result || !result.ok) {
           setMessage(result?.error || t('itemOptionUpdateFailed'), 'error');
         }
@@ -3940,7 +4015,7 @@
     }
 
     function toggleOrderConfirmation() {
-      if (!currentRoom?.menuLoaded) {
+      if (isSwitchingRoom || !currentRoom?.menuLoaded) {
         return;
       }
       if (currentRoom.settled) {
@@ -3964,21 +4039,25 @@
         return;
       }
 
+      const targetRoomId = roomId;
       socket.emit('confirmOrder', {
-        roomId,
+        roomId: targetRoomId,
         participantId,
         confirmed: shouldConfirm
       }, (result) => {
+        if (!isCurrentRoomTarget(targetRoomId, result?.room)) {
+          return;
+        }
         if (!result || !result.ok) {
           setMessage(result?.error || t('confirmCostFailed'), 'error');
           return;
         }
-        renderRoom(result.room);
+        renderRoomForTarget(result.room, targetRoomId);
       });
     }
 
     async function uploadPendingImage() {
-      if (pendingMenuFiles.length === 0 || isUploading) {
+      if (pendingMenuFiles.length === 0 || isUploading || isSwitchingRoom) {
         return;
       }
       if (currentRoom?.menuLoaded) {
@@ -3986,6 +4065,7 @@
         return;
       }
 
+      const targetRoomId = roomId;
       const formData = new FormData();
       formData.append('menuImage', pendingMenuFiles[0]);
       const localOcrText = String(elements.localOcrTextInput.value || '').trim();
@@ -3998,7 +4078,7 @@
       setMessage('', 'warn');
 
       try {
-        const response = await fetch(`/api/rooms/${encodeURIComponent(roomId)}/menu`, {
+        const response = await fetch(`/api/rooms/${encodeURIComponent(targetRoomId)}/menu`, {
           method: 'POST',
           body: formData
         });
@@ -4006,17 +4086,24 @@
         if (!response.ok) {
           throw new Error(data.error || t('parseImageFailed'));
         }
+        if (!isCurrentRoomTarget(targetRoomId, data)) {
+          return;
+        }
         clearPendingUpload(false);
-        renderRoom(data);
+        renderRoomForTarget(data, targetRoomId);
       } catch (error) {
-        setMessage(error.message, 'error');
+        if (isCurrentRoomTarget(targetRoomId)) {
+          setMessage(error.message, 'error');
+        }
       } finally {
-        setUploading(false);
+        if (String(targetRoomId) === String(roomId)) {
+          setUploading(false);
+        }
       }
     }
 
     async function loadSampleRoom() {
-      if (isUploading) {
+      if (isUploading || isSwitchingRoom) {
         return;
       }
       if (!currentRoom?.id) {
@@ -4028,6 +4115,7 @@
         return;
       }
 
+      const targetRoomId = currentRoom.id;
       const currentInputName = String(elements.displayNameInput.value || '').trim();
       if (!hasValidDisplayName(currentInputName)) {
         displayName = 'Demo Host';
@@ -4041,7 +4129,7 @@
       setUploading(true);
       setMessage('', 'warn');
       try {
-        const response = await fetch(`/api/rooms/${encodeURIComponent(currentRoom.id)}/sample`, {
+        const response = await fetch(`/api/rooms/${encodeURIComponent(targetRoomId)}/sample`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -4055,14 +4143,21 @@
         if (!response.ok) {
           throw new Error(data.error || t('sampleRoomLoadFailed'));
         }
+        if (!isCurrentRoomTarget(targetRoomId, data.room)) {
+          return;
+        }
         clearPendingUpload(false);
-        renderRoom(data.room);
+        renderRoomForTarget(data.room, targetRoomId);
         setMessage(t('sampleRoomLoaded'), 'info');
         joinRoom();
       } catch (error) {
-        setMessage(error.message || t('sampleRoomLoadFailed'), 'error');
+        if (isCurrentRoomTarget(targetRoomId)) {
+          setMessage(error.message || t('sampleRoomLoadFailed'), 'error');
+        }
       } finally {
-        setUploading(false);
+        if (String(targetRoomId) === String(roomId)) {
+          setUploading(false);
+        }
       }
     }
 
@@ -4074,21 +4169,31 @@
     }
 
     async function startNewRoom() {
+      if (isUploading || isSwitchingRoom) {
+        return;
+      }
       const shouldCreate = !currentRoom?.menuLoaded
         || window.confirm(t('newRoomConfirm'));
       if (!shouldCreate) {
         return;
       }
 
+      isSwitchingRoom = true;
+      setUploading(isUploading);
+      let shouldJoinRoom = false;
       try {
         const room = await createRoom();
-        isSourceMenuCollapsed = false;
-        clearPendingUpload(false);
-        renderRoom(room);
+        switchRoom(room);
         setMessage(t('newRoomCreated'), 'info');
-        joinRoom();
+        shouldJoinRoom = true;
       } catch (error) {
         setMessage(error.message || t('createRoomFailed'), 'error');
+      } finally {
+        isSwitchingRoom = false;
+        setUploading(isUploading);
+        if (shouldJoinRoom) {
+          joinRoom();
+        }
       }
     }
 
@@ -4206,18 +4311,22 @@
     }
 
     function settleRoom() {
-      if (!currentRoom?.menuLoaded) {
+      if (isSwitchingRoom || !currentRoom?.menuLoaded) {
         return;
       }
+      const targetRoomId = roomId;
       socket.emit('settleRoom', {
-        roomId,
+        roomId: targetRoomId,
         participantId
       }, (result) => {
+        if (!isCurrentRoomTarget(targetRoomId, result?.room)) {
+          return;
+        }
         if (!result || !result.ok) {
           setMessage(result?.error || t('settleFailed'), 'error');
           return;
         }
-        renderRoom(result.room);
+        renderRoomForTarget(result.room, targetRoomId);
         const text = buildOrderText(result.room);
         elements.settlementOutput.textContent = text;
         elements.settlementOutput.dataset.visible = 'true';
@@ -4228,15 +4337,19 @@
     }
 
     function reviewAgentProposal(proposalId, action) {
-      if (!currentRoom?.id) {
+      if (isSwitchingRoom || !currentRoom?.id) {
         return;
       }
+      const targetRoomId = currentRoom.id;
       socket.emit('reviewAgentProposal', {
-        roomId: currentRoom.id,
+        roomId: targetRoomId,
         participantId,
         proposalId,
         action
       }, (result) => {
+        if (!isCurrentRoomTarget(targetRoomId, result?.room)) {
+          return;
+        }
         if (!result || !result.ok) {
           pendingProposalReview = null;
           setMessage(result?.error || t('draftReviewFailed'), 'error');
@@ -4244,7 +4357,7 @@
           return;
         }
         pendingProposalReview = null;
-        renderRoom(result.room);
+        renderRoomForTarget(result.room, targetRoomId);
       });
     }
 
@@ -4270,81 +4383,97 @@
     }
 
     function setMenuMode(menuMode) {
-      if (!currentRoom?.menuLoaded) {
+      if (isSwitchingRoom || !currentRoom?.menuLoaded) {
         return;
       }
+      const targetRoomId = roomId;
       socket.emit('setMenuMode', {
-        roomId,
+        roomId: targetRoomId,
         participantId,
         menuMode
       }, (result) => {
+        if (!isCurrentRoomTarget(targetRoomId, result?.room)) {
+          return;
+        }
         if (!result || !result.ok) {
           setMessage(result?.error || t('modeSwitchFailed'), 'error');
           return;
         }
-        renderRoom(result.room);
+        renderRoomForTarget(result.room, targetRoomId);
       });
     }
 
     function updateParsedItem(itemId, patch) {
-      if (!currentRoom?.menuLoaded || !canReviewParsedItems(currentRoom)) {
+      if (isSwitchingRoom || !currentRoom?.menuLoaded || !canReviewParsedItems(currentRoom)) {
         return;
       }
       const item = currentRoom.items.find((candidate) => candidate.id === itemId);
       if (!item) {
         return;
       }
+      const targetRoomId = roomId;
       socket.emit('updateParsedItem', {
-        roomId,
+        roomId: targetRoomId,
         participantId,
         itemId,
         name: patch.name ?? item.name,
         price: patch.price ?? item.price,
         category: patch.category ?? item.category
       }, (result) => {
+        if (!isCurrentRoomTarget(targetRoomId, result?.room)) {
+          return;
+        }
         if (!result || !result.ok) {
           setMessage(result?.error || t('itemUpdateFailed'), 'error');
-          renderRoom(currentRoom);
+          renderRoomForTarget(currentRoom, targetRoomId);
           return;
         }
         setMessage(t('itemReviewSaved'), 'info');
-        renderRoom(result.room);
+        renderRoomForTarget(result.room, targetRoomId);
       });
     }
 
     function removeParsedItem(itemId) {
-      if (!currentRoom?.menuLoaded || !canReviewParsedItems(currentRoom)) {
+      if (isSwitchingRoom || !currentRoom?.menuLoaded || !canReviewParsedItems(currentRoom)) {
         return;
       }
+      const targetRoomId = roomId;
       socket.emit('removeParsedItem', {
-        roomId,
+        roomId: targetRoomId,
         participantId,
         itemId
       }, (result) => {
+        if (!isCurrentRoomTarget(targetRoomId, result?.room)) {
+          return;
+        }
         if (!result || !result.ok) {
           setMessage(result?.error || t('itemRemoveFailed'), 'error');
-          renderRoom(currentRoom);
+          renderRoomForTarget(currentRoom, targetRoomId);
           return;
         }
         setMessage(t('itemRemoved'), 'info');
-        renderRoom(result.room);
+        renderRoomForTarget(result.room, targetRoomId);
       });
     }
 
     function openItemsForMembers() {
-      if (!currentRoom?.menuLoaded || !isOwner(currentRoom) || currentRoom.itemsOpenForMembers) {
+      if (isSwitchingRoom || !currentRoom?.menuLoaded || !isOwner(currentRoom) || currentRoom.itemsOpenForMembers) {
         return;
       }
+      const targetRoomId = roomId;
       socket.emit('openItemsForMembers', {
-        roomId,
+        roomId: targetRoomId,
         participantId
       }, (result) => {
+        if (!isCurrentRoomTarget(targetRoomId, result?.room)) {
+          return;
+        }
         if (!result || !result.ok) {
           setMessage(result?.error || t('openItemsFailed'), 'error');
           return;
         }
         setMessage(t('openedToMembers'), 'info');
-        renderRoom(result.room);
+        renderRoomForTarget(result.room, targetRoomId);
       });
     }
 
@@ -4362,18 +4491,27 @@
     }
 
     function resetRoom() {
+      if (isUploading || isSwitchingRoom) {
+        return;
+      }
       const confirmed = window.confirm(t('resetConfirm'));
       if (!confirmed) {
         return;
       }
 
-      socket.emit('resetRoom', { roomId, participantId }, (result) => {
-        if (!result || !result.ok) {
+      const targetRoomId = roomId;
+      isSwitchingRoom = true;
+      setUploading(isUploading);
+      socket.emit('resetRoom', { roomId: targetRoomId, participantId }, (result) => {
+        const targetStillCurrent = isSameRoomTarget(targetRoomId, result?.room);
+        if (targetStillCurrent && (!result || !result.ok)) {
           setMessage(result?.error || t('resetFailed'), 'error');
-          return;
         }
-        clearPendingUpload(false);
-        renderRoom(result.room);
+        if (targetStillCurrent && result?.ok) {
+          switchRoom(result.room);
+        }
+        isSwitchingRoom = false;
+        setUploading(isUploading);
       });
     }
 
@@ -4388,8 +4526,12 @@
       setChip(elements.connectionChip, t('reconnecting'), 'warn');
     });
 
-    socket.on('roomState', renderRoom);
-    socket.on('presenceState', renderRoom);
+    function handleRoomState(room) {
+      renderRoomForTarget(room, roomId);
+    }
+
+    socket.on('roomState', handleRoomState);
+    socket.on('presenceState', handleRoomState);
 
     elements.languageToggle.addEventListener('click', (event) => {
       const button = event.target.closest('button[data-lang]');

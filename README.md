@@ -2,7 +2,7 @@
 
 Shared Room MCP is an open-source trust boundary layer for the agent-native web. It gives people and AI assistants one shared page where agents can prepare real-world work, while humans keep final authority over commitments.
 
-Live demo: https://shared-room-mcp.zeabur.app/
+Live demo: https://sharedroom.jace0423.com/
 
 The app is English-first for judging and demo review. A Chinese UI dictionary remains available for local use, but the default page language, initial HTML, README, and submission packet are English.
 
@@ -22,7 +22,7 @@ WebMCP is a good fit because the assistant can enter the same browser room as th
 
 ## How We Checked It
 
-The demo is not only a single happy-path recording. Before submission, the room flow was repeated locally and once against the live Zeabur app.
+The demo is not only a single happy-path recording. Before submission, the room flow was repeated locally and against deployed versions of the app.
 
 The full check summary is in [`docs/testing/VALIDATION_EVIDENCE.md`](docs/testing/VALIDATION_EVIDENCE.md).
 
@@ -35,7 +35,8 @@ The full check summary is in [`docs/testing/VALIDATION_EVIDENCE.md`](docs/testin
 | Split-language scenarios | 240/240 passed | Chinese and English cases stay separated and still end in host review |
 | Host-only draft review | 200/200 denied for non-hosts | non-host users cannot create or approve host drafts |
 | Load Sample Room | 120/120 passed | sample data stays as a draft and does not settle, pay, or call outside services |
-| Live Zeabur flow | 4/4 passed | deployed app keeps the same host-review and member-confirmation flow |
+| Railway production flow | 5/5 passed | sequential hosted checks kept the host-review, member-confirmation, and export flow |
+| Same-tab room switch | 2/2 passed | a new room gets clean controls, and late updates from the old room are ignored |
 
 These checks show that the assistant workflow is repeatable and no-key by default. They are not a claim of production-scale database capacity. The default JSON save layer is for a single demo service; production traffic should use Redis or PostgreSQL.
 
@@ -199,7 +200,7 @@ sequenceDiagram
   Page-->>Host: Download a local file from the reviewed summary
 
   Note over Agent,Server: Agent cannot edit items, confirm claims, settle, pay, book, or submit external forms.
-  Note over Store: On Zeabur, use ROOM_STORE_PATH=/data/rooms.json with a mounted volume.
+  Note over Store: On a hosted demo, use ROOM_STORE_PATH=/data/rooms.json with a mounted volume.
 ```
 
 ```mermaid
@@ -222,10 +223,12 @@ flowchart TD
   F --> HTML[Download HTML]
   F --> PDF[Download PDF]
   F --> PRINT[Print summary]
-  SAVE --> VOL[Zeabur volume keeps demo rooms after restart]
+  SAVE --> VOL[Mounted volume keeps demo rooms after restart]
 
   OPTIONAL[Optional deployer integrations] -. draft only .-> A
 ```
+
+The detailed module, permission, state, and room-transition diagrams are in [`docs/ai-generated/2026Q3/shared_room_mermaid_module_design_20260831.md`](docs/ai-generated/2026Q3/shared_room_mermaid_module_design_20260831.md).
 
 ## Environment Variables
 
@@ -272,7 +275,7 @@ OPENAI_MAX_OUTPUT_TOKENS=16000
 OPENAI_IMAGE_DETAIL=high
 ```
 
-Do not commit API keys. Set secrets only in Zeabur environment variables or the hosting provider secret manager.
+Do not commit API keys. Set secrets only in the hosting provider's secret manager.
 
 Runtime requires Node.js `>=20.9.0` because the image normalization pipeline uses `sharp@0.35.x`.
 
@@ -282,19 +285,19 @@ The repository provides configuration names only. Each project organizer changes
 
 | purpose | variable | where to replace | required |
 |---|---|---|---|
-| Server port | `PORT` | Zeabur service variables | yes |
-| Same-origin or allowlisted Socket.IO origin | `CORS_ORIGIN` | Leave empty for same-origin Zeabur deployment; set only for a separate frontend domain | optional |
-| Room JSON store | `ROOM_STORE_PATH` | Zeabur service variables, use `/data/rooms.json` with a mounted volume | yes for restart-safe demo |
-| Room save smoothing | `ROOM_PERSIST_DEBOUNCE_MS`, `ROOM_PERSIST_JITTER_MS` | Zeabur service variables; small millisecond values smooth short write bursts | optional |
-| Trust whitelist/audit sheet | `TRUST_LAYER_SPREADSHEET_ID` | Zeabur service variables | optional |
-| Example Gemini OCR repair adapter | `GEMINI_API_KEY` or supported Google key alias | Zeabur service variables or provider secret manager | optional |
-| Example OpenAI OCR repair adapter | `OPENAI_API_KEY` | Zeabur service variables or provider secret manager | optional |
-| Public rate limit | `API_RATE_LIMIT_MAX`, `ROOM_CREATE_RATE_LIMIT_MAX`, `MENU_PARSE_RATE_LIMIT_MAX` | Zeabur service variables | yes |
+| Server port | `PORT` | hosting service variables | yes |
+| Same-origin or allowlisted Socket.IO origin | `CORS_ORIGIN` | leave empty for a same-origin deployment; set only for a separate frontend domain | optional |
+| Room JSON store | `ROOM_STORE_PATH` | hosting service variables, use `/data/rooms.json` with a mounted volume | yes for restart-safe demo |
+| Room save smoothing | `ROOM_PERSIST_DEBOUNCE_MS`, `ROOM_PERSIST_JITTER_MS` | hosting service variables; small millisecond values smooth short write bursts | optional |
+| Trust whitelist/audit sheet | `TRUST_LAYER_SPREADSHEET_ID` | hosting service variables | optional |
+| Example Gemini OCR repair adapter | `GEMINI_API_KEY` or supported Google key alias | provider secret manager | optional |
+| Example OpenAI OCR repair adapter | `OPENAI_API_KEY` | provider secret manager | optional |
+| Public rate limit | `API_RATE_LIMIT_MAX`, `ROOM_CREATE_RATE_LIMIT_MAX`, `MENU_PARSE_RATE_LIMIT_MAX` | hosting service variables | yes |
 
 Recommended open-source deployment order:
 
-1. Copy `env.sample` variable names into Zeabur Variables.
-2. Mount a Zeabur volume and set `ROOM_STORE_PATH=/data/rooms.json`.
+1. Copy `env.sample` variable names into the hosting service variables.
+2. Mount a persistent volume at `/data` and set `ROOM_STORE_PATH=/data/rooms.json`.
 3. Run the no-key flow first with manual input or local OCR text.
 4. Add a provider key only if the deployment owner wants optional OCR/schema repair.
 5. Restart the service and verify `/healthz` reports the expected provider and persistence flags without exposing secret values.
@@ -324,15 +327,15 @@ Open `http://localhost:3000`.
 
 The app does not automatically load `.env`. If local AI image parsing is needed, export the key in the shell before starting the server. Use `env.sample` as the variable-name reference. Without an API key, the room still works with local OCR text when enough candidates are extracted.
 
-## Zeabur Deployment
+## Hosted Deployment
 
-1. Connect the public GitHub repository to Zeabur.
+1. Connect the public GitHub repository to a Node.js hosting service. The live demo currently runs on Railway.
 2. Create a Node.js service.
 3. Set the required environment variables listed above.
 4. Keep AI provider keys empty for a clean WebMCP tool-layer demo, or add optional adapter keys only if OCR/schema repair should call external models.
 5. Add a persistent volume and set `ROOM_STORE_PATH=/data/rooms.json` if rooms must survive service restarts.
 6. Keep the public demo on one service instance when using JSON persistence.
-7. Zeabur runs `npm install` and `npm start`.
+7. Use `npm install` as the install command and `npm start` as the start command.
 
 Recommended public-demo limits:
 
@@ -404,7 +407,7 @@ The detailed timed runbook is in [`docs/submission/WEBMCP_SUBMISSION.md`](docs/s
 
 ## Known MVP Limits
 
-- Room data is saved to a local JSON file by default. On Zeabur, attach a volume and set `ROOM_STORE_PATH=/data/rooms.json`; otherwise a platform restart can still clear room state.
+- Room data is saved to a local JSON file by default. On a hosted service, attach a volume and set `ROOM_STORE_PATH=/data/rooms.json`; otherwise a platform restart can still clear room state.
 - The current save layer is meant for one demo service instance. It smooths short write bursts by merging nearby changes and adding a small millisecond delay before saving, but a hard crash can still lose the latest tiny write window. Production traffic should move to Redis or PostgreSQL.
 - Room ownership is demo-grade. Production deployments should add signed sessions or a real login system.
 - OCR quality depends on image clarity.

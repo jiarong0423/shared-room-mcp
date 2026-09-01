@@ -276,7 +276,7 @@ DONE_CONFIRMED:
 - Committed and pushed evidence-version patch.
   - evidence: Git commit `58a77a8 Polish evidence-backed submission flow` pushed to `origin/main`.
 - Deployed to the approved Zeabur target.
-  - evidence: project `69d93c5ce8ec40d5bceadb94`, service `6a95d639aa6a5ebc1401dcd0`, environment `69d93c5c474db8a99d6de959`, deployment reached `RUNNING`.
+  - evidence: the Zeabur deployment reached `RUNNING`; platform-internal project identifiers are intentionally omitted from the public log.
 - Verified live runtime after cutover.
   - evidence: `https://shared-room-mcp.zeabur.app/healthz` returned `roomStorePath=/data/rooms.json`, `roomPersistDebounceMs=35`, `roomPersistJitterMs=120`, `hasGeminiKey=false`, and `hasOpenAiKey=false`.
 - Verified live flow after cutover.
@@ -427,14 +427,14 @@ Scope:
 - Owner project: `shared-room-mcp`
 - Changed artifacts: `docs/testing/VALIDATION_EVIDENCE.md`, `docs/security/SECURITY_SCAN_EVIDENCE.md`, `docs/decisions/2026Q2/DEVELOPMENT_LOG.md`
 - Deployed commit: `f806d69`
-- Zeabur deployment: `6a969dab5158a7aaa4e61476`
+- Zeabur export deployment: `RUNNING`; platform-internal deployment identifier omitted from the public log
 
 DONE_CONFIRMED:
 
 - GitHub main received the naming and export commit.
   - evidence: `git push origin main` updated `main` to `f806d69`.
 - Zeabur was redeployed to the approved service and reached `RUNNING`.
-  - evidence: project `69d93c5ce8ec40d5bceadb94`, service `6a95d639aa6a5ebc1401dcd0`, environment `69d93c5c474db8a99d6de959`, deployment `6a969dab5158a7aaa4e61476`.
+  - evidence: the Zeabur export deployment reached `RUNNING`; platform-internal project identifiers are intentionally omitted from the public log.
 - Live page served the current wording and export controls.
   - evidence: live HTML contained `Evidence And Items`, `Owner Finalizes Summary`, `Download HTML`, and `智慧共享空間`.
 - Live backend export routes worked.
@@ -533,3 +533,113 @@ WATCH_LATER:
 Next resume point:
 
 - Run `git diff --check`, inspect the final diff, then commit, push, and redeploy only after approval.
+
+## 2026-09-02 Railway Production Recovery
+
+Scope:
+
+- Owner project: `shared-room-mcp`
+- Cloud target: Railway production service with a persistent `/data` volume
+- Public URL: `https://sharedroom.jace0423.com`
+
+DONE_CONFIRMED:
+
+- Railway is connected to `jiarong0423/shared-room-mcp` on `main` and reports the service online.
+- Persistent room storage is enabled with `ROOM_STORE_PATH=/data/rooms.json`.
+- The deployment health check is `/healthz` on port `8080`.
+- Cloudflare publishes the Railway CNAME and ownership-verification TXT records as DNS-only records.
+- Railway accepted the custom domain and removed the pending DNS state.
+- Public HTTPS checks passed for the homepage and `/healthz` with HTTP 200.
+- The Socket.IO polling handshake passed with HTTP 200 and advertised a WebSocket upgrade.
+- The in-app browser loaded the production UI and detected the seven expected WebMCP tools.
+
+Next resume point:
+
+- Use `https://sharedroom.jace0423.com` as the live judging and recording URL. Keep the Railway generated domain only as a fallback.
+
+## 2026-09-02 Railway Five-Round Low-Rate Smoke Test
+
+Scope:
+
+- Production URL: `https://sharedroom.jace0423.com`
+- Method: five sequential end-to-end rooms with deliberate delays; no concurrency or stress traffic
+
+DONE_CONFIRMED:
+
+- Five fresh-room workflows passed: `bbcb431e`, `85fc826a`, `ccb7f9f8`, `081b7a5c`, and `14b70245`.
+- Every passing round covered sample loading, same-card host draft review, member opening, a second participant joining, self-selection, self-confirmation, owner finalization, and enabled HTML/PDF exports.
+- Round one export files were downloaded from production and identified as readable HTML and a one-page PDF 1.4 document; PDF text extraction contained the finalized room, item, person, and total.
+- WebMCP tools were detected on both host and member pages throughout the production run.
+
+WATCH_LATER:
+
+- After finalizing a room, using `New Room` in the same browser tab creates an empty room but leaves `Load Sample Room` disabled. A fresh browser tab is unaffected. The likely direct cause is that `startNewRoom()` renders the new room without resetting the upload/button state previously derived from the finalized room.
+
+Next resume point:
+
+- Repair and regression-test the same-tab `New Room` button state before recording repeated rooms in one tab. The public first-visit judging path is otherwise ready.
+
+## 2026-09-02 03:00 Room Transition State Isolation
+
+Scope:
+
+- Owner project: `shared-room-mcp`
+- Changed runtime artifact: `public/index.html`
+- Validation target: local browser only; no cloud deployment or cloud stress traffic
+
+Direct cause:
+
+- `Load Sample Room` was disabled from the previous room inside `setUploading()`, but `startNewRoom()` rendered the new empty room without recalculating that control state.
+
+Root cause:
+
+- Room identity changes, room-scoped temporary UI state, and asynchronous room responses did not share one transition boundary. API-only and fresh-tab tests did not cover same-tab cross-room state.
+
+DONE_CONFIRMED:
+
+- Added one `switchRoom(room)` boundary for initial load, new-room creation, missing-room recovery, and same-room reset.
+- Room transitions now clear pending upload previews, proposal confirmation staging, source-image transforms, summary-tab state, copied OCR text, and room messages while preserving language and display-name preferences.
+- Every room render recalculates upload and sample controls from the current room plus upload/transition state.
+- New-room and reset transitions block overlapping upload/transition actions.
+- Fetch and Socket.IO callbacks capture their target room and ignore responses that no longer match the current room.
+- Socket `roomState` and `presenceState` events are ignored during room transitions and when their room id differs from the current URL room.
+- Local browser regression 1 passed: loaded room A -> New Room B -> `Load Sample Room` enabled -> sample loaded only into B.
+- Local browser regression 2 passed: after the host switched from room A to room B, a second tab updated A; the host remained on B with the empty-room controls intact.
+- Browser console warning/error check passed with no entries in either test tab.
+- `npm run check`, inline-script syntax check, `npm run audit:tasks`, and `git diff --check` passed.
+- `ai-security-rules rules-check` passed with critical `0`, high `0`, blocking `0`, P0 `0`, and P1 `0`; the audit-only report was written outside the repository.
+- `ai-security-rules export-gate` passed after documentation and identifier cleanup with blocking findings `0`, P0 `0`, P1 `0`, and P2 `0`; the audit-only report was written outside the repository.
+- `ai-security-rules deploy-gate` passed before commit with blocking findings `0`, P0 `0`, P1 `0`, and P2 `0`; the audit-only report was written outside the repository.
+
+Release scenario matrix:
+
+| Scenario | Expected | Result | Evidence |
+|---|---|---|---|
+| Existing room render | Controls derive from the room currently shown | passed | every `renderRoom()` now recomputes upload, reset, and sample controls |
+| Loaded room A -> New Room B | B receives a clean URL, clean temporary UI state, and enabled sample action | passed | isolated local browser regression 1 |
+| Same-room reset | Reset keeps the room URL but clears the room through the same transition boundary | passed | second-tab reset completed while the first tab remained isolated |
+| Late fetch or Socket.IO response | A response for A cannot render over B | passed | target-room guards plus isolated local browser regression 2 |
+| Overlapping upload or room switch | New upload/switch actions stop until the active transition ends | passed | transition lock is checked by upload, new-room, reset, and write actions |
+| Backend room/calculation contract | No backend formula, persistence, settlement, or export behavior changes | passed | changed runtime scope is limited to `public/index.html`; existing backend checks passed |
+| Git release | New commit is visible on public `main` | pending | must remain pending until commit and push complete |
+| Cloud runtime | Two locked production E2E cases pass on the deployed commit | pending | no cloud request was sent for this change yet |
+
+Impact state before release:
+
+| Layer | State | Reason |
+|---|---:|---|
+| Frontend room transition | O | two isolated browser regressions passed |
+| Async callback boundary | O | target-room guards are present on affected fetch and Socket.IO callbacks |
+| Old-room event isolation | O | second-tab old-room update could not overwrite the new room |
+| Backend calculations and persistence | O | no backend file or data contract changed |
+| Human confirmation and payment boundary | O | proposal, confirmation, settlement, and no-payment rules are unchanged |
+| Git release | △ | commit and push pending |
+| Cloud runtime | △ | exactly two low-rate production checks pending after deployment |
+
+WATCH_LATER:
+
+- Cloud verification remains intentionally limited to two sequential E2E cases after commit and deployment approval. No cloud request was sent in this stage.
+
+Next resume point:
+
+- Review the final diff, then commit and push only after explicit approval. After deployment, run exactly the two locked cloud E2E cases and stop.
