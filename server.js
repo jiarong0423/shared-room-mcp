@@ -22,7 +22,12 @@ const io = new Server(server, configuredCorsOrigin
   }
   : {});
 
-const port = Number(process.env.PORT || 3000);
+function parsePort(value) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 && parsed <= 65535 ? parsed : null;
+}
+
+const port = parsePort(process.env.PORT) || parsePort(process.env.WEB_PORT) || 3000;
 const host = process.env.HOST || '0.0.0.0';
 const geminiModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
 const geminiFallbackModels = (process.env.GEMINI_MODEL_FALLBACKS || '')
