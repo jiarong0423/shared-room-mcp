@@ -230,13 +230,13 @@ Scope:
 DONE_CONFIRMED:
 
 - GitHub repository metadata was completed.
-  - evidence: `gh repo view jiarong0423/shared-room-mcp` shows description, homepage `https://shared-room-mcp.zeabur.app/`, MIT license, public visibility, and topics `webmcp`, `codex`, `agent-native-web`, `human-in-the-loop`, and `open-source`.
+  - evidence: `gh repo view jiarong0423/shared-room-mcp` showed the expected description, MIT license, public visibility, and topics `webmcp`, `codex`, `agent-native-web`, `human-in-the-loop`, and `open-source` at that time. The earlier homepage is superseded by the current active demo URL.
 - Zeabur live HTML no longer serves the old duplicate-review copy.
   - evidence: live cache-busted HTML returned `Cache-Control: no-store`, old hits `0`, and expected hits for `Shared Room`, `Download HTML`, `Download PDF`, and `Owner Finalizes Summary`.
 - The official open-gate stress flow now verifies export files.
   - evidence: `npm run stress:open-gate -- --base-url http://127.0.0.1:3184 --rounds 5 --output-dir logs/runtime` passed 20/20 and now checks valid HTML/PDF after host settlement.
 - The live service passed the same export-aware open-gate flow.
-  - evidence: `npm run stress:open-gate -- --base-url https://shared-room-mcp.zeabur.app --rounds 1 --output-dir logs/runtime` passed 4/4 and checked host review, member confirmation, settlement, HTML export, and PDF export.
+  - evidence: a retired hosted URL passed 4/4 and checked host review, member confirmation, settlement, HTML export, and PDF export.
 - Security and submission evidence were updated with the final export recheck.
   - evidence: `docs/testing/VALIDATION_EVIDENCE.md` and `docs/security/SECURITY_SCAN_EVIDENCE.md` include the 20/20 final open-gate export recheck.
 
@@ -258,7 +258,7 @@ INTENTIONALLY_NOT_DO:
 
 Next resume point:
 
-- Recheck Zeabur deployment list, then use `https://shared-room-mcp.zeabur.app/?v=<timestamp>` for recording if live HTML still has old hits `0` and live `stress:open-gate` remains green.
+- SUPERSEDED: this historical recording target is retired. Use only `https://shared-room-mcp-next.zeabur.app/` for current recording.
 
 - Did not claim production-scale capacity.
   - reason: current evidence supports hackathon/demo repeatability, not thousands of concurrent users.
@@ -278,9 +278,9 @@ DONE_CONFIRMED:
 - Deployed to the approved Zeabur target.
   - evidence: the Zeabur deployment reached `RUNNING`; platform-internal project identifiers are intentionally omitted from the public log.
 - Verified live runtime after cutover.
-  - evidence: `https://shared-room-mcp.zeabur.app/healthz` returned `roomStorePath=/data/rooms.json`, `roomPersistDebounceMs=35`, `roomPersistJitterMs=120`, `hasGeminiKey=false`, and `hasOpenAiKey=false`.
+  - evidence: the retired hosted health endpoint returned `roomStorePath=/data/rooms.json`, `roomPersistDebounceMs=35`, `roomPersistJitterMs=120`, `hasGeminiKey=false`, and `hasOpenAiKey=false`.
 - Verified live flow after cutover.
-  - evidence: `npm run stress:open-gate -- --base-url https://shared-room-mcp.zeabur.app --rounds 1 --output-dir logs/runtime` passed 4/4.
+  - evidence: a retired hosted smoke passed 4/4.
 
 WATCH_LATER:
 
@@ -447,7 +447,7 @@ WATCH_LATER:
 
 Next resume point:
 
-- Recording can start from `https://shared-room-mcp.zeabur.app/` using one English scene and one Chinese scene. The agent should stop before final confirmation and tell the human which button to press.
+- SUPERSEDED: that earlier recording target is retired. Current recording starts from `https://shared-room-mcp-next.zeabur.app/` using one English scene and one Chinese scene. The agent should stop before final confirmation and tell the human which button to press.
 
 ## 2026-09-01 17:54 Architecture And Export Readability Recheck
 
@@ -534,35 +534,37 @@ Next resume point:
 
 - Run `git diff --check`, inspect the final diff, then commit, push, and redeploy only after approval.
 
-## 2026-09-02 Railway Production Recovery
+## 2026-09-02 Retired Host Production Recovery (SUPERSEDED HISTORICAL EVIDENCE)
 
 Scope:
 
 - Owner project: `shared-room-mcp`
-- Cloud target: Railway production service with a persistent `/data` volume
-- Public URL: `https://sharedroom.jace0423.com`
+- Cloud target: retired production service with a persistent `/data` volume
+- Public URL: retired custom domain
+- Superseded status: the retired host was removed before recording after the operator stopped payment. This section is retained only as dated recovery evidence and is not an active deployment instruction.
 
 DONE_CONFIRMED:
 
-- Railway is connected to `jiarong0423/shared-room-mcp` on `main` and reports the service online.
+- The retired host was connected to `jiarong0423/shared-room-mcp` on `main` and reported the service online.
 - Persistent room storage is enabled with `ROOM_STORE_PATH=/data/rooms.json`.
 - The deployment health check is `/healthz` on port `8080`.
-- Cloudflare publishes the Railway CNAME and ownership-verification TXT records as DNS-only records.
-- Railway accepted the custom domain and removed the pending DNS state.
+- Cloudflare published the retired host CNAME and ownership-verification TXT records as DNS-only records.
+- The retired host accepted the custom domain and removed the pending DNS state.
 - Public HTTPS checks passed for the homepage and `/healthz` with HTTP 200.
 - The Socket.IO polling handshake passed with HTTP 200 and advertised a WebSocket upgrade.
 - The in-app browser loaded the production UI and detected the seven expected WebMCP tools.
 
 Next resume point:
 
-- Use `https://sharedroom.jace0423.com` as the live judging and recording URL. Keep the Railway generated domain only as a fallback.
+- SUPERSEDED: do not use the retired custom domain as the live judging or recording URL. Current active target is `https://shared-room-mcp-next.zeabur.app/`.
 
-## 2026-09-02 Railway Five-Round Low-Rate Smoke Test
+## 2026-09-02 Retired Host Five-Round Low-Rate Smoke Test (SUPERSEDED HISTORICAL EVIDENCE)
 
 Scope:
 
-- Production URL: `https://sharedroom.jace0423.com`
+- Production URL: retired custom domain
 - Method: five sequential end-to-end rooms with deliberate delays; no concurrency or stress traffic
+- Superseded status: historical retired-host smoke evidence. Current production target is Zeabur at `https://shared-room-mcp-next.zeabur.app/`.
 
 DONE_CONFIRMED:
 
@@ -639,7 +641,7 @@ Impact state before release:
 PRODUCTION_EVIDENCE:
 
 - Production health returned HTTP 200 and reported `/data/rooms.json`, save smoothing `35/120`, and no optional provider keys.
-- Production HTML contained `switchRoom(room)` and `isSwitchingRoom` after Railway deployed commit `bdaab1f`.
+- Production HTML contained `switchRoom(room)` and `isSwitchingRoom` after the retired host deployed commit `bdaab1f`.
 - Case 1 passed: room `2989812c` loaded the sample, switched in the same tab to room `ea7ba1b6`, restored the empty-room sample action, and loaded the sample only into the new room.
 - Case 2 passed: the main tab switched from room `430977f9` to room `24125277`; resetting the old room in a second tab did not change the main URL, sample button, empty-room chip, or item count.
 - Console warning/error lists were empty for the case 1 tab, case 2 main tab, and case 2 old-room tab.
@@ -648,7 +650,7 @@ PRODUCTION_EVIDENCE:
 
 Next resume point:
 
-- Use `https://sharedroom.jace0423.com/` for recording and the Devpost Live URL. The next remaining submission artifact is the public demo video URL.
+- SUPERSEDED: do not use the retired custom domain for recording or Devpost. Current active target is `https://shared-room-mcp-next.zeabur.app/`.
 
 ## 2026-09-02 Bilingual Export And Recording Lock
 
@@ -687,7 +689,7 @@ Next resume point:
 PRODUCTION_EVIDENCE:
 
 - GitHub `main` received commit `4d133f2`.
-- Railway automatically deployed the change; production `/healthz` returned HTTP 200, retained `/data/rooms.json`, and reported `menuParseRateLimitMax=30`.
+- SUPERSEDED HISTORICAL EVIDENCE: the retired host automatically deployed the change at that time; production `/healthz` returned HTTP 200, retained `/data/rooms.json`, and reported `menuParseRateLimitMax=30`. It is no longer the active host.
 - The in-app browser detected all seven WebMCP tools on the production page.
 - One existing finalized room was used for a low-rate frontend check. The visible `Download PDF` and `Download HTML` controls each produced a file.
 - `file`, `pdfinfo`, `pdftotext`, and a rendered-page inspection confirmed that the production PDF is a readable one-page PDF 1.4 file and that the HTML is readable UTF-8.
@@ -699,15 +701,15 @@ Scope:
 
 - Current recording target: `https://shared-room-mcp-next.zeabur.app/`
 - Current cloud host: Zeabur
-- Historical Railway host: removed before recording after the operator stopped Railway payment
+- Historical retired host: removed before recording after the operator stopped payment
 
 Direct cause:
 
-- Submission-facing docs still named the custom Railway-backed domain and described Railway as the current production host after the live service moved back to Zeabur.
+- Submission-facing docs still named the retired custom domain and described the retired host as current production after the live service moved back to Zeabur.
 
 Root cause:
 
-- Deployment evidence from earlier Railway and Zeabur passes was mixed with the current recording target, so historical provider names were easy to read as the active deployment.
+- Deployment evidence from earlier retired-host and Zeabur passes was mixed with the current recording target, so historical provider names were easy to read as the active deployment.
 
 DONE_CONFIRMED:
 
@@ -716,9 +718,33 @@ DONE_CONFIRMED:
 - A fresh production browser smoke on Zeabur loaded the page, loaded the sample room, opened it to members, claimed an item, confirmed the member cost, finalized the room, and triggered both HTML and PDF downloads.
 - WebMCP `inspect_room` was available on the current Zeabur page.
 - Browser console warning/error count was `0` during the pre-recording Zeabur smoke.
-- `README.md`, `docs/submission/WEBMCP_SUBMISSION.md`, `docs/testing/VALIDATION_EVIDENCE.md`, and `docs/security/SECURITY_SCAN_EVIDENCE.md` were updated so the current public demo points to Zeabur. Older Railway and old Zeabur URLs remain only as historical evidence where explicitly framed by date.
+- `README.md`, `docs/submission/WEBMCP_SUBMISSION.md`, `docs/testing/VALIDATION_EVIDENCE.md`, and `docs/security/SECURITY_SCAN_EVIDENCE.md` were updated so the current public demo points to Zeabur. Older hosted URLs remain only as superseded historical evidence where explicitly framed by date.
 
 Next resume point:
 
 - Record from `https://shared-room-mcp-next.zeabur.app/`.
-- Do not use `https://sharedroom.jace0423.com/` for recording unless DNS is later repointed to the current Zeabur service and rechecked.
+- Do not use any retired custom domain for recording unless DNS is later repointed to the current Zeabur service and rechecked.
+
+## 2026-09-03 04:05 Superseded Host Cleanup
+
+Scope:
+
+- Owner project: `shared-room-mcp`
+- Changed artifacts: `docs/decisions/2026Q2/DEVELOPMENT_LOG.md`, `docs/security/SECURITY_SCAN_EVIDENCE.md`, `docs/testing/VALIDATION_EVIDENCE.md`
+- Latest validation evidence: post-deploy live Zeabur `/healthz` returned HTTP 200; live HTML exposed `Price Role`, `AI review score`, `scenario contract`, and `sourceNumberClass`; local HEAD and `origin/main` matched commit `4c770bc34ac5a2988022ea829e051243462895d3`.
+
+DONE_CONFIRMED:
+
+- Active deployment wording is Zeabur-only.
+  - evidence: current target remains `https://shared-room-mcp-next.zeabur.app/`.
+- Retired hosts are retained only as superseded dated evidence.
+  - evidence: historical sections now include `SUPERSEDED HISTORICAL EVIDENCE` or equivalent superseded notes.
+
+WATCH_LATER:
+
+- GitHub repository About homepage should be rechecked if the public listing still points to an older host.
+  - trigger to revisit: before final public submission or if judges report a stale homepage link.
+
+Next resume point:
+
+- Use `https://shared-room-mcp-next.zeabur.app/` as the only active demo, recording, and validation URL unless a future DNS migration is explicitly performed and revalidated.
