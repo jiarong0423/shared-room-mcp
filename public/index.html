@@ -3898,13 +3898,53 @@
       return `/api/rooms/${encodeURIComponent(exportRoomId)}/export.${extension}?lang=${encodeURIComponent(currentLanguage)}`;
     }
 
-    function triggerExportDownload(format, href) {
+    function getExportFilename(format, exportRoomId = getExportRoomId()) {
+      const extension = format === 'pdf' ? 'pdf' : 'html';
+      const roomToken = sanitizeFileToken(exportRoomId);
+      return `shared-room-${roomToken}.${extension}`;
+    }
+
+    function getDispositionFilename(disposition) {
+      if (!disposition) {
+        return '';
+      }
+      const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+      if (utf8Match?.[1]) {
+        try {
+          return decodeURIComponent(utf8Match[1].trim().replace(/^"|"$/g, ''));
+        } catch (error) {
+          return utf8Match[1].trim().replace(/^"|"$/g, '');
+        }
+      }
+      const asciiMatch = disposition.match(/filename="?([^";]+)"?/i);
+      return asciiMatch?.[1]?.trim() || '';
+    }
+
+    async function triggerExportDownload(format, href) {
       const exportRoomId = getExportRoomId();
       if (!exportRoomId || !href) {
         setMessage(t('exportUnavailable'), 'error');
         return;
       }
-      window.location.assign(href);
+      const response = await fetch(href, {
+        credentials: 'same-origin',
+        cache: 'no-store'
+      });
+      if (!response.ok) {
+        throw new Error(`Export failed with status ${response.status}`);
+      }
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const filename = getDispositionFilename(response.headers.get('content-disposition'))
+        || getExportFilename(format, exportRoomId);
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = filename;
+      anchor.style.display = 'none';
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 30000);
     }
 
     function escapeHtml(value) {
@@ -4298,7 +4338,7 @@
         .slice(0, 48) || 'room';
     }
 
-    function guardExportDownload(event) {
+    async function guardExportDownload(event) {
       event.preventDefault();
       const link = event.currentTarget;
       const format = link.id === 'downloadPdfButton' ? 'pdf' : 'html';
@@ -4318,8 +4358,13 @@
         elements.settlementOutput.textContent = text;
         elements.settlementOutput.dataset.visible = 'true';
       }
-      setMessage(format === 'pdf' ? t('pdfDownloaded') : t('htmlDownloaded'), 'info');
-      triggerExportDownload(format, href);
+      try {
+        await triggerExportDownload(format, href);
+        setMessage(format === 'pdf' ? t('pdfDownloaded') : t('htmlDownloaded'), 'info');
+      } catch (error) {
+        console.warn('Export download fallback navigation used.', error);
+        window.location.assign(href);
+      }
     }
 
     function copyOrderText() {
