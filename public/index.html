@@ -3876,16 +3876,35 @@
         return;
       }
       const extension = format === 'pdf' ? 'pdf' : 'html';
-      const canDownload = Boolean(enabled && currentRoom?.id);
+      const exportRoomId = getExportRoomId();
+      const canDownload = Boolean(enabled && exportRoomId);
       link.setAttribute('aria-disabled', canDownload ? 'false' : 'true');
       if (!canDownload) {
         link.removeAttribute('href');
         link.removeAttribute('download');
         return;
       }
-      const roomToken = sanitizeFileToken(currentRoom.id);
-      link.href = `/api/rooms/${encodeURIComponent(currentRoom.id)}/export.${extension}?lang=${encodeURIComponent(currentLanguage)}`;
+      const roomToken = sanitizeFileToken(exportRoomId);
+      link.href = getExportHref(extension, exportRoomId);
       link.download = `shared-room-${roomToken}.${extension}`;
+    }
+
+    function getExportRoomId() {
+      return currentRoom?.id || roomId || pageParams.get('room') || '';
+    }
+
+    function getExportHref(format, exportRoomId = getExportRoomId()) {
+      const extension = format === 'pdf' ? 'pdf' : 'html';
+      return `/api/rooms/${encodeURIComponent(exportRoomId)}/export.${extension}?lang=${encodeURIComponent(currentLanguage)}`;
+    }
+
+    function triggerExportDownload(format, href) {
+      const exportRoomId = getExportRoomId();
+      if (!exportRoomId || !href) {
+        setMessage(t('exportUnavailable'), 'error');
+        return;
+      }
+      window.location.assign(href);
     }
 
     function escapeHtml(value) {
@@ -4280,22 +4299,27 @@
     }
 
     function guardExportDownload(event) {
+      event.preventDefault();
       const link = event.currentTarget;
-      if (link.getAttribute('aria-disabled') === 'true' || !link.getAttribute('href')) {
-        event.preventDefault();
+      const format = link.id === 'downloadPdfButton' ? 'pdf' : 'html';
+      const exportRoomId = getExportRoomId();
+      const href = link.getAttribute('href') || (exportRoomId ? getExportHref(format, exportRoomId) : '');
+      const locallyUnavailable = link.getAttribute('aria-disabled') === 'true' && Boolean(currentRoom?.menuLoaded);
+      if (!exportRoomId || locallyUnavailable || !href) {
         setMessage(t('exportUnavailable'), 'error');
         return;
       }
       const text = buildOrderText();
-      if (!text) {
-        event.preventDefault();
+      if (!text && currentRoom?.menuLoaded) {
         setMessage(t('exportUnavailable'), 'error');
         return;
       }
-      elements.settlementOutput.textContent = text;
-      elements.settlementOutput.dataset.visible = 'true';
-      const format = link.id === 'downloadPdfButton' ? 'pdf' : 'html';
+      if (text) {
+        elements.settlementOutput.textContent = text;
+        elements.settlementOutput.dataset.visible = 'true';
+      }
       setMessage(format === 'pdf' ? t('pdfDownloaded') : t('htmlDownloaded'), 'info');
+      triggerExportDownload(format, href);
     }
 
     function copyOrderText() {
