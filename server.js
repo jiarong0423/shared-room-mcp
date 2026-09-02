@@ -1993,6 +1993,23 @@ function isLikelyLocalOcrSection(line) {
   return compact.length > 0 && compact.length <= 16 && localOcrSectionPattern.test(compact);
 }
 
+function isLikelyLocalOcrDynamicSection(line, nextLine = '') {
+  const compact = String(line || '').replace(/\s+/g, '').trim();
+  if (compact.length < 2 || compact.length > 16) {
+    return false;
+  }
+  if (extractLocalOcrPriceMatches(line).length > 0 || extractLocalOcrPriceMatches(nextLine).length === 0) {
+    return false;
+  }
+  if (localOcrSkipLinePattern.test(line) || classifyLocalOcrRuleLine(line)) {
+    return false;
+  }
+  if (/票價|費用|價格|菜單|menu|price|table/i.test(compact)) {
+    return false;
+  }
+  return /[\u4e00-\u9fff]/.test(compact) || /^[A-Z][A-Za-z0-9 '&-]{1,31}$/.test(String(line || '').trim());
+}
+
 function extractLocalOcrPriceMatches(line) {
   const matches = [];
   localOcrPricePattern.lastIndex = 0;
@@ -2378,7 +2395,9 @@ function parseLocalOcrMenuCandidates(localOcrText, imageCount = 1) {
   const ruleHints = [];
   let currentSection = '';
 
-  for (const line of lines) {
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+    const line = lines[lineIndex];
+    const nextLine = lines[lineIndex + 1] || '';
     if (localOcrSkipLinePattern.test(line)) {
       continue;
     }
@@ -2387,7 +2406,7 @@ function parseLocalOcrMenuCandidates(localOcrText, imageCount = 1) {
       ruleHints.push(ruleHint);
       continue;
     }
-    if (isLikelyLocalOcrSection(line)) {
+    if (isLikelyLocalOcrSection(line) || isLikelyLocalOcrDynamicSection(line, nextLine)) {
       currentSection = line.replace(/\s+/g, '').slice(0, 24);
       continue;
     }
@@ -2464,6 +2483,18 @@ function normalizeNameForQuality(name) {
     .replace(/特大杯|小杯|中杯|大杯|分享瓶|瓶裝|加大|小瓶|中瓶|大瓶|熱|冰/gi, '')
     .replace(/\b(extra\s*large|x-large|xl|large|medium|med|regular|reg|small|short|s|m|l)\b/gi, '');
   return text.replace(/\s+/g, '').trim();
+}
+
+function shouldApplyDrinkSizeQualityGate(menuType, taskType, group) {
+  if (menuType === 'drink' || taskType === 'drink_order') {
+    return true;
+  }
+  return group.some((item) => item.supportsDrinkOptions || String(item.category || '') === 'drink');
+}
+
+function hasBlockingParseQuality(room) {
+  const parseQuality = room?.parseQuality && typeof room.parseQuality === 'object' ? room.parseQuality : null;
+  return Boolean(parseQuality && (parseQuality.status === 'review_required' || Number(parseQuality.highIssueCount || 0) > 0));
 }
 
 function evaluateMenuParseQuality(input) {
@@ -2577,7 +2608,7 @@ function evaluateMenuParseQuality(input) {
   for (const [base, group] of baseNames.entries()) {
     const prices = Array.from(new Set(group.map((item) => Number(item.price)))).sort((a, b) => a - b);
     const names = Array.from(new Set(group.map((item) => String(item.name || '').trim())));
-    if (group.length > 1 && prices.length > 1 && names.some((name) => !hasDrinkSizeMarker(name))) {
+    if (shouldApplyDrinkSizeQualityGate(menuType, taskType, group) && group.length > 1 && prices.length > 1 && names.some((name) => !hasDrinkSizeMarker(name))) {
       issues.push({
         type: 'size_variant_missing_marker',
         severity: 'high',
@@ -3102,10 +3133,53 @@ function normalizeParsedItems(items, imageCount = 1, addonSection = null) {
     normalized.push(normalizedItem);
   }
 
-  return mergeDrinkSizeVariants(pruneDrinkNutritionItems(normalized)).map((item, index) => ({
+  return disambiguateDuplicateNamesBySection(mergeDrinkSizeVariants(pruneDrinkNutritionItems(normalized))).map((item, index) => ({
     ...item,
     id: `item_${index + 1}`
   }));
+}
+
+function disambiguateDuplicateNamesBySection(items) {
+  const groups = new Map();
+  for (const item of items) {
+    const name = String(item?.name || '').trim();
+    if (!name) {
+      continue;
+    }
+    const group = groups.get(name) || [];
+    group.push(item);
+    groups.set(name, group);
+  }
+
+  for (const group of groups.values()) {
+    if (group.length <= 1) {
+      continue;
+    }
+    const prices = new Set(group.map((item) => Number(item.price)).filter((price) => Number.isInteger(price)));
+    const sections = new Set(group.map((item) => String(item.sectionName || '').trim()).filter(Boolean));
+    if (prices.size <= 1 || sections.size <= 1) {
+      continue;
+    }
+    for (const item of group) {
+      const sectionName = normalizeShortText(item.sectionName, 24);
+      const name = normalizeShortText(item.name, 48);
+      if (!sectionName || !name || name.includes(sectionName)) {
+        continue;
+      }
+      item.name = normalizeShortText(`${sectionName} ${name}`, 48);
+      if (!Array.isArray(item.tags)) {
+        item.tags = [];
+      }
+      if (!item.tags.includes('manual_review')) {
+        item.tags.push('manual_review');
+      }
+      if (!item.note) {
+        item.note = '同名不同區段，已自動加上區段名稱，請人工確認。';
+      }
+    }
+  }
+
+  return items;
 }
 
 function mergeDrinkSizeVariants(items) {
@@ -4956,13 +5030,17 @@ io.on('connection', (socket) => {
       ack?.({ ok: false, error: '沒有可開放的品項' });
       return;
     }
-
-    room.itemsOpenForMembers = true;
     room.parseQuality = evaluateMenuParseQuality({
       items: room.items,
       menuType: room.menuType,
       taskRouter: room.taskRouter
     });
+    if (hasBlockingParseQuality(room)) {
+      ack?.({ ok: false, error: 'AI 複查發現高風險解析問題，請先修正清單後再開放給成員。' });
+      return;
+    }
+
+    room.itemsOpenForMembers = true;
     touchRoom(room, 'items_opened_for_members');
 
     const state = serializeRoom(room);
@@ -5225,6 +5303,10 @@ io.on('connection', (socket) => {
     }
     if (proposal.status !== 'pending_host_confirmation') {
       ack?.({ ok: false, error: '這份建議草稿已處理' });
+      return;
+    }
+    if (action === 'accept' && ['semantic_repair_draft', 'evidence_review', 'task_router_review'].includes(String(proposal.proposalType || '')) && hasBlockingParseQuality(room)) {
+      ack?.({ ok: false, error: 'AI 複查發現高風險解析問題，請先修正清單後再確認草稿。' });
       return;
     }
 

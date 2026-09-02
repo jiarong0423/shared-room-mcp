@@ -1890,6 +1890,7 @@
         ownerOnlyDraftReview: '只有發起者可決定',
         draftReviewFailed: '草稿審核失敗',
         draftCreated: '建議已儲存，等待發起者確認。',
+        aiReviewBlocksDraft: 'AI 複查發現高風險解析問題，請先修正清單。',
         drinkOptionSettledError: '此房間已結算，不能再修改甜度冰塊。',
         drinkOptionNameError: '請先輸入名稱並套用名稱再選甜度冰塊。',
         drinkOptionConfirmedError: '個人費用已確認，請先取消確認再修改甜度冰塊。',
@@ -2124,6 +2125,7 @@
         ownerOnlyDraftReview: 'host decides only',
         draftReviewFailed: 'Failed to review draft',
         draftCreated: 'Suggestion saved for host confirmation.',
+        aiReviewBlocksDraft: 'AI review found high-risk parsing issues. Fix the item list first.',
         drinkOptionSettledError: 'This room is settled. Drink options cannot be changed.',
         drinkOptionNameError: 'Enter and apply your name before choosing drink options.',
         drinkOptionConfirmedError: 'Your cost is already confirmed. Cancel confirmation before changing drink options.',
@@ -3279,6 +3281,15 @@
       return t(`proposalRisk${String(riskLevel || 'needs_human_review')}`);
     }
 
+    function hasBlockingParseQuality(room = currentRoom) {
+      const quality = room?.parseQuality || null;
+      return Boolean(quality && (quality.status === 'review_required' || Number(quality.highIssueCount || 0) > 0));
+    }
+
+    function proposalNeedsAiReviewGate(proposal) {
+      return ['semantic_repair_draft', 'evidence_review', 'task_router_review'].includes(String(proposal?.proposalType || ''));
+    }
+
     function renderAgentProposals(room) {
       const proposals = Array.isArray(room?.agentProposals) ? room.agentProposals : [];
       const seenPendingTypes = new Set();
@@ -3317,12 +3328,14 @@
         const acceptArmed = owner && reviewAction === 'accept';
         const rejectArmed = owner && reviewAction === 'reject';
         const reviewStage = acceptArmed ? 'accept' : rejectArmed ? 'reject' : '';
+        const blockedByAiReview = isPending && proposalNeedsAiReviewGate(proposal) && hasBlockingParseQuality(room);
         const acceptButtonClass = rejectArmed ? 'button secondary' : `button ${acceptArmed ? 'confirm-approval' : ''}`;
         const controls = isPending
           ? `
             <div class="proposal-actions">
-              <button class="${escapeHtml(acceptButtonClass)}" type="button" data-proposal-action="accept" data-proposal-confirm="${acceptArmed ? 'true' : 'false'}" data-proposal-id="${escapeHtml(proposal.id)}" ${owner ? '' : 'disabled'}>${escapeHtml(t(acceptArmed ? 'confirmHumanApproval' : 'approveDraft'))}</button>
+              <button class="${escapeHtml(acceptButtonClass)}" type="button" data-proposal-action="accept" data-proposal-confirm="${acceptArmed ? 'true' : 'false'}" data-proposal-blocked="${blockedByAiReview ? 'true' : 'false'}" data-proposal-id="${escapeHtml(proposal.id)}" ${owner ? '' : 'disabled'}>${escapeHtml(t(acceptArmed ? 'confirmHumanApproval' : 'approveDraft'))}</button>
               <button class="button secondary ${rejectArmed ? 'confirm-reject' : ''}" type="button" data-proposal-action="reject" data-proposal-confirm="${rejectArmed ? 'true' : 'false'}" data-proposal-id="${escapeHtml(proposal.id)}" ${owner ? '' : 'disabled'}>${escapeHtml(t(rejectArmed ? 'confirmRejectDraft' : 'rejectDraft'))}</button>
+              ${blockedByAiReview ? `<span class="proposal-meta">${escapeHtml(t('aiReviewBlocksDraft'))}</span>` : ''}
               ${owner ? '' : `<span class="proposal-meta">${escapeHtml(t('ownerOnlyDraftReview'))}</span>`}
             </div>
           `
@@ -3407,8 +3420,9 @@
       });
       const owner = isOwner(room);
       const isOpen = Boolean(room.itemsOpenForMembers);
+      const blockedByAiReview = hasBlockingParseQuality(room);
       elements.openItemsButton.textContent = isOpen ? t('openedToMembers') : t('openToMembers');
-      elements.openItemsButton.disabled = !owner || isOpen || room.settled || !Array.isArray(room.items) || room.items.length === 0;
+      elements.openItemsButton.disabled = !owner || isOpen || room.settled || !Array.isArray(room.items) || room.items.length === 0 || blockedByAiReview;
       elements.openItemsButton.dataset.tone = isOpen ? 'good' : 'warn';
     }
 
@@ -4456,6 +4470,47 @@
       });
     }
 
+    function commitParsedItemEdit(itemEdit) {
+      if (!itemEdit || itemEdit.disabled) {
+        return false;
+      }
+      const itemId = itemEdit.dataset.itemId;
+      const field = itemEdit.dataset.itemField;
+      const item = currentRoom?.items?.find((candidate) => candidate.id === itemId);
+      if (!item || !field) {
+        return false;
+      }
+
+      if (field === 'name') {
+        const nextName = itemEdit.value.trim().slice(0, 48);
+        itemEdit.value = nextName;
+        if (nextName && nextName !== String(item.name || '')) {
+          updateParsedItem(itemId, { name: nextName });
+          return true;
+        }
+        return false;
+      }
+
+      if (field === 'price') {
+        const nextPrice = Math.floor(Number(itemEdit.value) || 0);
+        if (nextPrice !== Number(item.price || 0)) {
+          updateParsedItem(itemId, { price: nextPrice });
+          return true;
+        }
+        return false;
+      }
+
+      if (field === 'category') {
+        const nextCategory = itemEdit.value;
+        if (nextCategory !== String(item.category || 'other')) {
+          updateParsedItem(itemId, { category: nextCategory });
+          return true;
+        }
+      }
+
+      return false;
+    }
+
     function removeParsedItem(itemId) {
       if (isSwitchingRoom || !currentRoom?.menuLoaded || !canReviewParsedItems(currentRoom)) {
         return;
@@ -4584,20 +4639,8 @@
     elements.menuBody.addEventListener('change', (event) => {
       const itemEdit = event.target.closest('[data-action="edit-parsed-item"]');
       if (itemEdit) {
-        const itemId = itemEdit.dataset.itemId;
-        const field = itemEdit.dataset.itemField;
-        if (field === 'name') {
-          updateParsedItem(itemId, { name: itemEdit.value });
-          return;
-        }
-        if (field === 'price') {
-          updateParsedItem(itemId, { price: Math.floor(Number(itemEdit.value) || 0) });
-          return;
-        }
-        if (field === 'category') {
-          updateParsedItem(itemId, { category: itemEdit.value });
-          return;
-        }
+        commitParsedItemEdit(itemEdit);
+        return;
       }
 
       const select = event.target.closest('select[data-action="set-item-option"]');
@@ -4616,6 +4659,23 @@
         checkbox.dataset.optionId,
         checkbox.checked
       );
+    });
+
+    elements.menuBody.addEventListener('focusout', (event) => {
+      const itemEdit = event.target.closest('[data-action="edit-parsed-item"]');
+      if (itemEdit && itemEdit.tagName !== 'SELECT') {
+        commitParsedItemEdit(itemEdit);
+      }
+    });
+
+    elements.menuBody.addEventListener('keydown', (event) => {
+      const itemEdit = event.target.closest('[data-action="edit-parsed-item"]');
+      if (!itemEdit || event.key !== 'Enter' || itemEdit.tagName === 'TEXTAREA') {
+        return;
+      }
+      event.preventDefault();
+      commitParsedItemEdit(itemEdit);
+      itemEdit.blur();
     });
 
     elements.menuModeToggle.addEventListener('click', (event) => {
@@ -4644,6 +4704,11 @@
       }
       const proposalId = button.dataset.proposalId;
       const action = button.dataset.proposalAction;
+      if (action === 'accept' && button.dataset.proposalConfirm === 'true' && button.dataset.proposalBlocked === 'true') {
+        window.alert(t('aiReviewBlocksDraft'));
+        setMessage(t('aiReviewBlocksDraft'), 'error');
+        return;
+      }
       if (button.dataset.proposalConfirm !== 'true') {
         prepareProposalReview(proposalId, action);
         return;
