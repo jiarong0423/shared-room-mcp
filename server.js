@@ -27,7 +27,8 @@ function parsePort(value) {
   return Number.isInteger(parsed) && parsed > 0 && parsed <= 65535 ? parsed : null;
 }
 
-const port = parsePort(process.env.PORT) || parsePort(process.env.WEB_PORT) || 3000;
+const hasConfiguredPort = typeof process.env.PORT === 'string' && process.env.PORT.trim() !== '';
+const port = parsePort(process.env.PORT) || parsePort(process.env.WEB_PORT) || (hasConfiguredPort ? 8080 : 3000);
 const host = process.env.HOST || '0.0.0.0';
 const geminiModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
 const geminiFallbackModels = (process.env.GEMINI_MODEL_FALLBACKS || '')
