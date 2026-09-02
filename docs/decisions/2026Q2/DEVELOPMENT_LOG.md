@@ -692,3 +692,33 @@ PRODUCTION_EVIDENCE:
 - One existing finalized room was used for a low-rate frontend check. The visible `Download PDF` and `Download HTML` controls each produced a file.
 - `file`, `pdfinfo`, `pdftotext`, and a rendered-page inspection confirmed that the production PDF is a readable one-page PDF 1.4 file and that the HTML is readable UTF-8.
 - No new production room stress, concurrency test, or repeated OCR upload was run after deployment.
+
+## 2026-09-02 Zeabur-Only Recording Gate
+
+Scope:
+
+- Current recording target: `https://shared-room-mcp-next.zeabur.app/`
+- Current cloud host: Zeabur
+- Historical Railway host: removed before recording after the operator stopped Railway payment
+
+Direct cause:
+
+- Submission-facing docs still named the custom Railway-backed domain and described Railway as the current production host after the live service moved back to Zeabur.
+
+Root cause:
+
+- Deployment evidence from earlier Railway and Zeabur passes was mixed with the current recording target, so historical provider names were easy to read as the active deployment.
+
+DONE_CONFIRMED:
+
+- Current Zeabur `/healthz` returned HTTP 200 and reported `roomStorePath=/data/rooms.json`.
+- Current Zeabur service kept the mounted `/data` volume and JSON persistence.
+- A fresh production browser smoke on Zeabur loaded the page, loaded the sample room, opened it to members, claimed an item, confirmed the member cost, finalized the room, and triggered both HTML and PDF downloads.
+- WebMCP `inspect_room` was available on the current Zeabur page.
+- Browser console warning/error count was `0` during the pre-recording Zeabur smoke.
+- `README.md`, `docs/submission/WEBMCP_SUBMISSION.md`, `docs/testing/VALIDATION_EVIDENCE.md`, and `docs/security/SECURITY_SCAN_EVIDENCE.md` were updated so the current public demo points to Zeabur. Older Railway and old Zeabur URLs remain only as historical evidence where explicitly framed by date.
+
+Next resume point:
+
+- Record from `https://shared-room-mcp-next.zeabur.app/`.
+- Do not use `https://sharedroom.jace0423.com/` for recording unless DNS is later repointed to the current Zeabur service and rechecked.

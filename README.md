@@ -2,7 +2,7 @@
 
 Shared Room MCP is an open-source trust boundary layer for the agent-native web. It gives people and AI assistants one shared page where agents can prepare real-world work, while humans keep final authority over commitments.
 
-Live demo: https://sharedroom.jace0423.com/
+Live demo: https://shared-room-mcp-next.zeabur.app/
 
 The app is English-first for judging and demo review. A Chinese UI dictionary remains available for local use, but the default page language, initial HTML, README, and submission packet are English.
 
@@ -35,7 +35,7 @@ The full check summary is in [`docs/testing/VALIDATION_EVIDENCE.md`](docs/testin
 | Split-language scenarios | 240/240 passed | Chinese and English cases stay separated and still end in host review |
 | Host-only draft review | 200/200 denied for non-hosts | non-host users cannot create or approve host drafts |
 | Load Sample Room | 120/120 passed | sample data stays as a draft and does not settle, pay, or call outside services |
-| Railway production flow | 5/5 passed | sequential hosted checks kept the host-review, member-confirmation, and export flow |
+| Current Zeabur production flow | PASS | hosted health, WebMCP, member-confirmation, finalized summary, and HTML/PDF export flow |
 | Same-tab room switch | 2/2 passed | a new room gets clean controls, and late updates from the old room are ignored |
 
 These checks show that the assistant workflow is repeatable and no-key by default. They are not a claim of production-scale database capacity. The default JSON save layer is for a single demo service; production traffic should use Redis or PostgreSQL.
@@ -329,7 +329,7 @@ The app does not automatically load `.env`. If local AI image parsing is needed,
 
 ## Hosted Deployment
 
-1. Connect the public GitHub repository to a Node.js hosting service. The live demo currently runs on Railway.
+1. Connect the public GitHub repository to a Node.js hosting service. The live demo currently runs on Zeabur.
 2. Create a Node.js service.
 3. Set the required environment variables listed above.
 4. Keep AI provider keys empty for a clean WebMCP tool-layer demo, or add optional adapter keys only if OCR/schema repair should call external models.

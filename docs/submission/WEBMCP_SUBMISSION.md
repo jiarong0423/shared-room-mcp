@@ -2,7 +2,7 @@
 
 Project name: Shared Room MCP
 
-Live URL: https://sharedroom.jace0423.com/
+Live URL: https://shared-room-mcp-next.zeabur.app/
 
 Public repository URL: https://github.com/jiarong0423/shared-room-mcp
 
@@ -60,7 +60,7 @@ Checked against the WebMCP Challenge page on 2026-09-01.
 
 | Requirement | Local status |
 |---|---|
-| Working live URL accessible in ChatGPT in-app browser or Chrome with WebMCP enabled | Ready: https://sharedroom.jace0423.com/ |
+| Working live URL accessible in ChatGPT in-app browser or Chrome with WebMCP enabled | Ready: https://shared-room-mcp-next.zeabur.app/ |
 | Text description explaining WebMCP fit and user experience | Ready in `README.md` and this packet |
 | Public YouTube demo under 3 minutes with audio | Pending `TODO_YOUTUBE_DEMO_URL` |
 | Public code repository | Ready: https://github.com/jiarong0423/shared-room-mcp |
@@ -126,7 +126,7 @@ Do not commit API keys. Set secrets in the hosting provider's secret manager onl
 
 Runtime requires Node.js `>=20.9.0`. Leave `CORS_ORIGIN` empty for a same-origin deployment; set it only when the browser frontend is served from a separate trusted origin.
 
-For a hosted demo, attach a persistent volume before using `/data/rooms.json`. Without a volume, room data can still work during one runtime session, but a platform restart can clear it. The current Railway service mounts `/data` and uses this path.
+For a hosted demo, attach a persistent volume before using `/data/rooms.json`. Without a volume, room data can still work during one runtime session, but a platform restart can clear it. The current Zeabur service mounts `/data` and uses this path.
 
 The current save layer is a hackathon MVP choice for one running service instance. It smooths short write bursts by merging nearby room changes and adding a small millisecond delay before saving, but a hard crash can still lose the latest tiny write window. Production traffic should still use Redis or PostgreSQL.
 
@@ -245,7 +245,7 @@ Operator rule for recording:
 
 - Public repository URL is set to `https://github.com/jiarong0423/shared-room-mcp`.
 - Replace `TODO_YOUTUBE_DEMO_URL` after uploading the public demo video.
-- Live URL `https://sharedroom.jace0423.com/` was rechecked after the final functional push; production health, WebMCP tools, and the two locked room-transition cases passed.
-- Confirm the Railway `/data` volume remains mounted when `ROOM_STORE_PATH=/data/rooms.json` is configured.
+- Live URL `https://shared-room-mcp-next.zeabur.app/` was rechecked after the final functional push; production health, WebMCP tools, and HTML/PDF downloads passed.
+- Confirm the Zeabur `/data` volume remains mounted when `ROOM_STORE_PATH=/data/rooms.json` is configured.
 - Disclose that the current room ownership model is demo-grade; production deployments should add signed sessions or a real login system.
 - Confirm Devpost description uses the same WebMCP safety rule stated here.
