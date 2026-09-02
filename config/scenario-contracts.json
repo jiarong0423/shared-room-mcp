@@ -1,0 +1,1221 @@
+{
+  "version": "shared-room-scenario-contracts.v2",
+  "defaultContractId": "generic_price_evidence",
+  "routingPolicy": {
+    "explicitBindingFirst": true,
+    "matchScoreThreshold": 0.72,
+    "ambiguityDeltaThreshold": 0.25,
+    "unknownIndustryDecision": "generic_sandbox",
+    "protectedNamespaces": [
+      "core"
+    ],
+    "thirdPartyNamespaceRequired": true
+  },
+  "contracts": [
+    {
+      "id": "menu_size_option_matrix",
+      "namespace": "core.menu_v1",
+      "priority": "P0",
+      "taskTypes": [
+        "drink_order",
+        "restaurant_split"
+      ],
+      "categoryBinding": null,
+      "description": "Menu or drink board with base items, size columns, add-ons, and optional temperature/customization fields.",
+      "signals": {
+        "language": [
+          "zh-TW",
+          "en"
+        ],
+        "positiveTokens": [
+          "small",
+          "medium",
+          "large",
+          "regular",
+          "小杯",
+          "中杯",
+          "大杯",
+          "瓶裝",
+          "加料",
+          "topping",
+          "upgrade"
+        ],
+        "negativeTokens": [
+          "統一編號",
+          "發票",
+          "退房",
+          "入住",
+          "點數"
+        ],
+        "requiredAnyTokens": [
+          "small",
+          "medium",
+          "large",
+          "regular",
+          "小杯",
+          "中杯",
+          "大杯",
+          "瓶裝",
+          "加料",
+          "topping",
+          "upgrade"
+        ],
+        "ambiguityTokens": [
+          "size",
+          "capacity",
+          "quantity"
+        ]
+      },
+      "forbiddenNumberClasses": [
+        "capacity",
+        "nutrition",
+        "quantity",
+        "phone",
+        "date"
+      ],
+      "humanReviewTriggers": [
+        "size_price_non_monotonic",
+        "ambiguous_addon_scope",
+        "category_binding_conflict"
+      ],
+      "guardrails": [
+        "currency_marker_preferred",
+        "line_position_price_anchor",
+        "capacity_number_not_price",
+        "size_variant_grouping",
+        "addon_only_not_base_item"
+      ],
+      "promptNodes": [
+        "ocr_text_cleanup",
+        "menu_size_option_extraction",
+        "parser_post_audit"
+      ],
+      "reviewPolicy": {
+        "humanFinalApprovalRequired": true,
+        "draftCanBePreparedByAssistant": true,
+        "autoFinalizeAllowed": false
+      },
+      "outputFields": [
+        "name",
+        "price",
+        "category",
+        "sectionName",
+        "sizeLabel",
+        "supportsDrinkOptions",
+        "optionGroups",
+        "note",
+        "tags",
+        "priceRole",
+        "sourceNumberClass",
+        "currency",
+        "quantity",
+        "unit",
+        "conditions",
+        "reviewFlags",
+        "rawTextEvidence",
+        "confidence"
+      ]
+    },
+    {
+      "id": "ticket_activity_matrix",
+      "namespace": "core.ticket_v1",
+      "priority": "P0",
+      "taskTypes": [
+        "ticket_activity"
+      ],
+      "categoryBinding": "ticket",
+      "description": "Ticket, travel, tour, activity, class, or admission price matrix with itinerary, age, member, time, or route dimensions.",
+      "signals": {
+        "language": [
+          "zh-TW",
+          "en"
+        ],
+        "positiveTokens": [
+          "行程",
+          "旅遊",
+          "門票",
+          "票價",
+          "會員",
+          "非會員",
+          "嬰兒",
+          "幼兒",
+          "小童",
+          "route",
+          "trip",
+          "tour",
+          "ticket"
+        ],
+        "negativeTokens": [
+          "服務費",
+          "統一編號",
+          "房型",
+          "退房"
+        ],
+        "requiredAnyTokens": [
+          "行程",
+          "旅遊",
+          "門票",
+          "票價",
+          "會員",
+          "非會員",
+          "嬰兒",
+          "幼兒",
+          "小童",
+          "route",
+          "trip",
+          "tour",
+          "ticket"
+        ],
+        "ambiguityTokens": [
+          "age",
+          "itinerary",
+          "quantity"
+        ]
+      },
+      "forbiddenNumberClasses": [
+        "age",
+        "itinerary",
+        "member_id",
+        "quantity",
+        "date"
+      ],
+      "humanReviewTriggers": [
+        "age_range_crosses_price_columns",
+        "price_inversion_by_age",
+        "ambiguous_member_scope"
+      ],
+      "guardrails": [
+        "currency_marker_preferred",
+        "line_position_price_anchor",
+        "age_number_not_price",
+        "itinerary_number_not_price",
+        "task_type_category_binding_ticket"
+      ],
+      "promptNodes": [
+        "ocr_text_cleanup",
+        "ticket_activity_extraction",
+        "parser_post_audit"
+      ],
+      "reviewPolicy": {
+        "humanFinalApprovalRequired": true,
+        "draftCanBePreparedByAssistant": true,
+        "autoFinalizeAllowed": false
+      },
+      "outputFields": [
+        "name",
+        "price",
+        "category",
+        "sectionName",
+        "sizeLabel",
+        "note",
+        "tags",
+        "priceRole",
+        "sourceNumberClass",
+        "currency",
+        "quantity",
+        "unit",
+        "conditions",
+        "reviewFlags",
+        "rawTextEvidence",
+        "confidence"
+      ]
+    },
+    {
+      "id": "venue_rate_matrix",
+      "namespace": "core.venue_v1",
+      "priority": "P0",
+      "taskTypes": [
+        "sports_venue",
+        "ktv_room"
+      ],
+      "categoryBinding": "venue",
+      "description": "Venue, room, court, KTV, pool lane, studio, or facility rate table with time, weekday/weekend, people, or room dimensions.",
+      "signals": {
+        "language": [
+          "zh-TW",
+          "en"
+        ],
+        "positiveTokens": [
+          "包廂",
+          "場地",
+          "球場",
+          "泳道",
+          "時段",
+          "小時",
+          "weekday",
+          "weekend",
+          "hour",
+          "venue",
+          "court",
+          "room"
+        ],
+        "negativeTokens": [
+          "房型",
+          "入住",
+          "統一編號",
+          "折扣"
+        ],
+        "requiredAnyTokens": [
+          "包廂",
+          "場地",
+          "球場",
+          "泳道",
+          "時段",
+          "小時",
+          "weekday",
+          "weekend",
+          "hour",
+          "venue",
+          "court",
+          "room"
+        ],
+        "ambiguityTokens": [
+          "quantity",
+          "capacity"
+        ]
+      },
+      "forbiddenNumberClasses": [
+        "capacity",
+        "duration",
+        "people_count",
+        "time"
+      ],
+      "humanReviewTriggers": [
+        "mixed_per_person_and_room_rate",
+        "time_unit_missing",
+        "ambiguous_day_type"
+      ],
+      "guardrails": [
+        "currency_marker_preferred",
+        "line_position_price_anchor",
+        "capacity_number_not_price",
+        "quantity_number_not_price"
+      ],
+      "promptNodes": [
+        "ocr_text_cleanup",
+        "rate_and_deposit_extraction",
+        "parser_post_audit"
+      ],
+      "reviewPolicy": {
+        "humanFinalApprovalRequired": true,
+        "draftCanBePreparedByAssistant": true,
+        "autoFinalizeAllowed": false
+      },
+      "outputFields": [
+        "name",
+        "price",
+        "category",
+        "sectionName",
+        "sizeLabel",
+        "note",
+        "tags",
+        "priceRole",
+        "sourceNumberClass",
+        "currency",
+        "quantity",
+        "unit",
+        "conditions",
+        "reviewFlags",
+        "rawTextEvidence",
+        "confidence"
+      ]
+    },
+    {
+      "id": "rental_deposit_key_value",
+      "namespace": "core.rental_v1",
+      "priority": "P0",
+      "taskTypes": [
+        "rental_share"
+      ],
+      "categoryBinding": "rental",
+      "description": "Rental list or key-value notice where rent, deposit, cleaning fee, or guarantee amount can appear together.",
+      "signals": {
+        "language": [
+          "zh-TW",
+          "en"
+        ],
+        "positiveTokens": [
+          "租借",
+          "器材",
+          "押金",
+          "保證金",
+          "deposit",
+          "rental",
+          "rent",
+          "equipment"
+        ],
+        "negativeTokens": [
+          "統一編號",
+          "會員點數",
+          "折扣碼"
+        ],
+        "requiredAnyTokens": [
+          "租借",
+          "器材",
+          "押金",
+          "保證金",
+          "deposit",
+          "rental",
+          "rent",
+          "equipment"
+        ],
+        "ambiguityTokens": [
+          "deposit",
+          "quantity"
+        ]
+      },
+      "forbiddenNumberClasses": [
+        "quantity",
+        "duration",
+        "damage_code"
+      ],
+      "humanReviewTriggers": [
+        "deposit_and_rent_not_labeled",
+        "damage_fee_looks_like_item_price",
+        "unit_period_missing"
+      ],
+      "guardrails": [
+        "currency_marker_preferred",
+        "line_position_price_anchor",
+        "quantity_number_not_price"
+      ],
+      "promptNodes": [
+        "ocr_text_cleanup",
+        "rate_and_deposit_extraction",
+        "parser_post_audit"
+      ],
+      "reviewPolicy": {
+        "humanFinalApprovalRequired": true,
+        "draftCanBePreparedByAssistant": true,
+        "autoFinalizeAllowed": false
+      },
+      "outputFields": [
+        "name",
+        "price",
+        "category",
+        "sectionName",
+        "sizeLabel",
+        "note",
+        "tags",
+        "priceRole",
+        "sourceNumberClass",
+        "currency",
+        "quantity",
+        "unit",
+        "conditions",
+        "reviewFlags",
+        "rawTextEvidence",
+        "confidence"
+      ]
+    },
+    {
+      "id": "group_buy_threshold_policy",
+      "namespace": "core.group_buy_v1",
+      "priority": "P0",
+      "taskTypes": [
+        "group_buy"
+      ],
+      "categoryBinding": null,
+      "description": "Group-buy sheet or poster with item prices, free-shipping thresholds, tier discounts, and minimum order quantities.",
+      "signals": {
+        "language": [
+          "zh-TW",
+          "en"
+        ],
+        "positiveTokens": [
+          "團購",
+          "滿額",
+          "免運",
+          "滿件",
+          "批發",
+          "free shipping",
+          "bulk discount",
+          "group buy"
+        ],
+        "negativeTokens": [
+          "統一編號",
+          "退房",
+          "入住",
+          "服務費"
+        ],
+        "requiredAnyTokens": [
+          "團購",
+          "滿額",
+          "免運",
+          "滿件",
+          "批發",
+          "free shipping",
+          "bulk discount",
+          "group buy"
+        ],
+        "ambiguityTokens": [
+          "quantity",
+          "discount",
+          "threshold"
+        ]
+      },
+      "forbiddenNumberClasses": [
+        "threshold_amount",
+        "quantity_threshold",
+        "discount_rate"
+      ],
+      "humanReviewTriggers": [
+        "multiple_threshold_order_unclear",
+        "discount_scope_unclear",
+        "free_shipping_threshold_only"
+      ],
+      "guardrails": [
+        "currency_marker_preferred",
+        "line_position_price_anchor",
+        "quantity_number_not_price"
+      ],
+      "promptNodes": [
+        "ocr_text_cleanup",
+        "generic_price_extraction",
+        "parser_post_audit"
+      ],
+      "reviewPolicy": {
+        "humanFinalApprovalRequired": true,
+        "draftCanBePreparedByAssistant": true,
+        "autoFinalizeAllowed": false
+      },
+      "outputFields": [
+        "name",
+        "price",
+        "category",
+        "sectionName",
+        "sizeLabel",
+        "note",
+        "tags",
+        "priceRole",
+        "sourceNumberClass",
+        "currency",
+        "quantity",
+        "unit",
+        "conditions",
+        "reviewFlags",
+        "rawTextEvidence",
+        "confidence"
+      ]
+    },
+    {
+      "id": "service_tax_fee_structure",
+      "namespace": "core.tax_service_v1",
+      "priority": "P0",
+      "taskTypes": [
+        "extract_fee_structure"
+      ],
+      "categoryBinding": "service",
+      "description": "Dining, service, and checkout evidence with service charge, tax, subtotal, and total rows.",
+      "signals": {
+        "language": [
+          "zh-TW",
+          "en"
+        ],
+        "positiveTokens": [
+          "服務費",
+          "一成",
+          "營業稅",
+          "稅金",
+          "subtotal",
+          "service charge",
+          "tax",
+          "grand total"
+        ],
+        "negativeTokens": [
+          "年齡",
+          "行程",
+          "點數",
+          "房型"
+        ],
+        "requiredAnyTokens": [
+          "服務費",
+          "營業稅",
+          "稅金",
+          "service charge",
+          "tax"
+        ],
+        "ambiguityTokens": [
+          "percentage",
+          "subtotal",
+          "total"
+        ]
+      },
+      "forbiddenNumberClasses": [
+        "percentage_rate",
+        "table_number",
+        "open_time",
+        "tax_id"
+      ],
+      "humanReviewTriggers": [
+        "tax_included_unclear",
+        "calculated_total_mismatch",
+        "percentage_without_base_amount"
+      ],
+      "guardrails": [
+        "currency_marker_preferred",
+        "line_position_price_anchor",
+        "percentage_rate_not_absolute_price",
+        "subtotal_total_not_base_item_price"
+      ],
+      "promptNodes": [
+        "ocr_text_cleanup",
+        "service_tax_extraction",
+        "parser_post_audit"
+      ],
+      "reviewPolicy": {
+        "humanFinalApprovalRequired": true,
+        "draftCanBePreparedByAssistant": true,
+        "autoFinalizeAllowed": false
+      },
+      "outputFields": [
+        "name",
+        "price",
+        "category",
+        "sectionName",
+        "sizeLabel",
+        "note",
+        "tags",
+        "priceRole",
+        "sourceNumberClass",
+        "currency",
+        "quantity",
+        "unit",
+        "conditions",
+        "reviewFlags",
+        "rawTextEvidence",
+        "confidence"
+      ]
+    },
+    {
+      "id": "discount_voucher_policy",
+      "namespace": "core.discount_v1",
+      "priority": "P0",
+      "taskTypes": [
+        "parse_discount_policy"
+      ],
+      "categoryBinding": null,
+      "description": "Promotion, coupon, threshold discount, buy-one-get-one, and order-level discount policy evidence.",
+      "signals": {
+        "language": [
+          "zh-TW",
+          "en"
+        ],
+        "positiveTokens": [
+          "折扣",
+          "折抵",
+          "優惠券",
+          "滿千折百",
+          "買一送一",
+          "coupon",
+          "voucher",
+          "discount",
+          "promo"
+        ],
+        "negativeTokens": [
+          "統一編號",
+          "退房",
+          "押金"
+        ],
+        "requiredAnyTokens": [
+          "折扣",
+          "折抵",
+          "優惠券",
+          "買一送一",
+          "coupon",
+          "voucher",
+          "discount"
+        ],
+        "ambiguityTokens": [
+          "discount",
+          "threshold",
+          "percentage"
+        ]
+      },
+      "forbiddenNumberClasses": [
+        "threshold_amount",
+        "discount_rate",
+        "voucher_face_value"
+      ],
+      "humanReviewTriggers": [
+        "discount_scope_unclear",
+        "bundle_discount_allocation_unclear",
+        "multiple_discount_stacking"
+      ],
+      "guardrails": [
+        "currency_marker_preferred",
+        "line_position_price_anchor",
+        "percentage_rate_not_absolute_price"
+      ],
+      "promptNodes": [
+        "ocr_text_cleanup",
+        "discount_policy_extraction",
+        "parser_post_audit"
+      ],
+      "reviewPolicy": {
+        "humanFinalApprovalRequired": true,
+        "draftCanBePreparedByAssistant": true,
+        "autoFinalizeAllowed": false
+      },
+      "outputFields": [
+        "name",
+        "price",
+        "category",
+        "sectionName",
+        "sizeLabel",
+        "note",
+        "tags",
+        "priceRole",
+        "sourceNumberClass",
+        "currency",
+        "quantity",
+        "unit",
+        "conditions",
+        "reviewFlags",
+        "rawTextEvidence",
+        "confidence"
+      ]
+    },
+    {
+      "id": "receipt_ocr_summary",
+      "namespace": "core.receipt_ocr_v1",
+      "priority": "P0",
+      "taskTypes": [
+        "parse_ocr_bill"
+      ],
+      "categoryBinding": null,
+      "description": "POS receipt or checkout detail photo with merchant data, line items, subtotal, total, payment, change, dates, and identifiers.",
+      "signals": {
+        "language": [
+          "zh-TW",
+          "en"
+        ],
+        "positiveTokens": [
+          "發票",
+          "收據",
+          "統一編號",
+          "小計",
+          "總計",
+          "找零",
+          "invoice",
+          "receipt",
+          "subtotal",
+          "change",
+          "paid"
+        ],
+        "negativeTokens": [
+          "行程",
+          "房型",
+          "點數"
+        ],
+        "requiredAnyTokens": [
+          "發票",
+          "收據",
+          "小計",
+          "總計",
+          "invoice",
+          "receipt",
+          "subtotal"
+        ],
+        "ambiguityTokens": [
+          "receipt_id",
+          "date",
+          "time",
+          "payment_last4",
+          "total"
+        ]
+      },
+      "forbiddenNumberClasses": [
+        "tax_id",
+        "invoice_number",
+        "date",
+        "time",
+        "card_last4",
+        "amount_paid",
+        "change"
+      ],
+      "humanReviewTriggers": [
+        "line_item_sum_mismatch",
+        "receipt_identifier_unmasked",
+        "faded_or_cropped_receipt"
+      ],
+      "guardrails": [
+        "currency_marker_preferred",
+        "line_position_price_anchor",
+        "receipt_identifier_not_price",
+        "subtotal_total_not_base_item_price"
+      ],
+      "promptNodes": [
+        "ocr_text_cleanup",
+        "receipt_ocr_extraction",
+        "parser_post_audit"
+      ],
+      "reviewPolicy": {
+        "humanFinalApprovalRequired": true,
+        "draftCanBePreparedByAssistant": true,
+        "autoFinalizeAllowed": false
+      },
+      "outputFields": [
+        "name",
+        "price",
+        "category",
+        "sectionName",
+        "sizeLabel",
+        "note",
+        "tags",
+        "priceRole",
+        "sourceNumberClass",
+        "currency",
+        "quantity",
+        "unit",
+        "conditions",
+        "reviewFlags",
+        "rawTextEvidence",
+        "confidence"
+      ]
+    },
+    {
+      "id": "lodging_extra_person_rate",
+      "namespace": "ext.lodging_v1",
+      "priority": "P1",
+      "taskTypes": [
+        "parse_lodging_rate"
+      ],
+      "categoryBinding": "service",
+      "description": "Accommodation and room-rate table with weekday/weekend rate, extra person, extra bed, breakfast, cleaning fee, and check-in/out time.",
+      "signals": {
+        "language": [
+          "zh-TW",
+          "en"
+        ],
+        "positiveTokens": [
+          "住宿",
+          "房型",
+          "平日",
+          "假日",
+          "加人",
+          "加床",
+          "入住",
+          "退房",
+          "lodging",
+          "hotel",
+          "extra person"
+        ],
+        "negativeTokens": [
+          "統一編號",
+          "票券",
+          "租借"
+        ],
+        "requiredAnyTokens": [
+          "住宿",
+          "房型",
+          "加人",
+          "加床",
+          "入住",
+          "退房",
+          "lodging",
+          "hotel"
+        ],
+        "ambiguityTokens": [
+          "time",
+          "capacity",
+          "day_type"
+        ]
+      },
+      "forbiddenNumberClasses": [
+        "check_in_time",
+        "check_out_time",
+        "occupancy_count",
+        "room_number"
+      ],
+      "humanReviewTriggers": [
+        "per_room_or_per_person_unclear",
+        "weekday_weekend_unclear",
+        "cleaning_fee_scope_unclear"
+      ],
+      "guardrails": [
+        "currency_marker_preferred",
+        "line_position_price_anchor",
+        "time_value_not_price",
+        "capacity_number_not_price"
+      ],
+      "promptNodes": [
+        "ocr_text_cleanup",
+        "lodging_rate_extraction",
+        "parser_post_audit"
+      ],
+      "reviewPolicy": {
+        "humanFinalApprovalRequired": true,
+        "draftCanBePreparedByAssistant": true,
+        "autoFinalizeAllowed": false
+      },
+      "outputFields": [
+        "name",
+        "price",
+        "category",
+        "sectionName",
+        "sizeLabel",
+        "note",
+        "tags",
+        "priceRole",
+        "sourceNumberClass",
+        "currency",
+        "quantity",
+        "unit",
+        "conditions",
+        "reviewFlags",
+        "rawTextEvidence",
+        "confidence"
+      ]
+    },
+    {
+      "id": "workshop_course_fee",
+      "namespace": "ext.workshop_v1",
+      "priority": "P1",
+      "taskTypes": [
+        "parse_course_fee"
+      ],
+      "categoryBinding": "ticket",
+      "description": "Course, workshop, experience, material fee, group ticket, and deposit evidence.",
+      "signals": {
+        "language": [
+          "zh-TW",
+          "en"
+        ],
+        "positiveTokens": [
+          "課程",
+          "體驗",
+          "手作",
+          "材料費",
+          "訂金",
+          "雙人",
+          "團報",
+          "workshop",
+          "course",
+          "material fee",
+          "deposit"
+        ],
+        "negativeTokens": [
+          "統一編號",
+          "房型",
+          "退房"
+        ],
+        "requiredAnyTokens": [
+          "課程",
+          "體驗",
+          "材料費",
+          "訂金",
+          "團報",
+          "workshop",
+          "course"
+        ],
+        "ambiguityTokens": [
+          "deposit",
+          "group_size",
+          "included_fee"
+        ]
+      },
+      "forbiddenNumberClasses": [
+        "group_size",
+        "deposit_as_total",
+        "session_count"
+      ],
+      "humanReviewTriggers": [
+        "deposit_total_confusion",
+        "material_fee_included_unclear",
+        "group_price_per_person_unclear"
+      ],
+      "guardrails": [
+        "currency_marker_preferred",
+        "line_position_price_anchor",
+        "quantity_number_not_price"
+      ],
+      "promptNodes": [
+        "ocr_text_cleanup",
+        "workshop_fee_extraction",
+        "parser_post_audit"
+      ],
+      "reviewPolicy": {
+        "humanFinalApprovalRequired": true,
+        "draftCanBePreparedByAssistant": true,
+        "autoFinalizeAllowed": false
+      },
+      "outputFields": [
+        "name",
+        "price",
+        "category",
+        "sectionName",
+        "sizeLabel",
+        "note",
+        "tags",
+        "priceRole",
+        "sourceNumberClass",
+        "currency",
+        "quantity",
+        "unit",
+        "conditions",
+        "reviewFlags",
+        "rawTextEvidence",
+        "confidence"
+      ]
+    },
+    {
+      "id": "transport_rideshare_fee",
+      "namespace": "ext.transport_v1",
+      "priority": "P2",
+      "taskTypes": [
+        "parse_transport_share"
+      ],
+      "categoryBinding": "service",
+      "description": "Transport, rideshare, parking, toll, mileage, night surcharge, and shared route fee evidence.",
+      "signals": {
+        "language": [
+          "zh-TW",
+          "en"
+        ],
+        "positiveTokens": [
+          "拼車",
+          "交通",
+          "里程",
+          "夜間",
+          "過路費",
+          "停車費",
+          "rideshare",
+          "transport",
+          "mileage",
+          "toll",
+          "parking"
+        ],
+        "negativeTokens": [
+          "房型",
+          "票券",
+          "統一編號"
+        ],
+        "requiredAnyTokens": [
+          "拼車",
+          "交通",
+          "里程",
+          "過路費",
+          "停車費",
+          "rideshare",
+          "transport"
+        ],
+        "ambiguityTokens": [
+          "distance",
+          "percentage",
+          "time"
+        ]
+      },
+      "forbiddenNumberClasses": [
+        "distance",
+        "night_surcharge_rate",
+        "license_plate",
+        "time"
+      ],
+      "humanReviewTriggers": [
+        "fare_formula_unclear",
+        "toll_split_scope_unclear",
+        "distance_fee_unit_missing"
+      ],
+      "guardrails": [
+        "currency_marker_preferred",
+        "line_position_price_anchor",
+        "time_value_not_price"
+      ],
+      "promptNodes": [
+        "ocr_text_cleanup",
+        "transport_fee_extraction",
+        "parser_post_audit"
+      ],
+      "reviewPolicy": {
+        "humanFinalApprovalRequired": true,
+        "draftCanBePreparedByAssistant": true,
+        "autoFinalizeAllowed": false
+      },
+      "outputFields": [
+        "name",
+        "price",
+        "category",
+        "sectionName",
+        "sizeLabel",
+        "note",
+        "tags",
+        "priceRole",
+        "sourceNumberClass",
+        "currency",
+        "quantity",
+        "unit",
+        "conditions",
+        "reviewFlags",
+        "rawTextEvidence",
+        "confidence"
+      ]
+    },
+    {
+      "id": "membership_points_value",
+      "namespace": "ext.membership_v1",
+      "priority": "P2",
+      "taskTypes": [
+        "parse_membership_value"
+      ],
+      "categoryBinding": null,
+      "description": "Stored value, membership card, point redemption, bonus credit, and cash/points dual pricing evidence.",
+      "signals": {
+        "language": [
+          "zh-TW",
+          "en"
+        ],
+        "positiveTokens": [
+          "儲值",
+          "點數",
+          "會員卡",
+          "送點",
+          "扣點",
+          "stored value",
+          "points",
+          "membership",
+          "bonus"
+        ],
+        "negativeTokens": [
+          "統一編號",
+          "房型",
+          "行程"
+        ],
+        "requiredAnyTokens": [
+          "儲值",
+          "點數",
+          "會員卡",
+          "stored value",
+          "points",
+          "membership"
+        ],
+        "ambiguityTokens": [
+          "points",
+          "bonus_value",
+          "stored_value"
+        ]
+      },
+      "forbiddenNumberClasses": [
+        "bonus_points",
+        "point_price",
+        "stored_value_face_amount"
+      ],
+      "humanReviewTriggers": [
+        "cash_and_points_exchange_unclear",
+        "bonus_credit_not_actual_spend",
+        "redemption_scope_unclear"
+      ],
+      "guardrails": [
+        "currency_marker_preferred",
+        "line_position_price_anchor"
+      ],
+      "promptNodes": [
+        "ocr_text_cleanup",
+        "membership_value_extraction",
+        "parser_post_audit"
+      ],
+      "reviewPolicy": {
+        "humanFinalApprovalRequired": true,
+        "draftCanBePreparedByAssistant": true,
+        "autoFinalizeAllowed": false
+      },
+      "outputFields": [
+        "name",
+        "price",
+        "category",
+        "sectionName",
+        "sizeLabel",
+        "note",
+        "tags",
+        "priceRole",
+        "sourceNumberClass",
+        "currency",
+        "quantity",
+        "unit",
+        "conditions",
+        "reviewFlags",
+        "rawTextEvidence",
+        "confidence"
+      ]
+    },
+    {
+      "id": "generic_price_evidence",
+      "namespace": "core.generic_sandbox_v1",
+      "priority": "P0",
+      "taskTypes": [
+        "auto",
+        "generic_split"
+      ],
+      "categoryBinding": null,
+      "description": "Fallback sandbox contract for mixed or unknown price evidence when task type is not strongly identified.",
+      "signals": {
+        "language": [
+          "zh-TW",
+          "en",
+          "unknown"
+        ],
+        "positiveTokens": [],
+        "negativeTokens": [],
+        "requiredAnyTokens": [],
+        "ambiguityTokens": [
+          "quantity",
+          "capacity",
+          "size",
+          "deposit",
+          "age",
+          "itinerary",
+          "receipt_id",
+          "percentage"
+        ]
+      },
+      "forbiddenNumberClasses": [
+        "quantity",
+        "capacity",
+        "age",
+        "itinerary",
+        "date",
+        "phone",
+        "address",
+        "receipt_id"
+      ],
+      "humanReviewTriggers": [
+        "unknown_industry",
+        "low_confidence",
+        "ambiguous_contract_route"
+      ],
+      "guardrails": [
+        "currency_marker_preferred",
+        "line_position_price_anchor",
+        "human_final_approval_required"
+      ],
+      "promptNodes": [
+        "ocr_text_cleanup",
+        "generic_price_extraction",
+        "parser_post_audit"
+      ],
+      "reviewPolicy": {
+        "humanFinalApprovalRequired": true,
+        "draftCanBePreparedByAssistant": true,
+        "autoFinalizeAllowed": false
+      },
+      "outputFields": [
+        "name",
+        "price",
+        "category",
+        "sectionName",
+        "sizeLabel",
+        "note",
+        "tags",
+        "priceRole",
+        "sourceNumberClass",
+        "currency",
+        "quantity",
+        "unit",
+        "conditions",
+        "reviewFlags",
+        "rawTextEvidence",
+        "confidence"
+      ]
+    }
+  ]
+}

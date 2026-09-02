@@ -1,0 +1,194 @@
+{
+  "version": "shared-room-enterprise-submit-gate.v1",
+  "purpose": "Validate third-party or enterprise MCP templates before they are allowed into industry routing and runtime contracts.",
+  "defaultDecision": "deny",
+  "stages": [
+    {
+      "id": "package_boundary",
+      "order": 10,
+      "owner": "submit_gate",
+      "required": true,
+      "mode": "metadata_only",
+      "description": "Confirm the submitted bundle has a declared manifest, owner, version, entrypoints, and export boundary.",
+      "blocksOn": [
+        "missing_manifest",
+        "unknown_owner",
+        "unbounded_export_paths",
+        "runtime_files_in_submission"
+      ]
+    },
+    {
+      "id": "static_security_gate",
+      "order": 20,
+      "owner": "ai-security-rules",
+      "required": true,
+      "mode": "static_hard_gate",
+      "commandModes": [
+        "scan",
+        "rules-check",
+        "export-gate"
+      ],
+      "description": "Run fast read-only static checks before any submitted MCP file is parsed, loaded, routed, or executed.",
+      "blocksOn": [
+        "critical_or_high_finding",
+        "secret_like_source_residue",
+        "over_privileged_mcp_config",
+        "package_runner_or_install_hook_risk",
+        "missing_public_export_manifest",
+        "path_traversal_risk",
+        "wildcard_network_or_filesystem_scope"
+      ]
+    },
+    {
+      "id": "semantic_safety_gate",
+      "order": 30,
+      "owner": "ai-security-rules",
+      "required": true,
+      "mode": "agentic_semantic_gate",
+      "commandModes": [
+        "agent-review",
+        "rules-check"
+      ],
+      "description": "Scan prompts, tool descriptions, instructions, and agent-readable files for semantic safety issues before contract validation.",
+      "blocksOn": [
+        "prompt_injection_in_agent_readable_file",
+        "hidden_intent_or_jailbreak_pattern",
+        "tool_description_requests_policy_bypass",
+        "indirect_prompt_injection_risk"
+      ]
+    },
+    {
+      "id": "contract_schema",
+      "order": 40,
+      "owner": "shared-room-mcp",
+      "required": true,
+      "mode": "schema_validation",
+      "description": "Validate scenario contracts, prompt nodes, guardrails, task type bindings, review policy, and output fields.",
+      "blocksOn": [
+        "unknown_task_type",
+        "unknown_guardrail",
+        "unknown_prompt_node",
+        "missing_human_final_approval",
+        "auto_finalize_allowed"
+      ]
+    },
+    {
+      "id": "industry_routing",
+      "order": 50,
+      "owner": "shared-room-mcp",
+      "required": true,
+      "mode": "deterministic_routing",
+      "description": "Route the validated template into an industry contract such as menu, ticket/activity, venue, rental, group-buy, or generic price evidence.",
+      "blocksOn": [
+        "no_matching_contract",
+        "ambiguous_high_risk_contract",
+        "category_binding_conflict"
+      ]
+    },
+    {
+      "id": "scenario_regression",
+      "order": 60,
+      "owner": "shared-room-mcp",
+      "required": true,
+      "mode": "repeat_matrix",
+      "defaultRepeat": 5,
+      "description": "Run scenario fixtures multiple times and require stable item count, prices, contract selection, and blocking behavior.",
+      "blocksOn": [
+        "price_drift",
+        "item_count_drift",
+        "contract_drift",
+        "forbidden_number_leaked",
+        "final_action_not_human_controlled"
+      ]
+    },
+    {
+      "id": "human_review",
+      "order": 70,
+      "owner": "human_operator",
+      "required": true,
+      "mode": "manual_approval",
+      "description": "A human reviews the gate evidence before the template can be promoted into the accepted registry.",
+      "blocksOn": [
+        "unreviewed_high_risk_warning",
+        "missing_gate_evidence",
+        "operator_rejects_submission"
+      ]
+    }
+  ],
+  "governanceFields": {
+    "provenanceAndIntegrity": [
+      "sha256",
+      "sigstore_proof",
+      "git_commit_sha",
+      "builder_id"
+    ],
+    "permissionAndCapability": [
+      "declared_tools",
+      "declared_resources",
+      "network_egress_allowlist",
+      "filesystem_scope"
+    ],
+    "dataAndPrivacyClass": [
+      "data_classification_level",
+      "pii_handling_policy",
+      "retention_policy"
+    ],
+    "sbomAndDependency": [
+      "cyclonedx_sbom",
+      "vulnerability_scan_report",
+      "package_reputation_evidence"
+    ],
+    "sandboxExecutionSpec": [
+      "execution_isolation_level",
+      "runtime_network_policy",
+      "runtime_command_policy"
+    ],
+    "humanFinalActionSpec": [
+      "approval_required_actions",
+      "requires_human_approval",
+      "final_action_owner"
+    ],
+    "lifecycleAndRevocation": [
+      "revocation_endpoint",
+      "sunset_date",
+      "cve_contact",
+      "rollback_identity"
+    ],
+    "reviewSlaAndAuditTrail": [
+      "review_sla_hours",
+      "automated_test_evidence_url",
+      "audit_log_retention_days"
+    ]
+  },
+  "registryTiers": [
+    {
+      "id": "certified",
+      "description": "Fully reviewed MCP templates or adapters that passed static security, semantic safety, contract validation, repeat regression, and human approval."
+    },
+    {
+      "id": "experimental",
+      "description": "Custom or early-stage submissions that remain sandboxed with restricted network/filesystem scope and higher human review frequency."
+    }
+  ],
+  "forbiddenRuntimeEffectsBeforeApproval": [
+    "load_unscanned_mcp_server",
+    "execute_submitted_command",
+    "read_submitted_secret_file",
+    "grant_network_access",
+    "grant_home_directory_access",
+    "submit_payment_or_booking",
+    "finalize_settlement",
+    "promote_to_runtime_registry"
+  ],
+  "requiredEvidence": [
+    "ai-security-rules report path",
+    "semantic safety report path",
+    "contract validation report",
+    "scenario regression matrix",
+    "human approval decision",
+    "artifact sha256",
+    "permission manifest",
+    "sandbox policy",
+    "revocation path"
+  ]
+}

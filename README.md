@@ -241,6 +241,7 @@ CORS_ORIGIN=
 ROOM_TTL_HOURS=12
 ROOM_PERSISTENCE=json
 ROOM_STORE_PATH=data/rooms.json
+GUARDRAIL_MEMORY_PATH=data/guardrail-memory.json
 ROOM_PERSIST_DEBOUNCE_MS=35
 ROOM_PERSIST_JITTER_MS=120
 MAX_IMAGE_MB=8
@@ -288,6 +289,7 @@ The repository provides configuration names only. Each project organizer changes
 | Server port | `PORT` | hosting service variables | yes |
 | Same-origin or allowlisted Socket.IO origin | `CORS_ORIGIN` | leave empty for a same-origin deployment; set only for a separate frontend domain | optional |
 | Room JSON store | `ROOM_STORE_PATH` | hosting service variables, use `/data/rooms.json` with a mounted volume | yes for restart-safe demo |
+| Guardrail memory candidate store | `GUARDRAIL_MEMORY_PATH` | hosting service variables, use `/data/guardrail-memory.json` with a mounted volume | optional |
 | Room save smoothing | `ROOM_PERSIST_DEBOUNCE_MS`, `ROOM_PERSIST_JITTER_MS` | hosting service variables; small millisecond values smooth short write bursts | optional |
 | Trust whitelist/audit sheet | `TRUST_LAYER_SPREADSHEET_ID` | hosting service variables | optional |
 | Example Gemini OCR repair adapter | `GEMINI_API_KEY` or supported Google key alias | provider secret manager | optional |
@@ -298,9 +300,31 @@ Recommended open-source deployment order:
 
 1. Copy `env.sample` variable names into the hosting service variables.
 2. Mount a persistent volume at `/data` and set `ROOM_STORE_PATH=/data/rooms.json`.
-3. Run the no-key flow first with manual input or local OCR text.
-4. Add a provider key only if the deployment owner wants optional OCR/schema repair.
-5. Restart the service and verify `/healthz` reports the expected provider and persistence flags without exposing secret values.
+3. For the adaptive review loop, set `GUARDRAIL_MEMORY_PATH=/data/guardrail-memory.json` so human corrections and blocked approval attempts are retained as guardrail candidates.
+4. Run the no-key flow first with manual input or local OCR text.
+5. Add a provider key only if the deployment owner wants optional OCR/schema repair.
+6. Restart the service and verify `/healthz` reports the expected provider and persistence flags without exposing secret values.
+
+## Enterprise MCP Submit Gate
+
+Future company or third-party MCP templates should enter through a default-deny submit gate before the runtime can load them:
+
+```text
+submitted template -> package boundary -> static security gate -> semantic safety gate -> contract schema -> industry routing -> repeat regression -> human approval -> accepted registry
+```
+
+The security gate is split into two mandatory phases. The static gate rejects secrets, over-privileged MCP configs, install hooks, package-runner risks, unsafe public-export payloads, and unbounded filesystem or network scope. The semantic safety gate then reviews prompts, tool descriptions, and agent-readable files for prompt injection, hidden intent, jailbreak patterns, or policy-bypass language before any submitted MCP file is trusted by the parser or runtime.
+
+Enterprise submissions must also declare provenance, permissions, data/privacy class, SBOM/dependency evidence, sandbox policy, human final-action boundaries, revocation path, and audit/SLA metadata. Approved artifacts are promoted into an accepted registry tier; experimental artifacts stay sandboxed.
+
+Local validation entrypoints:
+
+```bash
+npm run verify:adaptive-contracts
+npm run regression:adaptive-parser -- --base-url http://127.0.0.1:4180 --repeat 5
+```
+
+The matching design contract is in `config/enterprise-submit-gate.json`.
 
 ## Fast Review Sample
 

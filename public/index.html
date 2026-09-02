@@ -476,6 +476,20 @@
       font-size: 12px;
     }
 
+    .quality-breakdown {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .quality-breakdown span,
+    .quality-issues div {
+      overflow-wrap: anywhere;
+    }
+
     .proposal-panel {
       display: none;
       gap: 10px;
@@ -776,7 +790,7 @@
 
     .item-review-controls {
       display: grid;
-      grid-template-columns: minmax(140px, 1.3fr) minmax(88px, 0.6fr) minmax(120px, 0.8fr) auto;
+      grid-template-columns: minmax(140px, 1.25fr) minmax(88px, 0.55fr) minmax(116px, 0.8fr) minmax(120px, 0.85fr) auto;
       gap: 8px;
       align-items: end;
       border-top: 1px dashed #ded5c8;
@@ -809,6 +823,64 @@
     .item-review-remove {
       min-height: 34px;
       white-space: nowrap;
+    }
+
+    .item-review-audit {
+      grid-column: 1 / -1;
+      display: grid;
+      gap: 6px;
+      border: 1px solid #eadfce;
+      border-radius: 8px;
+      background: #fffaf1;
+      color: var(--muted);
+      padding: 8px 9px;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .item-review-audit[data-risk="true"] {
+      border-color: #e7b76d;
+      background: #fff4d8;
+      color: #7c4b12;
+    }
+
+    .item-review-audit-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .item-review-pill {
+      display: inline-flex;
+      max-width: 100%;
+      align-items: center;
+      border: 1px solid #dfd2c1;
+      border-radius: 999px;
+      background: #fffdf9;
+      padding: 3px 7px;
+      color: var(--muted);
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .item-review-pill[data-tone="warn"] {
+      border-color: #e0a94b;
+      background: #fff2cf;
+      color: #7a4a0e;
+    }
+
+    .item-review-pill[data-tone="danger"] {
+      border-color: #d9927f;
+      background: #fff0ec;
+      color: #8d2f1e;
+    }
+
+    .item-review-evidence {
+      color: var(--muted);
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     .menu-row-side {
@@ -1784,6 +1856,14 @@
         qualityWarn: '需要快速檢查',
         qualityReview: '需要人工確認',
         qualityNone: '尚無品質報告',
+        aiConfidence: 'AI 複查分數',
+        scenarioContract: '情境契約',
+        schemaAlignment: '欄位對齊',
+        entityAnchoring: '項目錨定',
+        priceCoverage: '價格覆蓋',
+        contractFit: '情境吻合',
+        issuePenalty: '問題扣分',
+        blockingReasons: '阻擋原因',
         needsReview: '需要確認',
         rulesKeptSeparate: '規則已另外列出',
         freeShippingRuleFound: '免運門檻',
@@ -1928,6 +2008,41 @@
         itemName: '名稱',
         itemPrice: '金額',
         itemCategory: '分類',
+        itemPriceRole: '金額角色',
+        itemSourceClass: '來源類型',
+        itemConfidence: '信心',
+        itemEvidence: '來源',
+        itemReviewFlags: '疑點',
+        priceRoleline_item: '可分攤品項',
+        priceRolediscount: '折扣',
+        priceRoletax_and_fee: '稅費/服務費',
+        priceRoledeposit: '押金',
+        priceRoleprepayment_down: '訂金',
+        priceRoleaggregate_subtotal: '小計',
+        priceRoleaggregate_grand_total: '總計',
+        sourceNumberClasscurrency_amount: '金額',
+        sourceNumberClassage_range: '年齡',
+        sourceNumberClassitinerary_index: '行程編號',
+        sourceNumberClasspercentage_rate: '百分比',
+        sourceNumberClassreceipt_total: '收據總計',
+        sourceNumberClasspayment_amount: '付款金額',
+        sourceNumberClasspoints_value: '點數',
+        sourceNumberClassdistance: '距離',
+        sourceNumberClassduration: '時間',
+        sourceNumberClassquantity: '數量',
+        sourceNumberClassunknown: '未知',
+        reviewFlagmultiple_price_candidates: '多個價格候選',
+        reviewFlagdeposit_detected: '偵測到押金',
+        reviewFlagprepayment_detected: '偵測到訂金',
+        reviewFlagdiscount_scope_unclear: '折扣範圍不明',
+        reviewFlagtax_or_fee_detected: '偵測到稅費',
+        reviewFlagarithmetic_mismatch: '金額加總不符',
+        reviewFlagmissing_grand_total: '缺少總計',
+        reviewFlagage_range_near_price: '年齡靠近價格',
+        reviewFlagitinerary_number_near_price: '行程編號靠近價格',
+        reviewFlagpercentage_near_price: '百分比靠近價格',
+        reviewFlagpoints_cash_confusion: '點數與現金可能混淆',
+        reviewFlagreview_required: '需要人工複查',
         removeItem: '移除',
         itemReviewSaved: '項目已修正。',
         itemRemoved: '項目已移除。',
@@ -2020,6 +2135,14 @@
         qualityWarn: 'Quick review needed',
         qualityReview: 'Human review required',
         qualityNone: 'No quality report yet',
+        aiConfidence: 'AI review score',
+        scenarioContract: 'scenario contract',
+        schemaAlignment: 'schema alignment',
+        entityAnchoring: 'entity anchoring',
+        priceCoverage: 'price coverage',
+        contractFit: 'contract fit',
+        issuePenalty: 'issue penalty',
+        blockingReasons: 'blocking reasons',
         needsReview: 'Needs review',
         rulesKeptSeparate: 'rules shown separately',
         freeShippingRuleFound: 'free shipping threshold',
@@ -2163,6 +2286,41 @@
         itemName: 'Name',
         itemPrice: 'Price',
         itemCategory: 'Category',
+        itemPriceRole: 'Price Role',
+        itemSourceClass: 'Source Type',
+        itemConfidence: 'Confidence',
+        itemEvidence: 'Evidence',
+        itemReviewFlags: 'Flags',
+        priceRoleline_item: 'billable item',
+        priceRolediscount: 'discount',
+        priceRoletax_and_fee: 'tax / fee',
+        priceRoledeposit: 'deposit',
+        priceRoleprepayment_down: 'down payment',
+        priceRoleaggregate_subtotal: 'subtotal',
+        priceRoleaggregate_grand_total: 'grand total',
+        sourceNumberClasscurrency_amount: 'money',
+        sourceNumberClassage_range: 'age',
+        sourceNumberClassitinerary_index: 'itinerary index',
+        sourceNumberClasspercentage_rate: 'percentage',
+        sourceNumberClassreceipt_total: 'receipt total',
+        sourceNumberClasspayment_amount: 'payment',
+        sourceNumberClasspoints_value: 'points',
+        sourceNumberClassdistance: 'distance',
+        sourceNumberClassduration: 'duration',
+        sourceNumberClassquantity: 'quantity',
+        sourceNumberClassunknown: 'unknown',
+        reviewFlagmultiple_price_candidates: 'multiple price candidates',
+        reviewFlagdeposit_detected: 'deposit detected',
+        reviewFlagprepayment_detected: 'prepayment detected',
+        reviewFlagdiscount_scope_unclear: 'unclear discount scope',
+        reviewFlagtax_or_fee_detected: 'tax or fee detected',
+        reviewFlagarithmetic_mismatch: 'amount mismatch',
+        reviewFlagmissing_grand_total: 'missing grand total',
+        reviewFlagage_range_near_price: 'age near price',
+        reviewFlagitinerary_number_near_price: 'itinerary number near price',
+        reviewFlagpercentage_near_price: 'percentage near price',
+        reviewFlagpoints_cash_confusion: 'points/cash confusion',
+        reviewFlagreview_required: 'human review required',
         removeItem: 'Remove',
         itemReviewSaved: 'Item updated.',
         itemRemoved: 'Item removed.',
@@ -3234,11 +3392,49 @@
           return `<div>${escapeHtml(`${issue.detail || issue.type || t('needsReview')}${target}`)}</div>`;
         }).join('')
         : '';
+      const blockingRows = Array.isArray(quality?.blockingReasons)
+        ? quality.blockingReasons.slice(0, 4).map((reason) => {
+          const target = reason.item ? `：${reason.item}` : '';
+          return `<div>${escapeHtml(`${t('blockingReasons')} · ${reason.detail || reason.type || t('needsReview')}${target}`)}</div>`;
+        }).join('')
+        : '';
       const ruleHints = Array.isArray(localOcr?.ruleHints) ? localOcr.ruleHints : [];
       const ruleRows = ruleHints.slice(0, 4).map((rule) => {
         const sourceText = rule?.text ? `：${rule.text}` : '';
         return `<div>${escapeHtml(`${getRuleHintText(rule)}${sourceText}`)}</div>`;
       }).join('');
+      const arithmeticCheck = quality?.arithmeticCheck || null;
+      const arithmeticRows = arithmeticCheck
+        ? [
+          `${t('sharedCandidate')}: ${formatMoney(Number(arithmeticCheck.billableTotal || 0))}`,
+          Number(arithmeticCheck.expectedTotal || 0) > 0
+            ? `${t('totalAmount')}: ${formatMoney(Number(arithmeticCheck.expectedTotal || 0))}`
+            : '',
+          Number(arithmeticCheck.difference || 0) !== 0
+            ? `${t('blockingReasons')} · ${formatMoney(Math.abs(Number(arithmeticCheck.difference || 0)))}`
+            : ''
+        ].filter(Boolean).map((row) => `<div>${escapeHtml(row)}</div>`).join('')
+        : '';
+      const confidence = quality?.adaptiveConfidence || null;
+      const components = confidence?.components || {};
+      const contract = confidence?.featureProfile?.scenarioContract || '';
+      const scoreText = confidence
+        ? `${t('aiConfidence')} ${Math.round(Number(confidence.score || 0) * 100)} / ${Math.round(Number(confidence.threshold || 0.85) * 100)}`
+        : '';
+      const contractText = contract ? `${t('scenarioContract')} ${contract}` : '';
+      const breakdownRows = confidence
+        ? `
+          <div class="quality-breakdown">
+            ${scoreText ? `<span>${escapeHtml(scoreText)}</span>` : ''}
+            ${contractText ? `<span>${escapeHtml(contractText)}</span>` : ''}
+            <span>${escapeHtml(`${t('schemaAlignment')} ${Math.round(Number(components.schemaAlignment || 0) * 100)}%`)}</span>
+            <span>${escapeHtml(`${t('entityAnchoring')} ${Math.round(Number(components.entityAnchoring || 0) * 100)}%`)}</span>
+            <span>${escapeHtml(`${t('priceCoverage')} ${Math.round(Number(components.priceCoverage || 0) * 100)}%`)}</span>
+            <span>${escapeHtml(`${t('contractFit')} ${Math.round(Number(components.contractFit || 0) * 100)}%`)}</span>
+            <span>${escapeHtml(`${t('issuePenalty')} ${Math.round(Number(components.issuePenalty || 0) * 100)}%`)}</span>
+          </div>
+        `
+        : '';
       const localOcrText = localOcr?.enabled
         ? t('localOcrProvided')
         : t('localOcrMissing');
@@ -3258,7 +3454,10 @@
           ${escapeHtml(getQualityStatusLabel(quality?.status))}
           <span>${escapeHtml(`${taskText} · ${localOcrText} · ${auditText} · ${t('suspicious')} ${Number(quality?.issueCount || 0)} · ${t('optionGroups')} ${Number(quality?.optionGroupCount || 0)}${ruleText}`)}</span>
         </div>
+        ${breakdownRows}
+        ${arithmeticRows ? `<div class="quality-issues">${arithmeticRows}</div>` : ''}
         ${ruleRows ? `<div class="quality-issues">${ruleRows}</div>` : ''}
+        ${blockingRows ? `<div class="quality-issues">${blockingRows}</div>` : ''}
         ${issueRows ? `<div class="quality-issues">${issueRows}</div>` : ''}
       `;
     }
@@ -3281,9 +3480,67 @@
       return t(`proposalRisk${String(riskLevel || 'needs_human_review')}`);
     }
 
+    const itemPriceRoleOptions = [
+      'line_item',
+      'discount',
+      'tax_and_fee',
+      'deposit',
+      'prepayment_down',
+      'aggregate_subtotal',
+      'aggregate_grand_total'
+    ];
+
+    function getPriceRoleText(priceRole) {
+      const key = `priceRole${String(priceRole || 'line_item')}`;
+      const translated = t(key);
+      return translated === key ? String(priceRole || 'line_item') : translated;
+    }
+
+    function getSourceNumberClassText(sourceNumberClass) {
+      const key = `sourceNumberClass${String(sourceNumberClass || 'unknown')}`;
+      const translated = t(key);
+      return translated === key ? String(sourceNumberClass || 'unknown') : translated;
+    }
+
+    function getReviewFlagText(flag) {
+      const key = `reviewFlag${String(flag || '')}`;
+      const translated = t(key);
+      return translated === key ? String(flag || '') : translated;
+    }
+
+    function itemHasReviewRisk(item) {
+      const role = String(item?.priceRole || 'line_item');
+      const sourceClass = String(item?.sourceNumberClass || 'unknown');
+      const flags = Array.isArray(item?.reviewFlags) ? item.reviewFlags : [];
+      return role !== 'line_item'
+        || sourceClass !== 'currency_amount'
+        || flags.length > 0
+        || Number(item?.confidence || 1) < 0.82;
+    }
+
+    function getReviewFlagTone(flag) {
+      if (['arithmetic_mismatch', 'age_range_near_price', 'itinerary_number_near_price', 'percentage_near_price', 'points_cash_confusion', 'review_required'].includes(String(flag || ''))) {
+        return 'danger';
+      }
+      return 'warn';
+    }
+
     function hasBlockingParseQuality(room = currentRoom) {
       const quality = room?.parseQuality || null;
       return Boolean(quality && (quality.status === 'review_required' || Number(quality.highIssueCount || 0) > 0));
+    }
+
+    function getBlockingReviewMessage(room = currentRoom) {
+      const quality = room?.parseQuality || null;
+      const reasons = Array.isArray(quality?.blockingReasons) ? quality.blockingReasons : [];
+      if (reasons.length === 0) {
+        return t('aiReviewBlocksDraft');
+      }
+      const details = reasons.slice(0, 3)
+        .map((reason) => reason.detail || reason.type || t('needsReview'))
+        .filter(Boolean)
+        .join('\n');
+      return `${t('aiReviewBlocksDraft')}\n${details}`;
     }
 
     function proposalNeedsAiReviewGate(proposal) {
@@ -3423,6 +3680,7 @@
       const blockedByAiReview = hasBlockingParseQuality(room);
       elements.openItemsButton.textContent = isOpen ? t('openedToMembers') : t('openToMembers');
       elements.openItemsButton.disabled = !owner || isOpen || room.settled || !Array.isArray(room.items) || room.items.length === 0 || blockedByAiReview;
+      elements.openItemsButton.title = blockedByAiReview ? getBlockingReviewMessage(room) : '';
       elements.openItemsButton.dataset.tone = isOpen ? 'good' : 'warn';
     }
 
@@ -3561,12 +3819,25 @@
     function renderItemReviewControls(item, itemTotal = null) {
       const labels = itemMetaLabels[currentLanguage] || itemMetaLabels.en;
       const category = String(item?.category || 'other');
+      const priceRole = String(item?.priceRole || 'line_item');
+      const sourceNumberClass = String(item?.sourceNumberClass || 'unknown');
+      const confidence = Number.isFinite(Number(item?.confidence)) ? Number(item.confidence) : null;
+      const reviewFlags = Array.isArray(item?.reviewFlags) ? item.reviewFlags.filter(Boolean).slice(0, 6) : [];
+      const rawTextEvidence = String(item?.rawTextEvidence || '').trim();
       const claimed = Number(itemTotal?.qty || 0) > 0;
       const disabled = claimed ? 'disabled' : '';
       const options = itemCategoryOptions.map((value) => {
         const selected = value === category ? 'selected' : '';
         return `<option value="${escapeHtml(value)}" ${selected}>${escapeHtml(labels.category[value] || value)}</option>`;
       }).join('');
+      const priceRoleOptions = itemPriceRoleOptions.map((value) => {
+        const selected = value === priceRole ? 'selected' : '';
+        return `<option value="${escapeHtml(value)}" ${selected}>${escapeHtml(getPriceRoleText(value))}</option>`;
+      }).join('');
+      const flagRows = reviewFlags.length > 0
+        ? reviewFlags.map((flag) => `<span class="item-review-pill" data-tone="${escapeHtml(getReviewFlagTone(flag))}">${escapeHtml(getReviewFlagText(flag))}</span>`).join('')
+        : '';
+      const confidenceText = confidence === null ? '' : `${t('itemConfidence')} ${Math.round(confidence * 100)}%`;
       return `
         <div class="item-review-controls" aria-label="${escapeHtml(t('reviewParsedItems'))}">
           <label class="item-review-field">
@@ -3581,7 +3852,20 @@
             <span>${escapeHtml(t('itemCategory'))}</span>
             <select class="item-review-select" data-action="edit-parsed-item" data-item-field="category" data-item-id="${escapeHtml(item.id)}" ${disabled}>${options}</select>
           </label>
+          <label class="item-review-field">
+            <span>${escapeHtml(t('itemPriceRole'))}</span>
+            <select class="item-review-select" data-action="edit-parsed-item" data-item-field="priceRole" data-item-id="${escapeHtml(item.id)}" ${disabled}>${priceRoleOptions}</select>
+          </label>
           <button class="button secondary item-review-remove" type="button" data-action="remove-parsed-item" data-item-id="${escapeHtml(item.id)}" ${disabled}>${escapeHtml(t('removeItem'))}</button>
+          <div class="item-review-audit" data-risk="${itemHasReviewRisk(item) ? 'true' : 'false'}">
+            <div class="item-review-audit-row">
+              <span class="item-review-pill" data-tone="${priceRole === 'line_item' ? '' : 'warn'}">${escapeHtml(getPriceRoleText(priceRole))}</span>
+              <span class="item-review-pill" data-tone="${sourceNumberClass === 'currency_amount' ? '' : 'warn'}">${escapeHtml(`${t('itemSourceClass')} · ${getSourceNumberClassText(sourceNumberClass)}`)}</span>
+              ${confidenceText ? `<span class="item-review-pill" data-tone="${confidence < 0.82 ? 'warn' : ''}">${escapeHtml(confidenceText)}</span>` : ''}
+              ${flagRows}
+            </div>
+            ${rawTextEvidence ? `<div class="item-review-evidence">${escapeHtml(`${t('itemEvidence')}: ${rawTextEvidence}`)}</div>` : ''}
+          </div>
         </div>
       `;
     }
@@ -4455,7 +4739,8 @@
         itemId,
         name: patch.name ?? item.name,
         price: patch.price ?? item.price,
-        category: patch.category ?? item.category
+        category: patch.category ?? item.category,
+        priceRole: patch.priceRole ?? item.priceRole
       }, (result) => {
         if (!isCurrentRoomTarget(targetRoomId, result?.room)) {
           return;
@@ -4508,6 +4793,14 @@
         }
       }
 
+      if (field === 'priceRole') {
+        const nextPriceRole = itemEdit.value;
+        if (nextPriceRole !== String(item.priceRole || 'line_item')) {
+          updateParsedItem(itemId, { priceRole: nextPriceRole });
+          return true;
+        }
+      }
+
       return false;
     }
 
@@ -4536,6 +4829,12 @@
 
     function openItemsForMembers() {
       if (isSwitchingRoom || !currentRoom?.menuLoaded || !isOwner(currentRoom) || currentRoom.itemsOpenForMembers) {
+        return;
+      }
+      if (hasBlockingParseQuality(currentRoom)) {
+        const message = getBlockingReviewMessage(currentRoom);
+        window.alert(message);
+        setMessage(message, 'error');
         return;
       }
       const targetRoomId = roomId;
@@ -4705,8 +5004,9 @@
       const proposalId = button.dataset.proposalId;
       const action = button.dataset.proposalAction;
       if (action === 'accept' && button.dataset.proposalConfirm === 'true' && button.dataset.proposalBlocked === 'true') {
-        window.alert(t('aiReviewBlocksDraft'));
-        setMessage(t('aiReviewBlocksDraft'), 'error');
+        const message = getBlockingReviewMessage(currentRoom);
+        window.alert(message);
+        setMessage(message, 'error');
         return;
       }
       if (button.dataset.proposalConfirm !== 'true') {

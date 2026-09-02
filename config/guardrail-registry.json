@@ -1,0 +1,100 @@
+{
+  "version": "shared-room-guardrail-registry.v2",
+  "rules": [
+    {
+      "id": "currency_marker_preferred",
+      "severity": "high",
+      "description": "When a line has multiple numbers, values with NT$, $, 元, 圓, or 塊 are stronger price candidates than bare numbers."
+    },
+    {
+      "id": "line_position_price_anchor",
+      "severity": "high",
+      "description": "A price must be anchored to a billable item, ticket type, plan, venue, rental object, service, or add-on."
+    },
+    {
+      "id": "age_number_not_price",
+      "severity": "high",
+      "description": "Age ranges such as 0 歲, 未滿 1 歲, 2-6 years old, or age labels are not prices."
+    },
+    {
+      "id": "itinerary_number_not_price",
+      "severity": "high",
+      "description": "Route, trip, itinerary, option, and plan indexes are section identifiers, not prices."
+    },
+    {
+      "id": "capacity_number_not_price",
+      "severity": "medium",
+      "description": "Capacity, ml, cc, calories, kcal, grams, seats, or volume numbers are not prices."
+    },
+    {
+      "id": "quantity_number_not_price",
+      "severity": "medium",
+      "description": "Counts, quantity, people, pieces, packs, boxes, hours, days, and duration numbers are not prices unless explicitly marked as charge amounts."
+    },
+    {
+      "id": "size_variant_grouping",
+      "severity": "medium",
+      "description": "Size columns should become optionGroups.size instead of duplicate base item names."
+    },
+    {
+      "id": "task_type_category_binding_ticket",
+      "severity": "high",
+      "description": "When taskType is ticket_activity, extracted billable rows should default to category=ticket unless clearly non-ticket."
+    },
+    {
+      "id": "addon_only_not_base_item",
+      "severity": "medium",
+      "description": "Topping, upgrade, and add-on lines should not become base items unless explicitly sold standalone."
+    },
+    {
+      "id": "threshold_amount_not_item_price",
+      "severity": "high",
+      "description": "Free-shipping, minimum-spend, full-order discount, and group-buy threshold amounts are policy numbers, not item prices."
+    },
+    {
+      "id": "discount_value_not_item_price",
+      "severity": "high",
+      "description": "Coupon face values, discount amounts, percent-off values, and buy-one-get-one counts are discount policy values, not item prices."
+    },
+    {
+      "id": "percentage_rate_not_absolute_price",
+      "severity": "high",
+      "description": "Service charge, tax, discount, and surcharge percentages are rates and must not be stored as absolute item prices."
+    },
+    {
+      "id": "subtotal_total_not_base_item_price",
+      "severity": "high",
+      "description": "Subtotal, grand total, paid amount, and change rows are summary fields and must not become selectable base items."
+    },
+    {
+      "id": "receipt_identifier_not_price",
+      "severity": "critical",
+      "description": "Receipt numbers, tax IDs, invoice IDs, dates, times, and card last-four values must never enter item price fields."
+    },
+    {
+      "id": "deposit_amount_role_required",
+      "severity": "high",
+      "description": "Deposit, guarantee, reservation, or prepayment amounts must keep an explicit role label instead of silently becoming the full item price."
+    },
+    {
+      "id": "time_value_not_price",
+      "severity": "medium",
+      "description": "Check-in, checkout, open, close, session, and departure times are not prices."
+    },
+    {
+      "id": "distance_number_not_price",
+      "severity": "medium",
+      "description": "Distance, mileage, kilometers, route numbers, and license plate numbers are not prices."
+    },
+    {
+      "id": "points_value_not_cash_price",
+      "severity": "high",
+      "description": "Points, bonus credits, stored-value bonuses, and redemption units must not be mixed with cash prices unless a cash conversion is explicitly stated."
+    },
+    {
+      "id": "human_final_approval_required",
+      "severity": "critical",
+      "description": "LLM and WebMCP may prepare drafts and suggestions, but final approval and export actions remain human-controlled."
+    }
+  ]
+}

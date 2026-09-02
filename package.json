@@ -10,6 +10,8 @@
     "dev": "node server.js",
     "check": "node --check server.js",
     "audit:tasks": "node scripts/task-gap-audit.mjs",
+    "verify:adaptive-contracts": "node scripts/verify-adaptive-contracts.mjs",
+    "regression:adaptive-parser": "node scripts/regression-adaptive-parser.mjs",
     "stress:menu": "node scripts/stress-menu-parser.mjs",
     "stress:contracts": "node scripts/stress-local-contracts.mjs",
     "stress:open-gate": "node scripts/stress-open-gate.mjs"
@@ -23,5 +25,8 @@
     "multer": "^2.1.1",
     "sharp": "^0.35.4",
     "socket.io": "^4.7.5"
+  },
+  "overrides": {
+    "qs": "6.16.0"
   }
 }

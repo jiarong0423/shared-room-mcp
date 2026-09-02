@@ -8,6 +8,12 @@ import { randomUUID } from 'crypto';
 import { fileURLToPath } from 'url';
 import { Server } from 'socket.io';
 import { GoogleGenAI, Type } from '@google/genai';
+import {
+  buildAdaptivePipelineMetadata,
+  buildAdaptivePromptLines,
+  buildExtractionFeatureProfile,
+  scoreAdaptiveParseQuality
+} from './lib/adaptive/pipeline.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -58,6 +64,7 @@ const apiRateLimitMax = Math.max(10, Math.min(3000, Number(process.env.API_RATE_
 const roomCreateRateLimitMax = Math.max(2, Math.min(300, Number(process.env.ROOM_CREATE_RATE_LIMIT_MAX || 20)));
 const menuParseRateLimitMax = Math.max(1, Math.min(120, Number(process.env.MENU_PARSE_RATE_LIMIT_MAX || 30)));
 const imageMaxDimension = Math.max(640, Math.min(1800, Number(process.env.IMAGE_MAX_DIMENSION || 1400)));
+const imageOcrTargetDimension = Math.max(imageMaxDimension, Math.min(2400, Number(process.env.IMAGE_OCR_TARGET_DIMENSION || 1800)));
 const imageJpegQuality = Math.max(50, Math.min(86, Number(process.env.IMAGE_JPEG_QUALITY || 80)));
 const itemThumbSize = Math.max(96, Math.min(360, Number(process.env.ITEM_THUMB_SIZE || 160)));
 const localOcrMaxChars = Math.max(0, Math.min(24000, Number(process.env.LOCAL_OCR_MAX_CHARS || 12000)));
@@ -69,7 +76,9 @@ const trustLayerSpreadsheetUrl = trustLayerSpreadsheetId
   : '';
 const roomPersistenceEnabled = String(process.env.ROOM_PERSISTENCE || 'json').toLowerCase() !== 'memory';
 const roomStorePath = path.resolve(__dirname, process.env.ROOM_STORE_PATH || 'data/rooms.json');
+const guardrailMemoryPath = path.resolve(__dirname, process.env.GUARDRAIL_MEMORY_PATH || 'data/guardrail-memory.json');
 const roomStoreVersion = 'group-room-json-store.v1';
+const guardrailMemoryVersion = 'shared-room-guardrail-memory.v1';
 const roomPersistDebounceMs = Math.max(0, Math.min(1000, Number(process.env.ROOM_PERSIST_DEBOUNCE_MS || 35)));
 const roomPersistJitterMs = Math.max(0, Math.min(2000, Number(process.env.ROOM_PERSIST_JITTER_MS || 120)));
 const rooms = new Map();
@@ -96,6 +105,13 @@ const roomTaskTypes = new Set([
   'sports_venue',
   'ticket_activity',
   'rental_share',
+  'extract_fee_structure',
+  'parse_discount_policy',
+  'parse_ocr_bill',
+  'parse_lodging_rate',
+  'parse_course_fee',
+  'parse_transport_share',
+  'parse_membership_value',
   'generic_split'
 ]);
 const defaultTaskRouter = Object.freeze({
@@ -204,8 +220,8 @@ const defaultDrinkOptions = {
   sweetness: '正常糖',
   ice: '正常冰'
 };
-const nonMenuPriceFieldPattern = /總糖量|糖量|總熱量|熱量|大卡|卡路里|營養|公克|克數|容量|毫升|ml|ML|代碼|編號|期限|效期|日期|使用期限|有效期限|電話|地址|營業|外送|回饋|點數|建議表/;
-const addonOnlyItemPattern = /^(加料|加購|加價|升級|免費升級|飲品免費升級|珍珠|波霸|椰果|仙草|布丁|蘆薈|脆纖果|百年仙草凍|鮮奶酪|奶蓋|加珍珠|加波霸|加椰果|加仙草|加布丁|加蘆薈)$/;
+const nonMenuPriceFieldPattern = /總糖量|糖量|總熱量|熱量|大卡|卡路里|營養|公克|克數|容量|毫升|ml|ML|代碼|編號|期限|效期|日期|使用期限|有效期限|電話|地址|營業|外送|回饋|點數|儲值|送點|建議表|統一編號|統編|發票號碼|收據號碼|卡號|末四碼|交易序號|機台|桌號|小計|總計|合計|實收|找零|服務費率|稅率|折扣率|入住|退房/;
+const addonOnlyItemPattern = /^(加料|加購|加價|升級|免費升級|飲品免費升級|珍珠|波霸|椰果|仙草|布丁|蘆薈|脆纖果|百年仙草凍|鮮奶酪|奶蓋|加珍珠|加波霸|加椰果|加仙草|加布丁|加蘆薈|pearl\s*topping|tapioca\s*topping|boba\s*topping|oat\s*milk\s*upgrade|milk\s*upgrade|extra\s*shot|add-?on|topping|upgrade)$/i;
 const noAddonOptionPattern = /^(不加|不要|無|無加料|不需加料|none|no)$/i;
 const standaloneBottlePattern = /(?:^|[\s｜|/（(])瓶(?:$|[\s｜|/）)])|瓶$/;
 const drinkSizePattern = /小杯|中杯|大杯|特大杯|分享瓶|瓶裝|加大|小瓶|中瓶|大瓶|\bS\b|\bM\b|\bL\b|\bXL\b|\bSmall\b|\bMedium\b|\bMed\b|\bRegular\b|\bReg\b|\bLarge\b|\bExtra\s*Large\b|\bX-Large\b/i;
@@ -213,15 +229,18 @@ const largeDrinkSizePattern = /大杯|特大杯|分享瓶|瓶裝|加大|大瓶|\
 const localOcrPricePattern = /(?:NT\$?\s*)?([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{1,4})(?:\s*(?:元|圓|塊))?/g;
 const localOcrRuleAmountPattern = /(?:NT\$?\s*)?([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{1,6})(?:\s*(?:元|圓|塊))?/g;
 const localOcrSectionPattern = /^(飯類|麵類|粥品|湯品|湯類|小菜|點心|炸物|主餐|套餐|便當|飲品|飲料|咖啡|茶飲|鮮奶茶|果汁|冰沙|甜點|加料|配料|包廂|場地|場租|票券|門票|活動|課程|器材|租借|低消|服務費|Toppings?|Add-?ons?|Meals?|Drinks?|Coffee|Tea|Rooms?|Tickets?|Rentals?|Activities?|Courts?|Venues?)$/i;
-const localOcrSkipLinePattern = /總糖量|糖量|總熱量|熱量|大卡|卡路里|營養|公克|克數|容量|毫升|ml|ML|電話|地址|營業|回饋|點數|建議表|使用期限|有效期限|統一編號|發票/;
+const localOcrSkipLinePattern = /總糖量|糖量|總熱量|熱量|大卡|卡路里|營養|公克|克數|容量|毫升|ml|ML|電話|地址|營業|回饋|點數|儲值|送\s*[0-9,]+\s*點|送點|建議表|使用期限|有效期限|統一編號|統編|發票號碼|收據號碼|卡號|末四碼|交易序號|機台|桌號|小計|總計|合計|實收|找零|服務費率|稅率|每梯次|名額|人數|限額|行程約|%/;
+const localOcrPaymentLinePattern = /^(?:現金|刷卡|信用卡|付款|支付|cash|card|paid)\s*(?:NT\$?\s*)?[0-9,]+/i;
 const localOcrQuantityContextPattern = /^(?:\s*(?:cups?|qty|quantity|count|pcs?|pieces?|orders?|sets?|boxes?|packs?|items?|people|persons?|pax|players?|attendees?|tickets?|hours?|hrs?|days?|人|位|杯|瓶|份|件|個|張|名|小時|鐘|天|組|盒|包|套|桶|次|顆)\b|\s*(?:人|位|杯|瓶|份|件|個|張|名|小時|鐘|天|組|盒|包|套|桶|次|顆))/i;
 const localOcrQuantityPrefixPattern = /(?:^|\s)(?:qty|quantity|count|subtotal|total\s*qty|數量|小計|合計|總杯數|總數|人數)\s*$/i;
+const localOcrAgeContextPattern = /^(?:\s*(?:歲|歲以上|歲以下|歲[（(]?含[）)]?|years?\s*old|yo)\b|\s*(?:歲|歲以上|歲以下|歲[（(]?含[）)]?))/i;
+const localOcrItineraryHeadingPattern = /^\s*(?:行程|方案|路線|route|trip|tour)\s*[0-9一二三四五六七八九十]+\s*[：:、.)-]/i;
 const localOcrSoldOutLinePattern = /售完|完售|缺貨|暫停供應|sold\s*out|out\s*of\s*stock|unavailable/i;
 const localOcrFreeShippingRulePattern = /免運|免物流|免配送|free\s*shipping|free\s*delivery|free\s*shipping\s*gap/i;
 const localOcrMinimumRulePattern = /門檻|滿額|起送|低消|最低消費|minimum\s*(?:order|spend|charge|consume)|min\.?\s*(?:order|spend|charge)|threshold/i;
-const localOcrDiscountRulePattern = /數量優惠|滿件|滿\s*[0-9]+\s*(?:件|個|組|盒|包|pcs?|pieces?|items?)|[0-9.]+\s*折|買\s*[0-9]+\s*送\s*[0-9]+|第\s*[二三四五六七八九十0-9]+\s*件|bulk\s*discount|volume\s*discount|quantity\s*discount|tier(?:ed)?\s*discount|buy\s*[0-9]+\s*get\s*[0-9]+|[0-9]+\s*for\s*[0-9]+|save\s*[0-9]+%|[0-9]+%\s*off|coupon\s*(?:code|discount)|promo(?:tion)?\s*(?:code|discount)|promo\s*code/i;
+const localOcrDiscountRulePattern = /數量優惠|滿件|滿\s*[0-9]+\s*(?:件|個|組|盒|包|pcs?|pieces?|items?)|滿\s*(?:NT\$?\s*)?[0-9,]+\s*(?:元|圓|塊)?\s*(?:折|減|抵)|[0-9.]+\s*折|買\s*[0-9]+\s*送\s*[0-9]+|第\s*[二三四五六七八九十0-9]+\s*件|折扣|折抵|優惠券|折價券|coupon|voucher|bulk\s*discount|volume\s*discount|quantity\s*discount|tier(?:ed)?\s*discount|buy\s*[0-9]+\s*get\s*[0-9]+|[0-9]+\s*for\s*[0-9]+|save\s*[0-9]+%|[0-9]+%\s*off|coupon\s*(?:code|discount)|promo(?:tion)?\s*(?:code|discount)|promo\s*code/i;
 const suspiciousMenuNoise = /(總糖量|總熱量|大卡|卡路里|熱量|糖量|建議表|使用期限|外送|回饋|點數|電話|地址|營業|店長推薦|不建議)/;
-const suspiciousAddon = /^(加料|加購|加價|升級|免費升級|飲品免費升級|珍珠|波霸|椰果|仙草|布丁|蘆薈|脆纖果|百年仙草凍|鮮奶酪)$/;
+const suspiciousAddon = /^(加料|加購|加價|升級|免費升級|飲品免費升級|珍珠|波霸|椰果|仙草|布丁|蘆薈|脆纖果|百年仙草凍|鮮奶酪|pearl\s*topping|tapioca\s*topping|boba\s*topping|oat\s*milk\s*upgrade|milk\s*upgrade|extra\s*shot|add-?on|topping|upgrade)$/i;
 const menuCategories = new Set([
   'main',
   'side',
@@ -236,6 +255,42 @@ const menuCategories = new Set([
   'venue',
   'addon',
   'other'
+]);
+const priceRoles = new Set([
+  'line_item',
+  'discount',
+  'tax_and_fee',
+  'deposit',
+  'prepayment_down',
+  'aggregate_subtotal',
+  'aggregate_grand_total'
+]);
+const sourceNumberClasses = new Set([
+  'currency_amount',
+  'age_range',
+  'itinerary_index',
+  'percentage_rate',
+  'receipt_total',
+  'payment_amount',
+  'points_value',
+  'distance',
+  'duration',
+  'quantity',
+  'unknown'
+]);
+const reviewFlagTypes = new Set([
+  'multiple_price_candidates',
+  'deposit_detected',
+  'prepayment_detected',
+  'discount_scope_unclear',
+  'tax_or_fee_detected',
+  'arithmetic_mismatch',
+  'missing_grand_total',
+  'age_range_near_price',
+  'itinerary_number_near_price',
+  'percentage_near_price',
+  'points_cash_confusion',
+  'review_required'
 ]);
 const temperatureOptions = ['冷', '熱', '常溫', '冷熱皆可', '未標示'];
 const spiceLevels = ['none', 'mild', 'medium', 'hot', 'extra_hot', 'unknown'];
@@ -334,6 +389,59 @@ const menuSchema = {
           price: {
             type: Type.INTEGER,
             description: '單價，只能是整數，不含貨幣符號。若飲料表格有 L/瓶 兩欄價格，price 使用 L 欄或最低尺寸價格。'
+          },
+          priceRole: {
+            type: Type.STRING,
+            description: '價格角色，只能輸出 line_item、discount、tax_and_fee、deposit、prepayment_down、aggregate_subtotal 或 aggregate_grand_total。一般商品輸出 line_item；押金輸出 deposit；服務費或稅輸出 tax_and_fee；折扣輸出 discount。'
+          },
+          sourceNumberClass: {
+            type: Type.STRING,
+            description: '原始數字類型，只能輸出 currency_amount、age_range、itinerary_index、percentage_rate、receipt_total、payment_amount、points_value、distance、duration、quantity 或 unknown。'
+          },
+          currency: {
+            type: Type.STRING,
+            description: '幣別代碼，台幣輸出 TWD；未標示但明顯是本地台幣也輸出 TWD。'
+          },
+          quantity: {
+            type: Type.INTEGER,
+            description: '此列品項數量，沒有明確數量固定輸出 1。'
+          },
+          unit: {
+            type: Type.STRING,
+            description: '單位，例如 人、小時、晚、天、件、組、盒、公里。沒有標示輸出空字串。'
+          },
+          conditions: {
+            type: Type.ARRAY,
+            description: '影響價格但不是價格本身的條件，例如年齡、會員、平假日、時段、房型、公里、梯次。',
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                type: {
+                  type: Type.STRING,
+                  description: '條件類型，例如 age、membership、day_type、time、capacity、distance、payment_role。'
+                },
+                label: {
+                  type: Type.STRING,
+                  description: '圖片或文字中看到的條件原文。'
+                }
+              },
+              required: ['type', 'label']
+            }
+          },
+          reviewFlags: {
+            type: Type.ARRAY,
+            description: '需要人工複查的原因代碼，例如 deposit_detected、discount_scope_unclear、age_range_near_price、percentage_near_price、points_cash_confusion。沒有就輸出空陣列。',
+            items: {
+              type: Type.STRING
+            }
+          },
+          rawTextEvidence: {
+            type: Type.STRING,
+            description: '此 item 對應的原始 OCR 或圖片文字片段，用來讓人審核來源。'
+          },
+          confidence: {
+            type: Type.NUMBER,
+            description: '此 item 的解析信心，0 到 1。'
           },
           supportsDrinkOptions: {
             type: Type.BOOLEAN,
@@ -508,6 +616,52 @@ const openAiMenuSchema = {
           },
           price: {
             type: 'integer'
+          },
+          priceRole: {
+            type: 'string',
+            enum: ['line_item', 'discount', 'tax_and_fee', 'deposit', 'prepayment_down', 'aggregate_subtotal', 'aggregate_grand_total']
+          },
+          sourceNumberClass: {
+            type: 'string',
+            enum: ['currency_amount', 'age_range', 'itinerary_index', 'percentage_rate', 'receipt_total', 'payment_amount', 'points_value', 'distance', 'duration', 'quantity', 'unknown']
+          },
+          currency: {
+            type: 'string'
+          },
+          quantity: {
+            type: 'number'
+          },
+          unit: {
+            type: 'string'
+          },
+          conditions: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['type', 'label'],
+              properties: {
+                type: {
+                  type: 'string'
+                },
+                label: {
+                  type: 'string'
+                }
+              }
+            }
+          },
+          reviewFlags: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['multiple_price_candidates', 'deposit_detected', 'prepayment_detected', 'discount_scope_unclear', 'tax_or_fee_detected', 'arithmetic_mismatch', 'missing_grand_total', 'age_range_near_price', 'itinerary_number_near_price', 'percentage_near_price', 'points_cash_confusion', 'review_required']
+            }
+          },
+          rawTextEvidence: {
+            type: 'string'
+          },
+          confidence: {
+            type: 'number'
           },
           supportsDrinkOptions: {
             type: 'boolean'
@@ -999,6 +1153,66 @@ function persistRooms(reason = 'room_state_changed') {
   }, roomPersistDebounceMs + jitterMs);
 }
 
+function readGuardrailMemoryPayload() {
+  try {
+    if (!fs.existsSync(guardrailMemoryPath)) {
+      return {
+        version: guardrailMemoryVersion,
+        events: []
+      };
+    }
+    const payload = JSON.parse(fs.readFileSync(guardrailMemoryPath, 'utf8'));
+    return {
+      version: payload.version || guardrailMemoryVersion,
+      events: Array.isArray(payload.events) ? payload.events : []
+    };
+  } catch (error) {
+    writeLog('error', 'guardrail_memory_read_failed', {
+      guardrailMemoryPath,
+      error: error.message
+    });
+    return {
+      version: guardrailMemoryVersion,
+      events: []
+    };
+  }
+}
+
+function appendGuardrailMemoryEvent(event) {
+  if (!roomPersistenceEnabled) {
+    return;
+  }
+  const nextEvent = {
+    id: `guardrail_${randomUUID().slice(0, 8)}`,
+    createdAt: nowIso(),
+    status: 'candidate',
+    source: 'human_review_loop',
+    ...event
+  };
+  const payload = readGuardrailMemoryPayload();
+  const nextPayload = {
+    version: guardrailMemoryVersion,
+    updatedAt: nowIso(),
+    events: [nextEvent, ...payload.events].slice(0, 200)
+  };
+  const tempPath = `${guardrailMemoryPath}.tmp`;
+  try {
+    fs.mkdirSync(path.dirname(guardrailMemoryPath), { recursive: true });
+    fs.writeFileSync(tempPath, `${JSON.stringify(nextPayload, null, 2)}\n`, 'utf8');
+    fs.renameSync(tempPath, guardrailMemoryPath);
+    writeLog('info', 'guardrail_memory_event_recorded', {
+      eventId: nextEvent.id,
+      roomId: nextEvent.roomId || null,
+      eventType: nextEvent.eventType || 'unknown'
+    });
+  } catch (error) {
+    writeLog('error', 'guardrail_memory_write_failed', {
+      guardrailMemoryPath,
+      error: error.message
+    });
+  }
+}
+
 function loadPersistedRooms() {
   if (!roomPersistenceEnabled) {
     writeLog('info', 'room_persistence_disabled', {
@@ -1216,10 +1430,10 @@ async function prepareMenuImage(file) {
     const prepared = await image
       .rotate()
       .resize({
-        width: imageMaxDimension,
-        height: imageMaxDimension,
+        width: imageOcrTargetDimension,
+        height: imageOcrTargetDimension,
         fit: 'inside',
-        withoutEnlargement: true
+        withoutEnlargement: false
       })
       .flatten({
         background: '#ffffff'
@@ -1824,7 +2038,7 @@ function inferDrinkItem(name) {
   }
 
   const chineseDrink = /紅茶|綠茶|青茶|烏龍|奶茶|鮮奶|拿鐵|咖啡|可可|豆漿|果汁|檸檬|多多|冰沙|奶蓋|手搖|飲品|飲料|冷飲|熱飲|氣泡|珍珠|波霸|椰果|仙草|布丁|芋圓|黑糖|乳酸/.test(text);
-  const englishDrink = /\b(?:tea|milk tea|latte|coffee|cocoa|juice|lemonade|smoothie|boba|pearl|tapioca|foam|cheese foam|brown sugar|oolong|jasmine|matcha|yogurt|soda|cola)\b/i.test(rawText);
+  const englishDrink = /\b(?:tea|milk tea|latte|coffee|americano|espresso|cappuccino|mocha|macchiato|cocoa|juice|lemonade|smoothie|boba|pearl|tapioca|foam|cheese foam|brown sugar|oolong|jasmine|matcha|yogurt|soda|cola)\b/i.test(rawText);
   return chineseDrink || englishDrink;
 }
 
@@ -2033,8 +2247,13 @@ function selectLocalOcrPriceMatch(line, priceMatches) {
     return priceMatches[0] || null;
   }
 
+  const explicitCurrencyMatch = priceMatches.find((match) => /(?:NT\$|元|圓|塊)/i.test(String(match.raw || '')));
+  if (explicitCurrencyMatch) {
+    return explicitCurrencyMatch;
+  }
+
   const normalizedLine = String(line || '').toLowerCase();
-  const nonPriceNumericContext = /(?:cups?|qty|quantity|count|pcs?|pieces?|orders?|sets?|boxes?|packs?|items?|hour|hours|hr|hrs|pax|person|people|player|players|attendee|attendees|ticket|tickets|weekday|weekend|day|days|小時|鐘|人|位|堂|次|分鐘|分|杯|瓶|份|件|個|張|名|組|盒|包|套|桶)/i;
+  const nonPriceNumericContext = /(?:cups?|qty|quantity|count|pcs?|pieces?|orders?|sets?|boxes?|packs?|items?|hour|hours|hr|hrs|pax|person|people|player|players|attendee|attendees|ticket|tickets|weekday|weekend|day|days|age|years?\s*old|yo|小時|鐘|人|位|堂|次|分鐘|分|杯|瓶|份|件|個|張|名|組|盒|包|套|桶|歲|未滿|以上|以下|含)/i;
   for (let index = 0; index < priceMatches.length - 1; index += 1) {
     const current = priceMatches[index];
     const next = priceMatches[index + 1];
@@ -2053,6 +2272,9 @@ function isLikelyLocalOcrQuantityMatch(line, match, nextMatch = null) {
   const afterEnd = nextMatch ? nextMatch.index : Math.min(text.length, match.index + rawLength + 24);
   const after = text.slice(match.index + rawLength, afterEnd);
   const before = text.slice(Math.max(0, match.index - 24), match.index);
+  if (localOcrAgeContextPattern.test(after)) {
+    return true;
+  }
   return (Number(match?.price) <= 300 && localOcrQuantityContextPattern.test(after))
     || localOcrQuantityPrefixPattern.test(before);
 }
@@ -2148,6 +2370,34 @@ function inferTaskTypeFromSignals(text, items = []) {
     || /\b(?:ticket|admission|workshop|class|activity)\b/i.test(combinedRaw)) {
     return 'ticket_activity';
   }
+  if (/發票|收據|統一編號|統編|小計|總計|找零|刷卡|現金/.test(combined)
+    || /\b(?:receipt|invoice|subtotal|grand total|change|paid)\b/i.test(combinedRaw)) {
+    return 'parse_ocr_bill';
+  }
+  if (/服務費|營業稅|稅金|一成|外加/.test(combined)
+    || /\b(?:service charge|tax|gratuity)\b/i.test(combinedRaw)) {
+    return 'extract_fee_structure';
+  }
+  if (/折扣|折抵|優惠券|折價券|買一送一|滿千折百/.test(combined)
+    || /\b(?:coupon|voucher|discount|promo)\b/i.test(combinedRaw)) {
+    return 'parse_discount_policy';
+  }
+  if (/住宿|房型|入住|退房|加床|加人費|民宿|飯店/.test(combined)
+    || /\b(?:lodging|hotel|check in|check-in|checkout|check out|extra person)\b/i.test(combinedRaw)) {
+    return 'parse_lodging_rate';
+  }
+  if (/課程|體驗|手作|材料費|訂金|團報/.test(combined)
+    || /\b(?:workshop|course|material fee|deposit)\b/i.test(combinedRaw)) {
+    return 'parse_course_fee';
+  }
+  if (/拼車|交通|里程|夜間|過路費|停車費|包車/.test(combined)
+    || /\b(?:rideshare|transport|mileage|toll|parking)\b/i.test(combinedRaw)) {
+    return 'parse_transport_share';
+  }
+  if (/儲值|點數|會員卡|送點|扣點/.test(combined)
+    || /\b(?:stored value|points|membership|bonus)\b/i.test(combinedRaw)) {
+    return 'parse_membership_value';
+  }
   const drinkCount = items.filter((item) => item.supportsDrinkOptions || item.category === 'drink').length;
   if (drinkCount >= Math.max(2, Math.ceil(items.length * 0.6)) || /飲料|飲品|手搖|咖啡|茶飲/.test(normalizedRaw.replace(/\s+/g, '')) || /\bdrink\b/i.test(normalizedRaw)) {
     return 'drink_order';
@@ -2216,6 +2466,41 @@ function buildRoomTaskRouter(input = {}) {
       thresholdKind: 'deposit_or_time_rate',
       splitMode: 'shared_rental_or_per_person_items',
       evidenceStrength: 'high'
+    },
+    extract_fee_structure: {
+      thresholdKind: 'service_tax_or_surcharge',
+      splitMode: 'shared_fee_or_order_adjustment',
+      evidenceStrength: 'high'
+    },
+    parse_discount_policy: {
+      thresholdKind: 'promotion_or_discount_threshold',
+      splitMode: 'order_level_adjustment',
+      evidenceStrength: 'high'
+    },
+    parse_ocr_bill: {
+      thresholdKind: 'receipt_subtotal_or_total',
+      splitMode: 'receipt_line_items_plus_shared_adjustments',
+      evidenceStrength: 'high'
+    },
+    parse_lodging_rate: {
+      thresholdKind: 'room_rate_or_extra_person_fee',
+      splitMode: 'shared_lodging_fee_plus_personal_addons',
+      evidenceStrength: 'high'
+    },
+    parse_course_fee: {
+      thresholdKind: 'course_fee_or_deposit',
+      splitMode: 'per_person_items_plus_shared_materials',
+      evidenceStrength: 'high'
+    },
+    parse_transport_share: {
+      thresholdKind: 'fare_distance_or_surcharge',
+      splitMode: 'shared_transport_fee_plus_tolls',
+      evidenceStrength: 'medium'
+    },
+    parse_membership_value: {
+      thresholdKind: 'stored_value_or_points_policy',
+      splitMode: 'cash_items_with_points_review',
+      evidenceStrength: 'medium'
     },
     generic_split: {
       thresholdKind: 'custom',
@@ -2312,8 +2597,14 @@ function buildEvidenceContract(room) {
       maxImageBytes,
       maxImagesPerUpload: 1,
       processedMaxDimension: imageMaxDimension,
+      ocrTargetDimension: imageOcrTargetDimension,
       processedJpegQuality: imageJpegQuality,
       storedAsProcessedEvidenceImage: true
+    },
+    adaptivePipeline: {
+      featureParser: true,
+      promptBuilder: true,
+      ...buildAdaptivePipelineMetadata()
     },
     acceptedEvidenceSources: [
       'user_uploaded_price_photo',
@@ -2339,6 +2630,15 @@ function buildEvidenceContract(room) {
       outputFields: [
         'name',
         'price',
+        'priceRole',
+        'sourceNumberClass',
+        'currency',
+        'quantity',
+        'unit',
+        'conditions',
+        'reviewFlags',
+        'rawTextEvidence',
+        'confidence',
         'category',
         'sectionName',
         'sizeLabel',
@@ -2389,21 +2689,26 @@ function buildEvidenceContract(room) {
   };
 }
 
-function parseLocalOcrMenuCandidates(localOcrText, imageCount = 1) {
+function parseLocalOcrMenuCandidates(localOcrText, imageCount = 1, options = {}) {
   const lines = splitLocalOcrLines(localOcrText);
   const rawItems = [];
   const ruleHints = [];
   let currentSection = '';
+  const selectedTaskType = normalizeRoomTaskType(options.taskType);
 
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
     const line = lines[lineIndex];
     const nextLine = lines[lineIndex + 1] || '';
-    if (localOcrSkipLinePattern.test(line)) {
+    if (localOcrSkipLinePattern.test(line) || localOcrPaymentLinePattern.test(line)) {
       continue;
     }
     const ruleHint = classifyLocalOcrRuleLine(line);
     if (ruleHint) {
       ruleHints.push(ruleHint);
+      continue;
+    }
+    if (localOcrItineraryHeadingPattern.test(line)) {
+      currentSection = cleanLocalOcrName(line).slice(0, 24);
       continue;
     }
     if (isLikelyLocalOcrSection(line) || isLikelyLocalOcrDynamicSection(line, nextLine)) {
@@ -2420,7 +2725,7 @@ function parseLocalOcrMenuCandidates(localOcrText, imageCount = 1) {
     const selectedPrice = selectLocalOcrPriceMatch(line, priceCandidates);
     const firstPrice = priceCandidates[0];
     const nameBoundary = selectedPrice && selectedPrice.index > firstPrice.index ? selectedPrice.index : firstPrice.index;
-    const name = cleanLocalOcrName(line.slice(0, nameBoundary)
+    let name = cleanLocalOcrName(line.slice(0, nameBoundary)
       .replace(/\b[0-9]{1,3}\s*(?:cups?|qty|quantity|count|pcs?|pieces?|orders?|sets?|boxes?|packs?|items?|hour|hours|hr|hrs|pax|person|people|players?|attendees?|tickets?|day|days)\b/gi, '')
       .replace(/[0-9]{1,3}\s*(?:小時|鐘|人|位|堂|次|分鐘|分|杯|瓶|份|件|個|張|名|組|盒|包|套|桶)/g, ''));
     if (!name || name.length < 2 || shouldDropNonMenuPriceName(name) || addonOnlyItemPattern.test(name)) {
@@ -2428,9 +2733,12 @@ function parseLocalOcrMenuCandidates(localOcrText, imageCount = 1) {
     }
 
     const supportsDrinkOptions = inferDrinkItem(name);
-    const category = normalizeMenuCategory('', `${currentSection} ${name}`, supportsDrinkOptions);
+    const category = selectedTaskType === 'ticket_activity'
+      ? 'ticket'
+      : normalizeMenuCategory('', `${currentSection} ${name}`, supportsDrinkOptions);
     const optionGroups = [];
     if (priceCandidates.length >= 2 && supportsDrinkOptions) {
+      name = stripDrinkSizeFromName(name);
       const basePrice = firstPrice.price;
       const labels = ['小杯', '中杯', '大杯', '瓶裝'];
       optionGroups.push({
@@ -2447,6 +2755,13 @@ function parseLocalOcrMenuCandidates(localOcrText, imageCount = 1) {
     rawItems.push({
       name,
       price: selectedPrice.price,
+      priceRole: normalizePriceRole('', { name, sectionName: currentSection }, selectedTaskType),
+      sourceNumberClass: normalizeSourceNumberClass('', { name, sectionName: currentSection }),
+      currency: 'TWD',
+      quantity: 1,
+      unit: inferUnitFromText(line),
+      rawTextEvidence: normalizeShortText(line, 220),
+      confidence: priceCandidates.length >= 2 ? 0.78 : 0.9,
       supportsDrinkOptions,
       sourceImageIndex: Math.min(1, imageCount),
       category,
@@ -2456,6 +2771,8 @@ function parseLocalOcrMenuCandidates(localOcrText, imageCount = 1) {
       spiceLevel: normalizeSpiceLevel('', name),
       dietaryFlags: [],
       tags: priceCandidates.length >= 2 ? ['manual_review'] : [],
+      conditions: normalizeConditions([], line),
+      reviewFlags: priceCandidates.length >= 2 ? ['multiple_price_candidates'] : [],
       note: priceCandidates.length >= 2 ? '本地 OCR 偵測到多個價格，請確認尺寸欄位。' : '',
       optionGroups
     });
@@ -2502,6 +2819,11 @@ function evaluateMenuParseQuality(input) {
   const menuType = normalizeMenuType(input?.menuType, items);
   const taskRouter = input?.taskRouter && typeof input.taskRouter === 'object' ? input.taskRouter : null;
   const taskType = String(taskRouter?.taskType || '');
+  const featureProfile = buildExtractionFeatureProfile({
+    localOcrText: input?.localOcrText || '',
+    taskType,
+    taskRouter
+  });
   const issues = [];
   const exactNames = new Map();
   const baseNames = new Map();
@@ -2562,7 +2884,7 @@ function evaluateMenuParseQuality(input) {
         type: 'menu_noise_as_item',
         severity: 'medium',
         item: name,
-        detail: '疑似把營養資訊、說明或非結算文字當成項目。'
+        detail: '疑似把營養資訊、說明或非費用文字當成項目。'
       });
     }
     if (suspiciousAddon.test(name)) {
@@ -2634,9 +2956,35 @@ function evaluateMenuParseQuality(input) {
     });
   }
 
+  const arithmeticCheck = runArithmeticInvariantCheck(items, input?.localOcrText || '');
+  if (arithmeticCheck.reviewFlags.includes('arithmetic_mismatch')) {
+    issues.push({
+      type: 'arithmetic_mismatch',
+      severity: 'high',
+      detail: arithmeticCheck.logs.find((line) => line.includes('不符')) || '細項合計與單據總額不符。'
+    });
+  }
+  if (arithmeticCheck.reviewFlags.includes('deposit_detected')) {
+    issues.push({
+      type: 'deposit_detected',
+      severity: 'medium',
+      detail: '偵測到押金或保證金，請確認是否應排除一般分攤。'
+    });
+  }
+
   const highIssues = issues.filter((issue) => issue.severity === 'high').length;
   const mediumIssues = issues.filter((issue) => issue.severity === 'medium').length;
   const status = highIssues > 0 ? 'review_required' : mediumIssues > 0 ? 'warn' : 'pass';
+  const adaptiveConfidence = scoreAdaptiveParseQuality({
+    items,
+    issues,
+    menuType,
+    taskType,
+    taskRouter,
+    localOcr: input?.localOcr || null,
+    localOcrText: input?.localOcrText || '',
+    featureProfile
+  });
 
   return {
     status,
@@ -2648,6 +2996,9 @@ function evaluateMenuParseQuality(input) {
     drinkCount,
     categoryCounts,
     taskConflict: Boolean(taskRouter?.hasTaskConflict),
+    arithmeticCheck,
+    adaptiveConfidence,
+    blockingReasons: adaptiveConfidence.blockingReasons,
     issues: issues.slice(0, 20)
   };
 }
@@ -3073,6 +3424,181 @@ function appendGlobalAddonGroup(rawGroups, globalAddonGroup) {
   });
 }
 
+function normalizePriceRole(value, item = {}, taskType = '') {
+  const explicit = String(value || '').trim();
+  if (priceRoles.has(explicit)) {
+    return explicit;
+  }
+  const text = `${item?.name || ''} ${item?.sectionName || ''} ${item?.note || ''}`.toLowerCase();
+  if (/押金|保證金|deposit|security\s*deposit/.test(text)) {
+    return 'deposit';
+  }
+  if (/訂金|預付|prepay|down\s*payment/.test(text)) {
+    return 'prepayment_down';
+  }
+  if (/折扣|折抵|優惠券|折價券|discount|coupon|voucher/.test(text)) {
+    return 'discount';
+  }
+  if (/服務費|清潔費|手續費|稅|\btax\b|service\s*(?:charge|fee)|cleaning\s*fee|\bfee\b/.test(text)) {
+    return 'tax_and_fee';
+  }
+  if (/小計|subtotal/.test(text)) {
+    return 'aggregate_subtotal';
+  }
+  if (/總計|合計|實付|grand\s*total|total/.test(text)) {
+    return 'aggregate_grand_total';
+  }
+  if (taskType === 'extract_fee_structure' && /費$|fee$/.test(text)) {
+    return 'tax_and_fee';
+  }
+  return 'line_item';
+}
+
+function normalizeSourceNumberClass(value, item = {}) {
+  const explicit = String(value || '').trim();
+  if (sourceNumberClasses.has(explicit)) {
+    return explicit;
+  }
+  const text = `${item?.name || ''} ${item?.sectionName || ''} ${item?.note || ''}`;
+  if (/%|折|percent|percentage/.test(text)) {
+    return 'percentage_rate';
+  }
+  if (/點數|點|points?/.test(text)) {
+    return 'points_value';
+  }
+  if (/公里|km|mile/.test(text)) {
+    return 'distance';
+  }
+  if (/小時|分鐘|天|hour|hr|day/.test(text)) {
+    return 'duration';
+  }
+  return 'currency_amount';
+}
+
+function inferUnitFromText(text) {
+  const source = String(text || '');
+  const match = source.match(/\/\s*(人|位|小時|晚|天|件|組|盒|包|公里|km|hour|hr|day|person|pax|night)/i);
+  if (match) {
+    return normalizeShortText(match[1], 24);
+  }
+  if (/每公里|\/\s*公里|per\s*km/i.test(source)) return '公里';
+  if (/\/\s*人|每人|per\s*person|pax/i.test(source)) return '人';
+  if (/\/\s*小時|每小時|per\s*hour/i.test(source)) return '小時';
+  if (/\/\s*晚|每晚|per\s*night/i.test(source)) return '晚';
+  return '';
+}
+
+function inferConditionsFromText(text) {
+  const source = String(text || '');
+  const conditions = [];
+  const ageMatches = source.match(/[0-9]+\s*歲(?:～|~|-|至)?\s*(?:未滿\s*)?[0-9]+\s*歲(?:（含）)?|未滿\s*[0-9]+\s*歲/g) || [];
+  for (const match of ageMatches.slice(0, 4)) {
+    conditions.push({ type: 'age', label: normalizeShortText(match, 40) });
+  }
+  if (/會員/.test(source)) conditions.push({ type: 'membership', label: /非會員/.test(source) ? '非會員' : '會員' });
+  if (/假日|weekend/i.test(source)) conditions.push({ type: 'day_type', label: '假日' });
+  if (/平日|weekday/i.test(source)) conditions.push({ type: 'day_type', label: '平日' });
+  if (/押金|保證金|deposit/i.test(source)) conditions.push({ type: 'payment_role', label: '押金' });
+  if (/訂金|預付|down\s*payment/i.test(source)) conditions.push({ type: 'payment_role', label: '訂金' });
+  return conditions.slice(0, 8);
+}
+
+function normalizeConditions(value, evidenceText) {
+  const explicit = Array.isArray(value)
+    ? value
+      .map((condition) => {
+        if (condition && typeof condition === 'object') {
+          const type = normalizeShortText(condition.type, 32) || 'condition';
+          const label = normalizeShortText(condition.label || condition.value || '', 80);
+          return label ? { type, label } : null;
+        }
+        const label = normalizeShortText(condition, 80);
+        return label ? { type: 'condition', label } : null;
+      })
+      .filter(Boolean)
+    : [];
+  const inferred = inferConditionsFromText(evidenceText);
+  const seen = new Set();
+  return explicit.concat(inferred).filter((condition) => {
+    const key = `${condition.type}|${condition.label}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 8);
+}
+
+function normalizeConfidence(value, fallback = 0.86) {
+  const confidence = Number(value);
+  if (!Number.isFinite(confidence)) {
+    return fallback;
+  }
+  return Math.max(0, Math.min(1, Number(confidence.toFixed(2))));
+}
+
+function extractAggregateAmount(localOcrText, kind) {
+  const source = String(localOcrText || '');
+  const labels = kind === 'subtotal'
+    ? '(?:小計|subtotal)'
+    : '(?:總計|合計|實付|應付|grand\\s*total|total)';
+  const regexp = new RegExp(`${labels}[^0-9]{0,12}(?:NT\\$?\\s*)?([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{1,6})`, 'i');
+  const match = source.match(regexp);
+  return match ? Number(String(match[1]).replace(/,/g, '')) : null;
+}
+
+function runArithmeticInvariantCheck(items, localOcrText = '') {
+  const reviewFlags = new Set();
+  const logs = [];
+  const roleSums = {
+    lineItem: 0,
+    taxAndFee: 0,
+    discount: 0,
+    deposit: 0,
+    prepaymentDown: 0
+  };
+  let aggregateSubtotal = null;
+  let aggregateGrandTotal = null;
+
+  for (const item of Array.isArray(items) ? items : []) {
+    const price = Number(item?.price);
+    if (!Number.isFinite(price)) continue;
+    const role = normalizePriceRole(item?.priceRole, item);
+    if (role === 'line_item') roleSums.lineItem += price;
+    if (role === 'tax_and_fee') roleSums.taxAndFee += price;
+    if (role === 'discount') roleSums.discount += Math.abs(price);
+    if (role === 'deposit') {
+      roleSums.deposit += price;
+      reviewFlags.add('deposit_detected');
+    }
+    if (role === 'prepayment_down') roleSums.prepaymentDown += Math.abs(price);
+    if (role === 'aggregate_subtotal') aggregateSubtotal = price;
+    if (role === 'aggregate_grand_total') aggregateGrandTotal = price;
+  }
+
+  aggregateSubtotal = aggregateSubtotal ?? extractAggregateAmount(localOcrText, 'subtotal');
+  aggregateGrandTotal = aggregateGrandTotal ?? extractAggregateAmount(localOcrText, 'grand_total');
+
+  const computedTotal = roleSums.lineItem + roleSums.taxAndFee - roleSums.discount - roleSums.prepaymentDown;
+  const expectedTotal = aggregateGrandTotal ?? aggregateSubtotal;
+  const discrepancy = expectedTotal === null ? 0 : Math.abs(computedTotal - expectedTotal);
+  if (expectedTotal !== null && discrepancy > 1) {
+    reviewFlags.add('arithmetic_mismatch');
+    logs.push(`細項計算 ${computedTotal} 與單據總額 ${expectedTotal} 不符，差額 ${discrepancy}。`);
+  }
+  if (roleSums.deposit > 0) {
+    logs.push(`偵測到押金 ${roleSums.deposit}，需要人工確認是否排除一般分攤。`);
+  }
+
+  return {
+    passed: !reviewFlags.has('arithmetic_mismatch'),
+    computedTotal,
+    expectedTotal,
+    discrepancy,
+    roleSums,
+    reviewFlags: Array.from(reviewFlags),
+    logs
+  };
+}
+
 function normalizeParsedItems(items, imageCount = 1, addonSection = null) {
   const normalized = [];
   const seen = new Set();
@@ -3097,6 +3623,15 @@ function normalizeParsedItems(items, imageCount = 1, addonSection = null) {
     const dietaryFlags = normalizeFlagList(item?.dietaryFlags, allowedDietaryFlags, 8);
     const tags = normalizeFlagList(item?.tags, allowedItemTags, 8);
     const note = normalizeShortText(item?.note, 60);
+    const evidenceText = normalizeShortText(item?.rawTextEvidence || `${sectionName} ${name}`, 220);
+    const priceRole = normalizePriceRole(item?.priceRole, { ...item, name, sectionName, note });
+    const sourceNumberClass = normalizeSourceNumberClass(item?.sourceNumberClass, { ...item, name, sectionName, note });
+    const currency = normalizeShortText(item?.currency || 'TWD', 12).toUpperCase() || 'TWD';
+    const quantity = Math.max(1, Math.min(10000, Number(item?.quantity || 1)));
+    const unit = normalizeShortText(item?.unit || inferUnitFromText(evidenceText), 24);
+    const conditions = normalizeConditions(item?.conditions, evidenceText);
+    const reviewFlags = normalizeFlagList(item?.reviewFlags, reviewFlagTypes, 12);
+    const confidence = normalizeConfidence(item?.confidence);
     const rawOptionGroups = supportsDrinkOptions
       ? appendGlobalAddonGroup(item?.optionGroups, globalAddonGroup)
       : item?.optionGroups;
@@ -3112,6 +3647,15 @@ function normalizeParsedItems(items, imageCount = 1, addonSection = null) {
       id: `item_${normalized.length + 1}`,
       name,
       price,
+      priceRole,
+      sourceNumberClass,
+      currency,
+      quantity,
+      unit,
+      conditions,
+      reviewFlags,
+      rawTextEvidence: evidenceText,
+      confidence,
       supportsDrinkOptions,
       category,
       sectionName,
@@ -4061,14 +4605,19 @@ function buildMenuParsePrompt(options = {}) {
   const taskRouter = options.taskRouter && typeof options.taskRouter === 'object'
     ? options.taskRouter
     : { ...defaultTaskRouter };
+  const featureProfile = buildExtractionFeatureProfile({
+    localOcrText,
+    taskType: taskRouter.selectedTaskType || taskRouter.taskType || options.taskType,
+    taskRouter
+  });
   const promptLines = [
     '你正在處理多人揪團消費的現場價格證據圖片，不限餐飲。',
     `任務判別模組已鎖定 taskType=${taskRouter.taskType || 'generic_split'}，thresholdKind=${taskRouter.thresholdKind || 'custom'}，splitMode=${taskRouter.splitMode || 'individual_items'}，riskPolicy=${taskRouter.riskPolicy || 'conservative'}。`,
     '你只能在這個任務邊界內修補 OCR 與欄位，不要把任務重新發散成其他產品；若圖片訊號與 taskType 衝突，請用 manual_review 與 note 標記，不要自行改任務。',
     '本次只會有一張圖片。每個項目的 sourceImageIndex 一律輸出 1。',
     '請先判斷整張圖片是一般消費項目、飲料單或混合清單，menuType 只能輸出 general、drink 或 mixed。',
-    '解析流程必須分四步思考但只輸出 JSON：第一步辨識版面區塊與表格欄位；第二步抽取可選擇、可分攤或可結算的項目、價格與規格；第三步把自由文字收斂到固定欄位；第四步丟棄電話、地址、營業時間、品牌口號、廣告文案與非結算數字。',
-    '請只輸出可選擇、可分攤或可結算的項目與單價，不要把電話、地址、營業時間、分類標題、方案說明或廣告文案當成獨立項目。',
+    '解析流程必須分四步思考但只輸出 JSON：第一步辨識版面區塊與表格欄位；第二步抽取可選擇、可分攤或可列入費用的項目、價格與規格；第三步把自由文字收斂到固定欄位；第四步丟棄電話、地址、營業時間、品牌口號、廣告文案與非費用數字。',
+    '請只輸出可選擇、可分攤或可列入費用的項目與單價，不要把電話、地址、營業時間、分類標題、方案說明或廣告文案當成獨立項目。',
     '自由價格證據規則：圖片可能是餐飲菜單、飲料單、KTV 包廂價目表、運動場地費率、票券表、課程/活動報名表、器材租借表、低消/服務費公告、優惠券格、套餐卡片或混合圖。請以視覺邊界與價格欄關係建立項目，不要只依照逐行 OCR 文字。',
     '欄位收斂規則：category 只能輸出 main、side、snack、soup、dessert、drink、set、service、ticket、rental、venue、addon、other；sectionName 放圖片上的區塊標題；sizeLabel 只放該列固定份量、時段、人數或規格；temperature 只能輸出 冷、熱、常溫、冷熱皆可、未標示；spiceLevel 只能輸出 none、mild、medium、hot、extra_hot、unknown。',
     '通用揪團欄位規則：KTV 包廂、運動場地、球場、泳道、包場輸出 category=venue；票券、門票、報名、活動、課程輸出 category=ticket；器材、球拍、鞋、裝備、麥克風租借輸出 category=rental；服務費、清潔費、低消、人頭費、計時費輸出 category=service；多人方案、包套、組合、共享方案輸出 category=set。',
@@ -4077,7 +4626,7 @@ function buildMenuParsePrompt(options = {}) {
     '飲料欄位規則：手搖、咖啡、茶、鮮奶、拿鐵、果汁、冰沙、氣泡飲歸 category=drink。咖啡因、無咖啡因、季節限定、招牌、熱賣、新品、甜度冰塊、冷熱、瓶裝、分享瓶、容量、加料都要收斂到 supportsDrinkOptions、temperature、tags、dietaryFlags、sizeLabel、optionGroups 或 note，不要塞進品名造成重複。',
     '方案與組合規則：如果一個價格包含主餐、附餐、飲料、甜點、包廂、場地、票券、器材或多人共享內容，輸出成一個項目 category=set，name 用短句保留主要內容，note 可寫固定內容、可換項目、時段、人數或限制。不要把方案裡的附帶內容拆成零元品項。',
     '不確定欄位規則：看得出可點但分類不明，category=other；價格或規格疑似模糊但仍可讀，tags 加 manual_review 且 note 寫短句；價格不可靠則跳過該品項。',
-    '模糊規則 1：價格只能來自可選擇、可分攤或可結算的價格欄。若數字位於「總糖量、總熱量、大卡、卡路里、克、容量、ml、使用期限、代碼、電話、地址」等欄位，絕對不要當成 price。',
+    '模糊規則 1：價格只能來自可選擇、可分攤或可列入費用的價格欄。若數字位於「總糖量、總熱量、大卡、卡路里、克、容量、ml、使用期限、代碼、電話、地址」等欄位，絕對不要當成 price。',
     '模糊規則 2：飲料價目表如果有「小杯、中杯、大杯、分享瓶、瓶裝、L、瓶」或英文「S、M、L、XL、Small、Medium、Regular、Large、Extra Large」欄位，請優先把大小做成該品項的 optionGroups size 下拉，不要輸出同名多價品項。',
     '模糊規則 3：同一列如果同時有價格與營養數字，只保留價格欄，不要輸出糖量、熱量、容量。若無法判斷哪個是價格，跳過該列。',
     '模糊規則 4：「加料、加購、加價升級、免費升級、珍珠、波霸、椰果、仙草、布丁、蘆薈」這類加料或升級選項不是主品項，除非它在菜單上明確是可單點商品。',
@@ -4095,11 +4644,15 @@ function buildMenuParsePrompt(options = {}) {
     'optionGroups 的 size/custom 群組 selectionType 輸出 single；size 群組要包含基準尺寸且 priceDelta 為 0。addon 群組 selectionType 輸出 multiple，只輸出可加購配料，不要輸出「不加」。',
     'dietaryFlags 只輸出圖片明確可見或品名直接寫出的資訊：vegetarian、vegan、contains_meat、contains_pork、contains_beef、contains_chicken、contains_seafood、contains_dairy、contains_egg、contains_nuts、contains_caffeine、decaf、unknown。不要猜測過敏原。',
     'tags 只輸出圖片明確可見或品名直接寫出的資訊：signature、popular、limited、seasonal、new、discount、combo、shareable、single_serving、customizable、per_person、room_package、time_limited、spicy、vegetarian、caffeinated、non_caffeinated、manual_review。',
-    '每個品項請輸出 name、price、supportsDrinkOptions、sourceImageIndex、category、sectionName、sizeLabel、temperature、spiceLevel、dietaryFlags、tags、note、optionGroups。全域加料只放 addonSection。不要輸出座標、圖片框、角度或其他欄位。',
+    '每個品項請輸出 name、price、priceRole、sourceNumberClass、currency、quantity、unit、conditions、reviewFlags、rawTextEvidence、confidence、supportsDrinkOptions、sourceImageIndex、category、sectionName、sizeLabel、temperature、spiceLevel、dietaryFlags、tags、note、optionGroups。price 只放可分攤或需人工判定的金額；年齡、行程編號、人數、公里、百分比、點數、卡號、統編不可塞進 price。',
+    'priceRole 規則：一般商品或票券=line_item；押金/保證金=deposit；訂金/預付=prepayment_down；固定服務費或稅金=tax_and_fee；折扣/折抵=discount；小計=aggregate_subtotal；總計/實付=aggregate_grand_total。aggregate row 只作為對帳，不要當成可選商品。',
+    'rawTextEvidence 必須是該 item 對應的原始文字片段；conditions 放會員/非會員、年齡、平假日、時段、房型、單位條件；reviewFlags 只輸出已知代碼，沒有就空陣列。全域加料只放 addonSection。不要輸出座標、圖片框、角度或其他欄位。',
     '若菜單是純文字飲料價目表，也照樣解析品名與價格，不需要判斷商品圖片。',
     '如果圖片有模糊、遮擋或無法確定的價格，請跳過該品項。',
     'warnings 只在嚴重無法解析整張證據圖片時輸出短句；英文來源用英文，中文來源用繁體中文。不要說明你如何假設大小杯價格。'
   ];
+
+  promptLines.push(...buildAdaptivePromptLines(featureProfile));
 
   if (localOcrText) {
     promptLines.push(
@@ -4229,7 +4782,8 @@ async function parseMenuImagesWithGemini(imageFiles, options = {}) {
   const parseQuality = evaluateMenuParseQuality({
     items,
     menuType: normalizeMenuType(parsed.menuType, items),
-    taskRouter
+    taskRouter,
+    localOcrText: options.localOcrText
   });
 
   return {
@@ -4307,7 +4861,9 @@ async function parseMenuImages(files, options = {}) {
     throw error;
   }
 
-  const localOcr = parseLocalOcrMenuCandidates(options.localOcrText, imageFiles.length);
+  const localOcr = parseLocalOcrMenuCandidates(options.localOcrText, imageFiles.length, {
+    taskType: options.taskType
+  });
   const initialTaskRouter = buildRoomTaskRouter({
     taskType: options.taskType,
     localOcrText: options.localOcrText,
@@ -4316,7 +4872,9 @@ async function parseMenuImages(files, options = {}) {
   const localQuality = evaluateMenuParseQuality({
     items: localOcr.items,
     menuType: localOcr.menuType,
-    taskRouter: initialTaskRouter
+    taskRouter: initialTaskRouter,
+    localOcr: localOcr.metrics,
+    localOcrText: options.localOcrText
   });
   const localFallback = localOcr.items.length > 0
     ? {
@@ -4365,7 +4923,9 @@ async function parseMenuImages(files, options = {}) {
         parsed.parseQuality = evaluateMenuParseQuality({
           items: parsed.items,
           menuType: parsed.menuType,
-          taskRouter: parsed.taskRouter
+          taskRouter: parsed.taskRouter,
+          localOcr: localOcr.metrics,
+          localOcrText: options.localOcrText
         });
         return parsed;
       }
@@ -4379,7 +4939,9 @@ async function parseMenuImages(files, options = {}) {
         parsed.parseQuality = evaluateMenuParseQuality({
           items: parsed.items,
           menuType: parsed.menuType,
-          taskRouter: parsed.taskRouter
+          taskRouter: parsed.taskRouter,
+          localOcr: localOcr.metrics,
+          localOcrText: options.localOcrText
         });
         return parsed;
       }
@@ -4633,7 +5195,9 @@ app.post('/api/rooms/:roomId/menu', createRateLimitMiddleware('menu_parse', menu
       menuType: parsed.menuType,
       taskRouter: room.taskRouter
     });
-    room.localOcr = parsed.localOcr || parseLocalOcrMenuCandidates(localOcrText, preparedImages.length).metrics;
+    room.localOcr = parsed.localOcr || parseLocalOcrMenuCandidates(localOcrText, preparedImages.length, {
+      taskType: requestedTaskType
+    }).metrics;
     room.menuImages = preparedImages.map((image, index) => ({
       index,
       buffer: image.buffer,
@@ -5036,6 +5600,16 @@ io.on('connection', (socket) => {
       taskRouter: room.taskRouter
     });
     if (hasBlockingParseQuality(room)) {
+      appendGuardrailMemoryEvent({
+        eventType: 'open_members_blocked',
+        roomId: room.id,
+        taskType: room.taskRouter?.taskType || null,
+        scenarioContract: room.parseQuality?.adaptiveConfidence?.featureProfile?.scenarioContract || null,
+        blockingReasons: room.parseQuality?.blockingReasons || [],
+        issueTypes: Array.isArray(room.parseQuality?.issues)
+          ? room.parseQuality.issues.map((issue) => issue.type).filter(Boolean)
+          : []
+      });
       ack?.({ ok: false, error: 'AI 複查發現高風險解析問題，請先修正清單後再開放給成員。' });
       return;
     }
@@ -5099,6 +5673,17 @@ io.on('connection', (socket) => {
       return;
     }
 
+    const previousItem = {
+      name: item.name,
+      price: item.price,
+      category: item.category,
+      supportsDrinkOptions: item.supportsDrinkOptions,
+      priceRole: item.priceRole,
+      sourceNumberClass: item.sourceNumberClass,
+      reviewFlags: item.reviewFlags,
+      rawTextEvidence: item.rawTextEvidence,
+      confidence: item.confidence
+    };
     const supportsDrinkOptions = typeof payload?.supportsDrinkOptions === 'boolean'
       ? payload.supportsDrinkOptions
       : inferDrinkItem(nextName);
@@ -5106,6 +5691,16 @@ io.on('connection', (socket) => {
     item.price = nextPrice;
     item.supportsDrinkOptions = supportsDrinkOptions;
     item.category = normalizeMenuCategory(payload?.category || item.category, nextName, supportsDrinkOptions);
+    item.priceRole = normalizePriceRole(payload?.priceRole || item.priceRole, {
+      ...item,
+      name: nextName,
+      price: nextPrice
+    }, room.taskRouter?.taskType || room.menuType);
+    item.sourceNumberClass = normalizeSourceNumberClass(item.sourceNumberClass, {
+      ...item,
+      name: nextName,
+      priceRole: item.priceRole
+    });
     item.sectionName = normalizeShortText(item.sectionName, 32);
     item.sizeLabel = normalizeShortText(item.sizeLabel, 24);
     item.temperature = normalizeTemperature(item.temperature, nextName, supportsDrinkOptions);
@@ -5125,6 +5720,30 @@ io.on('connection', (socket) => {
       roomId: room.id,
       itemId: item.id,
       updatedBy: participantId
+    });
+    appendGuardrailMemoryEvent({
+      eventType: 'parsed_item_updated',
+      roomId: room.id,
+      taskType: room.taskRouter?.taskType || null,
+      scenarioContract: room.parseQuality?.adaptiveConfidence?.featureProfile?.scenarioContract || null,
+      previousItem,
+      nextItem: {
+        name: item.name,
+        price: item.price,
+        category: item.category,
+        supportsDrinkOptions: item.supportsDrinkOptions,
+        priceRole: item.priceRole,
+        sourceNumberClass: item.sourceNumberClass,
+        reviewFlags: item.reviewFlags,
+        rawTextEvidence: item.rawTextEvidence,
+        confidence: item.confidence
+      },
+      parseQuality: {
+        status: room.parseQuality?.status || null,
+        issueTypes: Array.isArray(room.parseQuality?.issues)
+          ? room.parseQuality.issues.map((issue) => issue.type).filter(Boolean)
+          : []
+      }
     });
     ack?.({ ok: true, room: state });
   });
@@ -5179,6 +5798,23 @@ io.on('connection', (socket) => {
       roomId: room.id,
       itemId,
       removedBy: participantId
+    });
+    appendGuardrailMemoryEvent({
+      eventType: 'parsed_item_removed',
+      roomId: room.id,
+      taskType: room.taskRouter?.taskType || null,
+      scenarioContract: room.parseQuality?.adaptiveConfidence?.featureProfile?.scenarioContract || null,
+      removedItem: {
+        name: item.name,
+        price: item.price,
+        category: item.category
+      },
+      parseQuality: {
+        status: room.parseQuality?.status || null,
+        issueTypes: Array.isArray(room.parseQuality?.issues)
+          ? room.parseQuality.issues.map((issue) => issue.type).filter(Boolean)
+          : []
+      }
     });
     ack?.({ ok: true, room: state });
   });
@@ -5306,6 +5942,18 @@ io.on('connection', (socket) => {
       return;
     }
     if (action === 'accept' && ['semantic_repair_draft', 'evidence_review', 'task_router_review'].includes(String(proposal.proposalType || '')) && hasBlockingParseQuality(room)) {
+      appendGuardrailMemoryEvent({
+        eventType: 'proposal_accept_blocked',
+        roomId: room.id,
+        proposalId,
+        proposalType: proposal.proposalType || null,
+        taskType: room.taskRouter?.taskType || null,
+        scenarioContract: room.parseQuality?.adaptiveConfidence?.featureProfile?.scenarioContract || null,
+        blockingReasons: room.parseQuality?.blockingReasons || [],
+        issueTypes: Array.isArray(room.parseQuality?.issues)
+          ? room.parseQuality.issues.map((issue) => issue.type).filter(Boolean)
+          : []
+      });
       ack?.({ ok: false, error: 'AI 複查發現高風險解析問題，請先修正清單後再確認草稿。' });
       return;
     }
