@@ -3221,11 +3221,12 @@
       }
 
       if (snapshot.itemsOpenForMembers && snapshot.audit?.pendingClaimCount > 0) {
+        const itemCount = Number(snapshot.audit.pendingClaimCount || 0);
         actions.push({
           id: 'resolve_pending_claims',
           priority: 'required',
           label: 'Members confirm their own shared or personal items',
-          reason: `${snapshot.audit.pendingClaimCount} item(s) still need confirmation.`
+          reason: `${itemCount} ${itemCount === 1 ? 'item still needs' : 'items still need'} confirmation.`
         });
         humanReview.push('Members confirm their own items.');
       }
@@ -3568,9 +3569,9 @@
         [/rule\/audit\s+candidate/gi, 'rule to check'],
         [/structural\s+review\s+gates/gi, 'opening checks'],
         [/review\s+gates/gi, 'review reasons'],
-        [/rule-like item\(s\)/gi, 'fee or rule item(s)'],
+        [/rule-like item\(s\)/gi, 'fee or rule rows'],
         [/selectable item\(s\)/gi, 'member choice(s)'],
-        [/member item\(s\)/gi, 'member item(s)'],
+        [/member item\(s\)/gi, 'member items'],
         [/candidate\s+routing/gi, 'opening check']
       ]
     };
@@ -3581,6 +3582,10 @@
         .replace(/\s+\./g, '.')
         .replace(/\n{3,}/g, '\n\n')
         .trim();
+    }
+
+    function pluralPhrase(count, singular, plural) {
+      return Number(count) === 1 ? singular : plural;
     }
 
     function humanizeVisibleText(value) {
@@ -3596,18 +3601,28 @@
         .replace(/Local\s+vision\s+model:\s*[^.]+\.?\s*/gi, zh ? '已用本機看圖輔助。 ' : 'A local visual check was used. ')
         .replace(/Local\s+vision\s+correction\s+was\s+unavailable\s+or\s+produced\s+no\s+structured\s+items\.?/gi, zh ? '看圖核對還沒有產生可用清單。' : 'The photo check did not return usable rows.')
         .replace(/Local\s+OCR\s+draft\s+prepared,\s+but\s+local\s+vision\s+did\s+not\s+produce\s+structured\s+items\.?/gi, zh ? '已讀到照片文字，但看圖核對還沒有產生可用清單。' : 'Photo text was read, but the visual check did not return usable rows.')
-        .replace(/Local\s+review\s+draft\s+prepared\s+(\d+)\s+item\(s\):/gi, (_match, count) => zh ? `照片讀取草稿已準備 ${count} 個項目：` : `Photo review draft prepared ${count} item(s):`)
+        .replace(/Local\s+review\s+draft\s+prepared\s+(\d+)\s+item\(s\):/gi, (_match, count) => zh ? `照片讀取草稿已準備 ${count} 個項目：` : `Photo review draft prepared ${count} ${pluralPhrase(count, 'item', 'items')}:`)
         .replace(/Host must compare the original image before approving\.?/gi, zh ? '主揪採納前要對照原圖。' : 'The host should compare the draft with the original image before approving.')
-        .replace(/(\d+)\s+parser\s+candidate\(s\)\s+still\s+need\s+host\s+review\.?/gi, (_match, count) => zh ? `${count} 個讀到的項目需要主揪核對。` : `${count} read item(s) need host review.`)
-        .replace(/(\d+)\s+read item\(s\) need host review before members can use the list\.?/gi, (_match, count) => zh ? `${count} 個讀到的項目需要主揪核對後才能開放。` : `${count} read item(s) need host review before members can use the list.`)
-        .replace(/(\d+)\s+rule\/audit\s+candidate\(s\)\s+need\s+host\s+decision\.?/gi, (_match, count) => zh ? `${count} 個費用或總額規則需要主揪判斷。` : `${count} fee or total note(s) need host review.`)
-        .replace(/(\d+)\s+fee, total, discount, or threshold note\(s\) need host decision\.?/gi, (_match, count) => zh ? `${count} 個費用、總額、折扣或門檻需要主揪判斷。` : `${count} fee, total, discount, or threshold note(s) need host review.`)
-        .replace(/(\d+)\s+rule-like item\(s\) are still member selectable\.?/gi, (_match, count) => zh ? `${count} 個費用或規則還在成員可選清單中。` : `${count} fee or rule item(s) are still showing as member choices.`)
-        .replace(/(\d+)\s+fee or rule item\(s\) are still showing as member choices\.?/gi, (_match, count) => zh ? `${count} 個費用或規則還在成員可選清單中。` : `${count} fee or rule item(s) are still showing as member choices.`)
-        .replace(/(\d+)\s+selectable item\(s\) lack evidence pointers\.?/gi, (_match, count) => zh ? `${count} 個可選項目還缺少照片線索。` : `${count} member choice(s) still need a visible evidence clue.`)
-        .replace(/(\d+)\s+member choice\(s\) still need a visible evidence clue\.?/gi, (_match, count) => zh ? `${count} 個可選項目還缺少照片線索。` : `${count} member choice(s) still need a visible evidence clue.`)
-        .replace(/(\d+)\s+member\s+item\(s\)\s+still\s+carry\s+blocking\s+review\s+gates\.?/gi, (_match, count) => zh ? `${count} 個成員項目需要先修正或移除。` : `${count} member item(s) need edit or removal before opening.`)
-        .replace(/(\d+)\s+member item\(s\) need edit or removal before opening\.?/gi, (_match, count) => zh ? `${count} 個成員項目需要先修正或移除。` : `${count} member item(s) need edit or removal before opening.`)
+        .replace(/(\d+)\s+parser\s+candidate\(s\)\s+still\s+need\s+host\s+review\.?/gi, (_match, count) => zh ? `${count} 個讀到的項目需要主揪核對。` : `${count} ${pluralPhrase(count, 'photo row needs', 'photo rows need')} host review.`)
+        .replace(/(\d+)\s+read item\(s\) need host review before members can use the list\.?/gi, (_match, count) => zh ? `${count} 個讀到的項目需要主揪核對後才能開放。` : `${count} ${pluralPhrase(count, 'photo row needs', 'photo rows need')} host review before members can use the list.`)
+        .replace(/(\d+)\s+photo row needs host review before members can use the list\.?/gi, (_match, count) => zh ? `${count} 個讀到的項目需要主揪核對後才能開放。` : `${count} photo row needs host review before members can use the list.`)
+        .replace(/(\d+)\s+photo rows need host review before members can use the list\.?/gi, (_match, count) => zh ? `${count} 個讀到的項目需要主揪核對後才能開放。` : `${count} photo rows need host review before members can use the list.`)
+        .replace(/(\d+)\s+rule\/audit\s+candidate\(s\)\s+need\s+host\s+decision\.?/gi, (_match, count) => zh ? `${count} 個費用或總額規則需要主揪判斷。` : `${count} ${pluralPhrase(count, 'fee or total note needs', 'fee or total notes need')} host review.`)
+        .replace(/(\d+)\s+fee, total, discount, or threshold note\(s\) need host decision\.?/gi, (_match, count) => zh ? `${count} 個費用、總額、折扣或門檻需要主揪判斷。` : `${count} ${pluralPhrase(count, 'fee, total, discount, or threshold note needs', 'fee, total, discount, or threshold notes need')} host review.`)
+        .replace(/(\d+)\s+fee, total, discount, or threshold note needs host review\.?/gi, (_match, count) => zh ? `${count} 個費用、總額、折扣或門檻需要主揪判斷。` : `${count} fee, total, discount, or threshold note needs host review.`)
+        .replace(/(\d+)\s+fee, total, discount, or threshold notes need host review\.?/gi, (_match, count) => zh ? `${count} 個費用、總額、折扣或門檻需要主揪判斷。` : `${count} fee, total, discount, or threshold notes need host review.`)
+        .replace(/(\d+)\s+rule-like item\(s\) are still member selectable\.?/gi, (_match, count) => zh ? `${count} 個費用或規則還在成員可選清單中。` : `${count} ${pluralPhrase(count, 'fee or rule row is', 'fee or rule rows are')} still showing as member choices.`)
+        .replace(/(\d+)\s+fee or rule item\(s\) are still showing as member choices\.?/gi, (_match, count) => zh ? `${count} 個費用或規則還在成員可選清單中。` : `${count} ${pluralPhrase(count, 'fee or rule row is', 'fee or rule rows are')} still showing as member choices.`)
+        .replace(/(\d+)\s+fee or rule row is still showing as member choices\.?/gi, (_match, count) => zh ? `${count} 個費用或規則還在成員可選清單中。` : `${count} fee or rule row is still showing as member choices.`)
+        .replace(/(\d+)\s+fee or rule rows are still showing as member choices\.?/gi, (_match, count) => zh ? `${count} 個費用或規則還在成員可選清單中。` : `${count} fee or rule rows are still showing as member choices.`)
+        .replace(/(\d+)\s+selectable item\(s\) lack evidence pointers\.?/gi, (_match, count) => zh ? `${count} 個可選項目還缺少照片線索。` : `${count} ${pluralPhrase(count, 'member choice still needs', 'member choices still need')} a visible evidence clue.`)
+        .replace(/(\d+)\s+member choice\(s\) still need a visible evidence clue\.?/gi, (_match, count) => zh ? `${count} 個可選項目還缺少照片線索。` : `${count} ${pluralPhrase(count, 'member choice still needs', 'member choices still need')} a visible evidence clue.`)
+        .replace(/(\d+)\s+member choice still needs a visible evidence clue\.?/gi, (_match, count) => zh ? `${count} 個可選項目還缺少照片線索。` : `${count} member choice still needs a visible evidence clue.`)
+        .replace(/(\d+)\s+member choices still need a visible evidence clue\.?/gi, (_match, count) => zh ? `${count} 個可選項目還缺少照片線索。` : `${count} member choices still need a visible evidence clue.`)
+        .replace(/(\d+)\s+member\s+item\(s\)\s+still\s+carry\s+blocking\s+review\s+gates\.?/gi, (_match, count) => zh ? `${count} 個成員項目需要先修正或移除。` : `${count} ${pluralPhrase(count, 'member item needs', 'member items need')} edit or removal before opening.`)
+        .replace(/(\d+)\s+member item\(s\) need edit or removal before opening\.?/gi, (_match, count) => zh ? `${count} 個成員項目需要先修正或移除。` : `${count} ${pluralPhrase(count, 'member item needs', 'member items need')} edit or removal before opening.`)
+        .replace(/(\d+)\s+member item needs edit or removal before opening\.?/gi, (_match, count) => zh ? `${count} 個成員項目需要先修正或移除。` : `${count} member item needs edit or removal before opening.`)
+        .replace(/(\d+)\s+member items need edit or removal before opening\.?/gi, (_match, count) => zh ? `${count} 個成員項目需要先修正或移除。` : `${count} member items need edit or removal before opening.`)
         .replace(/(.+?)\s+has\s+structural\s+review\s+gates\s+that\s+require\s+edit\/remove\s+before\s+accept\.?/gi, (_match, label) => zh ? `${label} 需要先修正或移除。` : `${label} needs edit or removal before approval.`);
 
       for (const [pattern, replacement] of visibleTermMap[currentLanguage] || visibleTermMap.en) {
@@ -3904,7 +3919,7 @@
       const sourceMode = String(proposal?.payload?.sourceMode || '');
       if (sourceMode === 'local_ocr_plus_local_vision') {
         return currentLanguage === 'en'
-          ? `Photo review draft prepared ${items.length} item(s)${itemPreview ? `: ${itemPreview}` : ''}`
+          ? `Photo review draft prepared ${items.length} ${pluralPhrase(items.length, 'item', 'items')}${itemPreview ? `: ${itemPreview}` : ''}`
           : `照片讀取草稿已準備 ${items.length} 個項目${itemPreview ? `：${itemPreview}` : ''}`;
       }
       if (sourceMode === 'local_ocr_only_bridge_draft' || sourceMode === 'local_ocr_fallback') {

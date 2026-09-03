@@ -3553,26 +3553,29 @@ function getAntiPollutionBlocks(room) {
   const selectableItems = Array.isArray(room?.items) ? room.items : [];
   const pendingCandidates = candidates.filter((candidate) => !['accepted', 'modified', 'rejected'].includes(normalizeParserCandidateStatus(candidate.status)));
   if (pendingCandidates.length > 0) {
+    const itemNoun = pendingCandidates.length === 1 ? 'photo row needs' : 'photo rows need';
     blocks.push({
       id: 'pending_candidates_block_member_open',
       severity: 'block',
-      detail: `${pendingCandidates.length} read item(s) need host review before members can use the list.`
+      detail: `${pendingCandidates.length} ${itemNoun} host review before members can use the list.`
     });
   }
   const pollutedItems = selectableItems.filter((item) => inferDisplaySurface(item, room?.taskRouter?.taskType) !== 'member_selectable');
   if (pollutedItems.length > 0) {
+    const itemNoun = pollutedItems.length === 1 ? 'fee or rule row is' : 'fee or rule rows are';
     blocks.push({
       id: 'rule_roles_not_member_selectable',
       severity: 'block',
-      detail: `${pollutedItems.length} fee or rule item(s) are still showing as member choices.`
+      detail: `${pollutedItems.length} ${itemNoun} still showing as member choices.`
     });
   }
   const missingEvidenceItems = selectableItems.filter((item) => !item.sourceAssetId && (!Array.isArray(item.sourceObservationIds) || item.sourceObservationIds.length === 0));
   if (missingEvidenceItems.length > 0) {
+    const itemNoun = missingEvidenceItems.length === 1 ? 'member choice still needs' : 'member choices still need';
     blocks.push({
       id: 'member_items_require_evidence_pointer',
       severity: 'block',
-      detail: `${missingEvidenceItems.length} member choice(s) still need a visible evidence clue.`
+      detail: `${missingEvidenceItems.length} ${itemNoun} a visible evidence clue.`
     });
   }
   const blockingRuleRoles = new Set([
@@ -3595,20 +3598,22 @@ function getAntiPollutionBlocks(room) {
     return (rule.reviewRequired || status === 'pending') && blockingRuleRoles.has(normalizePriceRole(rule.priceRole || rule.ruleType, rule, room?.taskRouter?.taskType));
   });
   if (unreviewedRules.length > 0) {
+    const noteNoun = unreviewedRules.length === 1 ? 'fee, total, discount, or threshold note needs' : 'fee, total, discount, or threshold notes need';
     blocks.push({
       id: 'unreviewed_rules_block_member_open',
       severity: 'block',
-      detail: `${unreviewedRules.length} fee, total, discount, or threshold note(s) need host decision.`
+      detail: `${unreviewedRules.length} ${noteNoun} host review.`
     });
   }
   const blockedReviewGateItems = selectableItems.filter((item) => {
     return normalizeReviewGates(item.reviewGates).some((gate) => gate.severity === 'block');
   });
   if (blockedReviewGateItems.length > 0) {
+    const itemNoun = blockedReviewGateItems.length === 1 ? 'member item needs' : 'member items need';
     blocks.push({
       id: 'review_gate_blocks_member_open',
       severity: 'block',
-      detail: `${blockedReviewGateItems.length} member item(s) need edit or removal before opening.`
+      detail: `${blockedReviewGateItems.length} ${itemNoun} edit or removal before opening.`
     });
   }
   return blocks.concat(getStructuralReviewBlocks(room));

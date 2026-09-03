@@ -598,7 +598,7 @@ function buildProposalPayload(args, room, image, ocrResult, visionResult) {
     proposalType: 'semantic_repair_draft',
     riskLevel: 'needs_human_review',
     summary: structuredItems.length > 0
-      ? `Photo review draft prepared ${structuredItems.length} item(s): ${itemPreview}`.slice(0, 360)
+      ? `Photo review draft prepared ${structuredItems.length} ${structuredItems.length === 1 ? 'item' : 'items'}: ${itemPreview}`.slice(0, 360)
       : 'Photo text was read, but the visual check did not return usable rows.',
     rationale: [
       visionResult.ok
