@@ -16,8 +16,8 @@ const codexReviewedItems = Object.freeze([
     name: 'French Fries',
     price: 90,
     category: 'main',
-    sectionName: 'Snack',
-    rawTextEvidence: 'SNACK French Fries 90',
+    sectionName: 'Snacks',
+    rawTextEvidence: 'French Fries NT$ 90',
     confidence: 0.99,
     reviewFlags: []
   },
@@ -25,8 +25,8 @@ const codexReviewedItems = Object.freeze([
     name: 'Special Fries',
     price: 110,
     category: 'main',
-    sectionName: 'Snack',
-    rawTextEvidence: 'SNACK Special Fries 110',
+    sectionName: 'Snacks',
+    rawTextEvidence: 'Special Fries NT$ 110',
     confidence: 0.99,
     reviewFlags: []
   },
@@ -34,8 +34,8 @@ const codexReviewedItems = Object.freeze([
     name: 'Fried Chicken',
     price: 130,
     category: 'main',
-    sectionName: 'Snack',
-    rawTextEvidence: 'SNACK Fried Chicken 130',
+    sectionName: 'Snacks',
+    rawTextEvidence: 'Fried Chicken NT$ 130',
     confidence: 0.99,
     reviewFlags: []
   },
@@ -43,8 +43,8 @@ const codexReviewedItems = Object.freeze([
     name: 'Hash Browns',
     price: 70,
     category: 'main',
-    sectionName: 'Snack',
-    rawTextEvidence: 'SNACK Hash Browns 70',
+    sectionName: 'Snacks',
+    rawTextEvidence: 'Hash Browns NT$ 70',
     confidence: 0.99,
     reviewFlags: []
   },
@@ -52,8 +52,8 @@ const codexReviewedItems = Object.freeze([
     name: 'Americano',
     price: 90,
     category: 'drink',
-    sectionName: 'Cafe',
-    rawTextEvidence: 'CAFE Americano 90',
+    sectionName: 'Coffee',
+    rawTextEvidence: 'Americano NT$ 90',
     confidence: 0.99,
     reviewFlags: []
   },
@@ -61,8 +61,8 @@ const codexReviewedItems = Object.freeze([
     name: 'Cappuccino',
     price: 110,
     category: 'drink',
-    sectionName: 'Cafe',
-    rawTextEvidence: 'CAFE Cappuccino 110',
+    sectionName: 'Coffee',
+    rawTextEvidence: 'Cappuccino NT$ 110',
     confidence: 0.99,
     reviewFlags: []
   },
@@ -70,8 +70,8 @@ const codexReviewedItems = Object.freeze([
     name: 'Latte',
     price: 120,
     category: 'drink',
-    sectionName: 'Cafe',
-    rawTextEvidence: 'CAFE Latte 120',
+    sectionName: 'Coffee',
+    rawTextEvidence: 'Latte NT$ 120',
     confidence: 0.99,
     reviewFlags: []
   },
@@ -79,8 +79,8 @@ const codexReviewedItems = Object.freeze([
     name: 'Special Blend Coffee',
     price: 100,
     category: 'drink',
-    sectionName: 'Cafe',
-    rawTextEvidence: 'CAFE Special Blend Coffee 100',
+    sectionName: 'Coffee',
+    rawTextEvidence: 'Special Blend Coffee NT$ 100',
     confidence: 0.99,
     reviewFlags: []
   },
@@ -88,8 +88,8 @@ const codexReviewedItems = Object.freeze([
     name: 'Coke',
     price: 70,
     category: 'drink',
-    sectionName: 'Soft Drink',
-    rawTextEvidence: 'SOFT DRINK Coke 70',
+    sectionName: 'Cold Drinks',
+    rawTextEvidence: 'Coke NT$ 70',
     confidence: 0.99,
     reviewFlags: []
   },
@@ -97,8 +97,8 @@ const codexReviewedItems = Object.freeze([
     name: '7 Up',
     price: 70,
     category: 'drink',
-    sectionName: 'Soft Drink',
-    rawTextEvidence: 'SOFT DRINK 7 Up 70',
+    sectionName: 'Cold Drinks',
+    rawTextEvidence: '7Up NT$ 70',
     confidence: 0.98,
     reviewFlags: []
   },
@@ -106,8 +106,8 @@ const codexReviewedItems = Object.freeze([
     name: 'Milk Tea',
     price: 100,
     category: 'drink',
-    sectionName: 'Soft Drink',
-    rawTextEvidence: 'SOFT DRINK Milk Tea 100',
+    sectionName: 'Cold Drinks',
+    rawTextEvidence: 'Milk Tea NT$ 100',
     confidence: 0.99,
     reviewFlags: []
   },
@@ -115,8 +115,8 @@ const codexReviewedItems = Object.freeze([
     name: 'Grapefruit Soda',
     price: 110,
     category: 'drink',
-    sectionName: 'Soft Drink',
-    rawTextEvidence: 'SOFT DRINK Grapefruit Soda 110',
+    sectionName: 'Cold Drinks',
+    rawTextEvidence: 'Grapefruit Soda NT$ 110',
     confidence: 0.99,
     reviewFlags: []
   },
@@ -124,8 +124,8 @@ const codexReviewedItems = Object.freeze([
     name: 'Tiramisu',
     price: 100,
     category: 'dessert',
-    sectionName: 'Dessert',
-    rawTextEvidence: 'DESSERT Tiramisu 100',
+    sectionName: 'Desserts',
+    rawTextEvidence: 'Tiramisu NT$ 100',
     confidence: 0.99,
     reviewFlags: []
   },
@@ -133,8 +133,8 @@ const codexReviewedItems = Object.freeze([
     name: 'Chocolate Brownie',
     price: 80,
     category: 'dessert',
-    sectionName: 'Dessert',
-    rawTextEvidence: 'DESSERT Chocolate Brownie 80',
+    sectionName: 'Desserts',
+    rawTextEvidence: 'Chocolate Brownie NT$ 80',
     confidence: 0.99,
     reviewFlags: []
   },
@@ -143,7 +143,7 @@ const codexReviewedItems = Object.freeze([
     price: 110,
     category: 'main',
     sectionName: 'Fresh Salad',
-    rawTextEvidence: 'FRESH SALAD Fresh Salad 110',
+    rawTextEvidence: 'Fresh Salad NT$ 110',
     confidence: 0.99,
     reviewFlags: []
   },
@@ -151,8 +151,8 @@ const codexReviewedItems = Object.freeze([
     name: 'Chicken',
     price: 30,
     category: 'addon',
-    sectionName: 'Add-ons',
-    rawTextEvidence: 'ADD-ONS Chicken +30',
+    sectionName: 'Add Ons',
+    rawTextEvidence: 'Chicken +NT$ 30',
     confidence: 0.98,
     reviewFlags: []
   },
@@ -160,8 +160,8 @@ const codexReviewedItems = Object.freeze([
     name: 'Mozzarella Cheese',
     price: 30,
     category: 'addon',
-    sectionName: 'Add-ons',
-    rawTextEvidence: 'ADD-ONS Mozzarella Cheese +30',
+    sectionName: 'Add Ons',
+    rawTextEvidence: 'Mozzarella Cheese +NT$ 30',
     confidence: 0.98,
     reviewFlags: []
   },
@@ -169,8 +169,8 @@ const codexReviewedItems = Object.freeze([
     name: 'Avocado',
     price: 50,
     category: 'addon',
-    sectionName: 'Add-ons',
-    rawTextEvidence: 'ADD-ONS Avocado +50',
+    sectionName: 'Add Ons',
+    rawTextEvidence: 'Avocado +NT$ 50',
     confidence: 0.98,
     reviewFlags: []
   }
@@ -294,106 +294,158 @@ async function ensureDemoImage(args) {
 
   await fs.mkdir(args.outputDir, { recursive: true });
   const imagePath = path.join(args.outputDir, 'moon-table-cafe-menu-en.png');
-  const topGroups = [
+  const menuSections = [
     {
-      heading: 'SNACK',
-      x: 72,
-      priceX: 402,
+      heading: 'SNACKS',
+      subtitle: 'Hot sides for the table',
+      x: 80,
+      y: 214,
+      width: 520,
+      height: 294,
+      accent: '#b5692d',
       rows: [
-        ['French Fries', '90'],
-        ['Special Fries', '110'],
-        ['Fried Chicken', '130'],
-        ['Hash Browns', '70']
+        ['French Fries', 'NT$ 90'],
+        ['Special Fries', 'NT$ 110'],
+        ['Fried Chicken', 'NT$ 130'],
+        ['Hash Browns', 'NT$ 70']
       ]
     },
     {
-      heading: 'CAFE',
-      x: 512,
-      priceX: 842,
+      heading: 'COFFEE',
+      subtitle: 'Classic espresso bar',
+      x: 665,
+      y: 214,
+      width: 520,
+      height: 294,
+      accent: '#5f6f61',
       rows: [
-        ['Americano', '90'],
-        ['Cappuccino', '110'],
-        ['Latte', '120'],
-        ['Special Blend Coffee', '100']
+        ['Americano', 'NT$ 90'],
+        ['Cappuccino', 'NT$ 110'],
+        ['Latte', 'NT$ 120'],
+        ['Special Blend Coffee', 'NT$ 100']
       ]
     },
     {
-      heading: 'SOFT DRINK',
-      x: 952,
-      priceX: 1282,
+      heading: 'COLD DRINKS',
+      subtitle: 'Bottles and tea',
+      x: 1250,
+      y: 214,
+      width: 520,
+      height: 294,
+      accent: '#336f82',
       rows: [
-        ['Coke', '70'],
-        ['7 Up', '70'],
-        ['Milk Tea', '100'],
-        ['Grapefruit Soda', '110']
+        ['Coke', 'NT$ 70'],
+        ['7 Up', 'NT$ 70'],
+        ['Milk Tea', 'NT$ 100'],
+        ['Grapefruit Soda', 'NT$ 110']
       ]
     },
     {
-      heading: 'DESSERT',
-      x: 1392,
-      priceX: 1728,
+      heading: 'DESSERTS',
+      subtitle: 'After-meal choices',
+      x: 80,
+      y: 558,
+      width: 520,
+      height: 214,
+      accent: '#8d5a7f',
       rows: [
-        ['Tiramisu', '100'],
-        ['Chocolate Brownie', '80']
+        ['Tiramisu', 'NT$ 100'],
+        ['Chocolate Brownie', 'NT$ 80']
       ]
-    }
-  ];
-  const lowerGroups = [
+    },
     {
       heading: 'FRESH SALAD',
-      x: 72,
-      priceX: 402,
+      subtitle: 'Build a lighter plate',
+      x: 665,
+      y: 558,
+      width: 520,
+      height: 214,
+      accent: '#4f7f53',
       rows: [
-        ['Fresh Salad', '110']
+        ['Fresh Salad', 'NT$ 110']
       ]
     },
     {
-      heading: 'ADD-ONS',
-      x: 512,
-      priceX: 842,
+      heading: 'ADD ONS',
+      subtitle: 'Optional toppings',
+      x: 1250,
+      y: 558,
+      width: 520,
+      height: 214,
+      accent: '#a65a3a',
       rows: [
-        ['Chicken', '+30'],
-        ['Mozzarella Cheese', '+30'],
-        ['Avocado', '+50']
-      ]
-    },
-    {
-      heading: 'NOTE',
-      x: 952,
-      priceX: 1728,
-      rows: [
-        ['Take-out fee: -30 where marked.', ''],
-        ['Organizer reviews menu before group order.', '']
+        ['Chicken', '+NT$ 30'],
+        ['Mozzarella Cheese', '+NT$ 30'],
+        ['Avocado', '+NT$ 50']
       ]
     }
   ];
-  const renderGroup = (group, y) => {
-    const rows = group.rows.map((row, index) => {
-      const rowY = y + 56 + index * 52;
-      const price = row[1]
-        ? `<text x="${group.priceX}" y="${rowY}" class="price">${escapeSvgText(row[1])}</text>`
+
+  const renderMenuSection = (section) => {
+    const priceX = section.x + section.width - 34;
+    const rows = section.rows.map((row, index) => {
+      const rowY = section.y + 108 + index * 46;
+      const lineY = rowY + 15;
+      const divider = index < section.rows.length - 1
+        ? `<line x1="${section.x + 34}" y1="${lineY}" x2="${section.x + section.width - 34}" y2="${lineY}" class="rowLine"/>`
         : '';
-      return `<text x="${group.x}" y="${rowY}" class="cell">${escapeSvgText(row[0])}</text>${price}`;
+      return [
+        `<text x="${section.x + 34}" y="${rowY}" class="itemName">${escapeSvgText(row[0])}</text>`,
+        `<text x="${priceX}" y="${rowY}" class="itemPrice">${escapeSvgText(row[1])}</text>`,
+        divider
+      ].join('');
     }).join('\n');
-    return `<text x="${group.x}" y="${y}" class="head">${escapeSvgText(group.heading)}</text>${rows}`;
+    return [
+      `<rect x="${section.x}" y="${section.y}" width="${section.width}" height="${section.height}" rx="24" class="menuCard"/>`,
+      `<rect x="${section.x}" y="${section.y}" width="12" height="${section.height}" rx="6" fill="${section.accent}"/>`,
+      `<text x="${section.x + 34}" y="${section.y + 50}" class="sectionHead">${escapeSvgText(section.heading)}</text>`,
+      `<text x="${section.x + 34}" y="${section.y + 80}" class="sectionSub">${escapeSvgText(section.subtitle)}</text>`,
+      rows
+    ].join('\n');
   };
-  const textRows = [
-    ...topGroups.map((group) => renderGroup(group, 170)),
-    ...lowerGroups.map((group) => renderGroup(group, 430))
-  ].join('\n');
+  const menuCards = menuSections.map((section) => renderMenuSection(section)).join('\n');
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1850" height="650" viewBox="0 0 1850 650">
-  <rect width="1850" height="650" fill="#f7f4eb"/>
-  <rect x="34" y="34" width="1782" height="582" rx="18" fill="#ffffff" stroke="#2f3a35" stroke-width="4"/>
-  <text x="72" y="95" class="title">Moon Table Cafe Menu</text>
-  <text x="72" y="132" class="meta">Fictional menu evidence for group ordering</text>
-  ${textRows}
+<svg xmlns="http://www.w3.org/2000/svg" width="1850" height="1050" viewBox="0 0 1850 1050">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7f0e4"/>
+      <stop offset="1" stop-color="#efe5d6"/>
+    </linearGradient>
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#695d4e" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <rect width="1850" height="1050" fill="url(#paper)"/>
+  <rect x="50" y="46" width="1750" height="950" rx="38" fill="#fffdf8" filter="url(#softShadow)"/>
+  <rect x="80" y="76" width="1690" height="112" rx="30" fill="#23392f"/>
+  <circle cx="1530" cy="132" r="30" fill="#dca45b"/>
+  <circle cx="1602" cy="132" r="30" fill="#f1cf8f"/>
+  <circle cx="1674" cy="132" r="30" fill="#dca45b"/>
+  <text x="126" y="130" class="brand">MOON TABLE CAFE</text>
+  <text x="126" y="166" class="tagline">Table order menu · private room link · merchant checks the final order</text>
+  <text x="1450" y="138" class="headerPrice">NT$</text>
+  ${menuCards}
+  <rect x="80" y="818" width="1088" height="128" rx="24" class="noteCard"/>
+  <text x="126" y="868" class="noteHead">ORDER ROOM NOTE</text>
+  <text x="126" y="906" class="noteText">Customers order from their own phones.</text>
+  <text x="126" y="936" class="noteText">Merchant reviews the combined list before sending it.</text>
+  <rect x="1212" y="818" width="558" height="128" rx="24" class="noteCard"/>
+  <text x="1258" y="868" class="noteHead">TAKE OUT</text>
+  <text x="1258" y="906" class="noteText">Adjustment -NT$ 30</text>
+  <text x="1258" y="936" class="noteText">only where marked.</text>
   <style>
-    .title { font: 800 54px Arial, sans-serif; fill: #202524; }
-    .meta { font: 500 24px Arial, sans-serif; fill: #626b65; }
-    .head { font: 800 30px Arial, sans-serif; fill: #202524; }
-    .cell { font: 600 27px Arial, sans-serif; fill: #202524; }
-    .price { font: 800 29px Arial, sans-serif; fill: #202524; text-anchor: end; }
+    .brand { font: 900 56px Arial, sans-serif; fill: #fffdf8; letter-spacing: 2px; }
+    .tagline { font: 600 24px Arial, sans-serif; fill: #d9e3db; }
+    .headerPrice { font: 900 42px Arial, sans-serif; fill: #fff4d8; text-anchor: middle; }
+    .menuCard { fill: #fff8ec; stroke: #e2d0b3; stroke-width: 2; }
+    .sectionHead { font: 900 34px Arial, sans-serif; fill: #202524; }
+    .sectionSub { font: 600 21px Arial, sans-serif; fill: #6c706c; }
+    .itemName { font: 700 28px Arial, sans-serif; fill: #202524; }
+    .itemPrice { font: 900 30px Arial, sans-serif; fill: #202524; text-anchor: end; }
+    .rowLine { stroke: #e6d8c4; stroke-width: 2; stroke-dasharray: 7 7; }
+    .noteCard { fill: #f3eadc; stroke: #d8c4a7; stroke-width: 2; }
+    .noteHead { font: 900 28px Arial, sans-serif; fill: #23392f; letter-spacing: 1px; }
+    .noteText { font: 600 25px Arial, sans-serif; fill: #4d524e; }
   </style>
 </svg>`;
   await sharp(Buffer.from(svg)).png().toFile(imagePath);
@@ -627,10 +679,14 @@ function buildCodexProposal(roomId, participantId, ocrText, imageSha256) {
       taskType: 'restaurant_split',
       menuType: 'mixed',
       localVisionConfigured: false,
+      reviewExecutionMode: 'codex_guided_visual_review',
+      externalProviderCall: false,
+      codexNodeCompleted: true,
       llmVisualReview: {
         provider: 'codex',
-        model: 'Codex visual review',
-        completed: true
+        model: 'Codex guided visual review',
+        completed: true,
+        executionMode: 'codex_guided_visual_review'
       },
       evidenceImageSha256: imageSha256,
       rawOcrPreview: ocrText,
@@ -640,9 +696,9 @@ function buildCodexProposal(roomId, participantId, ocrText, imageSha256) {
         sourceNumberClass: 'currency_amount'
       })),
       visualReviewNotes: [
-        'Corrected the OCR mistake where 7 Up was read as 710; the visible price is 70.',
-        'Added Mozzarella Cheese +30, which OCR missed.',
-        'Kept the take-out fee note out of customer choices because it is a fee note, not a selectable menu item.'
+        'Checked short product names such as 7 Up against the photo before keeping the visible price as 70.',
+        'Verified add-ons as optional toppings instead of treating them as required customer choices.',
+        'Kept the take-out adjustment note out of customer choices because it is a pricing note, not a selectable menu item.'
       ],
       warnings: [
         'Merchant should compare the draft with the original photo before publishing the list to customers.'
@@ -665,7 +721,7 @@ async function createProposal(baseUrl, roomId, proposal, timeoutMs) {
   return response.data;
 }
 
-async function acceptProposalForTest(baseUrl, connection, roomId, participantId, proposalId, timeoutMs) {
+async function acceptProposalForTest(baseUrl, connection, roomId, participantId, proposalId, expectedItemCount, timeoutMs) {
   const reviewed = await emitWithAck(baseUrl, connection, 'reviewAgentProposal', {
     roomId,
     participantId,
@@ -674,7 +730,7 @@ async function acceptProposalForTest(baseUrl, connection, roomId, participantId,
   }, timeoutMs);
   assertCondition(reviewed?.ok, `test accept failed: ${reviewed?.error || 'unknown error'}`);
   const itemCount = Array.isArray(reviewed.room?.items) ? reviewed.room.items.length : 0;
-  assertCondition(itemCount === codexReviewedItems.length, `accepted draft item count mismatch: ${itemCount}`);
+  assertCondition(itemCount === expectedItemCount, `accepted draft item count mismatch: expected ${expectedItemCount}, got ${itemCount}`);
   const acceptedProposal = Array.isArray(reviewed.room?.agentProposals)
     ? reviewed.room.agentProposals.find((candidate) => candidate.id === proposalId)
     : null;
@@ -720,8 +776,26 @@ async function main() {
     ocrText,
     args.timeoutMs
   );
-  const proposalPayload = buildCodexProposal(roomId, args.participantId, ocrText, imageSha256);
-  const proposalResult = await createProposal(args.baseUrl, roomId, proposalPayload, args.timeoutMs);
+  const defaultReviewExecution = {
+    mode: 'codex_guided_visual_review',
+    externalProviderCall: false,
+    codexNodeCompleted: true,
+    localVisionConfigured: false,
+    bridgeReportPath: null,
+    note: 'Tesseract OCR was executed locally. Codex occupies the LLM/visual-review node for this demo, prepares the structured draft, and leaves approval to the merchant.'
+  };
+  const proposalSetup = {
+    proposalResult: await createProposal(
+      args.baseUrl,
+      roomId,
+      buildCodexProposal(roomId, args.participantId, ocrText, imageSha256),
+      args.timeoutMs
+    ),
+    reviewExecution: defaultReviewExecution
+  };
+  const proposalResult = proposalSetup.proposalResult;
+  const reviewExecution = proposalSetup.reviewExecution || defaultReviewExecution;
+  const structuredItemCount = codexReviewedItems.length;
   const acceptedRoom = args.acceptForTest
     ? await acceptProposalForTest(
       args.baseUrl,
@@ -729,6 +803,7 @@ async function main() {
       roomId,
       args.participantId,
       proposalResult.proposal.id,
+      structuredItemCount,
       args.timeoutMs
     )
     : null;
@@ -737,6 +812,8 @@ async function main() {
   const report = {
     ok: true,
     acceptForTest: args.acceptForTest,
+    reviewProvider: 'codex_guided',
+    reviewExecution,
     roomId,
     roomUrl,
     participantId: args.participantId,
@@ -745,7 +822,7 @@ async function main() {
     imageSha256,
     ocrChars: ocrText.length,
     uploadedItemCount: Array.isArray(uploadedRoom.items) ? uploadedRoom.items.length : 0,
-    structuredItemCount: codexReviewedItems.length,
+    structuredItemCount,
     proposalId: proposalResult.proposal.id,
     proposalStatus: args.acceptForTest ? 'accepted_by_host' : proposalResult.proposal.status,
     productProposalStatus: toProductProposalStatus(args.acceptForTest ? 'accepted_by_host' : proposalResult.proposal.status),

@@ -862,7 +862,7 @@
 
     .item-review-audit[data-risk="true"] {
       border-color: #e2ddd4;
-      background: #fffdf9;
+      background: #fbfaf7;
       color: var(--muted);
     }
 
@@ -891,7 +891,7 @@
       align-items: center;
       border: 1px solid #dfd2c1;
       border-radius: 999px;
-      background: #fffdf9;
+      background: #fbfaf7;
       padding: 3px 7px;
       color: var(--muted);
       font-weight: 800;
@@ -900,7 +900,7 @@
 
     .item-review-pill[data-tone="warn"] {
       border-color: #ded6c9;
-      background: #fffdf9;
+      background: #fbfaf7;
       color: var(--muted);
     }
 
@@ -927,9 +927,9 @@
       display: grid;
       gap: 5px;
       min-width: 0;
-      border: 1px solid #eadfce;
+      border: 1px solid #e2ddd4;
       border-radius: 8px;
-      background: rgba(255, 253, 249, 0.72);
+      background: rgba(251, 250, 247, 0.82);
       padding: 7px;
     }
 
@@ -950,7 +950,7 @@
     }
 
     .item-review-gate[data-severity="warn"] {
-      color: #7a4a0e;
+      color: var(--accent-dark);
       font-weight: 800;
     }
 
@@ -1194,6 +1194,19 @@
       gap: 7px;
       width: min(100%, 720px);
       margin-top: 12px;
+    }
+
+    .flow-router-row {
+      width: 100%;
+      margin: 0 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-soft);
+      padding: 11px 12px;
+    }
+
+    .flow-router-row select {
+      background: #fff;
     }
 
     .task-selector label {
@@ -1564,6 +1577,7 @@
       .layout > .panel:first-child .panel-header,
       .room-tools,
       .field-grid,
+      .flow-router-row,
       #uploadSection,
       #menuBody,
       .menu-mode-row,
@@ -1658,6 +1672,22 @@
             </div>
           </div>
 
+          <div class="task-selector flow-router-row" id="flowRouter">
+            <label for="taskTypeSelect" data-i18n="taskType">Business Flow</label>
+            <select id="taskTypeSelect">
+              <option value="auto" data-i18n="taskAuto">Auto Detect</option>
+              <option value="group_buy" data-i18n="taskGroupBuy">Group Order / Free Shipping</option>
+              <option value="drink_order" data-i18n="taskDrinkOrder">Drink Menu</option>
+              <option value="restaurant_split" data-i18n="taskRestaurantSplit">Cafe / Restaurant Menu</option>
+              <option value="ktv_room" data-i18n="taskKtvRoom">KTV / Room Minimum</option>
+              <option value="sports_venue" data-i18n="taskSportsVenue">Sports Venue / Court Fee</option>
+              <option value="ticket_activity" data-i18n="taskTicketActivity">Tickets / Activity Signup</option>
+              <option value="rental_share" data-i18n="taskRentalShare">Rental / Deposit</option>
+              <option value="generic_split" data-i18n="taskGenericSplit">Other Price List</option>
+            </select>
+            <span class="task-lock-hint" id="taskLockHint" data-i18n="taskAutoHint">Auto mode can choose from the photo. Pick a flow to lock this room for the merchant review.</span>
+          </div>
+
           <div id="uploadSection">
             <label class="upload-zone" id="uploadZone">
               <input id="fileInput" type="file" accept="image/*">
@@ -1667,21 +1697,6 @@
                 <span class="upload-copy" data-i18n="uploadCopy">Choose, drop, or paste one menu, drink board, takeout list, group-order post, or service price photo.</span>
                 <button class="button" id="selectImageButton" type="button" data-i18n="selectImage">Select Image</button>
                   <img class="preview-image" id="previewImage" alt="Evidence photo preview" data-i18n-alt="evidencePreview" hidden>
-                <span class="task-selector">
-                  <label for="taskTypeSelect" data-i18n="taskType">Business Flow</label>
-                  <select id="taskTypeSelect">
-                    <option value="auto" data-i18n="taskAuto">Auto Detect</option>
-                    <option value="group_buy" data-i18n="taskGroupBuy">Group Order / Free Shipping</option>
-                    <option value="drink_order" data-i18n="taskDrinkOrder">Drink Menu</option>
-                    <option value="restaurant_split" data-i18n="taskRestaurantSplit">Cafe / Restaurant Menu</option>
-                    <option value="ktv_room" data-i18n="taskKtvRoom">KTV / Room Minimum</option>
-                    <option value="sports_venue" data-i18n="taskSportsVenue">Sports Venue / Court Fee</option>
-                    <option value="ticket_activity" data-i18n="taskTicketActivity">Tickets / Activity Signup</option>
-                    <option value="rental_share" data-i18n="taskRentalShare">Rental / Deposit</option>
-                    <option value="generic_split" data-i18n="taskGenericSplit">Other Price List</option>
-                  </select>
-                  <span class="task-lock-hint" id="taskLockHint" data-i18n="taskAutoHint">Auto mode can choose from the photo. Pick a flow to lock this room for the merchant review.</span>
-                </span>
                 <textarea class="ocr-field" id="localOcrTextInput" maxlength="12000" placeholder="Optional: paste text captured from the photo. The photo stays as evidence; the text only helps prepare a merchant review draft." data-i18n-placeholder="localOcrPlaceholder"></textarea>
                 <button class="button secondary sample-button" id="loadSampleButton" type="button" data-i18n="loadSampleRoom">Load Sample Room</button>
                 <span class="upload-actions" id="uploadActions">
@@ -1955,11 +1970,13 @@
         qualityWarn: '請商家快速核對',
         qualityReview: '需要商家核對',
         qualityNone: '尚無品質報告',
-        aiConfidence: '照片判讀把握度',
+        qualityPublished: '已發布給顧客',
+        customersCanOrder: '顧客可以開始選擇',
+        aiConfidence: '照片核對',
         scenarioContract: '適用情境',
-        schemaAlignment: '內容完整度',
+        schemaAlignment: '內容檢查',
         entityAnchoring: '項目可對照',
-        priceCoverage: '價格讀到',
+        priceCoverage: '價格辨識',
         contractFit: '用途吻合',
         issuePenalty: '需修正比例',
         blockingReasons: '需要先處理',
@@ -1984,8 +2001,8 @@
         confidence: '吻合度',
         modeHintPrefix: '系統建議',
         currentMode: '目前',
-        ownerCanSwitch: '你是商家或操作員，可切換模式',
-        ownerOnlySwitch: '只有商家或操作員可切換模式',
+        ownerCanSwitch: '你是商家，可切換清單類型',
+        ownerOnlySwitch: '只有商家可切換清單類型',
         generalItems: '一般項目',
         drinkMenu: '飲料單',
         mixedItems: '混合項目',
@@ -2064,10 +2081,10 @@
         contractAgentGuardHint: '商家核准後發布',
         agentDrafts: 'AI 審核草稿',
         noAgentDrafts: '尚無建議',
-        pendingHostConfirmation: '等待商家確認',
+        pendingHostConfirmation: '待商家確認',
         acceptedByHost: '商家已採納',
         rejectedByHost: '商家已拒絕',
-        proposalOnly: '只是一份建議',
+        proposalOnly: '待確認草稿',
         approveDraft: '採納草稿',
         confirmHumanApproval: '確認由人採納',
         rejectDraft: '拒絕草稿',
@@ -2075,7 +2092,7 @@
         ownerOnlyDraftReview: '只有商家可決定',
         draftReviewFailed: '草稿審核失敗',
         draftCreated: '建議已儲存，等待商家確認。',
-        aiReviewBlocksDraft: '清單還有內容需要核對，請先修正後再發布。',
+        aiReviewBlocksDraft: '商家核對後，顧客才能開始選擇。',
         drinkOptionSettledError: '此房間已完成，不能再修改甜度冰塊。',
         drinkOptionNameError: '請先輸入名稱並套用名稱再選甜度冰塊。',
         drinkOptionConfirmedError: '顧客選擇已確認，請先取消確認再修改甜度冰塊。',
@@ -2111,7 +2128,7 @@
         proposalTypegeneric_next_step: '下一步建議',
         proposalRisklow: '低風險',
         proposalRiskmedium: '需要看一下',
-        proposalRiskneeds_human_review: '需要商家確認',
+        proposalRiskneeds_human_review: '需商家確認',
         reviewParsedItems: '檢查品項清單',
         reviewParsedItemsHint: '開放前可移除錯列或修正名稱、金額、分類。',
         itemName: '名稱',
@@ -2119,15 +2136,17 @@
         itemCategory: '分類',
         itemPriceRole: '計價方式',
         itemSourceClass: '數字類型',
-        itemConfidence: '照片判讀把握度',
+        itemConfidence: '請對照照片',
         itemEvidence: '文字線索',
-        itemAuditAnchor: '照片文字',
-        itemReviewGate: '需要確認的原因',
+        itemAuditAnchor: '照片中這一列',
+        itemReviewGate: '核對提醒',
         itemReviewDetails: '照片核對',
         itemBoundingZone: '照片位置',
         itemDetectedType: '看起來是',
         itemNoReviewGate: '不用額外核對',
         itemReviewFlags: '核對提醒',
+        lowReadingConfidence: '請再對照照片確認',
+        genericReviewInstruction: '請先對照照片確認清單，再發布給顧客。',
         priceRoleline_item: '可點項目',
         priceRoleshared_fixed_fee: '共同費用',
         priceRoletax_rate: '稅率',
@@ -2269,11 +2288,13 @@
         qualityWarn: 'Merchant review suggested',
         qualityReview: 'Merchant review required',
         qualityNone: 'No quality report yet',
-        aiConfidence: 'Photo reading confidence',
+        qualityPublished: 'Published to customers',
+        customersCanOrder: 'Customers can order',
+        aiConfidence: 'Photo match',
         scenarioContract: 'Business flow',
-        schemaAlignment: 'Content complete',
+        schemaAlignment: 'Content check',
         entityAnchoring: 'Item match',
-        priceCoverage: 'Prices found',
+        priceCoverage: 'Prices read',
         contractFit: 'Flow match',
         issuePenalty: 'Needs correction',
         blockingReasons: 'Needs attention',
@@ -2298,8 +2319,8 @@
         confidence: 'match',
         modeHintPrefix: 'Suggested',
         currentMode: 'Current',
-        ownerCanSwitch: 'You are the merchant/operator and can switch modes',
-        ownerOnlySwitch: 'Only the merchant/operator can switch modes',
+        ownerCanSwitch: 'You are the merchant and can switch list types',
+        ownerOnlySwitch: 'Only the merchant can switch list types',
         generalItems: 'Item List',
         drinkMenu: 'Drink Options',
         mixedItems: 'Mixed Items',
@@ -2377,10 +2398,10 @@
         contractAgentGuardHint: 'the merchant approves before publish',
         agentDrafts: 'AI Review Draft',
         noAgentDrafts: 'No suggestions yet',
-        pendingHostConfirmation: 'waiting for merchant review',
-        acceptedByHost: 'merchant accepted',
-        rejectedByHost: 'merchant rejected',
-        proposalOnly: 'draft only',
+        pendingHostConfirmation: 'waiting for merchant',
+        acceptedByHost: 'accepted by merchant',
+        rejectedByHost: 'rejected by merchant',
+        proposalOnly: 'review draft',
         approveDraft: 'Approve Draft',
         confirmHumanApproval: 'Confirm Merchant Approval',
         rejectDraft: 'Reject Draft',
@@ -2388,7 +2409,7 @@
         ownerOnlyDraftReview: 'merchant approval required',
         draftReviewFailed: 'Failed to review draft',
         draftCreated: 'Suggestion saved for merchant review.',
-        aiReviewBlocksDraft: 'The list still needs merchant review before it is published.',
+        aiReviewBlocksDraft: 'Merchant review is required before customers can order.',
         drinkOptionSettledError: 'This room is finalized. Drink options cannot be changed.',
         drinkOptionNameError: 'Enter and apply your name before choosing drink options.',
         drinkOptionConfirmedError: 'Your selection is already confirmed. Cancel confirmation before changing drink options.',
@@ -2416,7 +2437,7 @@
         proposalTypeclaim_assignment: 'who should confirm',
         proposalTypemissing_confirmation: 'missing confirmation',
         proposalTypeevidence_review: 'price check',
-        proposalTypesemantic_repair_draft: 'photo review draft',
+        proposalTypesemantic_repair_draft: 'photo draft',
         proposalTypetask_router_review: 'purpose check',
         proposalTypebooking_draft: 'booking draft',
         proposalTypeservice_request_draft: 'service request draft',
@@ -2424,7 +2445,7 @@
         proposalTypegeneric_next_step: 'next step',
         proposalRisklow: 'low risk',
         proposalRiskmedium: 'review needed',
-        proposalRiskneeds_human_review: 'merchant review needed',
+        proposalRiskneeds_human_review: 'merchant check required',
         reviewParsedItems: 'Review Item List',
         reviewParsedItemsHint: 'Before opening, remove bad rows or fix names, prices, and categories.',
         itemName: 'Name',
@@ -2432,15 +2453,17 @@
         itemCategory: 'Category',
         itemPriceRole: 'Charge type',
         itemSourceClass: 'Number type',
-        itemConfidence: 'Photo reading confidence',
+        itemConfidence: 'Check with photo',
         itemEvidence: 'Nearby text',
-        itemAuditAnchor: 'Photo text',
-        itemReviewGate: 'Why this needs checking',
+        itemAuditAnchor: 'Seen near this row',
+        itemReviewGate: 'Merchant check',
         itemReviewDetails: 'Photo check',
         itemBoundingZone: 'Photo area',
         itemDetectedType: 'Looks like',
         itemNoReviewGate: 'No extra check needed',
         itemReviewFlags: 'Check notes',
+        lowReadingConfidence: 'Check this row with the photo',
+        genericReviewInstruction: 'Check the list against the photo before publishing to customers.',
         priceRoleline_item: 'order item',
         priceRoleshared_fixed_fee: 'shared fee',
         priceRoletax_rate: 'tax rate',
@@ -2568,10 +2591,21 @@
     }
 
     function renderTaskSelectorLock() {
-      const selected = taskTypeLabelKeys[selectedTaskType] ? selectedTaskType : 'auto';
-      const locked = selected !== 'auto';
+      const router = currentRoom?.taskRouter || {};
+      const roomTaskType = String(router.taskType || router.selectedTaskType || 'auto').trim().toLowerCase();
+      const roomSelectedTaskType = String(router.selectedTaskType || '').trim().toLowerCase();
+      const hasRoomEvidence = Boolean(currentRoom?.menuLoaded);
+      const effectiveRoomTaskType = taskTypeLabelKeys[roomTaskType]
+        ? roomTaskType
+        : (taskTypeLabelKeys[roomSelectedTaskType] ? roomSelectedTaskType : 'auto');
+      const selected = hasRoomEvidence
+        ? effectiveRoomTaskType
+        : (taskTypeLabelKeys[selectedTaskType] ? selectedTaskType : 'auto');
+      const locked = hasRoomEvidence
+        ? selected !== 'auto'
+        : selected !== 'auto';
       elements.taskTypeSelect.value = selected;
-      elements.taskTypeSelect.disabled = isUploading || isSwitchingRoom || Boolean(currentRoom?.menuLoaded);
+      elements.taskTypeSelect.disabled = isUploading || isSwitchingRoom || hasRoomEvidence;
       elements.taskLockHint.textContent = locked
         ? `${t('taskLockedPrefix')}: ${getTaskTypeDisplayName(selected)}. ${t('taskLockedHint')}`
         : t('taskAutoHint');
@@ -3556,12 +3590,38 @@
     function getItemMetaText(item, drinkOptionsEnabled, itemOptionsEnabled) {
       const parts = [];
       const labels = itemMetaLabels[currentLanguage] || itemMetaLabels.en;
+      const sectionDisplayNames = {
+        zh: {
+          snacks: '點心',
+          coffee: '咖啡',
+          'cold drinks': '冷飲',
+          desserts: '甜點',
+          'add ons': '加料',
+          'add-ons': '加料',
+          addons: '加料',
+          'fresh salad': '沙拉'
+        }
+      };
+      const getSectionDisplayName = (sectionName) => {
+        const rawSectionName = String(sectionName || '').trim();
+        if (!rawSectionName) {
+          return '';
+        }
+        if (currentLanguage !== 'zh') {
+          return rawSectionName;
+        }
+        const key = rawSectionName.toLowerCase().replace(/\s+/g, ' ');
+        return sectionDisplayNames.zh[key] || rawSectionName;
+      };
       const category = labels.category[item?.category] || '';
       if (category) {
         parts.push(category);
       }
       if (item?.sectionName) {
-        parts.push(item.sectionName);
+        const sectionName = getSectionDisplayName(item.sectionName);
+        if (sectionName && !parts.includes(sectionName)) {
+          parts.push(sectionName);
+        }
       }
       if (item?.sizeLabel) {
         parts.push(item.sizeLabel);
@@ -3747,6 +3807,11 @@
         .replace(/Source\s+mode:\s*[^.]+\.?\s*/gi, '')
         .replace(/Local\s+OCR\s+chars:\s*\d+\.?\s*/gi, '')
         .replace(/Local\s+vision\s+model:\s*[^.]+\.?\s*/gi, zh ? '已用本機看圖輔助。 ' : 'A local visual check was used. ')
+        .replace(/The\s+list\s+still\s+needs\s+(?:host|merchant)\s+review\s+before\s+it\s+opens\s+to\s+(?:members|customers)\.?/gi, zh ? '清單發布給顧客前，商家需要先核對。' : 'The merchant needs to review the list before customers can use it.')
+        .replace(/photo\s+text\s+only;\s+visual\s+check\s+needed\.?/gi, zh ? '目前只讀到照片文字，仍要對照原圖。' : 'Photo text was read; compare it with the image.')
+        .replace(/human\s+review\s+needed\.?/gi, zh ? '需要商家確認。' : 'Merchant review needed.')
+        .replace(/suggestion\s+only\.?/gi, zh ? '僅供建議。' : 'Draft only.')
+        .replace(/waiting\s+for\s+(?:host|merchant)\.?/gi, zh ? '等待商家確認。' : 'Waiting for merchant review.')
         .replace(new RegExp(`Only\\s+local\\s+OCR\\s+${'parser'}\\s+was\\s+used;\\s+this\\s+is\\s+not\\s+a\\s+completed\\s+pre-push\\s+review\\s+draft\\s+and\\s+(?:host|merchant)\\s+visual\\s+review\\s+is\\s+required\\s+before\\s+opening\\s+to\\s+(?:members|customers)\\.?`, 'gi'), zh ? '已讀到照片文字；發布給顧客前請先對照原圖。' : 'Photo text was read; compare it with the photo before publishing to customers.')
         .replace(/Photo\s+text\s+was\s+read,\s+but\s+the\s+(?:host|merchant)\s+should\s+compare\s+the\s+photo\s+before\s+opening\s+it\s+to\s+(?:members|customers)\.?/gi, zh ? '已讀到照片文字；發布給顧客前請先對照原圖。' : 'Photo text was read; compare it with the photo before publishing to customers.')
         .replace(/This\s+row\s+has\s+several\s+prices\.\s+Please\s+check\s+the\s+size\s+or\s+option\.?/gi, zh ? '這一列有多個價格，請確認尺寸或選項。' : 'This row has several prices. Please check the size or option.')
@@ -3756,7 +3821,7 @@
         .replace(/找不到房間，請重新建立(?:共享空間|房間)?/gi, zh ? '找不到房間，請重新建立。' : 'Room not found. Create a new room.')
         .replace(/此房間已經解析過價格證據，不會重複解析圖片。請先清空房間再上傳新證據。/gi, zh ? '此房間已經有菜單照片，請先清空房間再上傳新照片。' : 'This room already has a menu photo. Reset the room before uploading another one.')
         .replace(/請上傳一張價格證據圖片/gi, zh ? '請上傳一張菜單照片。' : 'Upload one menu photo.')
-        .replace(/只有商家或操作員可以建立建議草稿/gi, zh ? '只有商家或操作員可以建立建議草稿。' : 'Only the merchant or operator can create a draft.')
+        .replace(/只有商家可以建立(?:建議|審核)草稿/gi, zh ? '只有商家可以建立審核草稿。' : 'Only the merchant can create a review draft.')
         .replace(/此房間已完成，不能再修改數量/gi, zh ? '此房間已完成，不能再修改數量。' : 'This room is finalized. Quantities cannot be changed.')
         .replace(/此房間已完成，不能再修改甜度冰塊/gi, zh ? '此房間已完成，不能再修改甜度冰塊。' : 'This room is finalized. Drink options cannot be changed.')
         .replace(/此房間已完成，不能再修改選項/gi, zh ? '此房間已完成，不能再修改選項。' : 'This room is finalized. Item options cannot be changed.')
@@ -3799,8 +3864,11 @@
       for (const [pattern, replacement] of visibleTermMap[currentLanguage] || visibleTermMap.en) {
         text = text.replace(pattern, replacement);
       }
+      if (zh && /[A-Za-z]/.test(text) && /(?:host|merchant|member|customer|review|photo|parser|schema|contract|metadata|candidate|source|confidence|pre-push|visual|OCR)/i.test(text)) {
+        return t('genericReviewInstruction');
+      }
       if (!zh && /[\u3400-\u9fff]/.test(text)) {
-        return 'Check this row against the photo before publishing.';
+        return t('genericReviewInstruction');
       }
       return normalizeVisibleTextSpacing(text);
     }
@@ -3837,13 +3905,14 @@
       }
 
       const pendingStructuredDraft = roomHasPendingStructuredDraft(room);
-      const issueRows = !pendingStructuredDraft && Array.isArray(quality?.issues)
+      const isPublishedToCustomers = Boolean(room.itemsOpenForMembers);
+      const issueRows = !isPublishedToCustomers && !pendingStructuredDraft && Array.isArray(quality?.issues)
         ? quality.issues.slice(0, 4).map((issue) => {
           const target = issue.item ? `：${issue.item}` : '';
           return `<div>${escapeHtml(humanizeVisibleText(`${issue.detail || issue.type || t('needsReview')}${target}`))}</div>`;
         }).join('')
         : '';
-      const blockingRows = !pendingStructuredDraft && Array.isArray(quality?.blockingReasons)
+      const blockingRows = !isPublishedToCustomers && !pendingStructuredDraft && Array.isArray(quality?.blockingReasons)
         ? quality.blockingReasons.slice(0, 4).map((reason) => {
           const target = reason.item ? `：${reason.item}` : '';
           const reasonText = typeof reason === 'string' ? reason : reason.detail || reason.type || t('needsReview');
@@ -3852,14 +3921,14 @@
         : '';
       const antiPollution = room.antiPollution || {};
       const antiBlocks = Array.isArray(antiPollution.blocks) ? antiPollution.blocks : [];
-      const antiRows = antiBlocks.slice(0, 4).map((block) => {
+      const antiRows = !isPublishedToCustomers ? antiBlocks.slice(0, 4).map((block) => {
         return `<div>${escapeHtml(humanizeVisibleText(block.detail || block.id || t('needsReview')))}</div>`;
-      }).join('');
+      }).join('') : '';
       const ruleHints = Array.isArray(localOcr?.ruleHints) ? localOcr.ruleHints : [];
-      const ruleRows = ruleHints.slice(0, 4).map((rule) => {
+      const ruleRows = !isPublishedToCustomers ? ruleHints.slice(0, 4).map((rule) => {
         const sourceText = rule?.text ? `：${rule.text}` : '';
         return `<div>${escapeHtml(`${getRuleHintText(rule)}${sourceText}`)}</div>`;
-      }).join('');
+      }).join('') : '';
       const arithmeticCheck = quality?.arithmeticCheck || null;
       const arithmeticRows = arithmeticCheck
         ? [
@@ -3881,6 +3950,7 @@
         ? `${t('priceCoverage')} ${Math.round(Number(components.priceCoverage || 0) * 100)}%`
         : '';
       const breakdownRows = confidence
+        && !isPublishedToCustomers
         ? `
           <div class="quality-breakdown">
             ${scoreText ? `<span>${escapeHtml(scoreText)}</span>` : ''}
@@ -3894,19 +3964,25 @@
       const pendingItemCount = getPendingParserCandidateCount(room);
       const pendingRuleCount = getPendingCalculationRuleCount(room);
       const reviewBits = [];
-      if (pendingItemCount > 0) {
-        reviewBits.push(visibleItemCheckCount(pendingItemCount));
-      }
-      if (pendingRuleCount > 0) {
-        reviewBits.push(visibleRuleCheckCount(pendingRuleCount));
-      }
-      if (pendingStructuredDraft) {
+      if (isPublishedToCustomers) {
+        reviewBits.push(t('customersCanOrder'));
+      } else if (pendingStructuredDraft) {
         reviewBits.push(t('draftReadyForHost'));
-      } else if (roomNeedsVisibleHostCheck(room, quality)) {
-        reviewBits.push(t('hostCheckNeeded'));
+      } else {
+        if (pendingItemCount > 0) {
+          reviewBits.push(visibleItemCheckCount(pendingItemCount));
+        }
+        if (pendingRuleCount > 0) {
+          reviewBits.push(visibleRuleCheckCount(pendingRuleCount));
+        }
+        if (roomNeedsVisibleHostCheck(room, quality)) {
+          reviewBits.push(t('hostCheckNeeded'));
+        }
       }
       const reviewText = reviewBits.length > 0 ? ` · ${reviewBits.join(' · ')}` : '';
-      const taskText = getTaskRouterText(room);
+      const taskText = isPublishedToCustomers
+        ? `${t('taskLockedPrefix')}: ${getTaskTypeDisplayName(room?.taskRouter?.taskType || room?.taskRouter?.selectedTaskType || 'auto')}`
+        : getTaskRouterText(room);
       const audit = room.audit || {};
       const auditText = Number(audit.claimLedgerCount || 0) === 0
         ? t('auditNoActiveCosts')
@@ -3917,7 +3993,7 @@
       elements.qualityPanel.dataset.visible = 'true';
       elements.qualityPanel.innerHTML = `
         <div class="quality-title">
-          ${escapeHtml(getQualityStatusLabel(roomNeedsVisibleHostCheck(room, quality) ? 'review_required' : quality?.status))}
+          ${escapeHtml(isPublishedToCustomers ? t('qualityPublished') : getQualityStatusLabel(roomNeedsVisibleHostCheck(room, quality) ? 'review_required' : quality?.status))}
           <span>${escapeHtml(`${taskText} · ${localOcrText} · ${auditText}${reviewText}`)}</span>
         </div>
         ${breakdownRows}
@@ -4023,7 +4099,7 @@
     function getBlockingReviewMessage(room = currentRoom) {
       const antiBlocks = Array.isArray(room?.antiPollution?.blocks) ? room.antiPollution.blocks : [];
       if (antiBlocks.length > 0) {
-        const details = antiBlocks.slice(0, 3)
+        const details = antiBlocks.slice(0, 1)
           .map((block) => humanizeVisibleText(block.detail || block.id || t('needsReview')))
           .filter(Boolean)
           .join('\n');
@@ -4034,7 +4110,7 @@
       if (reasons.length === 0) {
         return t('aiReviewBlocksDraft');
       }
-      const details = reasons.slice(0, 3)
+      const details = reasons.slice(0, 1)
         .map((reason) => humanizeVisibleText(typeof reason === 'string' ? reason : reason.detail || reason.type || t('needsReview')))
         .filter(Boolean)
         .join('\n');
@@ -4196,8 +4272,6 @@
             <div class="proposal-meta">
               <span>${escapeHtml(getProposalTypeText(proposal.proposalType))}</span>
               <span>${escapeHtml(getProposalStatusText(proposal.status))}</span>
-              <span>${escapeHtml(t('proposalOnly'))}</span>
-              <span>${escapeHtml(getProposalRiskText(proposal.riskLevel))}</span>
             </div>
             <div class="proposal-summary">${escapeHtml(proposalSummary)}</div>
             ${proposalRationale ? `<div class="proposal-meta">${escapeHtml(proposalRationale)}</div>` : ''}
@@ -4436,9 +4510,9 @@
       const flagRows = reviewFlags.length > 0
         ? reviewFlags.map((flag) => `<span class="item-review-pill" data-tone="${escapeHtml(getReviewFlagTone(flag))}">${escapeHtml(getReviewFlagText(flag))}</span>`).join('')
         : '';
-      const confidenceText = confidence === null || (!hasReviewRisk && confidence >= 0.95)
+      const confidenceText = confidence === null || confidence >= 0.82
         ? ''
-        : `${t('itemConfidence')} ${Math.round(confidence * 100)}%`;
+        : t('lowReadingConfidence');
       const reviewReason = hasReviewRisk
         ? humanizeVisibleText(
           reviewFlags.length > 0

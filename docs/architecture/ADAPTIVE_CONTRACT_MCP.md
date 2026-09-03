@@ -6,7 +6,7 @@ Adaptive Contract MCP is not a blockchain smart contract and not an autonomous e
 
 The product boundary is a form-based async commercial intake room. It is not a chatroom, messaging app, payment gateway, booking bot, or browser-control agent. A cafe, restaurant, repair shop, clinic, salon, or local service provider can turn a physical menu, online menu, service list, or maintenance checklist into a private room link. Customers open that independent room on their own devices, choose their own items, see their own selections, and the merchant reviews the merged total before sending the order or service sheet. Payments and formal external orders stay outside this project.
 
-OCR plus LLM visual review produces a structured draft. The LLM visual review node can be Codex, Gemini, or a deployment-owner local vision model. WebMCP/Codex reviews the room state and draft against the evidence. The human edits, confirms, overrides advisory warnings, and releases the commitment. Threshold conditions such as group size or minimum spend are warnings until a merchant decides; AI never commits a booking, group formation, payment, or final summary.
+Local OCR produces candidate text. Codex occupies the LLM/visual-review node, checks the image against the OCR text, and prepares a structured draft. WebMCP scopes that draft to the current room. The human edits, confirms, overrides advisory warnings, and releases the commitment. Threshold conditions such as group size or minimum spend are warnings until a merchant decides; AI never commits a booking, group formation, payment, or final summary.
 
 Zeabur is the hosted state storage, MCP protocol host, HITL approval gate, guardrail runtime, customer publishing surface, and export surface. Zero required ML/OCR workload is processed on the Zeabur server in the default WebMCP Challenge path.
 
@@ -17,35 +17,35 @@ WebMCP is the assistant-facing tool boundary, not the customer synchronization l
 ```mermaid
 sequenceDiagram
   autonumber
-  actor Merchant as Merchant / Operator
-  actor Customer as Customer / Guest
-  participant Local as Authorized Local Bridge
+  actor Merchant as Merchant
+  actor Customer as Customer
+  participant Local as Local OCR Bridge
   participant OCR as Local OCR
-  participant LLM as LLM Visual Review
+  participant Codex as Codex LLM Visual Review
   participant Page as Shared Room MCP Page
   participant WebMCP as WebMCP State Reader
-  participant Contract as Adaptive Contract MCP
-  participant Review as ReviewGate
-  participant Guardrail as Guardrail Registry
+  participant Contract as Room Flow Rules
+  participant Review as Merchant Review Gate
+  participant Guardrail as Safety Checks
   participant Store as Room Store
 
   Merchant->>Page: Create independent room and provide evidence
   Page->>Store: Save uploaded evidence image
   Local->>OCR: Read local image and extract noisy text
   OCR-->>Local: OCR candidate text
-  Local->>LLM: Compare image plus OCR text
-  LLM-->>Local: Corrected structured draft plus review notes
-  Local->>Page: Write semantic_repair_draft proposal
+  Local->>Codex: Compare image plus OCR text
+  Codex-->>Local: Corrected structured draft plus review notes
+  Local->>Page: Write review draft proposal
   WebMCP->>Page: Inspect room state through page-local tools
   WebMCP->>Page: Summarize draft-only next action
   Merchant->>Review: Review the draft card
   Review->>Contract: Apply approved structured draft
-  Contract->>Contract: Route scenario and apply prompt contract
+  Contract->>Contract: Lock business flow and apply room rules
   Contract->>Guardrail: Check forbidden numbers, formulas, sparse evidence
-  Guardrail-->>Review: Emit warning or structural gate
+  Guardrail-->>Review: Show warning or stop-for-edit result
   Review-->>Page: Show extracted rows for merchant review
-  Merchant->>Review: Accept warning, edit value, or remove candidate
-  Review->>Contract: Mark resolved_warning or require edit/remove
+  Merchant->>Review: Accept note, edit value, or remove row
+  Review->>Contract: Record reviewed note or require edit/removal
   Contract->>Store: Save reviewed state and audit trail
   Merchant->>Page: Publish private room link to customers
   Page->>Store: Publish reviewed selectable rows
@@ -55,7 +55,7 @@ sequenceDiagram
   Page->>Merchant: Export HTML or PDF evidence record
 
   WebMCP-->>Merchant: State summary and draft recommendation
-  LLM-->>Review: OCR-only output remains blocked until reviewed
+  Codex-->>Review: OCR-only output remains blocked until reviewed
   Review-->>Merchant: Human approval remains required
   Guardrail-->>Merchant: Structural risk requires edit or removal
 ```
@@ -65,43 +65,43 @@ sequenceDiagram
 | node | may read | may write | may not do |
 |---|---|---|---|
 | Local OCR | Local evidence image | No room state writes | Approve drafts, publish customer list, finalize, or call external services |
-| LLM visual review: Codex, Gemini, or local model | Evidence image, OCR text, current room state when authorized | Structured draft and review notes only | Final approval, payment, booking, customer confirmation, or hidden item mutation |
-| Authorized local bridge | Local OCR output, LLM review JSON, target room id, merchant participant id | One `semantic_repair_draft` proposal | Create final commitments, bypass merchant review, or expose private OCR reports in the repo |
+| Codex LLM visual review | Evidence image, OCR text, current room state when authorized | Structured draft and review notes only | Final approval, payment, booking, customer confirmation, or hidden item mutation |
+| Authorized local bridge | Local OCR output, LLM review JSON, target room id, merchant participant id | One review draft proposal | Create final commitments, bypass merchant review, or expose private OCR reports in the repo |
 | WebMCP page tools | Current browser room state | Proposal-only draft creation | Edit parsed items, approve drafts, publish items to customers, finalize, or export on behalf of the user |
-| Zeabur room runtime | Uploaded evidence metadata, proposals, room state | Stores room state and applies an approved structured draft after merchant review | Run local OCR/LLM by default, charge payments, submit bookings, or auto-approve |
-| Merchant or operator | Evidence, draft, customers, totals | Review decisions, item edits, customer publishing, final summary | Confirm another customer's selection |
+| Zeabur room runtime | Uploaded evidence details, proposals, room state | Stores room state and applies an approved structured draft after merchant review | Run local OCR/LLM by default, charge payments, submit bookings, or auto-approve |
+| Merchant | Evidence, draft, customers, totals | Review decisions, item edits, customer publishing, final summary | Confirm another customer's selection |
 | Customer | Published selectable items and own selection | Own quantity/options and own confirmation | Edit evidence, approve AI drafts, publish the list, or finalize |
 
 ## Contract Pipeline
 
 ```mermaid
 flowchart TD
-  L0[Menu Or Service Evidence] --> B0[Authorized Local Bridge]
-  B0 --> B1[Local OCR Candidate Text]
-  B1 --> B2[LLM Visual Review: Codex, Gemini, or Local Model]
-  B2 --> B3[Structured Draft Proposal]
+  L0[Menu Or Service Evidence] --> B0[Local OCR Bridge]
+  B0 --> B1[Local OCR Text]
+  B1 --> B2[Codex LLM Visual Review]
+  B2 --> B3[Structured Draft]
   B3 --> L1[Merchant Draft Review]
-  L1 --> L2[Scenario Router]
-  L2 --> L3[Prompt Contract]
-  L3 --> L4[ParserCandidate Layer]
-  L4 --> L5[Canonical Number Normalizer]
-  L5 --> L6[Negative Pattern Registry]
-  L6 --> L7[ReviewGate]
+  L1 --> L2[Business Flow Lock]
+  L2 --> L3[Room Rules]
+  L3 --> L4[Draft Row Review]
+  L4 --> L5[Number Cleanup]
+  L5 --> L6[Safety Check List]
+  L6 --> L7[Merchant Review Gate]
   L7 --> L8[Merchant Review Decision]
   L8 --> L9[Private Customer Link Published]
   L9 --> L10[Customer Own Selection Confirmed]
   L10 --> L11[Merchant Sends Order Or Service Sheet]
   L11 --> L12[HTML or PDF Review Export]
 
-  L7 --> W[Declarative Warning]
+  L7 --> W[Review Note]
   W --> RW[Merchant Accepts Review Note]
   RW --> L9
 
-  B1 --> OB[OCR-only Blocker]
+  B1 --> OB[OCR-only Stop]
   OB --> HR[LLM visual review or human repair required]
   HR --> B3
 
-  L7 --> S[Structural Gate]
+  L7 --> S[Must Edit Or Remove]
   S --> ER[Edit or Remove Required]
   ER --> L8
 
@@ -154,4 +154,4 @@ The first form prevents repeated known error patterns without poisoning future r
 
 The image matrix is a deterministic contract-driven integration benchmark. It verifies artifact integrity, scenario routing, schema adherence, customer-visible masks, anti-pollution gates, and HITL state transitions under paired image and evidence text.
 
-It is not a provider accuracy benchmark and not a claim that arbitrary real-world images always parse correctly. The release claim is limited to deterministic image-plus-oracle integration, optional operator-machine OCR canaries, and the WebMCP plus Codex plus human-review loop. Zeabur is the hosted room/runtime/HITL surface; it is not the OCR engine unless a deployment owner explicitly installs and configures such an extension.
+It is not a provider accuracy benchmark and not a claim that arbitrary real-world images always parse correctly. The release claim is limited to deterministic image-plus-oracle integration, authorized local OCR canaries, and the WebMCP plus local OCR plus Codex plus human-review loop. Zeabur is the hosted room/runtime/HITL surface; it is not the OCR engine unless a deployment owner explicitly installs and configures such an extension.

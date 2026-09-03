@@ -45,7 +45,7 @@ Zeabur cannot reach the user's local vision model, so the Zeabur demo needs a lo
 
 ## Next Resume Point
 
-To run a real Zeabur host proposal, the operator must provide the target room's owner `participantId` and a reachable local vision endpoint/model. The bridge command should be run without `--dry-run` only after that owner identity is confirmed.
+To run a real Zeabur host proposal, the local bridge runner must provide the target room's owner `participantId` and a reachable local vision endpoint/model. The bridge command should be run without `--dry-run` only after that owner identity is confirmed.
 
 ## Closeout Update
 
@@ -58,7 +58,7 @@ Additional release-prep fixes completed after parallel review:
 - Made configured `local_vision` terminal by default. Remote Gemini/OpenAI fallback now requires `ALLOW_REMOTE_VISION_FALLBACK=true`.
 - Changed `/healthz` to expose only `localVisionConfigured` and `allowRemoteVisionFallback`; local vision endpoint origin and model name are no longer returned.
 - Changed the bridge CLI to default to dry-run, require `--write-cloud-proposal` for writes, require an explicit base URL for writes, and refuse private OCR reports outside tmp paths.
-- Updated README, submission runbook, architecture Mermaid diagrams, security evidence, validation evidence, `env.sample`, and public export manifest to match the local OCR plus local/visual LLM review loop.
+- Updated README, submission runbook, architecture Mermaid diagrams, security evidence, validation evidence, `env.sample`, and public export manifest to match the local OCR plus Codex visual-review loop. Optional model-provider adapters stayed extension-only.
 - Fixed the image-matrix runner to validate full extracted rows instead of member-selectable candidates only.
 
 Validation evidence:
@@ -165,7 +165,7 @@ Direct cause:
 
 Root cause:
 
-- The architecture mixed three separate roles: local OCR, LLM visual review, and Zeabur room state. The code needed an explicit proposal mode for OCR plus LLM visual review so Codex/Gemini/local models can act as an authorized review node without pretending that Zeabur runs the local OCR/LLM engine.
+- The architecture mixed three separate roles: local OCR, Codex LLM visual review, and Zeabur room state. The code needed an explicit proposal mode for OCR plus Codex visual review without pretending that Zeabur runs the local OCR/LLM engine. Other model providers remain extension-only.
 
 DONE_CONFIRMED:
 
@@ -177,7 +177,7 @@ DONE_CONFIRMED:
   - evidence: the review card can remain pending for the host, and approval applies the structured draft instead of the original noisy OCR rows.
 - Updated the visible UI mapping and public docs so demo wording uses plain-language review text instead of source/mode/model/debug terms.
   - evidence: tracked source/docs scan returned zero hits for old source, model, mock, harness, local machine path, and Codex attachment wording.
-- Updated Mermaid/architecture docs with explicit nodes and permissions for local OCR, Codex/Gemini/local-model visual review, authorized local bridge, WebMCP page tools, Zeabur runtime, host, and members.
+- Updated Mermaid/architecture docs with explicit nodes and permissions for local OCR, Codex LLM visual review, authorized local bridge, WebMCP page tools, Zeabur runtime, host, and members.
 
 Validation evidence:
 
@@ -205,7 +205,7 @@ NOT_RERUN:
 
 Next resume point:
 
-- Commit and push the guided OCR+LLM review flow, deploy the resulting commit to Zeabur, then rerun live `/healthz`, hosted member-release smoke, and one pending guided Codex review room for recording.
+- Commit and push the guided OCR+LLM review flow, deploy the resulting commit to Zeabur, then rerun live `/healthz`, hosted customer-publishing smoke, and one pending guided Codex review room for recording.
 
 ## 2026-09-04 01:57 Plain-Language OCR UI Closeout Governance
 
@@ -314,7 +314,7 @@ Scope:
 
 Direct cause:
 
-- The recording room could still show OCR parser candidates as full member rows before a Codex/Gemini/local-model visual review draft was approved.
+- The recording room could still show OCR parser candidates as full member rows before a Codex visual-review draft was approved.
 - The prepared recording URL did not rejoin the browser as the original host, so the right-side Approve/Reject buttons could appear locked even though a host draft existed.
 - Visible OCR review panels exposed too much engineering language and repeated warning copy.
 
@@ -375,3 +375,89 @@ Documentation correction:
 Remaining before public submission:
 
 - Insert the final uploaded YouTube demo URL.
+
+## 2026-09-04 04:58 Codex Positioning Lock
+
+Scope:
+
+- Owner project: `<project-root>`
+- Changed artifacts: `scripts/prepare-codex-ocr-llm-demo.mjs`, README/submission/architecture/testing/security docs, generated demo evidence under `/private/tmp`.
+
+Direct cause:
+
+- The recording path could be misunderstood as a Gemini or separate local-model flow. The intended demo has no second model provider: local OCR reads the image, Codex occupies the LLM/visual-review node, and WebMCP carries only the structured draft into the current room for merchant approval.
+
+Root cause:
+
+- The architecture supports optional provider adapters, but the demo/runbook did not separate optional extensions from the current Codex-centered path tightly enough.
+
+DONE_CONFIRMED:
+
+- Locked `npm run demo:codex-ocr-llm` to the Codex path only.
+  - evidence: the report now records `reviewProvider=codex_guided`, `reviewExecution.mode=codex_guided_visual_review`, `externalProviderCall=false`, and `codexNodeCompleted=true`.
+- Improved the generated cafe menu image from a plain OCR table into a merchant-style menu board while preserving crisp text for OCR.
+  - evidence image: `/private/tmp/webmcp-commercial-ui-codex-demo-v7/moon-table-cafe-menu-en.png`.
+- Updated README and architecture Mermaid diagrams so the main path is `Local OCR -> Codex LLM Visual Review -> Structured Draft Proposal -> Merchant Draft Review`.
+- Kept optional Gemini/OpenAI/local-model adapters as extension-only implementation details, not the demo main path.
+
+Validation evidence:
+
+- `node --check scripts/prepare-codex-ocr-llm-demo.mjs`: passed.
+- `npm run check`: passed.
+- `npm run verify:adaptive-contracts`: passed.
+- `npm run audit:tasks`: passed with code release blocking gaps `0`; one submission-only gap remains for the final YouTube demo URL.
+- `git diff --check`: passed.
+- Codex OCR+LLM accept smoke passed: `/private/tmp/webmcp-commercial-ui-codex-demo-v7/codex-ocr-llm-demo-2026-09-03T20-55-58-915Z.json`.
+- Codex OCR+LLM pending demo smoke passed: `/private/tmp/webmcp-commercial-ui-codex-demo-v7-pending/codex-ocr-llm-demo-2026-09-03T20-56-04-874Z.json`.
+- Local Customer Publishing smoke passed `4/4`: `/private/tmp/webmcp-commercial-ui-customer-publishing-v3/customer-publishing-stress-2026-09-03T20-57-01-758Z.md`.
+- `release-boundary-safety-gate`: PASS, blocking `0`; evidence `/Users/sunjiarong/Developer/webmcp/output/isolation/current_runs/webmcp_commercial_ui_20260904/release_boundary_codex_locked/release-boundary-report-2026-09-03T20-57-41-844Z.json`.
+- `ai-security-rules rules-check`: pass, blocking `0`, P0 `0`, P1 `0`, P2 `0`; evidence `/Users/sunjiarong/Developer/webmcp/output/isolation/current_runs/webmcp_commercial_ui_20260904/ai_security_rules_check_codex_locked/local_security_design_gate_rules_check.md`.
+- `ai-security-rules deploy-gate`: pass, blocking `0`, P0 `0`, P1 `0`, P2 `0`; evidence `/Users/sunjiarong/Developer/webmcp/output/isolation/current_runs/webmcp_commercial_ui_20260904/ai_security_deploy_gate_codex_locked/local_security_design_gate_deploy_gate.md`.
+
+Next resume point:
+
+- Commit and push the Codex-positioning lock, wait for Zeabur to deploy it, then rerun live `/healthz`, hosted customer-publishing smoke, and one live Codex OCR+LLM pending room for recording.
+
+## 2026-09-04 05:33 Commercial UI And Route Lock Closeout
+
+Scope:
+
+- Owner project: `<project-root>`
+- Changed artifacts: `public/index.html`, `server.js`, README/submission/architecture/testing/security docs, Codex demo runner evidence.
+
+Direct cause:
+
+- The visible UI still made the business-flow router look like an auto detector after a room was already locked, and user-facing text could still expose engineering or mixed-language labels during OCR review.
+
+Root cause:
+
+- The task router existed in room state, but the selector lived inside the upload area and rendered from local storage rather than the room's locked router once evidence was loaded.
+
+DONE_CONFIRMED:
+
+- Moved the business-flow selector to a fixed visible row above upload/review content.
+- Once evidence is loaded, the selector is disabled and renders the room's locked `taskRouter.taskType` instead of stale local storage.
+- Removed user-facing secondary-role wording from server errors and public docs. The commercial UI roles are now merchant, customer, and AI draft; local bridge authority remains a backend/deployment boundary.
+- Restricted pre-publish OCR/photo quality warnings to the merchant review phase. After publishing, the quality panel shows only that customers can order.
+- Added Chinese display mapping for common English menu section labels while preserving original item names from the source menu.
+
+Validation evidence:
+
+- `node --check server.js`: passed.
+- inline `public/index.html` script syntax check: passed.
+- `git diff --check`: passed.
+- Local pending Codex OCR+LLM room passed: `/private/tmp/webmcp-commercial-ui-final2-codex-anchor-pending/codex-ocr-llm-demo-2026-09-03T21-32-30-174Z.json`; recording room `58336ce0`.
+- Local accepted Codex OCR+LLM room passed: `/private/tmp/webmcp-commercial-ui-final2-codex-anchor-accepted/codex-ocr-llm-demo-2026-09-03T21-32-30-177Z.json`; accepted room `ed746994`.
+- Local Customer Publishing smoke passed `4/4`: `/private/tmp/webmcp-commercial-ui-final2-codex-anchor-customer-publishing/customer-publishing-stress-2026-09-03T21-32-28-838Z.md`.
+- Browser UI smoke passed on `http://127.0.0.1:3224`: pending room shows locked `Cafe / Restaurant Menu`; accepted/published room opens customer quantity controls; Chinese UI no longer shows English system text or duplicated translated section labels.
+- `npm run verify:adaptive-contracts`: passed with contracts `13`, prompt nodes `17`, guardrails `19`, scenarios `12`.
+- `npm run audit:tasks`: passed with code release blocking gaps `0`; one submission-only gap remains for the final YouTube demo URL.
+- `release-boundary-safety-gate`: PASS, blocking `0`; evidence `/Users/sunjiarong/Developer/webmcp/output/isolation/current_runs/webmcp_commercial_ui_20260904/release_boundary_final_codex_anchor/release-boundary-report-2026-09-03T21-34-24-093Z.json`.
+- `ai-security-rules rules-check`: pass, blocking `0`, P0 `0`, P1 `0`, P2 `0`; evidence `/Users/sunjiarong/Developer/webmcp/output/isolation/current_runs/webmcp_commercial_ui_20260904/ai_security_rules_check_final_codex_anchor/local_security_design_gate_rules_check.md`.
+- `ai-security-rules deploy-gate`: pass, blocking `0`, P0 `0`, P1 `0`, P2 `0`; evidence `/Users/sunjiarong/Developer/webmcp/output/isolation/current_runs/webmcp_commercial_ui_20260904/ai_security_deploy_gate_final_codex_anchor/local_security_design_gate_deploy_gate.md`.
+- `npm audit --audit-level=high`: passed with `0` vulnerabilities.
+- `npm audit --audit-level=moderate --omit=dev`: passed with `0` vulnerabilities.
+
+Next resume point:
+
+- Commit, push `main`, deploy Zeabur, then rerun live `/healthz`, live Codex OCR+LLM room creation, hosted customer-publishing smoke, and a live browser room check.

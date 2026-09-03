@@ -3603,16 +3603,89 @@ function buildSelectableItemsFromCandidates(items = [], candidates = []) {
     });
 }
 
+function attachVisualReviewEvidenceAnchors(candidates = [], evidenceAssets = [], observations = []) {
+  const fallbackAsset = evidenceAssets[0] || null;
+  if (!fallbackAsset) {
+    return candidates;
+  }
+
+  return candidates.map((candidate) => {
+    if (candidate.displaySurface !== 'member_selectable') {
+      return candidate;
+    }
+
+    const sourceObservationIds = Array.isArray(candidate.sourceObservationIds)
+      ? candidate.sourceObservationIds.filter(Boolean)
+      : [];
+    const matchedObservations = findObservationsByIds(sourceObservationIds, observations);
+    const candidateEvidenceText = normalizeShortText(
+      candidate.rawTextEvidence || `${candidate.label || candidate.name || 'Item'} NT$ ${candidate.amount || ''}`,
+      160
+    );
+    const broadOrBlockedObservation = matchedObservations.some((observation) => {
+      const observationText = String(observation.normalizedText || observation.rawText || '');
+      const observationGates = normalizeReviewGates(observation.reviewGates);
+      const hasStructuralGate = observationGates.some((gate) => structuralReviewGateIds.has(gate.id));
+      return hasStructuralGate || observationText.length > Math.max(120, candidateEvidenceText.length * 3);
+    });
+    const needsVisualAnchor = !candidate.sourceAssetId
+      || sourceObservationIds.length === 0
+      || broadOrBlockedObservation;
+
+    if (!needsVisualAnchor) {
+      return candidate;
+    }
+
+    const sourceAssetId = candidate.sourceAssetId || fallbackAsset.id;
+    const boundingZone = candidate.boundingZone && candidate.boundingZone !== 'unknown'
+      ? candidate.boundingZone
+      : 'body_table';
+    const detectedTypeHint = broadOrBlockedObservation
+      ? 'currency_amount'
+      : candidate.detectedTypeHint || 'currency_amount';
+    const visualAnchor = {
+      id: `anchor_${candidate.id || 'item'}_visual_review`,
+      anchorType: 'visual_review_note',
+      sourceAssetId,
+      sourceObservationId: null,
+      boundingZone,
+      bbox: null,
+      detectedTypeHint,
+      auditAnchor: candidateEvidenceText || normalizeShortText(fallbackAsset.sourceLabel || 'reviewed photo evidence', 160)
+    };
+    const anchoredCandidate = {
+      ...candidate,
+      sourceAssetId,
+      sourceObservationIds: broadOrBlockedObservation ? [] : sourceObservationIds,
+      boundingZone,
+      detectedTypeHint,
+      auditAnchor: visualAnchor.auditAnchor,
+      auditAnchors: normalizeAuditAnchors([visualAnchor]),
+      reviewGates: buildCandidateReviewGates({
+        ...candidate,
+        sourceAssetId,
+        sourceObservationIds: broadOrBlockedObservation ? [] : sourceObservationIds,
+        auditAnchor: visualAnchor.auditAnchor,
+        detectedTypeHint
+      }, broadOrBlockedObservation ? [] : observations)
+    };
+    return anchoredCandidate;
+  });
+}
+
 function applyEvidenceReviewLayers(room, parsedItems = [], options = {}) {
   const evidenceAssets = buildEvidenceAssetsFromImages(room, options.images || room.menuImages || [], {
     kind: options.evidenceKind || 'uploaded_image',
     sourceLabel: options.sourceLabel || 'price evidence'
   });
   const ocrObservations = buildOcrObservationsFromText(room, options.localOcrText || '', evidenceAssets, options.ocrSource || 'user_pasted_text');
-  const itemCandidates = buildParserCandidatesFromItems(room, parsedItems, ocrObservations, {
+  const rawItemCandidates = buildParserCandidatesFromItems(room, parsedItems, ocrObservations, {
     taskType: options.taskType,
     scenarioContractId: options.scenarioContractId
   });
+  const itemCandidates = options.allowImageEvidenceFallback === true
+    ? attachVisualReviewEvidenceAnchors(rawItemCandidates, evidenceAssets, ocrObservations)
+    : rawItemCandidates;
   const ruleCandidates = buildRuleCandidatesFromObservations(room, ocrObservations, itemCandidates, {
     taskType: options.taskType,
     scenarioContractId: options.scenarioContractId
@@ -3804,7 +3877,8 @@ function applyAcceptedVisualReviewProposal(room, proposal, reviewerId) {
     scenarioContractId: room.parseQuality?.adaptiveConfidence?.featureProfile?.scenarioContract || null,
     evidenceKind: 'uploaded_image',
     sourceLabel: 'reviewed photo evidence',
-    ocrSource: 'local_ocr'
+    ocrSource: 'local_ocr',
+    allowImageEvidenceFallback: true
   });
   room.parseQuality = evaluateMenuParseQuality({
     items: room.items,
@@ -4053,7 +4127,7 @@ function buildRoomTaskRouter(input = {}) {
     confidenceScore,
     confidenceReason: selectedTaskType === 'auto'
       ? 'The business flow was inferred from photo text and item signals.'
-      : 'The business flow is locked by the merchant or operator.',
+      : 'The business flow is locked by the merchant.',
     inferredTaskType,
     selectedTaskType,
     routeHintTaskType,
@@ -6286,7 +6360,7 @@ function buildMenuParsePrompt(options = {}) {
     taskRouter
   });
   const promptLines = [
-    '你正在處理商家或操作員建立的私密任務房價格證據圖片，不限餐飲、票券、預約、租借或現場費用。',
+    '你正在處理商家建立的私密任務房價格證據圖片，不限餐飲、票券、預約、租借或現場費用。',
     `任務判別模組已鎖定 taskType=${taskRouter.taskType || 'generic_split'}，thresholdKind=${taskRouter.thresholdKind || 'custom'}，splitMode=${taskRouter.splitMode || 'individual_items'}，riskPolicy=${taskRouter.riskPolicy || 'conservative'}。`,
     '你只能在這個任務邊界內修補 evidence 欄位，不要把任務重新發散成其他產品；若圖片訊號與 taskType 衝突，請用 manual_review 與 note 標記，不要自行改任務。',
     '本次只會有一張圖片。每個項目的 sourceImageIndex 一律輸出 1。',
@@ -7115,7 +7189,7 @@ app.post('/api/rooms/:roomId/agent-proposals', (req, res) => {
   }
   const requesterId = String(req.body?.participantId || '');
   if (!requesterId || room.ownerParticipantId !== requesterId) {
-    res.status(403).json({ error: '只有商家或操作員可以建立建議草稿' });
+    res.status(403).json({ error: '只有商家可以建立審核草稿' });
     return;
   }
 
@@ -7155,7 +7229,7 @@ app.post('/api/rooms/:roomId/sample', createRateLimitMiddleware('room_sample', r
     return;
   }
   if (room.ownerParticipantId && room.ownerParticipantId !== requesterId) {
-    res.status(403).json({ error: 'Only the merchant or operator can load the sample room.' });
+    res.status(403).json({ error: 'Only the merchant can load the sample room.' });
     return;
   }
   if (room.menuLoaded || room.items.length > 0 || room.agentProposals.length > 0) {
@@ -7638,7 +7712,7 @@ io.on('connection', (socket) => {
 
     const participantId = String(payload?.participantId || '');
     if (!participantId || room.ownerParticipantId !== participantId) {
-      ack?.({ ok: false, error: '只有商家或操作員可以切換清單類型' });
+      ack?.({ ok: false, error: '只有商家可以切換清單類型' });
       return;
     }
 
@@ -7667,7 +7741,7 @@ io.on('connection', (socket) => {
 
     const participantId = String(payload?.participantId || '');
     if (!participantId || room.ownerParticipantId !== participantId) {
-      ack?.({ ok: false, error: '只有商家或操作員可以發布清單' });
+      ack?.({ ok: false, error: '只有商家可以發布清單' });
       return;
     }
     if (!Array.isArray(room.items) || room.items.length === 0) {
@@ -7764,7 +7838,7 @@ io.on('connection', (socket) => {
 
     const participantId = String(payload?.participantId || '');
     if (!participantId || room.ownerParticipantId !== participantId) {
-      ack?.({ ok: false, error: '只有商家或操作員可以修正讀取結果' });
+      ack?.({ ok: false, error: '只有商家可以修正讀取結果' });
       return;
     }
     if (roomHasConfirmedParticipant(room)) {
@@ -7910,7 +7984,7 @@ io.on('connection', (socket) => {
 
     const participantId = String(payload?.participantId || '');
     if (!participantId || room.ownerParticipantId !== participantId) {
-      ack?.({ ok: false, error: '只有商家或操作員可以移除讀取結果' });
+      ack?.({ ok: false, error: '只有商家可以移除讀取結果' });
       return;
     }
     if (roomHasConfirmedParticipant(room)) {
@@ -8043,13 +8117,13 @@ io.on('connection', (socket) => {
 
     const participantId = String(payload?.participantId || '');
     if (!participantId || room.ownerParticipantId !== participantId) {
-      ack?.({ ok: false, error: '只有商家或操作員可以完成此房間摘要' });
+      ack?.({ ok: false, error: '只有商家可以完成此房間摘要' });
       return;
     }
 
     const participant = room.participants.get(participantId);
     if (!participant || !hasUsableDisplayName(participant.displayName)) {
-      ack?.({ ok: false, error: '商家或操作員請先輸入名稱再完成摘要' });
+      ack?.({ ok: false, error: '商家請先輸入名稱再完成摘要' });
       return;
     }
 
@@ -8083,7 +8157,7 @@ io.on('connection', (socket) => {
 
     const reviewerId = String(payload?.participantId || '');
     if (!reviewerId || room.ownerParticipantId !== reviewerId) {
-      ack?.({ ok: false, error: '只有商家或操作員可以決定建議草稿' });
+      ack?.({ ok: false, error: '只有商家可以決定審核草稿' });
       return;
     }
 
@@ -8189,7 +8263,7 @@ io.on('connection', (socket) => {
     }
     const participantId = String(payload?.participantId || '');
     if (!participantId || room.ownerParticipantId !== participantId) {
-      ack?.({ ok: false, error: '只有商家或操作員可以清空此房間' });
+      ack?.({ ok: false, error: '只有商家可以清空此房間' });
       return;
     }
 

@@ -32,7 +32,7 @@ Shared Room MCP is built for messy real-world coordination: table ordering, drin
 
 The project gives the assistant page-local WebMCP tools. The assistant can inspect the current private room, read the selected scenario, find missing confirmations, review price-reading quality, and create a draft for the merchant. Codex can also create a field-fix draft when the price list is read incorrectly, such as quantity, subtotal, size, or add-on columns being confused with item prices. Repairs become visible merchant-reviewed proposals before they affect customer-facing rows.
 
-The core demo works without any paid API key for room state, WebMCP inspection, merchant-reviewed proposals, local math, customer confirmation, and export. For image evidence, OCR-only output is candidate evidence; an authorized local bridge can run local OCR plus LLM visual review before it writes a draft-only proposal into the hosted room. The LLM visual review node can be Codex, Gemini, or a deployment-owner local vision model. Optional hosted model providers are replaceable helpers for deployments that explicitly choose them.
+The core demo works without any paid API key for room state, WebMCP inspection, merchant-reviewed proposals, local math, customer confirmation, and export. For image evidence, OCR-only output is candidate evidence; an authorized local bridge runs local OCR, Codex occupies the LLM/visual-review node, and the bridge writes a draft-only proposal into the hosted room. Optional hosted or local model providers are replaceable helpers for deployments that explicitly choose them outside this Codex demo path.
 
 After human review, the room can export a local HTML or PDF review record of the private task state.
 
@@ -60,15 +60,15 @@ Implemented WebMCP tools:
 
 The human controls the room, task type, uploaded evidence, copied text, parsed item review, customer publishing, participant names, customer selection confirmation, and final summary. The assistant helps by reading the current private room state, identifying conflicts, explaining missing confirmations, guiding the next action from the WebMCP tool output, and preparing drafts for the merchant. The `suggest_next_actions` tool is the main read path. The `create_action_proposal` tool stores a waiting-for-merchant JSON proposal under `room.agentProposals[]`, including field-fix drafts when Codex detects a reading mistake. The merchant can edit or remove parsed item rows before publishing the list to customers. Merchant review stays on one visible draft card; repeated same-type drafts replace the previous pending card instead of stacking duplicate decisions. Accepted reviews are explicit room-state transitions.
 
-The core loop is: local OCR produces candidate text; Codex, Gemini, or a local vision model checks the image and turns it into a structured draft; WebMCP/Codex writes or reviews the draft against room state and evidence; the human edits, confirms, and releases the final commitment.
+The core loop is: local OCR produces candidate text; Codex checks the image and turns it into a structured draft; WebMCP/Codex writes or reviews the draft against room state and evidence; the human edits, confirms, and releases the final commitment.
 
-Chinese wording for review: 圖片 -> OCR -> Codex/Gemini/本地模型看圖校正 -> 結構化草稿 -> 人工審核 -> 通過。
+Chinese wording for review: 圖片 -> 本地 OCR -> Codex 看圖校正 -> 結構化草稿 -> 人工審核 -> 通過。
 
-Zeabur is the hosted state storage, MCP protocol host, HITL approval gate, guardrail runtime, customer publishing surface, and export surface. Zero required ML/OCR workload is processed on the Zeabur server in the default WebMCP Challenge path; local OCR and LLM visual review run on the operator machine or authorized assistant layer before a draft proposal is pushed.
+Zeabur is the hosted state storage, MCP protocol host, HITL approval gate, guardrail runtime, customer publishing surface, and export surface. Zero required ML/OCR workload is processed on the Zeabur server in the default WebMCP Challenge path; local OCR and Codex visual review run through the authorized local bridge before a draft proposal is pushed.
 
 Threshold conditions such as minimum headcount, minimum spend, and free-shipping thresholds are review context. The assistant may flag a mismatch between the evidence and the current room state, but it cannot decide that the group is formed, the booking is valid, payment is complete, or the final summary is complete. The merchant can edit, override, and publish the customer-facing task after review.
 
-Provider AI is optional and limited to image/text repair helpers. Future forks can reuse the same draft-first pattern for booking drafts, repair appointment drafts, salon reservation drafts, activity signup drafts, and other pre-commitment workflows while keeping commitments behind merchant/customer review gates.
+Optional provider AI is limited to image/text repair helpers outside this demo path. Future forks can reuse the same draft-first pattern for booking drafts, repair appointment drafts, salon reservation drafts, activity signup drafts, and other pre-commitment workflows while keeping commitments behind merchant/customer review gates.
 
 ## Official Requirement Alignment
 
@@ -176,7 +176,7 @@ The image-matrix command is a deterministic contract-driven integration benchmar
 There are three separate image-test modes:
 
 - `image-only`: uploads only the image. It is a negative canary unless the deployment owner configured an image-reading provider.
-- `image-plus-local-ocr`: runs OCR on the operator machine first, then writes OCR metadata and a draft proposal into the hosted room. Zeabur remains the room/runtime/HITL surface, not the OCR engine. This mode is a canary for field isolation, evidence pointers, forbidden-number leakage, and advisory threshold handling; completed image review still requires LLM visual review or merchant repair before customer publishing.
+- `image-plus-local-ocr`: runs OCR through the authorized local bridge first, then writes OCR details and a draft proposal into the hosted room. Zeabur remains the room/runtime/HITL surface, not the OCR engine. This mode is a canary for field isolation, evidence pointers, forbidden-number leakage, and advisory threshold handling; completed image review still requires Codex visual review or merchant repair before customer publishing.
 - `image-plus-oracle-text`: uploads the image plus locked oracle text and verifies checksum-backed image-oracle artifacts, contract routing, customer-visible masks, and HITL state behavior.
 
 None of these modes should be described as provider accuracy, zero-shot extraction, unconstrained vision accuracy, or Zeabur-hosted OCR.
@@ -193,7 +193,7 @@ Target length: 2 minutes 20 seconds to 2 minutes 45 seconds. The recording shows
 
 Prepared synthetic evidence:
 
-- English: `Moon Table Cafe Menu`, generated by `npm run demo:codex-ocr-llm` when no image path is supplied. It intentionally contains one OCR-prone row, `7 Up 70`, and an add-on row that OCR may miss.
+- English: `Moon Table Cafe Menu`, generated by `npm run demo:codex-ocr-llm` when no image path is supplied. It is a synthetic merchant menu board with short-name, add-on, and pricing-note rows for OCR plus Codex visual review.
 - Optional Chinese contrast: `社區水果免運團購`, containing purchasable fruit items plus a free-shipping threshold and shipping-review lines.
 - All recording images are synthetic. They contain no customer, vendor, social-account, or payment data.
 
@@ -209,9 +209,9 @@ Spoken line:
 
 "AI prepares a local review draft and writes it into the room. Humans approve the commitment."
 
-0:05-0:18: **Presenter/operator setup.** Create or reuse the live room. Keep the evidence image and draft area visible so the source and the pending review card are both clear.
+0:05-0:18: **Presenter setup.** Create or reuse the live room. Keep the evidence image and draft area visible so the source and the pending review card are both clear.
 
-0:18-0:35: **WebMCP/Codex action.** Run `npm run demo:codex-ocr-llm -- --base-url https://shared-room-mcp-next.zeabur.app`. The guided bridge performs local OCR, applies Codex visual review against the image, and writes a `semantic_repair_draft` proposal into the Zeabur room. Call `inspect_room` and `suggest_next_actions`, then pause with one draft card visible under `AI Review Draft`.
+0:18-0:35: **WebMCP/Codex action.** Run `npm run demo:codex-ocr-llm -- --base-url https://shared-room-mcp-next.zeabur.app`. The guided bridge performs local OCR, puts Codex in the LLM/visual-review node for the image, and writes one review draft proposal into the Zeabur room. Call `inspect_room` and `suggest_next_actions`, then pause with one draft card visible under `AI Review Draft`.
 
 Agent cue:
 
@@ -225,7 +225,7 @@ Agent cue after the button changes:
 
 0:43-0:50: **Human click 2.** Click the green button on the same card. The card must visibly leave the waiting state. If a second equivalent card appears, stop the recording.
 
-0:50-1:05: **Presenter/operator setup.** Open the copied room link in a second tab as `Jamie`, select one item for Jamie, and move the pointer to Jamie's selection confirmation button.
+0:50-1:05: **Presenter setup.** Open the copied room link in a second tab as `Jamie`, select one item for Jamie, and move the pointer to Jamie's selection confirmation button.
 
 Agent cue:
 
@@ -233,7 +233,7 @@ Agent cue:
 
 1:05-1:12: **Human click 3.** Click Jamie's selection confirmation button once.
 
-1:12-1:22: **Presenter/operator setup.** Immediately return to the merchant tab, verify that Jamie is present and confirmed, then move the pointer to `Merchant Finalizes Summary`.
+1:12-1:22: **Presenter setup.** Immediately return to the merchant tab, verify that Jamie is present and confirmed, then move the pointer to `Merchant Finalizes Summary`.
 
 Agent cue:
 
@@ -245,7 +245,7 @@ Agent cue:
 
 ### Scene B: Chinese Free-Shipping Group Buy
 
-1:40-1:48: **Presenter/operator setup.** Open a new room, switch the UI to Chinese, and upload the prepared `社區水果免運團購` image through the visible file picker.
+1:40-1:48: **Presenter setup.** Open a new room, switch the UI to Chinese, and upload the prepared `社區水果免運團購` image through the visible file picker.
 
 1:48-2:02: **WebMCP/Codex action.** Run the authorized local review bridge against the Chinese evidence image. Show that `滿額 1500 免運`, `冷藏運費`, and `免運差額` are treated as review conditions, not as customer-selectable products.
 
@@ -263,7 +263,7 @@ Closing line:
 
 Operator rule for recording:
 
-- The presenter/operator performs navigation, language switching, file selection, customer item selection, tab switching, and pointer placement.
+- The presenter performs navigation, language switching, file selection, customer item selection, tab switching, and pointer placement.
 - WebMCP/Codex performs room inspection, local-review draft creation, and release-gate checks.
 - The human clicks only after the agent gives an explicit cue.
 - Draft review uses one visible card in one position: first review click, then green approval click on that same card.
