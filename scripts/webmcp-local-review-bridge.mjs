@@ -598,15 +598,13 @@ function buildProposalPayload(args, room, image, ocrResult, visionResult) {
     proposalType: 'semantic_repair_draft',
     riskLevel: 'needs_human_review',
     summary: structuredItems.length > 0
-      ? `Local review draft prepared ${structuredItems.length} item(s): ${itemPreview}`.slice(0, 360)
-      : 'Local OCR draft prepared, but local vision did not produce structured items.',
+      ? `Photo review draft prepared ${structuredItems.length} item(s): ${itemPreview}`.slice(0, 360)
+      : 'Photo text was read, but the visual check did not return usable rows.',
     rationale: [
-      `Source mode: ${sourceMode}.`,
-      `Local OCR chars: ${ocrPreview.length}.`,
       visionResult.ok
-        ? `Local vision model: ${visionResult.model}.`
-        : 'Local vision correction was unavailable or produced no structured items.',
-      'Host must compare the original image before approving.'
+        ? 'This draft was prepared from the photo with text reading and a visual check.'
+        : 'Only photo text was read. A visual check is still needed before approval.',
+      'The host should compare the draft with the original image before approving.'
     ].join(' ').slice(0, 700),
     payload: {
       sourceMode,

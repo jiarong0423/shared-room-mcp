@@ -1576,7 +1576,7 @@
     <header class="topbar">
       <div class="title-block">
         <h1 data-i18n="appTitle">Shared Room</h1>
-        <p data-i18n="appSubtitle">AI prepares structured drafts from messy inputs. People review, join, and approve the final action.</p>
+        <p data-i18n="appSubtitle">AI turns photos or messy text into a draft. The host reviews it, people join, and final approval stays human.</p>
       </div>
       <div class="status-row">
         <div class="language-toggle" id="languageToggle" aria-label="Language">
@@ -1613,10 +1613,10 @@
             </div>
             <div class="contract-pill">
               <strong data-i18n="contractEvidence">Read the Price List</strong>
-              <span data-i18n="contractEvidenceHint">photo or pasted text first</span>
+              <span data-i18n="contractEvidenceHint">photo review first</span>
             </div>
             <div class="contract-pill">
-              <strong data-i18n="contractFormula">Keep Math Local</strong>
+              <strong data-i18n="contractFormula">Calculate Here</strong>
               <span data-i18n="contractFormulaHint">totals are calculated here</span>
             </div>
             <div class="contract-pill">
@@ -1682,10 +1682,10 @@
                   <button class="image-tool-button" id="imageZoomInButton" type="button">＋</button>
                 </div>
               </div>
-              <div class="source-menu-viewer" id="sourceMenuViewer" aria-label="Draggable and zoomable saved evidence photo" data-i18n-aria-label="draggableEvidence">
+              <div class="source-menu-viewer" id="sourceMenuViewer" aria-label="Saved evidence photo" data-i18n-aria-label="draggableEvidence">
                 <img id="sourceMenuImage" alt="Saved Evidence Photo" draggable="false" data-i18n-alt="compressedEvidence">
               </div>
-              <div class="source-menu-hint" data-i18n="sourceMenuHint">Drag to inspect. Use wheel or pinch to zoom. This is the saved evidence copy, not a cropped item thumbnail.</div>
+              <div class="source-menu-hint" data-i18n="sourceMenuHint">Drag to inspect. Zoom in if the text is small.</div>
             </div>
             <div class="menu-mode-row">
               <div class="mode-copy">
@@ -1878,8 +1878,8 @@
         expand: '展開',
         downloadEvidence: '下載照片',
         resetZoom: '重置',
-        draggableEvidence: '可拖移縮放的證據照片',
-        sourceMenuHint: '可拖移查看，滾輪或雙指可縮放。這是保存後的證據圖片，不是項目裁切縮圖。',
+        draggableEvidence: '保存的證據照片',
+        sourceMenuHint: '可拖移查看，文字太小可放大。',
         itemMode: '清單類型',
         aiAutoDetect: '自動建議',
         itemModeToggle: '清單類型切換',
@@ -1920,26 +1920,29 @@
         personalClaims: '個人加點',
         targetReached: '已達標，多',
         targetRemaining: '還差',
-        qualityPass: '清單看起來正常',
-        qualityWarn: '需要快速檢查',
-        qualityReview: '需要人工確認',
+        qualityPass: '清單可供核對',
+        qualityWarn: '請快速核對',
+        qualityReview: '需要主揪核對',
         qualityNone: '尚無品質報告',
-        aiConfidence: 'AI 複查分數',
-        scenarioContract: '情境契約',
-        schemaAlignment: '欄位對齊',
-        entityAnchoring: '項目錨定',
-        priceCoverage: '價格覆蓋',
-        contractFit: '情境吻合',
-        issuePenalty: '問題扣分',
-        blockingReasons: '阻擋原因',
+        aiConfidence: '讀取把握度',
+        scenarioContract: '適用情境',
+        schemaAlignment: '內容完整度',
+        entityAnchoring: '項目可對照',
+        priceCoverage: '價格讀到',
+        contractFit: '用途吻合',
+        issuePenalty: '需修正比例',
+        blockingReasons: '需要先處理',
         needsReview: '需要確認',
-        rulesKeptSeparate: '規則已另外列出',
+        hostCheckNeeded: '需要主揪核對',
+        itemsNeedCheck: '待核對項目',
+        rulesNeedCheck: '待核對規則',
+        rulesKeptSeparate: '費用規則需確認',
         freeShippingRuleFound: '免運門檻',
         minimumRuleFound: '最低門檻',
         discountRuleFound: '優惠規則',
         unavailableRuleFound: '售完或不可用項目',
-        localOcrProvided: '已貼上文字',
-        localOcrMissing: '未貼上文字',
+        localOcrProvided: '已讀取照片文字',
+        localOcrMissing: '尚未讀取照片文字',
         auditPending: '還有人未確認',
         auditReady: '大家都確認了',
         auditNoActiveCosts: '尚無待確認費用',
@@ -1947,7 +1950,7 @@
         optionGroups: '可選項目',
         quickReview: '需確認',
         converged: '已整理',
-        confidence: '可信度',
+        confidence: '吻合度',
         modeHintPrefix: '系統建議',
         currentMode: '目前',
         ownerCanSwitch: '你是發起者，可切換模式',
@@ -2016,8 +2019,8 @@
         contractTaskRouter: '先選用途',
         contractTaskRouterHint: '房間只走一條路線',
         contractEvidence: '讀取價格內容',
-        contractEvidenceHint: '先看圖片或文字',
-        contractFormula: '金額留在本頁算',
+        contractEvidenceHint: '先看照片再出草稿',
+        contractFormula: '本頁算金額',
         contractFormulaHint: '不交給外部亂算',
         contractRepairGate: '看不清才求助',
         contractRepairGateHint: '不清楚就請人確認',
@@ -2038,7 +2041,7 @@
         ownerOnlyDraftReview: '只有發起者可決定',
         draftReviewFailed: '草稿審核失敗',
         draftCreated: '建議已儲存，等待發起者確認。',
-        aiReviewBlocksDraft: 'AI 複查發現高風險解析問題，請先修正清單。',
+        aiReviewBlocksDraft: '清單還有內容需要核對，請先修正後再開放。',
         drinkOptionSettledError: '此房間已結算，不能再修改甜度冰塊。',
         drinkOptionNameError: '請先輸入名稱並套用名稱再選甜度冰塊。',
         drinkOptionConfirmedError: '個人費用已確認，請先取消確認再修改甜度冰塊。',
@@ -2066,7 +2069,7 @@
         proposalTypeclaim_assignment: '確認誰要負責',
         proposalTypemissing_confirmation: '提醒尚未確認',
         proposalTypeevidence_review: '檢查價格內容',
-        proposalTypesemantic_repair_draft: '修正讀取草稿',
+        proposalTypesemantic_repair_draft: '照片讀取草稿',
         proposalTypetask_router_review: '確認用途選擇',
         proposalTypebooking_draft: '預約草稿',
         proposalTypeservice_request_draft: '服務需求草稿',
@@ -2080,16 +2083,16 @@
         itemName: '名稱',
         itemPrice: '金額',
         itemCategory: '分類',
-        itemPriceRole: '金額角色',
-        itemSourceClass: '來源類型',
-        itemConfidence: '信心',
-        itemEvidence: '來源',
-        itemAuditAnchor: '視覺錨點',
-        itemReviewGate: '審核阻擋',
-        itemBoundingZone: '圖面區域',
-        itemDetectedType: '偵測類型',
-        itemNoReviewGate: '沒有阻擋原因',
-        itemReviewFlags: '疑點',
+        itemPriceRole: '用途',
+        itemSourceClass: '讀成',
+        itemConfidence: '讀取把握度',
+        itemEvidence: '文字線索',
+        itemAuditAnchor: '照片線索',
+        itemReviewGate: '核對原因',
+        itemBoundingZone: '照片位置',
+        itemDetectedType: '看起來是',
+        itemNoReviewGate: '不用額外核對',
+        itemReviewFlags: '核對提醒',
         priceRoleline_item: '可分攤品項',
         priceRoleshared_fixed_fee: '共享固定費',
         priceRoletax_rate: '稅率',
@@ -2119,8 +2122,8 @@
         sourceNumberClassdistance: '距離',
         sourceNumberClassduration: '時間',
         sourceNumberClassquantity: '數量',
-        sourceNumberClassunknown: '未知',
-        reviewFlagmultiple_price_candidates: '多個價格候選',
+        sourceNumberClassunknown: '不確定',
+        reviewFlagmultiple_price_candidates: '多個可能金額',
         reviewFlagdeposit_detected: '偵測到押金',
         reviewFlagprepayment_detected: '偵測到訂金',
         reviewFlagdiscount_scope_unclear: '折扣範圍不明',
@@ -2132,9 +2135,9 @@
         reviewFlagpercentage_near_price: '百分比靠近價格',
         reviewFlagpoints_cash_confusion: '點數與現金可能混淆',
         reviewFlagreview_required: '需要人工複查',
-        antiPollutionGate: '候選分流',
-        parserCandidates: '候選',
-        calculationRules: '規則/對帳',
+        antiPollutionGate: '開放前檢查',
+        parserCandidates: '待核對項目',
+        calculationRules: '待核對規則',
         removeItem: '移除',
         itemReviewSaved: '項目已修正。',
         itemRemoved: '項目已移除。',
@@ -2143,7 +2146,7 @@
       },
       en: {
         appTitle: 'Shared Room',
-        appSubtitle: 'AI prepares structured drafts from messy inputs. People review, join, and approve the final action.',
+        appSubtitle: 'AI turns photos or messy text into a draft. The host reviews it, people join, and final approval stays human.',
         connecting: 'Connecting',
         connected: 'Connected',
         disconnected: 'Disconnected',
@@ -2181,8 +2184,8 @@
         expand: 'Expand',
         downloadEvidence: 'Download Photo',
         resetZoom: 'Reset',
-        draggableEvidence: 'Draggable and zoomable saved evidence photo',
-        sourceMenuHint: 'Drag to inspect. Use wheel or pinch to zoom. This is the saved evidence copy, not a cropped item thumbnail.',
+        draggableEvidence: 'Saved evidence photo',
+        sourceMenuHint: 'Drag to inspect. Zoom in if the text is small.',
         itemMode: 'List Type',
         aiAutoDetect: 'Suggested automatically',
         itemModeToggle: 'List type switch',
@@ -2223,26 +2226,29 @@
         personalClaims: 'personal add-ons',
         targetReached: 'Reached, over by',
         targetRemaining: 'Remaining',
-        qualityPass: 'List looks ready',
+        qualityPass: 'Ready for host check',
         qualityWarn: 'Quick review needed',
         qualityReview: 'Human review required',
         qualityNone: 'No quality report yet',
-        aiConfidence: 'AI review score',
-        scenarioContract: 'scenario contract',
-        schemaAlignment: 'schema alignment',
-        entityAnchoring: 'entity anchoring',
-        priceCoverage: 'price coverage',
-        contractFit: 'contract fit',
-        issuePenalty: 'issue penalty',
-        blockingReasons: 'blocking reasons',
+        aiConfidence: 'Reading confidence',
+        scenarioContract: 'Room type',
+        schemaAlignment: 'Content complete',
+        entityAnchoring: 'Item match',
+        priceCoverage: 'Prices found',
+        contractFit: 'Purpose match',
+        issuePenalty: 'Needs correction',
+        blockingReasons: 'Needs attention',
         needsReview: 'Needs review',
+        hostCheckNeeded: 'host check needed',
+        itemsNeedCheck: 'items to check',
+        rulesNeedCheck: 'rules to check',
         rulesKeptSeparate: 'rules shown separately',
         freeShippingRuleFound: 'free shipping threshold',
         minimumRuleFound: 'minimum threshold',
         discountRuleFound: 'discount rule',
         unavailableRuleFound: 'sold out or unavailable',
-        localOcrProvided: 'Text provided',
-        localOcrMissing: 'No text provided',
+        localOcrProvided: 'Photo text read',
+        localOcrMissing: 'No photo text yet',
         auditPending: 'People still need to confirm',
         auditReady: 'Everyone confirmed',
         auditNoActiveCosts: 'No pending costs',
@@ -2250,7 +2256,7 @@
         optionGroups: 'choices',
         quickReview: 'Review',
         converged: 'Organized',
-        confidence: 'confidence',
+        confidence: 'match',
         modeHintPrefix: 'Suggested',
         currentMode: 'Current',
         ownerCanSwitch: 'You are the owner and can switch modes',
@@ -2318,8 +2324,8 @@
         contractTaskRouter: 'Choose the Plan',
         contractTaskRouterHint: 'the room stays on one path',
         contractEvidence: 'Read the Price List',
-        contractEvidenceHint: 'photo or pasted text first',
-        contractFormula: 'Keep Math Local',
+        contractEvidenceHint: 'photo review first',
+        contractFormula: 'Calculate Here',
         contractFormulaHint: 'totals are calculated here',
         contractRepairGate: 'Ask Only If Needed',
         contractRepairGateHint: 'unclear text needs review',
@@ -2340,7 +2346,7 @@
         ownerOnlyDraftReview: 'host decides only',
         draftReviewFailed: 'Failed to review draft',
         draftCreated: 'Suggestion saved for host confirmation.',
-        aiReviewBlocksDraft: 'AI review found high-risk parsing issues. Fix the item list first.',
+        aiReviewBlocksDraft: 'The list still needs host review before it opens to members.',
         drinkOptionSettledError: 'This room is settled. Drink options cannot be changed.',
         drinkOptionNameError: 'Enter and apply your name before choosing drink options.',
         drinkOptionConfirmedError: 'Your cost is already confirmed. Cancel confirmation before changing drink options.',
@@ -2368,7 +2374,7 @@
         proposalTypeclaim_assignment: 'who should confirm',
         proposalTypemissing_confirmation: 'missing confirmation',
         proposalTypeevidence_review: 'price review',
-        proposalTypesemantic_repair_draft: 'reading fix draft',
+        proposalTypesemantic_repair_draft: 'photo reading draft',
         proposalTypetask_router_review: 'room purpose review',
         proposalTypebooking_draft: 'booking draft',
         proposalTypeservice_request_draft: 'service request draft',
@@ -2382,16 +2388,16 @@
         itemName: 'Name',
         itemPrice: 'Price',
         itemCategory: 'Category',
-        itemPriceRole: 'Price Role',
-        itemSourceClass: 'Source Type',
-        itemConfidence: 'Confidence',
+        itemPriceRole: 'Amount use',
+        itemSourceClass: 'Read as',
+        itemConfidence: 'Reading confidence',
         itemEvidence: 'Evidence',
-        itemAuditAnchor: 'Audit Anchor',
-        itemReviewGate: 'Review Gate',
-        itemBoundingZone: 'Image Zone',
-        itemDetectedType: 'Detected Type',
-        itemNoReviewGate: 'No blocking reason',
-        itemReviewFlags: 'Flags',
+        itemAuditAnchor: 'Photo clue',
+        itemReviewGate: 'Why check',
+        itemBoundingZone: 'Photo area',
+        itemDetectedType: 'Looks like',
+        itemNoReviewGate: 'No extra check needed',
+        itemReviewFlags: 'Check notes',
         priceRoleline_item: 'billable item',
         priceRoleshared_fixed_fee: 'shared fixed fee',
         priceRoletax_rate: 'tax rate',
@@ -2406,11 +2412,11 @@
         priceRoleprepayment_down: 'down payment',
         priceRoleaggregate_subtotal: 'subtotal',
         priceRoleaggregate_grand_total: 'grand total',
-        priceRolesubtotal_observation: 'subtotal audit',
-        priceRolegrand_total_observation: 'grand total audit',
+        priceRolesubtotal_observation: 'subtotal check',
+        priceRolegrand_total_observation: 'grand total check',
         priceRolethreshold_amount: 'threshold amount',
         priceRolepoints_value: 'points value',
-        priceRolenon_price_context: 'non-price context',
+        priceRolenon_price_context: 'not a price',
         sourceNumberClasscurrency_amount: 'money',
         sourceNumberClassage_range: 'age',
         sourceNumberClassitinerary_index: 'itinerary index',
@@ -2421,8 +2427,8 @@
         sourceNumberClassdistance: 'distance',
         sourceNumberClassduration: 'duration',
         sourceNumberClassquantity: 'quantity',
-        sourceNumberClassunknown: 'unknown',
-        reviewFlagmultiple_price_candidates: 'multiple price candidates',
+        sourceNumberClassunknown: 'uncertain',
+        reviewFlagmultiple_price_candidates: 'multiple possible prices',
         reviewFlagdeposit_detected: 'deposit detected',
         reviewFlagprepayment_detected: 'prepayment detected',
         reviewFlagdiscount_scope_unclear: 'unclear discount scope',
@@ -2434,9 +2440,9 @@
         reviewFlagpercentage_near_price: 'percentage near price',
         reviewFlagpoints_cash_confusion: 'points/cash confusion',
         reviewFlagreview_required: 'human review required',
-        antiPollutionGate: 'candidate routing',
-        parserCandidates: 'candidates',
-        calculationRules: 'rules/audit',
+        antiPollutionGate: 'opening check',
+        parserCandidates: 'items to check',
+        calculationRules: 'rules to check',
         removeItem: 'Remove',
         itemReviewSaved: 'Item updated.',
         itemRemoved: 'Item removed.',
@@ -3333,14 +3339,14 @@
         {
           name: 'inspect_room',
           title: 'Inspect room',
-          description: 'Read the current private task room: ServiceBlueprint boundary, selected purpose, totals, confirmations, price-reading quality, and current warnings.',
+          description: 'Read the current room purpose, totals, confirmations, photo-reading status, and warnings.',
           inputSchema: emptyInputSchema,
           execute: async () => JSON.stringify(getWebMcpRoomSnapshot())
         },
         {
           name: 'get_task_router',
           title: 'Get room purpose',
-          description: 'Read the selected room purpose and whether the sparse evidence appears to match the host-provided task boundary.',
+          description: 'Read what the room is for and whether the evidence appears to match that purpose.',
           inputSchema: emptyInputSchema,
           execute: async () => JSON.stringify({
             taskRouter: currentRoom?.taskRouter || null,
@@ -3351,7 +3357,7 @@
         {
           name: 'get_claim_audit',
           title: 'Get confirmations',
-          description: 'Read which receivers still need to confirm their own selected or assigned rows.',
+          description: 'Read who still needs to confirm their own choices or assigned rows.',
           inputSchema: emptyInputSchema,
           execute: async () => JSON.stringify({
             audit: currentRoom?.audit || null
@@ -3359,8 +3365,8 @@
         },
         {
           name: 'get_formula_contract',
-          title: 'Get local calculation rules',
-          description: 'Read the local calculation rules and current totals produced by the room contract.',
+          title: 'Get room totals',
+          description: 'Read the money rules and current totals calculated inside this room.',
           inputSchema: emptyInputSchema,
           execute: async () => JSON.stringify({
             formulaContract: currentRoom?.formulaContract || null,
@@ -3369,8 +3375,8 @@
         },
         {
           name: 'get_trust_layer_contract',
-          title: 'Get trust settings',
-          description: 'Read the optional trust settings for short-lived whitelist and review status.',
+          title: 'Get room sharing settings',
+          description: 'Read temporary sharing and review settings.',
           inputSchema: emptyInputSchema,
           execute: async () => JSON.stringify({
             trustLayerContract: currentRoom?.trustLayerContract || null,
@@ -3380,14 +3386,14 @@
         {
           name: 'suggest_next_actions',
           title: 'Suggest next actions',
-          description: 'Return state guidance based on ServiceBlueprint boundary, sparse evidence quality, selected purpose, local calculation rules, and confirmations.',
+          description: 'Suggest safe next steps from the room state, photo-reading status, selected purpose, totals, and confirmations.',
           inputSchema: emptyInputSchema,
           execute: async () => JSON.stringify(getAgentNextActions())
         },
         {
           name: 'create_action_proposal',
           title: 'Create host draft',
-          description: 'Create a draft proposal for the room host to review before member-facing state changes.',
+          description: 'Create a draft for the host to review before anything changes for members.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -3512,6 +3518,126 @@
       return t('rulesKeptSeparate');
     }
 
+    const visibleTermMap = {
+      zh: [
+        [/local_ocr_plus_local_vision/gi, '照片文字讀取加看圖核對'],
+        [/local_ocr_only_bridge_draft/gi, '只讀到照片文字，還要看圖核對'],
+        [/local_ocr_only_requires_visual_review/gi, '只讀到照片文字，還要看圖核對'],
+        [/local_ocr_fallback/gi, '只讀到照片文字，還要看圖核對'],
+        [/semantic_repair_draft/gi, '照片讀取草稿'],
+        [/evidence_review/gi, '照片內容核對'],
+        [/task_router_review/gi, '用途核對'],
+        [/mock-local-vision/gi, '本機看圖測試'],
+        [/AI review score/gi, '讀取把握度'],
+        [/scenario contract/gi, '適用情境'],
+        [/schema alignment/gi, '內容完整度'],
+        [/entity anchoring/gi, '項目可對照'],
+        [/contract fit/gi, '用途吻合'],
+        [/issue penalty/gi, '需修正比例'],
+        [/blocking reasons/gi, '需要先處理'],
+        [/parser candidate\(s\)/gi, '待核對項目'],
+        [/parser candidate/gi, '待核對項目'],
+        [/rule\/audit candidate\(s\)/gi, '待核對規則'],
+        [/rule\/audit candidate/gi, '待核對規則'],
+        [/structural review gates/gi, '開放前檢查'],
+        [/review gates/gi, '核對原因'],
+        [/rule-like item\(s\)/gi, '費用或規則'],
+        [/selectable item\(s\)/gi, '可選項目'],
+        [/member item\(s\)/gi, '成員可選項目'],
+        [/candidate routing/gi, '開放前檢查']
+      ],
+      en: [
+        [/local_ocr_plus_local_vision/gi, 'photo text plus visual check'],
+        [/local_ocr_only_bridge_draft/gi, 'photo text only; visual check needed'],
+        [/local_ocr_only_requires_visual_review/gi, 'photo text only; visual check needed'],
+        [/local_ocr_fallback/gi, 'photo text only; visual check needed'],
+        [/semantic_repair_draft/gi, 'photo reading draft'],
+        [/evidence_review/gi, 'photo review'],
+        [/task_router_review/gi, 'room purpose check'],
+        [/mock-local-vision/gi, 'local visual check'],
+        [/AI review score/gi, 'Reading confidence'],
+        [/scenario contract/gi, 'Room type'],
+        [/schema alignment/gi, 'Content complete'],
+        [/entity anchoring/gi, 'Item match'],
+        [/contract fit/gi, 'Purpose match'],
+        [/issue penalty/gi, 'Needs correction'],
+        [/blocking reasons/gi, 'Needs attention'],
+        [/parser candidate\(s\)/gi, 'items to check'],
+        [/parser candidate/gi, 'item to check'],
+        [/rule\/audit candidate\(s\)/gi, 'rules to check'],
+        [/rule\/audit candidate/gi, 'rule to check'],
+        [/structural review gates/gi, 'opening checks'],
+        [/review gates/gi, 'review reasons'],
+        [/rule-like item\(s\)/gi, 'fee or rule item(s)'],
+        [/selectable item\(s\)/gi, 'member choice(s)'],
+        [/member item\(s\)/gi, 'member item(s)'],
+        [/candidate routing/gi, 'opening check']
+      ]
+    };
+
+    function normalizeVisibleTextSpacing(value) {
+      return String(value || '')
+        .replace(/[ \t]+/g, ' ')
+        .replace(/\s+\./g, '.')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
+
+    function humanizeVisibleText(value) {
+      const zh = currentLanguage !== 'en';
+      let text = String(value || '').trim();
+      if (!text) {
+        return '';
+      }
+
+      text = text
+        .replace(/Source mode:\s*[^.]+\.?\s*/gi, '')
+        .replace(/Local OCR chars:\s*\d+\.?\s*/gi, '')
+        .replace(/Local vision model:\s*[^.]+\.?\s*/gi, zh ? '已用本機看圖輔助。 ' : 'A local visual check was used. ')
+        .replace(/Local vision correction was unavailable or produced no structured items\.?/gi, zh ? '看圖核對還沒有產生可用清單。' : 'The photo check did not return usable rows.')
+        .replace(/Local OCR draft prepared, but local vision did not produce structured items\.?/gi, zh ? '已讀到照片文字，但看圖核對還沒有產生可用清單。' : 'Photo text was read, but the visual check did not return usable rows.')
+        .replace(/Local review draft prepared\s+(\d+)\s+item\(s\):/gi, (_match, count) => zh ? `照片讀取草稿已準備 ${count} 個項目：` : `Photo review draft prepared ${count} item(s):`)
+        .replace(/Host must compare the original image before approving\.?/gi, zh ? '主揪採納前要對照原圖。' : 'The host should compare the draft with the original image before approving.')
+        .replace(/(\d+)\s+parser candidate\(s\) still need host review\.?/gi, (_match, count) => zh ? `${count} 個讀到的項目需要主揪核對。` : `${count} read item(s) need host review.`)
+        .replace(/(\d+)\s+read item\(s\) need host review before members can use the list\.?/gi, (_match, count) => zh ? `${count} 個讀到的項目需要主揪核對後才能開放。` : `${count} read item(s) need host review before members can use the list.`)
+        .replace(/(\d+)\s+rule\/audit candidate\(s\) need host decision\.?/gi, (_match, count) => zh ? `${count} 個費用或總額規則需要主揪判斷。` : `${count} fee or total note(s) need host review.`)
+        .replace(/(\d+)\s+fee, total, discount, or threshold note\(s\) need host decision\.?/gi, (_match, count) => zh ? `${count} 個費用、總額、折扣或門檻需要主揪判斷。` : `${count} fee, total, discount, or threshold note(s) need host review.`)
+        .replace(/(\d+)\s+rule-like item\(s\) are still member selectable\.?/gi, (_match, count) => zh ? `${count} 個費用或規則還在成員可選清單中。` : `${count} fee or rule item(s) are still showing as member choices.`)
+        .replace(/(\d+)\s+fee or rule item\(s\) are still showing as member choices\.?/gi, (_match, count) => zh ? `${count} 個費用或規則還在成員可選清單中。` : `${count} fee or rule item(s) are still showing as member choices.`)
+        .replace(/(\d+)\s+selectable item\(s\) lack evidence pointers\.?/gi, (_match, count) => zh ? `${count} 個可選項目還缺少照片線索。` : `${count} member choice(s) still need a visible evidence clue.`)
+        .replace(/(\d+)\s+member choice\(s\) still need a visible evidence clue\.?/gi, (_match, count) => zh ? `${count} 個可選項目還缺少照片線索。` : `${count} member choice(s) still need a visible evidence clue.`)
+        .replace(/(\d+)\s+member item\(s\) still carry blocking review gates\.?/gi, (_match, count) => zh ? `${count} 個成員項目需要先修正或移除。` : `${count} member item(s) need edit or removal before opening.`)
+        .replace(/(\d+)\s+member item\(s\) need edit or removal before opening\.?/gi, (_match, count) => zh ? `${count} 個成員項目需要先修正或移除。` : `${count} member item(s) need edit or removal before opening.`)
+        .replace(/(.+?) has structural review gates that require edit\/remove before accept\.?/gi, (_match, label) => zh ? `${label} 需要先修正或移除。` : `${label} needs edit or removal before approval.`);
+
+      for (const [pattern, replacement] of visibleTermMap[currentLanguage] || visibleTermMap.en) {
+        text = text.replace(pattern, replacement);
+      }
+      return normalizeVisibleTextSpacing(text);
+    }
+
+    function getPendingParserCandidateCount(room) {
+      const candidates = Array.isArray(room?.parserCandidates) ? room.parserCandidates : [];
+      return candidates.filter((candidate) => !['accepted', 'modified', 'rejected'].includes(String(candidate?.status || 'pending'))).length;
+    }
+
+    function getPendingCalculationRuleCount(room) {
+      const rules = Array.isArray(room?.calculationRules) ? room.calculationRules : [];
+      return rules.filter((rule) => !['accepted', 'modified', 'rejected'].includes(String(rule?.status || 'pending'))).length;
+    }
+
+    function roomNeedsVisibleHostCheck(room, quality = room?.parseQuality || null) {
+      const blockingReasons = Array.isArray(quality?.blockingReasons) ? quality.blockingReasons : [];
+      return Boolean(
+        quality?.status === 'review_required'
+        || Number(quality?.highIssueCount || 0) > 0
+        || blockingReasons.length > 0
+        || hasAntiPollutionBlocks(room)
+        || getPendingParserCandidateCount(room) > 0
+        || getPendingCalculationRuleCount(room) > 0
+      );
+    }
+
     function renderParseQuality(room) {
       const quality = room.parseQuality || null;
       const localOcr = room.localOcr || null;
@@ -3524,19 +3650,20 @@
       const issueRows = Array.isArray(quality?.issues)
         ? quality.issues.slice(0, 4).map((issue) => {
           const target = issue.item ? `：${issue.item}` : '';
-          return `<div>${escapeHtml(`${issue.detail || issue.type || t('needsReview')}${target}`)}</div>`;
+          return `<div>${escapeHtml(humanizeVisibleText(`${issue.detail || issue.type || t('needsReview')}${target}`))}</div>`;
         }).join('')
         : '';
       const blockingRows = Array.isArray(quality?.blockingReasons)
         ? quality.blockingReasons.slice(0, 4).map((reason) => {
           const target = reason.item ? `：${reason.item}` : '';
-          return `<div>${escapeHtml(`${t('blockingReasons')} · ${reason.detail || reason.type || t('needsReview')}${target}`)}</div>`;
+          const reasonText = typeof reason === 'string' ? reason : reason.detail || reason.type || t('needsReview');
+          return `<div>${escapeHtml(humanizeVisibleText(`${reasonText}${target}`))}</div>`;
         }).join('')
         : '';
       const antiPollution = room.antiPollution || {};
       const antiBlocks = Array.isArray(antiPollution.blocks) ? antiPollution.blocks : [];
       const antiRows = antiBlocks.slice(0, 4).map((block) => {
-        return `<div>${escapeHtml(`${t('antiPollutionGate')} · ${block.detail || block.id || t('needsReview')}`)}</div>`;
+        return `<div>${escapeHtml(humanizeVisibleText(block.detail || block.id || t('needsReview')))}</div>`;
       }).join('');
       const ruleHints = Array.isArray(localOcr?.ruleHints) ? localOcr.ruleHints : [];
       const ruleRows = ruleHints.slice(0, 4).map((rule) => {
@@ -3551,38 +3678,42 @@
             ? `${t('totalAmount')}: ${formatMoney(Number(arithmeticCheck.expectedTotal || 0))}`
             : '',
           Number(arithmeticCheck.difference || 0) !== 0
-            ? `${t('blockingReasons')} · ${formatMoney(Math.abs(Number(arithmeticCheck.difference || 0)))}`
+            ? `${t('needsReview')} · ${formatMoney(Math.abs(Number(arithmeticCheck.difference || 0)))}`
             : ''
         ].filter(Boolean).map((row) => `<div>${escapeHtml(row)}</div>`).join('')
         : '';
       const confidence = quality?.adaptiveConfidence || null;
       const components = confidence?.components || {};
-      const contract = confidence?.featureProfile?.scenarioContract || '';
       const scoreText = confidence
-        ? `${t('aiConfidence')} ${Math.round(Number(confidence.score || 0) * 100)} / ${Math.round(Number(confidence.threshold || 0.85) * 100)}`
+        ? `${t('aiConfidence')} ${Math.round(Number(confidence.score || 0) * 100)}%`
         : '';
-      const contractText = contract ? `${t('scenarioContract')} ${contract}` : '';
+      const priceCoverageText = confidence
+        ? `${t('priceCoverage')} ${Math.round(Number(components.priceCoverage || 0) * 100)}%`
+        : '';
       const breakdownRows = confidence
         ? `
           <div class="quality-breakdown">
             ${scoreText ? `<span>${escapeHtml(scoreText)}</span>` : ''}
-            ${contractText ? `<span>${escapeHtml(contractText)}</span>` : ''}
-            <span>${escapeHtml(`${t('schemaAlignment')} ${Math.round(Number(components.schemaAlignment || 0) * 100)}%`)}</span>
-            <span>${escapeHtml(`${t('entityAnchoring')} ${Math.round(Number(components.entityAnchoring || 0) * 100)}%`)}</span>
-            <span>${escapeHtml(`${t('priceCoverage')} ${Math.round(Number(components.priceCoverage || 0) * 100)}%`)}</span>
-            <span>${escapeHtml(`${t('contractFit')} ${Math.round(Number(components.contractFit || 0) * 100)}%`)}</span>
-            <span>${escapeHtml(`${t('issuePenalty')} ${Math.round(Number(components.issuePenalty || 0) * 100)}%`)}</span>
+            ${priceCoverageText ? `<span>${escapeHtml(priceCoverageText)}</span>` : ''}
           </div>
         `
         : '';
       const localOcrText = localOcr?.enabled
         ? t('localOcrProvided')
         : t('localOcrMissing');
-      const ruleCount = Number(localOcr?.ruleLineCount || ruleHints.length || 0);
-      const ruleText = ruleCount > 0 ? ` · ${t('rulesKeptSeparate')} ${ruleCount}` : '';
-      const candidateText = room.menuLoaded
-        ? ` · ${t('parserCandidates')} ${Array.isArray(room.parserCandidates) ? room.parserCandidates.length : 0} · ${t('calculationRules')} ${Array.isArray(room.calculationRules) ? room.calculationRules.length : 0}`
-        : '';
+      const pendingItemCount = getPendingParserCandidateCount(room);
+      const pendingRuleCount = getPendingCalculationRuleCount(room);
+      const reviewBits = [];
+      if (pendingItemCount > 0) {
+        reviewBits.push(`${pendingItemCount} ${t('itemsNeedCheck')}`);
+      }
+      if (pendingRuleCount > 0) {
+        reviewBits.push(`${pendingRuleCount} ${t('rulesNeedCheck')}`);
+      }
+      if (roomNeedsVisibleHostCheck(room, quality)) {
+        reviewBits.push(t('hostCheckNeeded'));
+      }
+      const reviewText = reviewBits.length > 0 ? ` · ${reviewBits.join(' · ')}` : '';
       const taskText = getTaskRouterText(room);
       const audit = room.audit || {};
       const auditText = Number(audit.claimLedgerCount || 0) === 0
@@ -3594,8 +3725,8 @@
       elements.qualityPanel.dataset.visible = 'true';
       elements.qualityPanel.innerHTML = `
         <div class="quality-title">
-          ${escapeHtml(getQualityStatusLabel(quality?.status))}
-          <span>${escapeHtml(`${taskText} · ${localOcrText} · ${auditText} · ${t('suspicious')} ${Number(quality?.issueCount || 0)} · ${t('optionGroups')} ${Number(quality?.optionGroupCount || 0)}${ruleText}${candidateText}`)}</span>
+          ${escapeHtml(getQualityStatusLabel(roomNeedsVisibleHostCheck(room, quality) ? 'review_required' : quality?.status))}
+          <span>${escapeHtml(`${taskText} · ${localOcrText} · ${auditText}${reviewText}`)}</span>
         </div>
         ${breakdownRows}
         ${arithmeticRows ? `<div class="quality-issues">${arithmeticRows}</div>` : ''}
@@ -3701,7 +3832,7 @@
       const antiBlocks = Array.isArray(room?.antiPollution?.blocks) ? room.antiPollution.blocks : [];
       if (antiBlocks.length > 0) {
         const details = antiBlocks.slice(0, 3)
-          .map((block) => block.detail || block.id || t('needsReview'))
+          .map((block) => humanizeVisibleText(block.detail || block.id || t('needsReview')))
           .filter(Boolean)
           .join('\n');
         return `${t('aiReviewBlocksDraft')}\n${details}`;
@@ -3712,7 +3843,7 @@
         return t('aiReviewBlocksDraft');
       }
       const details = reasons.slice(0, 3)
-        .map((reason) => reason.detail || reason.type || t('needsReview'))
+        .map((reason) => humanizeVisibleText(typeof reason === 'string' ? reason : reason.detail || reason.type || t('needsReview')))
         .filter(Boolean)
         .join('\n');
       return `${t('aiReviewBlocksDraft')}\n${details}`;
@@ -3721,21 +3852,18 @@
     function renderItemAuditAnchors(item) {
       const anchors = Array.isArray(item?.auditAnchors) ? item.auditAnchors.slice(0, 3) : [];
       const fallbackAnchor = String(item?.auditAnchor || item?.rawTextEvidence || '').trim();
-      const zone = String(item?.boundingZone || anchors[0]?.boundingZone || 'unknown');
-      const detectedType = String(item?.detectedTypeHint || anchors[0]?.detectedTypeHint || 'unknown');
       const anchorLines = anchors.length > 0
         ? anchors.map((anchor) => {
           const anchorText = String(anchor?.auditAnchor || '').trim();
-          const anchorZone = String(anchor?.boundingZone || zone || 'unknown');
-          const anchorType = String(anchor?.detectedTypeHint || detectedType || 'unknown');
-          return `<div class="item-review-anchor-line">${escapeHtml(`${anchorZone} · ${anchorType}${anchorText ? ` · ${anchorText}` : ''}`)}</div>`;
-        }).join('')
+          return anchorText ? `<div class="item-review-anchor-line">${escapeHtml(anchorText)}</div>` : '';
+        }).filter(Boolean).join('')
         : (fallbackAnchor ? `<div class="item-review-anchor-line">${escapeHtml(fallbackAnchor)}</div>` : '');
+      if (!anchorLines) {
+        return '';
+      }
       return `
         <div class="item-review-anchor">
           <div class="item-review-anchor-title">${escapeHtml(t('itemAuditAnchor'))}</div>
-          <div class="item-review-anchor-line">${escapeHtml(`${t('itemBoundingZone')}: ${zone}`)}</div>
-          <div class="item-review-anchor-line">${escapeHtml(`${t('itemDetectedType')}: ${detectedType}`)}</div>
           ${anchorLines}
         </div>
       `;
@@ -3746,8 +3874,8 @@
       const gateRows = gates.length > 0
         ? gates.map((gate) => {
           const severity = String(gate?.severity || 'warn');
-          const fields = Array.isArray(gate?.fields) && gate.fields.length > 0 ? ` [${gate.fields.join(', ')}]` : '';
-          return `<div class="item-review-gate" data-severity="${escapeHtml(severity)}">${escapeHtml(`${severity}: ${gate?.reason || gate?.id || ''}${fields}`)}</div>`;
+          const reason = humanizeVisibleText(gate?.reason || gate?.id || t('needsReview'));
+          return `<div class="item-review-gate" data-severity="${escapeHtml(severity)}">${escapeHtml(reason)}</div>`;
         }).join('')
         : `<div class="item-review-gate">${escapeHtml(t('itemNoReviewGate'))}</div>`;
       return `
@@ -3760,6 +3888,46 @@
 
     function proposalNeedsAiReviewGate(proposal) {
       return ['semantic_repair_draft', 'evidence_review', 'task_router_review'].includes(String(proposal?.proposalType || ''));
+    }
+
+    function getProposalStructuredItems(proposal) {
+      return Array.isArray(proposal?.payload?.structuredItems) ? proposal.payload.structuredItems : [];
+    }
+
+    function getVisibleProposalSummary(proposal) {
+      const items = getProposalStructuredItems(proposal);
+      const itemPreview = items
+        .slice(0, 8)
+        .map((item) => `${item.name || t('itemName')} ${Number.isFinite(Number(item.price)) ? formatMoney(Number(item.price)) : ''}`.trim())
+        .filter(Boolean)
+        .join(', ');
+      const sourceMode = String(proposal?.payload?.sourceMode || '');
+      if (sourceMode === 'local_ocr_plus_local_vision') {
+        return currentLanguage === 'en'
+          ? `Photo review draft prepared ${items.length} item(s)${itemPreview ? `: ${itemPreview}` : ''}`
+          : `照片讀取草稿已準備 ${items.length} 個項目${itemPreview ? `：${itemPreview}` : ''}`;
+      }
+      if (sourceMode === 'local_ocr_only_bridge_draft' || sourceMode === 'local_ocr_fallback') {
+        return currentLanguage === 'en'
+          ? 'Photo text was read, but the draft still needs a visual check.'
+          : '已讀到照片文字，但草稿還需要看圖核對。';
+      }
+      return humanizeVisibleText(proposal.summary || '');
+    }
+
+    function getVisibleProposalRationale(proposal) {
+      const sourceMode = String(proposal?.payload?.sourceMode || '');
+      if (sourceMode === 'local_ocr_plus_local_vision') {
+        return currentLanguage === 'en'
+          ? 'This draft was prepared from the photo with text reading and a visual check. The host should compare it with the original image before approving.'
+          : '這份草稿已先讀取照片文字並完成看圖核對。主揪採納前仍要對照原圖。';
+      }
+      if (sourceMode === 'local_ocr_only_bridge_draft' || sourceMode === 'local_ocr_fallback') {
+        return currentLanguage === 'en'
+          ? 'Only photo text was read. A visual check is still needed before approval.'
+          : '目前只讀到照片文字，採納前仍要完成看圖核對。';
+      }
+      return humanizeVisibleText(proposal.rationale || '');
     }
 
     function renderAgentProposals(room) {
@@ -3803,12 +3971,14 @@
         const structuralBlocks = getStructuralReviewBlocks(room);
         const blockedByAiReview = isPending && proposalNeedsAiReviewGate(proposal) && (hasBlockingParseQuality(room) || structuralBlocks.length > 0);
         const acceptButtonClass = rejectArmed ? 'button secondary' : `button ${acceptArmed ? 'confirm-approval' : ''}`;
+        const proposalSummary = getVisibleProposalSummary(proposal);
+        const proposalRationale = getVisibleProposalRationale(proposal);
         const controls = isPending
           ? `
             <div class="proposal-actions">
               <button class="${escapeHtml(acceptButtonClass)}" type="button" data-proposal-action="accept" data-proposal-confirm="${acceptArmed ? 'true' : 'false'}" data-proposal-blocked="${blockedByAiReview ? 'true' : 'false'}" data-proposal-id="${escapeHtml(proposal.id)}" ${owner ? '' : 'disabled'}>${escapeHtml(t(acceptArmed ? 'confirmHumanApproval' : 'approveDraft'))}</button>
               <button class="button secondary ${rejectArmed ? 'confirm-reject' : ''}" type="button" data-proposal-action="reject" data-proposal-confirm="${rejectArmed ? 'true' : 'false'}" data-proposal-id="${escapeHtml(proposal.id)}" ${owner ? '' : 'disabled'}>${escapeHtml(t(rejectArmed ? 'confirmRejectDraft' : 'rejectDraft'))}</button>
-              ${blockedByAiReview ? `<span class="proposal-meta">${escapeHtml(structuralBlocks.length > 0 ? structuralBlocks[0].detail : t('aiReviewBlocksDraft'))}</span>` : ''}
+              ${blockedByAiReview ? `<span class="proposal-meta">${escapeHtml(structuralBlocks.length > 0 ? humanizeVisibleText(structuralBlocks[0].detail) : t('aiReviewBlocksDraft'))}</span>` : ''}
               ${owner ? '' : `<span class="proposal-meta">${escapeHtml(t('ownerOnlyDraftReview'))}</span>`}
             </div>
           `
@@ -3821,8 +3991,8 @@
               <span>${escapeHtml(t('proposalOnly'))}</span>
               <span>${escapeHtml(getProposalRiskText(proposal.riskLevel))}</span>
             </div>
-            <div class="proposal-summary">${escapeHtml(proposal.summary || '')}</div>
-            ${proposal.rationale ? `<div class="proposal-meta">${escapeHtml(proposal.rationale)}</div>` : ''}
+            <div class="proposal-summary">${escapeHtml(proposalSummary)}</div>
+            ${proposalRationale ? `<div class="proposal-meta">${escapeHtml(proposalRationale)}</div>` : ''}
             ${controls}
           </article>
         `;

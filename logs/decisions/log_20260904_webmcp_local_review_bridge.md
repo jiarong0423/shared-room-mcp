@@ -110,6 +110,60 @@ Final recheck after README, submission, Mermaid, and runner wording cleanup:
 Remaining before public submission:
 
 - Insert the final uploaded YouTube demo URL.
+
+## 2026-09-04 01:57 Plain-Language OCR UI Closeout Governance
+
+Scope:
+
+- Owner project: `/Users/sunjiarong/Developer/webmcp`
+- Changed artifacts: `public/index.html`, `server.js`, `scripts/webmcp-local-review-bridge.mjs`, `logs/decisions/log_20260904_webmcp_local_review_bridge.md`
+- Latest validation evidence:
+  - `npm run check`: passed.
+  - `node --check scripts/webmcp-local-review-bridge.mjs`: passed.
+  - `git diff --check`: passed.
+  - Local browser UI wording smoke against `http://127.0.0.1:3214/?room=918b8ba3&_t=plain-language-ui`: passed. The rendered page no longer showed `Source mode`, `Local OCR chars`, model names, `parser candidate(s)`, `schema alignment`, `entity anchoring`, `contract fit`, `issue penalty`, `Number type`, `Audit Anchor`, `Review Gate`, `Image Zone`, or `Detected Type`.
+  - Local Member-Visibility Release smoke: passed `4/4`; evidence `/private/tmp/webmcp-ui-language-member-release-final/member-release-stress-2026-09-03T17-56-56-850Z.md`.
+  - Frontend local HTTP smoke: passed; evidence `/private/tmp/webmcp-frontend-ui-smoke-20260904-plain-ui/local_plain_ui.md`.
+  - `release-boundary-safety-gate`: PASS, blocking `0`; evidence `/private/tmp/webmcp-release-boundary-scan-20260904-plain-ui/release-boundary-report-2026-09-03T17-57-06-319Z.json`.
+  - `ai-security-rules deploy-gate`: pass, blocking `0`, P0 `0`, P1 `0`, P2 `0`; evidence `/private/tmp/webmcp-ai-security-deploy-gate-20260904-plain-ui/local_security_design_gate_deploy_gate.md`.
+
+DONE_CONFIRMED:
+
+- Replaced user-visible OCR/review engineering terms with plain-language UI text while preserving API and stored data keys.
+  - evidence: `public/index.html` now applies a visible-term mapping before rendering old proposal summaries, rationale text, parse-quality blockers, item review gates, and structural review blocks.
+- Fixed the contradictory status where a room could display `List looks ready` while still carrying review blockers.
+  - evidence: `roomNeedsVisibleHostCheck()` now forces the visible status to human-review wording whenever pending item checks, pending rule checks, parse blockers, or anti-pollution blocks exist.
+- Removed debug details from item review panels.
+  - evidence: item review rendering no longer prints bounding zone, detected type, severity labels, or field lists; it shows only host-facing reasons and evidence clues.
+- Changed new bridge proposal copy so future cloud proposals do not store visible `Source mode`, OCR character count, or local model names in summary/rationale.
+  - evidence: `scripts/webmcp-local-review-bridge.mjs` summary/rationale wording now uses photo review and host comparison language only.
+- Changed server-side blocker messages to plain-language text before they reach the UI.
+  - evidence: member-open blockers now reference read items, fee/rule notes, evidence clues, and host edit/removal decisions without parser/rule-audit wording.
+
+DO_NOW:
+
+- Commit and push the plain-language UI changes, then redeploy Zeabur and rerun live `/healthz` plus hosted UI smoke.
+  - action: next stage in the same turn.
+
+PRIORITY_INDEX:
+
+- Final YouTube demo URL still must be inserted after the accepted recording is uploaded.
+  - next action: update README/submission docs with the final URL.
+  - risk if ignored: Devpost submission remains incomplete even if code and Zeabur are ready.
+
+WATCH_LATER:
+
+- The WebMCP tool input schema still exposes stable enum values such as `semantic_repair_draft`.
+  - trigger to revisit: only if the visible Codex WebMCP panel starts showing raw enum values to reviewers instead of tool titles/descriptions. The runtime contract should not be renamed for copy-only cleanup.
+
+INTENTIONALLY_NOT_DO:
+
+- Did not rename internal data keys such as `parserCandidates`, `calculationRules`, `sourceMode`, or WebMCP tool names.
+  - reason: those are API/storage contracts, not user-facing copy. Renaming them would expand release risk without improving the visible demo surface.
+
+Next resume point:
+
+- After push, run `zeabur deploy --service-id 6a96fb0bd72bd6309d74fb9b --environment-id 69d93c5c474db8a99d6de959 --json --interactive=false`, then verify the live home page and current test room no longer render engineering copy.
 - Deploy the committed changes to Zeabur and recheck the live `/healthz` plus hosted room flow. The repository is push-prepared, but the current Zeabur production URL must not be described as updated until that deployment check passes.
 
 ## Zeabur Post-Deploy Recheck

@@ -3556,7 +3556,7 @@ function getAntiPollutionBlocks(room) {
     blocks.push({
       id: 'pending_candidates_block_member_open',
       severity: 'block',
-      detail: `${pendingCandidates.length} parser candidate(s) still need host review.`
+      detail: `${pendingCandidates.length} read item(s) need host review before members can use the list.`
     });
   }
   const pollutedItems = selectableItems.filter((item) => inferDisplaySurface(item, room?.taskRouter?.taskType) !== 'member_selectable');
@@ -3564,7 +3564,7 @@ function getAntiPollutionBlocks(room) {
     blocks.push({
       id: 'rule_roles_not_member_selectable',
       severity: 'block',
-      detail: `${pollutedItems.length} rule-like item(s) are still member selectable.`
+      detail: `${pollutedItems.length} fee or rule item(s) are still showing as member choices.`
     });
   }
   const missingEvidenceItems = selectableItems.filter((item) => !item.sourceAssetId && (!Array.isArray(item.sourceObservationIds) || item.sourceObservationIds.length === 0));
@@ -3572,7 +3572,7 @@ function getAntiPollutionBlocks(room) {
     blocks.push({
       id: 'member_items_require_evidence_pointer',
       severity: 'block',
-      detail: `${missingEvidenceItems.length} selectable item(s) lack evidence pointers.`
+      detail: `${missingEvidenceItems.length} member choice(s) still need a visible evidence clue.`
     });
   }
   const blockingRuleRoles = new Set([
@@ -3598,7 +3598,7 @@ function getAntiPollutionBlocks(room) {
     blocks.push({
       id: 'unreviewed_rules_block_member_open',
       severity: 'block',
-      detail: `${unreviewedRules.length} rule/audit candidate(s) need host decision.`
+      detail: `${unreviewedRules.length} fee, total, discount, or threshold note(s) need host decision.`
     });
   }
   const blockedReviewGateItems = selectableItems.filter((item) => {
@@ -3608,7 +3608,7 @@ function getAntiPollutionBlocks(room) {
     blocks.push({
       id: 'review_gate_blocks_member_open',
       severity: 'block',
-      detail: `${blockedReviewGateItems.length} member item(s) still carry blocking review gates.`
+      detail: `${blockedReviewGateItems.length} member item(s) need edit or removal before opening.`
     });
   }
   return blocks.concat(getStructuralReviewBlocks(room));
@@ -3676,7 +3676,7 @@ function getStructuralReviewBlocks(room) {
       candidateId: entry.candidate.id || null,
       label: entry.candidate.label || entry.candidate.name || '',
       gateIds: entry.gates.map((gate) => gate.id),
-      detail: `${entry.candidate.label || entry.candidate.name || 'Candidate'} has structural review gates that require edit/remove before accept.`
+      detail: `${entry.candidate.label || entry.candidate.name || 'Item'} needs host edit or removal before approval.`
     }));
 }
 
@@ -4234,7 +4234,7 @@ function getEvidenceReviewReleaseBlock(room) {
     return {
       id: localOcrOnlyReviewIssueId,
       severity: 'high',
-      message: 'Local OCR-only evidence cannot be opened to members until a local vision or reviewed semantic repair draft clears it.'
+      message: 'This photo was read as text only and still needs visual review before members can use it.'
     };
   }
   return null;
@@ -7361,7 +7361,7 @@ io.on('connection', (socket) => {
         blockingReasons: [evidenceReviewBlock.id],
         issueTypes: [evidenceReviewBlock.id]
       });
-      ack?.({ ok: false, error: 'OCR-only 草稿尚未完成本地/視覺 LLM 校正，不能開放給成員。' });
+      ack?.({ ok: false, error: '照片草稿還沒有完成看圖核對，不能開放給成員。' });
       return;
     }
     const antiPollutionBlocks = getAntiPollutionBlocks(room);
@@ -7374,7 +7374,7 @@ io.on('connection', (socket) => {
         blockingReasons: antiPollutionBlocks.map((block) => block.id),
         issueTypes: antiPollutionBlocks.map((block) => block.id)
       });
-      ack?.({ ok: false, error: `資料仍有 ${antiPollutionBlocks.length} 個候選/規則未完成審核，請先處理後再開放給成員。` });
+      ack?.({ ok: false, error: `清單仍有 ${antiPollutionBlocks.length} 個項目或費用規則需要核對，請先處理後再開放給成員。` });
       return;
     }
     room.parseQuality = evaluateMenuParseQuality({
@@ -7393,7 +7393,7 @@ io.on('connection', (socket) => {
         blockingReasons: [recomputedEvidenceReviewBlock.id],
         issueTypes: [recomputedEvidenceReviewBlock.id]
       });
-      ack?.({ ok: false, error: 'OCR-only 草稿尚未完成本地/視覺 LLM 校正，不能開放給成員。' });
+      ack?.({ ok: false, error: '照片草稿還沒有完成看圖核對，不能開放給成員。' });
       return;
     }
     if (hasBlockingParseQuality(room)) {
