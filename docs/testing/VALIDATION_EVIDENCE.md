@@ -1,6 +1,6 @@
 # How We Checked It
 
-Evidence date: 2026-09-03
+Evidence date: 2026-09-04 Asia/Taipei
 
 This file summarizes checks that were actually run before submission. The goal is simple: show that the demo flow was repeated, not only recorded once.
 
@@ -10,6 +10,11 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 
 | area | result | source | what was checked |
 |---|---:|---|---|
+| Current local contract stress after local-review bridge gate | 60/60 passed | `/private/tmp/webmcp-full-validation-v3/stress-local-contracts/local-contract-stress-2026-09-03T17-08-58-593Z.md` | 20 Chinese and English scenarios, 3 rounds each, no provider keys; OCR-only parser output remains review-required |
+| Current HITL Member-Visibility Release after local vision proof gate | 12/12 passed | `/private/tmp/webmcp-full-validation-v3/stress-member-release/member-release-stress-2026-09-03T17-09-00-638Z.md` | valid local-vision-backed `semantic_repair_draft` clears only the OCR-only blocker, then host release, member confirmation, owner finalization, HTML export, and PDF export pass |
+| OCR-only cloud proposal negative gate | PASS | local direct API probe against `http://127.0.0.1:3212` | direct `semantic_repair_draft` with `sourceMode=local_ocr_only_bridge_draft` returned HTTP 422 and did not create a cloud review draft |
+| Local review bridge CLI gates | PASS | `/private/tmp/webmcp-full-validation-v3/bridge-write/` and `/private/tmp/webmcp-full-validation-v3/bridge-default-dry-run/` | bridge defaults to dry-run, requires `--write-cloud-proposal` and explicit `--base-url` for writes, refuses repo output paths, and writes a proposal only after local vision returns structured items |
+| Current deterministic image-oracle integration benchmark | 115/115 passed | `/private/tmp/webmcp-full-validation-v3/image-matrix-oracle-v2/image-matrix-stress-2026-09-03T17-12-54-459Z.json` | external PNG artifacts were verified by SHA-256; full parser candidates, calculation rules, member-visible masks, forbidden-number checks, and HITL wiring passed in `image-plus-oracle-text` mode |
 | Main room flow | 400/400 passed | `logs/runtime/local-contract-stress-2026-09-01T00-10-12-135Z.md`, summarized in `docs/security/SECURITY_SCAN_EVIDENCE.md` | 20 Chinese and English scenarios, 20 rounds each, no provider keys |
 | Member-Visibility Release | 80/80 passed | summarized in `docs/security/SECURITY_SCAN_EVIDENCE.md` | AI draft stays closed, host reviews first, members can claim only after release |
 | Save queue follow-up | 20/20 passed | summarized local run | same host-review flow after the save queue change |
@@ -40,6 +45,7 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 
 - The demo does not depend on Zeabur-hosted OCR, a paid OCR API, or a paid model API.
 - The assistant can inspect the room and create drafts, but cannot release the member-visible list, confirm for members, finalize the room, pay, or submit bookings.
+- OCR-only output is candidate evidence. A cloud `semantic_repair_draft` requires local OCR plus local/visual LLM structured items before host review can clear the OCR-only blocker.
 - The host can review and fix parsed rows before members enter the claim step.
 - Duplicate assistant drafts for the same topic collapse into one visible host decision.
 - Members can claim and confirm only their own costs.
@@ -48,7 +54,7 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 - Room identity changes clear room-only temporary UI state while preserving language and display-name preferences.
 - Asynchronous responses and Socket.IO events are applied only when they still belong to the room shown in the URL.
 - The default JSON save layer is suitable for a single demo service and short write bursts, not production-scale traffic.
-- The recording runbook now fixes the human/agent handoff: WebMCP and the assistant handle room-state reading, draft preparation, and routine setup, while the human performs the same-card two-click review, personal confirmation, owner finalization, and final downloads.
+- The recording runbook now fixes the human/agent handoff: the presenter/operator handles page navigation and file selection; WebMCP and the assistant handle room-state reading, local-review draft preparation, and release-gate checks; the human performs the same-card two-click review, personal confirmation, owner finalization, and final downloads.
 - The image fixture runner now keeps large generated PNGs outside the main repository while preserving a checksum-backed oracle and quarantine output path.
 - The image fixture manifest build no longer blocks Zeabur deployment when the external PNG artifact is absent; it validates the checked-in 115-test manifest and only rebuilds when `IMAGE_MATRIX_ROOT` or `--matrix-root` is supplied.
 
@@ -59,4 +65,4 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 - This is not a payment, booking, banking, or vendor-ordering system.
 - Exported records are local review summaries. They do not submit forms or change external systems.
 - Production deployments should add real authentication and replace the JSON save layer with Redis or PostgreSQL.
-- The 115-case image fixture oracle result is not a hosted image-recognition benchmark. It proves artifact integrity, contract routing, oracle wiring, and HITL state behavior. The core demo path is WebMCP plus Codex/LLM side-panel review plus human approval, without requiring provider keys. If the runner uses `image-plus-local-ocr`, OCR happens on the operator machine before the request reaches the hosted room.
+- The 115-case image fixture oracle result is not a hosted image-recognition benchmark. It proves artifact integrity, contract routing, oracle wiring, and HITL state behavior. The core demo path is local OCR plus local/visual LLM review, WebMCP plus Codex room-state review, and human approval. If the runner uses `image-plus-local-ocr`, OCR happens on the operator machine before the request reaches the hosted room.

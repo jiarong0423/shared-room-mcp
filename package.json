@@ -12,6 +12,7 @@
     "audit:tasks": "node scripts/task-gap-audit.mjs",
     "verify:adaptive-contracts": "node scripts/verify-adaptive-contracts.mjs",
     "build:image-fixture-manifest": "node scripts/build-image-fixture-manifest.mjs",
+    "bridge:local-review": "node scripts/webmcp-local-review-bridge.mjs",
     "regression:adaptive-parser": "node scripts/regression-adaptive-parser.mjs",
     "stress:image-matrix": "node scripts/stress-image-matrix.mjs",
     "stress:menu": "node scripts/stress-menu-parser.mjs",

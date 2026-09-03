@@ -28,6 +28,7 @@ This repository is intended to be public for the WebMCP Challenge. The public ex
 - `fixtures/image-fixture-manifest.json`
 - `lib/adaptive/pipeline.mjs`
 - `scripts/build-image-fixture-manifest.mjs`
+- `scripts/webmcp-local-review-bridge.mjs`
 - `scripts/regression-adaptive-parser.mjs`
 - `scripts/task-gap-audit.mjs`
 - `scripts/stress-image-matrix.mjs`

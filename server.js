@@ -54,8 +54,21 @@ const openAiImageDetails = new Set(['low', 'high', 'auto', 'original']);
 const openAiImageDetail = openAiImageDetails.has(String(process.env.OPENAI_IMAGE_DETAIL || '').toLowerCase())
   ? String(process.env.OPENAI_IMAGE_DETAIL).toLowerCase()
   : 'high';
-const aiProviderTypes = new Set(['gemini', 'openai']);
-const aiProviderOrder = normalizeAiProviderOrder(process.env.AI_PROVIDER_ORDER || 'gemini,openai');
+const localVisionBaseUrl = String(process.env.LOCAL_VISION_BASE_URL || '').trim().replace(/\/+$/, '');
+const localVisionModel = String(process.env.LOCAL_VISION_MODEL || '').trim();
+const localVisionApiKey = String(process.env.LOCAL_VISION_API_KEY || '').trim();
+const localVisionTimeoutMs = Math.max(8000, Math.min(180000, Number(process.env.LOCAL_VISION_TIMEOUT_MS || 60000)));
+const localVisionMaxOutputTokens = Math.max(1024, Math.min(64000, Number(process.env.LOCAL_VISION_MAX_OUTPUT_TOKENS || 16000)));
+const localVisionImageDetail = openAiImageDetails.has(String(process.env.LOCAL_VISION_IMAGE_DETAIL || '').toLowerCase())
+  ? String(process.env.LOCAL_VISION_IMAGE_DETAIL).toLowerCase()
+  : openAiImageDetail;
+const localVisionApiStyles = new Set(['chat', 'responses']);
+const localVisionApiStyle = localVisionApiStyles.has(String(process.env.LOCAL_VISION_API_STYLE || '').toLowerCase())
+  ? String(process.env.LOCAL_VISION_API_STYLE).toLowerCase()
+  : 'chat';
+const allowRemoteVisionFallback = String(process.env.ALLOW_REMOTE_VISION_FALLBACK || 'false').toLowerCase() === 'true';
+const aiProviderTypes = new Set(['local_vision', 'gemini', 'openai']);
+const aiProviderOrder = normalizeAiProviderOrder(process.env.AI_PROVIDER_ORDER || 'local_vision,gemini,openai');
 const roomTtlMs = Number(process.env.ROOM_TTL_HOURS || 12) * 60 * 60 * 1000;
 const maxImageMb = Number(process.env.MAX_IMAGE_MB || 8);
 const maxImageBytes = maxImageMb * 1024 * 1024;
@@ -70,6 +83,7 @@ const itemThumbSize = Math.max(96, Math.min(360, Number(process.env.ITEM_THUMB_S
 const localOcrMaxChars = Math.max(0, Math.min(24000, Number(process.env.LOCAL_OCR_MAX_CHARS || 12000)));
 const localOcrFirst = String(process.env.LOCAL_OCR_FIRST || 'true').toLowerCase() !== 'false';
 const localOcrMinItems = Math.max(1, Math.min(20, Number(process.env.LOCAL_OCR_MIN_ITEMS || 3)));
+const localOcrOnlyReviewIssueId = 'local_ocr_only_requires_visual_review';
 const trustLayerSpreadsheetId = String(process.env.TRUST_LAYER_SPREADSHEET_ID || '').trim();
 const trustLayerSpreadsheetUrl = trustLayerSpreadsheetId
   ? `https://docs.google.com/spreadsheets/d/${encodeURIComponent(trustLayerSpreadsheetId)}/edit`
@@ -955,6 +969,37 @@ function normalizeAgentProposalInput(input = {}) {
   };
 }
 
+function isLocalVisionBackedSemanticProposal(proposal = {}) {
+  const payload = proposal.payload && typeof proposal.payload === 'object' ? proposal.payload : {};
+  return proposal.proposalType === 'semantic_repair_draft'
+    && payload.sourceMode === 'local_ocr_plus_local_vision'
+    && payload.localVisionConfigured === true
+    && Array.isArray(payload.structuredItems)
+    && payload.structuredItems.length > 0;
+}
+
+function validateExternalAgentProposalInput(normalized) {
+  const payload = normalized.payload && typeof normalized.payload === 'object' ? normalized.payload : {};
+  if (
+    ['semantic_repair_draft', 'evidence_review'].includes(normalized.proposalType)
+    && payload.sourceMode === 'local_ocr_only_bridge_draft'
+  ) {
+    return {
+      ok: false,
+      statusCode: 422,
+      error: 'OCR-only bridge output is local evidence only. Run local vision correction before creating a cloud review draft.'
+    };
+  }
+  if (normalized.proposalType === 'semantic_repair_draft' && !isLocalVisionBackedSemanticProposal(normalized)) {
+    return {
+      ok: false,
+      statusCode: 422,
+      error: 'Semantic repair drafts require local OCR plus local vision structured items before cloud proposal creation.'
+    };
+  }
+  return { ok: true };
+}
+
 function serializeAgentProposal(proposal) {
   return {
     id: proposal.id,
@@ -1032,6 +1077,8 @@ function serializeRoomForStore(room) {
       : [],
     warnings: Array.isArray(room.warnings) ? room.warnings : [],
     parseQuality: room.parseQuality || null,
+    evidenceReviewSource: room.evidenceReviewSource || null,
+    evidenceReviewModel: room.evidenceReviewModel || null,
     localOcr: room.localOcr || {
       enabled: false,
       lineCount: 0,
@@ -1127,6 +1174,8 @@ function hydrateRoomFromStore(record) {
       : [],
     warnings: Array.isArray(record.warnings) ? record.warnings : [],
     parseQuality: record.parseQuality || null,
+    evidenceReviewSource: typeof record.evidenceReviewSource === 'string' ? record.evidenceReviewSource : null,
+    evidenceReviewModel: typeof record.evidenceReviewModel === 'string' ? record.evidenceReviewModel : null,
     localOcr: record.localOcr || {
       enabled: false,
       lineCount: 0,
@@ -1475,7 +1524,7 @@ function normalizeAiProviderOrder(value) {
     }
   }
   if (ordered.length === 0) {
-    return ['gemini', 'openai'];
+    return ['local_vision', 'gemini', 'openai'];
   }
   return ordered;
 }
@@ -1526,6 +1575,9 @@ function getConfiguredProviderCandidates() {
   const { apiKey: geminiApiKey } = getGeminiApiKeyConfig();
   const { apiKey: openAiApiKey } = getOpenAiApiKeyConfig();
   return aiProviderOrder.filter((provider) => {
+    if (provider === 'local_vision') {
+      return Boolean(localVisionBaseUrl && localVisionModel);
+    }
     if (provider === 'gemini') {
       return Boolean(geminiApiKey);
     }
@@ -1836,6 +1888,8 @@ function createRoom() {
     agentProposals: [],
     warnings: [],
     parseQuality: null,
+    evidenceReviewSource: null,
+    evidenceReviewModel: null,
     localOcr: {
       enabled: false,
       lineCount: 0,
@@ -2059,6 +2113,8 @@ async function loadSampleRoom(room, input = {}) {
       ? '已依目前頁面語系與房間用途載入中文示範證據。請先檢查欄位，再開放給成員。'
       : 'Sample room loaded for quick review. The assistant may draft suggestions, but the host keeps final approval.'
   ];
+  room.evidenceReviewSource = 'sample_room_oracle';
+  room.evidenceReviewModel = 'deterministic-sample-fixture';
   room.parseQuality = evaluateMenuParseQuality({
     items: parsedItems,
     menuType: room.menuType,
@@ -3957,6 +4013,12 @@ function buildEvidenceContract(room) {
         ? parseQuality.issues.filter((issue) => issue.severity === 'high').map((issue) => issue.type).filter(Boolean)
         : []
     },
+    reviewProvenance: {
+      source: room?.evidenceReviewSource || null,
+      model: room?.evidenceReviewModel || null,
+      memberReleaseBlocked: Boolean(getEvidenceReviewReleaseBlock(room)),
+      blockingReason: getEvidenceReviewReleaseBlock(room)?.id || null
+    },
     aiRepairGate: {
       allowedOnlyWhenLocalInsufficient: true,
       allowedReasons: [
@@ -4116,9 +4178,66 @@ function shouldApplyDrinkSizeQualityGate(menuType, taskType, group) {
   return group.some((item) => item.supportsDrinkOptions || String(item.category || '') === 'drink');
 }
 
+function hasBlockingQualityObject(parseQuality) {
+  return Boolean(parseQuality && (parseQuality.status === 'review_required' || Number(parseQuality.highIssueCount || 0) > 0));
+}
+
 function hasBlockingParseQuality(room) {
   const parseQuality = room?.parseQuality && typeof room.parseQuality === 'object' ? room.parseQuality : null;
-  return Boolean(parseQuality && (parseQuality.status === 'review_required' || Number(parseQuality.highIssueCount || 0) > 0));
+  return hasBlockingQualityObject(parseQuality);
+}
+
+function stripLocalOcrOnlyReviewBlock(parseQuality) {
+  const quality = parseQuality && typeof parseQuality === 'object' ? parseQuality : {};
+  const issues = (Array.isArray(quality.issues) ? quality.issues : [])
+    .filter((issue) => issue?.type !== localOcrOnlyReviewIssueId);
+  const blockingReasons = (Array.isArray(quality.blockingReasons) ? quality.blockingReasons : [])
+    .filter((reason) => reason !== localOcrOnlyReviewIssueId);
+  const highIssueCount = issues.filter((issue) => issue?.severity === 'high').length;
+  const mediumIssueCount = issues.filter((issue) => issue?.severity === 'medium').length;
+  return {
+    ...quality,
+    issues,
+    blockingReasons,
+    issueCount: issues.length,
+    highIssueCount,
+    mediumIssueCount,
+    requiresHostReview: highIssueCount > 0 || mediumIssueCount > 0 || blockingReasons.length > 0,
+    status: highIssueCount > 0 || blockingReasons.length > 0
+      ? 'review_required'
+      : mediumIssueCount > 0
+        ? 'warning'
+        : 'ok'
+  };
+}
+
+function hasOnlyLocalOcrOnlyReviewBlock(room) {
+  const parseQuality = room?.parseQuality && typeof room.parseQuality === 'object' ? room.parseQuality : null;
+  if (room?.evidenceReviewSource === 'local_ocr_fallback') {
+    return !hasBlockingQualityObject(stripLocalOcrOnlyReviewBlock(parseQuality));
+  }
+  if (!hasBlockingQualityObject(parseQuality)) {
+    return false;
+  }
+  return !hasBlockingQualityObject(stripLocalOcrOnlyReviewBlock(parseQuality));
+}
+
+function getEvidenceReviewReleaseBlock(room) {
+  const parseQuality = room?.parseQuality && typeof room.parseQuality === 'object' ? room.parseQuality : null;
+  const issues = Array.isArray(parseQuality?.issues) ? parseQuality.issues : [];
+  const blockingReasons = Array.isArray(parseQuality?.blockingReasons) ? parseQuality.blockingReasons : [];
+  if (
+    room?.evidenceReviewSource === 'local_ocr_fallback'
+    || issues.some((issue) => issue?.type === localOcrOnlyReviewIssueId)
+    || blockingReasons.includes(localOcrOnlyReviewIssueId)
+  ) {
+    return {
+      id: localOcrOnlyReviewIssueId,
+      severity: 'high',
+      message: 'Local OCR-only evidence cannot be opened to members until a local vision or reviewed semantic repair draft clears it.'
+    };
+  }
+  return null;
 }
 
 function evaluateMenuParseQuality(input) {
@@ -5687,6 +5806,8 @@ function serializeRoom(room) {
     audit: formulaSnapshot.audit,
     warnings: room.warnings,
     parseQuality: room.parseQuality || null,
+    evidenceReviewSource: room.evidenceReviewSource || null,
+    evidenceReviewModel: room.evidenceReviewModel || null,
     localOcr: room.localOcr || null,
     createdAt: room.createdAt,
     updatedAt: room.updatedAt,
@@ -6068,7 +6189,7 @@ function buildGeminiContents(imageFiles, prompt) {
   return contents;
 }
 
-function buildOpenAiInput(imageFiles, prompt) {
+function buildOpenAiInput(imageFiles, prompt, detail = openAiImageDetail) {
   const content = [];
   for (let index = 0; index < imageFiles.length; index += 1) {
     const file = imageFiles[index];
@@ -6079,7 +6200,7 @@ function buildOpenAiInput(imageFiles, prompt) {
     content.push({
       type: 'input_image',
       image_url: `data:${file.mimetype};base64,${file.buffer.toString('base64')}`,
-      detail: openAiImageDetail
+      detail
     });
   }
   content.push({
@@ -6091,6 +6212,68 @@ function buildOpenAiInput(imageFiles, prompt) {
     role: 'user',
     content
   }];
+}
+
+function buildOpenAiCompatibleChatMessages(imageFiles, prompt, detail = openAiImageDetail) {
+  const content = [];
+  for (let index = 0; index < imageFiles.length; index += 1) {
+    const file = imageFiles[index];
+    content.push({
+      type: 'text',
+      text: `第 ${index + 1} 張價格證據圖片`
+    });
+    content.push({
+      type: 'image_url',
+      image_url: {
+        url: `data:${file.mimetype};base64,${file.buffer.toString('base64')}`,
+        detail
+      }
+    });
+  }
+  content.push({
+    type: 'text',
+    text: prompt
+  });
+
+  return [{
+    role: 'user',
+    content
+  }];
+}
+
+function buildOpenAiCompatibleUrl(baseUrl, route) {
+  const base = String(baseUrl || '').trim().replace(/\/+$/, '');
+  if (base.endsWith('/v1') && route.startsWith('/v1/')) {
+    return `${base}${route.slice(3)}`;
+  }
+  return `${base}${route}`;
+}
+
+function extractJsonObjectFromText(rawText, label = 'Local Vision') {
+  const text = String(rawText || '').trim();
+  if (!text) {
+    throw new Error(`${label} 沒有回傳可用內容`);
+  }
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  const candidate = fenced ? fenced[1].trim() : text;
+  try {
+    return JSON.parse(candidate);
+  } catch (directError) {
+    const start = candidate.indexOf('{');
+    const end = candidate.lastIndexOf('}');
+    if (start >= 0 && end > start) {
+      try {
+        return JSON.parse(candidate.slice(start, end + 1));
+      } catch (sliceError) {
+        const wrapped = new Error(`${label} 回傳 JSON 格式異常`);
+        wrapped.cause = sliceError;
+        throw wrapped;
+      }
+    }
+    const wrapped = new Error(`${label} 回傳 JSON 格式異常`);
+    wrapped.cause = directError;
+    throw wrapped;
+  }
 }
 
 async function parseMenuImagesWithGemini(imageFiles, options = {}) {
@@ -6216,6 +6399,172 @@ async function parseMenuImagesWithOpenAi(imageFiles, options = {}) {
   };
 }
 
+async function generateLocalVisionMenuContent(request) {
+  if (!localVisionBaseUrl || !localVisionModel) {
+    const error = new Error('本地視覺模型尚未設定 LOCAL_VISION_BASE_URL 與 LOCAL_VISION_MODEL。');
+    error.statusCode = 503;
+    throw error;
+  }
+
+  const endpoint = buildOpenAiCompatibleUrl(
+    localVisionBaseUrl,
+    localVisionApiStyle === 'responses' ? '/v1/responses' : '/v1/chat/completions'
+  );
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+  if (localVisionApiKey) {
+    headers.Authorization = `Bearer ${localVisionApiKey}`;
+  }
+  const body = localVisionApiStyle === 'responses'
+    ? {
+      model: localVisionModel,
+      input: request.input,
+      text: {
+        format: {
+          type: 'json_object'
+        }
+      },
+      max_output_tokens: localVisionMaxOutputTokens,
+      store: false
+    }
+    : {
+      model: localVisionModel,
+      messages: request.messages,
+      temperature: 0.1,
+      max_tokens: localVisionMaxOutputTokens,
+      response_format: {
+        type: 'json_object'
+      }
+    };
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, localVisionTimeoutMs);
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+    const responseBody = await response.json().catch(() => null);
+    if (!response.ok) {
+      const message = responseBody?.error?.message || response.statusText || 'Local Vision API request failed';
+      const error = new Error(message);
+      error.statusCode = response.status;
+      throw error;
+    }
+    return {
+      response: responseBody,
+      model: localVisionModel,
+      apiStyle: localVisionApiStyle
+    };
+  } catch (error) {
+    const wrapped = error?.name === 'AbortError'
+      ? Object.assign(new Error(`Local Vision 解析超過 ${Math.round(localVisionTimeoutMs / 1000)} 秒，已停止等待。`), { statusCode: 504 })
+      : error;
+    throw wrapped;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function extractLocalVisionOutputText(response, apiStyle = localVisionApiStyle) {
+  if (apiStyle === 'responses') {
+    return extractOpenAiOutputText(response);
+  }
+  const chunks = [];
+  for (const choice of Array.isArray(response?.choices) ? response.choices : []) {
+    const content = choice?.message?.content;
+    if (typeof content === 'string') {
+      chunks.push(content);
+    } else if (Array.isArray(content)) {
+      for (const item of content) {
+        if (typeof item?.text === 'string') {
+          chunks.push(item.text);
+        }
+      }
+    }
+  }
+  return chunks.join('\n').trim();
+}
+
+async function parseMenuImagesWithLocalVision(imageFiles, options = {}) {
+  const prompt = buildMenuParsePrompt(options);
+  const generated = await generateLocalVisionMenuContent({
+    input: buildOpenAiInput(imageFiles, prompt, localVisionImageDetail),
+    messages: buildOpenAiCompatibleChatMessages(imageFiles, prompt, localVisionImageDetail)
+  });
+  const rawText = extractLocalVisionOutputText(generated.response, generated.apiStyle);
+  const parsed = extractJsonObjectFromText(rawText, 'Local Vision');
+  const items = normalizeParsedItems(parsed.items, imageFiles.length, parsed.addonSection);
+  if (items.length === 0) {
+    const error = new Error('Local Vision 沒有辨識到可用的品名與價格');
+    error.statusCode = 422;
+    throw error;
+  }
+
+  const taskRouter = buildRoomTaskRouter({
+    taskType: options.taskRouter?.selectedTaskType || options.taskRouter?.taskType || options.taskType,
+    localOcrText: options.localOcrText,
+    items
+  });
+  const parseQuality = evaluateMenuParseQuality({
+    items,
+    menuType: normalizeMenuType(parsed.menuType, items),
+    taskRouter,
+    localOcrText: options.localOcrText
+  });
+
+  return {
+    items,
+    menuType: normalizeMenuType(parsed.menuType, items),
+    provider: 'local_vision',
+    modelUsed: generated.model,
+    warnings: Array.isArray(parsed.warnings) ? parsed.warnings.map(String).filter(Boolean).slice(0, 12) : [],
+    parseQuality,
+    taskRouter
+  };
+}
+
+function buildLocalOcrFallbackWarnings(warnings = []) {
+  const fallbackWarning = 'Only local OCR parser was used; this is not a completed pre-push review draft and host visual review is required before opening to members.';
+  return Array.from(new Set([...(Array.isArray(warnings) ? warnings : []), fallbackWarning].map(String).filter(Boolean)));
+}
+
+function forceLocalOcrFallbackReviewQuality(parseQuality) {
+  const quality = parseQuality && typeof parseQuality === 'object' ? parseQuality : {};
+  const fallbackIssue = {
+    type: localOcrOnlyReviewIssueId,
+    severity: 'high',
+    detail: 'Only local OCR parser was used; this is not a completed pre-push review draft and host visual review is required before opening to members.'
+  };
+  const currentIssues = Array.isArray(quality.issues) ? quality.issues : [];
+  const issues = [
+    fallbackIssue,
+    ...currentIssues.filter((issue) => issue?.type !== localOcrOnlyReviewIssueId)
+  ].slice(0, 20);
+  const blockingReasons = Array.from(new Set([
+    localOcrOnlyReviewIssueId,
+    ...(Array.isArray(quality.blockingReasons) ? quality.blockingReasons : [])
+  ]));
+  const highIssueCount = issues.filter((issue) => issue.severity === 'high').length;
+  const mediumIssueCount = issues.filter((issue) => issue.severity === 'medium').length;
+  return {
+    ...quality,
+    status: 'review_required',
+    issueCount: issues.length,
+    highIssueCount: Math.max(highIssueCount, 1),
+    mediumIssueCount,
+    issues,
+    blockingReasons,
+    requiresHostReview: true
+  };
+}
+
 async function parseMenuImages(files, options = {}) {
   const imageFiles = Array.isArray(files) && files.length > 0 ? files.slice(0, 1) : [];
   if (imageFiles.length === 0) {
@@ -6243,26 +6592,14 @@ async function parseMenuImages(files, options = {}) {
     ? {
       items: localOcr.items,
       menuType: localOcr.menuType,
-      provider: 'local_ocr',
+      provider: 'local_ocr_fallback',
       modelUsed: 'deterministic-ocr-text-parser',
-      warnings: ['已先用你貼上的文字建立房間，請確認品名、價格與規格。'],
-      parseQuality: localQuality,
+      warnings: buildLocalOcrFallbackWarnings(['已先用你貼上的文字建立房間，請確認品名、價格與規格。']),
+      parseQuality: forceLocalOcrFallbackReviewQuality(localQuality),
       localOcr: localOcr.metrics,
       taskRouter: initialTaskRouter
     }
     : null;
-  if (
-    localOcrFirst
-    && localFallback
-    && localFallback.items.length >= localOcrMinItems
-    && localQuality.highIssueCount === 0
-  ) {
-    return Object.assign({}, localFallback, {
-      warnings: localQuality.issueCount > 0
-        ? ['已先用你貼上的文字整理項目，部分內容請快速檢查。']
-        : []
-    });
-  }
   const candidates = getConfiguredProviderCandidates();
   if (candidates.length === 0) {
     if (localFallback && localFallback.items.length >= localOcrMinItems) {
@@ -6276,6 +6613,22 @@ async function parseMenuImages(files, options = {}) {
   let lastError = null;
   for (const provider of candidates) {
     try {
+      if (provider === 'local_vision') {
+        const parsed = await parseMenuImagesWithLocalVision(imageFiles, {
+          localOcrText: options.localOcrText,
+          localOcrCandidates: localOcr.items,
+          taskRouter: initialTaskRouter
+        });
+        parsed.localOcr = localOcr.metrics;
+        parsed.parseQuality = evaluateMenuParseQuality({
+          items: parsed.items,
+          menuType: parsed.menuType,
+          taskRouter: parsed.taskRouter,
+          localOcr: localOcr.metrics,
+          localOcrText: options.localOcrText
+        });
+        return parsed;
+      }
       if (provider === 'gemini') {
         const parsed = await parseMenuImagesWithGemini(imageFiles, {
           localOcrText: options.localOcrText,
@@ -6316,6 +6669,13 @@ async function parseMenuImages(files, options = {}) {
         statusCode,
         message: error.message
       });
+      if (provider === 'local_vision' && !allowRemoteVisionFallback) {
+        writeLog('warn', 'local_vision_remote_fallback_blocked', {
+          statusCode,
+          hasLocalOcrFallback: Boolean(localFallback)
+        });
+        break;
+      }
       if (!shouldFallbackToNextProvider(error)) {
         throw error;
       }
@@ -6354,6 +6714,8 @@ app.get('/healthz', (req, res) => {
     rooms: rooms.size,
     providerOrder: aiProviderOrder,
     activeProviderCandidates: getConfiguredProviderCandidates(),
+    localVisionConfigured: Boolean(localVisionBaseUrl && localVisionModel),
+    allowRemoteVisionFallback,
     geminiModel,
     geminiFallbackModels: getGeminiModelCandidates().slice(1),
     geminiRetryAttempts,
@@ -6466,7 +6828,14 @@ app.post('/api/rooms/:roomId/agent-proposals', (req, res) => {
     return;
   }
 
-  const proposal = createAgentProposal(room, req.body || {});
+  const normalizedInput = normalizeAgentProposalInput(req.body || {});
+  const proposalValidation = validateExternalAgentProposalInput(normalizedInput);
+  if (!proposalValidation.ok) {
+    res.status(proposalValidation.statusCode).json({ error: proposalValidation.error });
+    return;
+  }
+
+  const proposal = createAgentProposal(room, normalizedInput);
   const state = serializeRoom(room);
   io.to(room.id).emit('roomState', state);
   writeLog('info', 'agent_proposal_created', {
@@ -6567,6 +6936,8 @@ app.post('/api/rooms/:roomId/menu', createRateLimitMiddleware('menu_parse', menu
       items: parsed.items
     });
     room.warnings = parsed.warnings;
+    room.evidenceReviewSource = parsed.provider || null;
+    room.evidenceReviewModel = parsed.modelUsed || null;
     room.parseQuality = parsed.parseQuality || evaluateMenuParseQuality({
       items: parsed.items,
       menuType: parsed.menuType,
@@ -6980,6 +7351,19 @@ io.on('connection', (socket) => {
       ack?.({ ok: false, error: '沒有可開放的品項' });
       return;
     }
+    const evidenceReviewBlock = getEvidenceReviewReleaseBlock(room);
+    if (evidenceReviewBlock) {
+      appendGuardrailMemoryEvent({
+        eventType: 'open_members_blocked',
+        roomId: room.id,
+        taskType: room.taskRouter?.taskType || null,
+        scenarioContract: room.parseQuality?.adaptiveConfidence?.featureProfile?.scenarioContract || null,
+        blockingReasons: [evidenceReviewBlock.id],
+        issueTypes: [evidenceReviewBlock.id]
+      });
+      ack?.({ ok: false, error: 'OCR-only 草稿尚未完成本地/視覺 LLM 校正，不能開放給成員。' });
+      return;
+    }
     const antiPollutionBlocks = getAntiPollutionBlocks(room);
     if (antiPollutionBlocks.length > 0) {
       appendGuardrailMemoryEvent({
@@ -6998,6 +7382,20 @@ io.on('connection', (socket) => {
       menuType: room.menuType,
       taskRouter: room.taskRouter
     });
+    const recomputedEvidenceReviewBlock = getEvidenceReviewReleaseBlock(room);
+    if (recomputedEvidenceReviewBlock) {
+      room.parseQuality = forceLocalOcrFallbackReviewQuality(room.parseQuality);
+      appendGuardrailMemoryEvent({
+        eventType: 'open_members_blocked',
+        roomId: room.id,
+        taskType: room.taskRouter?.taskType || null,
+        scenarioContract: room.parseQuality?.adaptiveConfidence?.featureProfile?.scenarioContract || null,
+        blockingReasons: [recomputedEvidenceReviewBlock.id],
+        issueTypes: [recomputedEvidenceReviewBlock.id]
+      });
+      ack?.({ ok: false, error: 'OCR-only 草稿尚未完成本地/視覺 LLM 校正，不能開放給成員。' });
+      return;
+    }
     if (hasBlockingParseQuality(room)) {
       appendGuardrailMemoryEvent({
         eventType: 'open_members_blocked',
@@ -7388,7 +7786,12 @@ io.on('connection', (socket) => {
       ack?.({ ok: false, error: '這份建議草稿已處理' });
       return;
     }
-    if (action === 'accept' && ['semantic_repair_draft', 'evidence_review', 'task_router_review'].includes(String(proposal.proposalType || '')) && hasBlockingParseQuality(room)) {
+    const reviewProposalTypes = ['semantic_repair_draft', 'evidence_review', 'task_router_review'];
+    const isReviewProposal = reviewProposalTypes.includes(String(proposal.proposalType || ''));
+    const clearsLocalOcrOnlyBlock = action === 'accept'
+      && isLocalVisionBackedSemanticProposal(proposal)
+      && hasOnlyLocalOcrOnlyReviewBlock(room);
+    if (action === 'accept' && isReviewProposal && hasBlockingParseQuality(room) && !clearsLocalOcrOnlyBlock) {
       appendGuardrailMemoryEvent({
         eventType: 'proposal_accept_blocked',
         roomId: room.id,
@@ -7404,7 +7807,7 @@ io.on('connection', (socket) => {
       ack?.({ ok: false, error: 'AI 複查發現高風險解析問題，請先修正清單後再確認草稿。' });
       return;
     }
-    if (action === 'accept' && ['semantic_repair_draft', 'evidence_review', 'task_router_review'].includes(String(proposal.proposalType || ''))) {
+    if (action === 'accept' && isReviewProposal) {
       const structuralBlocks = getStructuralReviewBlocks(room);
       if (structuralBlocks.length > 0) {
         appendGuardrailMemoryEvent({
@@ -7422,8 +7825,13 @@ io.on('connection', (socket) => {
       }
     }
     let acceptedCandidateCount = 0;
-    if (action === 'accept' && ['semantic_repair_draft', 'evidence_review', 'task_router_review'].includes(String(proposal.proposalType || ''))) {
+    if (action === 'accept' && isReviewProposal) {
       acceptedCandidateCount = acceptPendingParserCandidates(room, reviewerId, `proposal ${proposalId} accepted by host`);
+    }
+    if (clearsLocalOcrOnlyBlock) {
+      room.evidenceReviewSource = 'local_vision_bridge';
+      room.evidenceReviewModel = normalizeBoundedText(proposal.payload?.localVision?.model, 120) || 'local_vision_bridge';
+      room.parseQuality = stripLocalOcrOnlyReviewBlock(room.parseQuality);
     }
 
     proposal.status = nextStatus;
@@ -7470,6 +7878,8 @@ io.on('connection', (socket) => {
     room.taskRouter = { ...defaultTaskRouter };
     room.warnings = [];
     room.parseQuality = null;
+    room.evidenceReviewSource = null;
+    room.evidenceReviewModel = null;
     room.localOcr = {
       enabled: false,
       lineCount: 0,

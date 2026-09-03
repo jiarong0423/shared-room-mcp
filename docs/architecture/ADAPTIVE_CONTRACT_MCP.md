@@ -17,6 +17,8 @@ sequenceDiagram
   autonumber
   actor Host as Host / Service Owner
   actor Member as Member / Guest
+  participant Local as Authorized Local Bridge
+  participant Vision as Local OCR + Vision LLM
   participant Page as Shared Room MCP Page
   participant WebMCP as WebMCP State Reader
   participant Contract as Adaptive Contract MCP
@@ -25,13 +27,18 @@ sequenceDiagram
   participant Store as Room Store
 
   Host->>Page: Create room and provide evidence
-  Page->>Contract: Build EvidenceAsset and OcrObservation
+  Page->>Store: Save uploaded evidence image
+  Local->>Vision: Read local image, run OCR, correct with visual model
+  Vision-->>Local: Structured draft plus review notes
+  Local->>Page: Write semantic_repair_draft proposal
+  WebMCP->>Page: Inspect room state through page-local tools
+  WebMCP->>Page: Summarize draft-only next action
+  Host->>Review: Review the draft card
+  Review->>Contract: Convert approved draft into parser candidates
   Contract->>Contract: Route scenario and apply prompt contract
   Contract->>Guardrail: Check forbidden numbers, formulas, sparse evidence
   Guardrail-->>Review: Emit warning or structural gate
   Review-->>Page: Show parser candidates for host review
-  WebMCP->>Page: Inspect room state through page-local tools
-  WebMCP->>Page: Prepare draft-only proposal
   Host->>Review: Accept warning, edit value, or remove candidate
   Review->>Contract: Mark resolved_warning or require edit/remove
   Contract->>Store: Save reviewed state and audit trail
@@ -43,6 +50,7 @@ sequenceDiagram
   Page->>Host: Export HTML or PDF evidence record
 
   WebMCP-->>Host: State summary and draft recommendation
+  Vision-->>Review: OCR-only output remains blocked
   Review-->>Host: Human approval remains required
   Guardrail-->>Host: Structural risk requires edit or removal
 ```
@@ -51,7 +59,11 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-  L0[EvidenceAsset image or text] --> L1[OcrObservation]
+  L0[Image-backed EvidenceAsset] --> B0[Authorized Local Bridge]
+  B0 --> B1[Local OCR Candidate Text]
+  B1 --> B2[Local or Visual LLM Correction]
+  B2 --> B3[Structured Draft Proposal]
+  B3 --> L1[Host Draft Review]
   L1 --> L2[Scenario Router]
   L2 --> L3[Prompt Contract]
   L3 --> L4[ParserCandidate Layer]
@@ -68,13 +80,17 @@ flowchart TD
   W --> RW[Host Accepts as resolved_warning]
   RW --> L9
 
+  B1 --> OB[OCR-only Blocker]
+  OB --> HR[Local vision or human repair required]
+  HR --> B3
+
   L7 --> S[Structural Gate]
   S --> ER[Edit or Remove Required]
   ER --> L8
 
-  S -. blocks .-> B1[Phone, date, address, tax id, business hours]
-  S -. blocks .-> B2[Non-currency numbers near forbidden context]
-  S -. blocks .-> B3[Unresolved tax, deposit, service fee, tier formula]
+  S -. blocks .-> RISK[Phone, date, address, tax id, business hours]
+  S -. blocks .-> RISK_NON_CURRENCY[Non-currency numbers near forbidden context]
+  S -. blocks .-> RISK_FORMULA[Unresolved tax, deposit, service fee, tier formula]
 ```
 
 ## Semantic Visual Anchor

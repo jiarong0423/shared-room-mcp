@@ -372,6 +372,12 @@ function getFirstItemId(room) {
 
 async function createProposal(baseUrl, room, ownerParticipantId, scenario, timeoutMs) {
   const beforeItemCount = Array.isArray(room.items) ? room.items.length : 0;
+  const structuredItems = (Array.isArray(room.items) ? room.items : []).map((item) => ({
+    name: item.name || item.label || '',
+    price: Number(item.price || item.amount || 0),
+    category: item.category || 'other',
+    rawTextEvidence: item.rawTextEvidence || item.name || item.label || ''
+  }));
   const response = await fetchJson(`${baseUrl}/api/rooms/${encodeURIComponent(room.id)}/agent-proposals`, {
     method: 'POST',
     headers: {
@@ -384,9 +390,20 @@ async function createProposal(baseUrl, room, ownerParticipantId, scenario, timeo
       rationale: 'The agent can prepare a draft, but only the host can edit parsed rows and open the reviewed list.',
       riskLevel: 'needs_human_review',
       payload: {
+        sourceMode: 'local_ocr_plus_local_vision',
+        localVisionConfigured: true,
+        localVision: {
+          provider: 'stress_harness',
+          model: 'mock-local-vision-review'
+        },
         scenario: scenario.id,
         taskType: scenario.taskType,
-        proposedAction: 'review_before_open'
+        proposedAction: 'review_before_open',
+        rawOcrPreview: scenario.text,
+        structuredItems,
+        visualReviewNotes: [
+          'Stress harness simulates a local vision correction layer for HITL release-gate validation.'
+        ]
       }
     })
   }, timeoutMs);

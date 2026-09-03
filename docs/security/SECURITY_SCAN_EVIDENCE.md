@@ -1,6 +1,6 @@
 # Security Scan Evidence
 
-Evidence date: 2026-09-03
+Evidence date: 2026-09-04 Asia/Taipei
 
 ## Scope
 
@@ -18,6 +18,13 @@ Status: passed.
 
 SAST-equivalent local code security evidence:
 
+- Local review bridge gate passed on 2026-09-04 Asia/Taipei. The bridge defaults to dry-run, requires `--write-cloud-proposal` and explicit `--base-url` for cloud writes, refuses repository output directories for private OCR reports, and created a cloud proposal only after a local vision endpoint returned structured items.
+- OCR-only cloud proposal negative gate passed on 2026-09-04 Asia/Taipei. A direct `semantic_repair_draft` request with `sourceMode=local_ocr_only_bridge_draft` returned HTTP 422 and did not create a review draft.
+- Current local contract stress passed 60/60 on 2026-09-04 Asia/Taipei after the local-review bridge gate. The run kept OCR-only parser output in review-required state while preserving Chinese and English room contracts.
+- Current HITL Member-Visibility Release stress passed 12/12 on 2026-09-04 Asia/Taipei. A local-vision-backed `semantic_repair_draft` cleared only the OCR-only blocker, then host release, member confirmation, owner finalization, HTML export, and PDF export passed.
+- Current deterministic image-oracle integration benchmark passed 115/115 on 2026-09-04 Asia/Taipei after the runner was corrected to validate full parser candidates instead of member-selectable candidates only.
+- Local `/healthz` redaction check passed on 2026-09-04 Asia/Taipei. It reports `localVisionConfigured` and `allowRemoteVisionFallback`, but does not expose the local vision endpoint origin or model name.
+- Mermaid and narrative boundary rescan passed on 2026-09-04 Asia/Taipei. README and architecture diagrams now include the authorized local bridge, local OCR, local/visual LLM correction, structured draft proposal, and OCR-only blocker before Member-Visibility Release.
 - Full Adaptive Contract MCP naming rescan passed on 2026-09-03. Active tracked source/docs/config/scripts passed checks for retired protocol names, retired stress script names, retired host URLs, retired custom domains, local machine paths, and known secret token prefixes.
 - Local `/healthz` on 2026-09-03 returned `acmcp-evidence-review.v1`, `acmcp-service-blueprint.v1`, `acmcp-trust-layer-contract.v1`, `acmcp-webmcp-tools.v2`, and `acmcp-room-store.v1`.
 - Local OCR canary on 2026-09-03 passed 3/3 for `S01_zh_ticket_activity_v01` through `v03` against `http://127.0.0.1:3017` using operator-machine Tesseract `chi_tra+eng`. The run verified table-aware text-block parsing, age-number leakage prevention, and threshold advisory handling. Zeabur remains the hosted room/runtime/HITL surface, not the OCR engine.

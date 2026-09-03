@@ -410,21 +410,20 @@ function isAdvisoryThresholdRule(rule) {
 function evaluateOracle(args, test, room) {
   const oracle = test.oracle || {};
   const candidates = Array.isArray(room?.parserCandidates) ? room.parserCandidates : [];
-  const selectableCandidates = candidates.filter((candidate) => candidate?.displaySurface === 'member_selectable' || candidate?.proposedItemId);
   const memberItems = Array.isArray(room?.items) ? room.items : [];
   const calculationRules = Array.isArray(room?.calculationRules) ? room.calculationRules : [];
   const calculationRulesForExactOracle = args.mode === 'image-plus-local-ocr'
     ? calculationRules.filter((rule) => !isAdvisoryThresholdRule(rule))
     : calculationRules;
   assertBoundary(test, room);
-  assertExpectedCount(test, 'parser candidate', selectableCandidates, oracle.expectedParserCandidates?.itemCount, oracle.expectedParserCandidates?.itemCountAtLeast);
+  assertExpectedCount(test, 'parser candidate', candidates, oracle.expectedParserCandidates?.itemCount, oracle.expectedParserCandidates?.itemCountAtLeast);
   assertExpectedCount(test, 'member item', memberItems, oracle.expectedSelectableItems?.itemCount, oracle.expectedSelectableItems?.itemCountAtLeast);
   assertExpectedCount(test, 'calculation rule', calculationRulesForExactOracle, oracle.expectedCalculationRules?.count, oracle.expectedCalculationRules?.countAtLeast);
   if (args.mode !== 'image-plus-local-ocr') {
-    assertExpectedPrices(test, 'parser candidate', selectableCandidates, oracle.expectedParserCandidates?.prices);
+    assertExpectedPrices(test, 'parser candidate', candidates, oracle.expectedParserCandidates?.prices);
     assertExpectedPrices(test, 'member item', memberItems, oracle.expectedSelectableItems?.prices);
   }
-  assertForbiddenNumbers(test, 'parser candidate', selectableCandidates, oracle.forbiddenParserCandidateNumbers || oracle.forbiddenNumbers);
+  assertForbiddenNumbers(test, 'parser candidate', candidates, oracle.forbiddenParserCandidateNumbers || oracle.forbiddenNumbers);
   assertForbiddenNumbers(test, 'member item', memberItems, oracle.forbiddenMemberNumbers || oracle.forbiddenNumbers);
   assertForbiddenNames(test, 'member item', memberItems, oracle.forbiddenMemberVisibleItems);
   for (const item of memberItems) {
@@ -557,7 +556,7 @@ async function main() {
     summary,
     modeClaims: {
       'image-only': 'Uploads only the image. This is a negative canary unless the target deployment has an explicit image-reading provider configured.',
-      'image-plus-local-ocr': 'Runs OCR on the operator machine first, then uploads the image plus locally extracted text. The hosted room is not the OCR engine.',
+      'image-plus-local-ocr': 'Runs OCR on the operator machine first, then writes OCR metadata and a draft proposal. The hosted room is not the OCR engine.',
       'image-plus-oracle-text': 'Uploads the image plus locked oracle text to validate checksum, contract routing, guardrails, member-visible masks, and HITL state transitions.'
     },
     results
