@@ -2,9 +2,13 @@
 
 Shared Room MCP is the reference application. Adaptive Contract MCP is the reusable contract, router, prompt, review-gate, and guardrail layer underneath it.
 
+Adaptive Contract MCP is not a blockchain smart contract and not an autonomous execution engine. It means adaptive room terms drafted from evidence, validated by strict schemas, reviewed through WebMCP/Codex, and executed only after human approval.
+
 The product boundary is a form-based async private task room. It is not a chatroom, messaging app, payment gateway, booking bot, or browser-control agent. A host defines the evidence and service boundary; members fill only their own selectable or assigned parts; final release and settlement stay behind explicit human review.
 
 OCR plus LLM-assisted parsing and text-block recognition produce a draft. WebMCP/Codex reviews the draft against room state and evidence. The human edits, confirms, overrides advisory warnings, and releases the commitment. Threshold conditions such as group size or minimum spend are warnings until a host decides; AI never commits a booking, group formation, payment, or settlement.
+
+Zeabur is the hosted state storage, MCP protocol host, HITL approval gate, guardrail runtime, member release surface, and export surface. Zero required ML/OCR workload is processed on the Zeabur server in the default WebMCP Challenge path.
 
 ## Runtime Loop
 

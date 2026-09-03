@@ -53,6 +53,8 @@ This is a single-direction task room. The host provides evidence and performs th
 
 `Shared Room MCP` is the demo application and repository slug. `Adaptive Contract MCP` is the underlying contract, routing, prompt, guardrail, and HITL state-machine layer. The architecture name is used where the project discusses reusable scenario contracts, image-fixture oracles, enterprise submission gates, and anti-pollution review controls.
 
+`Adaptive Contract MCP` is not a blockchain smart contract and not an autonomous execution engine. It means adaptive room terms drafted from evidence, validated by strict schemas, reviewed through WebMCP/Codex, and executed only after human approval.
+
 Core loop: OCR plus LLM-assisted parsing and text-block recognition produce a draft; WebMCP/Codex reviews the draft against room state and evidence; the human edits, confirms, and releases the final commitment.
 
 中文口徑：OCR + LLM 解析 + 文字區塊辨識 = 草稿；WebMCP/Codex 複查；人工修正、確認、放行。
@@ -66,7 +68,13 @@ AI provider adapters are extension-only:
 - Codex and the browser sidebar provide the intended LLM collaboration layer: visual review, evidence comparison, field-fix suggestions, and state guidance.
 - WebMCP is the primary agent integration; external model APIs are not required for the agent workflow.
 - Server-side Gemini/OpenAI adapters exist only as replaceable examples for deployment owners who explicitly choose external image-reading or schema repair outside the core demo path.
-- Zeabur is not the OCR engine. In the hosted demo it receives uploaded evidence plus host/assistant-provided text or review proposals, then runs the room state machine, guardrails, member release, and exports.
+- Zeabur is not the OCR engine. In the hosted demo, Zeabur is the state storage, MCP protocol host, HITL approval gate, guardrail runtime, member release surface, and export surface. It receives uploaded evidence plus host/assistant-provided text or review proposals, then runs the room state machine, guardrails, member release, and exports.
+
+## System Boundary Standard
+
+This project is an AI-assisted collaboration room, not an autonomous agent. Evidence ingestion and text extraction can happen through copied text, browser-side helpers, local OCR, or optional deployment-owner adapters. Those sources only seed parser candidates. WebMCP and Codex review the current room state and evidence, then prepare draft suggestions. Human clicks are required for parsed-item approval, Member-Visibility Release, member cost confirmation, overrides, and final summary export.
+
+Zeabur hosts the room state and approval workflow. Zero required ML/OCR workload is processed on the Zeabur server in the default WebMCP Challenge path.
 
 ## Open Source Tool-Layer Positioning
 

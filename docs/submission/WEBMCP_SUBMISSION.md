@@ -22,6 +22,8 @@ The core safety idea is simple: AI prepares the evidence review; humans approve 
 
 `Shared Room MCP` is the reference app and repository slug. `Adaptive Contract MCP` is the reusable architecture layer: scenario contracts, routing, prompt constraints, image-oracle verification, anti-pollution guardrails, and HITL state-machine enforcement.
 
+`Adaptive Contract MCP` is not a blockchain smart contract and not an autonomous execution engine. It means adaptive room terms drafted from evidence, validated by strict schemas, reviewed through WebMCP/Codex, and executed only after human approval.
+
 This brings WebMCP capability to real-world workflows, combining agent productivity with human control.
 
 Shared Room MCP is built for messy real-world coordination: group buys, drink orders, restaurant splits, KTV rooms, sports venues, tickets, rentals, appointment drafts, service requests, activity signups, and other pre-commitment workflows. These workflows usually start from a social post, evidence photo, receipt, partial form, copied text, or screenshot rather than a clean store API.
@@ -57,6 +59,8 @@ The human controls the room, task type, uploaded evidence, copied text, parsed i
 The core loop is: OCR plus LLM-assisted parsing and text-block recognition produce a draft; WebMCP/Codex reviews the draft against room state and evidence; the human edits, confirms, and releases the final commitment.
 
 Chinese wording for review: OCR + LLM 解析 + 文字區塊辨識 = 草稿；WebMCP/Codex 複查；人工修正、確認、放行。
+
+Zeabur is the hosted state storage, MCP protocol host, HITL approval gate, guardrail runtime, member release surface, and export surface. Zero required ML/OCR workload is processed on the Zeabur server in the default WebMCP Challenge path.
 
 Threshold conditions such as minimum headcount, minimum spend, and free-shipping thresholds are advisory room context. The assistant may flag a mismatch between the evidence and the current room state, but it cannot decide that the group is formed, the booking is valid, payment is complete, or settlement is final. The host can edit, override, and release the member-facing task after review.
 

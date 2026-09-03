@@ -26,8 +26,10 @@ SAST-equivalent local code security evidence:
 - The 115-image manifest builder passed on 2026-09-03 without the external PNG matrix present by validating the checked-in checksum/oracle manifest. Supplying `IMAGE_MATRIX_ROOT` still rebuilds the manifest from the external artifact.
 - `release-boundary-safety-gate`: passed on 2026-09-03 against the public-shape export with findings `0`, blocking `0`.
 - `ai-security-rules export-gate`: passed on 2026-09-03 against the public-shape export with blocking `0`, P0 `0`, P1 `0`, and P2 `0`.
+- Boundary wording rescan on 2026-09-03 confirmed that README, submission packet, architecture docs, server code, public UI, scripts, and package metadata consistently describe WebMCP as a page-local state reader and draft generator, Codex/LLM as the advisory review layer, human clicks as the commitment boundary, and Zeabur as the hosted state/runtime/export surface rather than the OCR engine.
+- `ai-security-rules export-gate`: passed again on 2026-09-03 after the boundary wording update with decision `pass`, blocking `0`, P0 `0`, P1 `0`, and P2 `0`.
 - `LocalGuard public-shape scan`: one high-severity, low-confidence secret heuristic remains from the npm lockfile integrity checksum. This is expected dependency metadata, not a secret. No real token, `.env`, cookie, credential, payment value, or private room payload was identified.
-- Superseded GitHub remote comparison from 2026-09-03 found a stale `main` before the cleanup push. This was historical release evidence and must be replaced by a fresh local/GitHub/Zeabur comparison after the next push and deployment.
+- GitHub remote comparison on 2026-09-03 confirmed that `origin/main` matched local commit `0ddbf4a26d1cd8419fc6ced8d53d3fb07b270426` before the boundary wording follow-up commit.
 - `npm run check`: passed on 2026-09-01.
 - `npm run audit:tasks`: passed on 2026-09-01 with checks ready `8/8`.
 - `npm audit --audit-level=high`: passed on 2026-09-01 with `0` vulnerabilities.
