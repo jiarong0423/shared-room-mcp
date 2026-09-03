@@ -2606,13 +2606,14 @@
     }
 
     function readStoredParticipantId() {
+      if (ownerBootstrapToken) {
+        return '';
+      }
       const scopedKey = getScopedStorageKey(storageKeys.participantId);
       if (!scopedKey) {
         return '';
       }
-      return sessionStorage.getItem(scopedKey)
-        || (ownerBootstrapToken ? localStorage.getItem(scopedKey) : '')
-        || '';
+      return sessionStorage.getItem(scopedKey) || '';
     }
 
     function persistParticipantId(nextParticipantId, targetRoomId = roomId) {
@@ -3165,10 +3166,19 @@
       roomId = room.id;
       currentRoom = room;
       isUploading = false;
+      syncRouteBootstrapIdentityFromRoom(room, roomId);
       const url = new URL(window.location.href);
       url.searchParams.set('room', roomId);
       window.history.replaceState({}, '', url.toString());
       renderRoom(room);
+    }
+
+    function getRoomApiUrl(targetRoomId) {
+      const url = new URL(`/api/rooms/${encodeURIComponent(targetRoomId)}`, window.location.origin);
+      if (ownerBootstrapToken) {
+        url.searchParams.set('ownerBootstrapToken', ownerBootstrapToken);
+      }
+      return url.pathname + url.search;
     }
 
     async function loadExistingRoom() {
@@ -3176,7 +3186,7 @@
         return createRoom();
       }
 
-      const response = await fetch(`/api/rooms/${encodeURIComponent(roomId)}`);
+      const response = await fetch(getRoomApiUrl(roomId));
       if (response.status === 404) {
         const data = await createRoom();
         setMessage(t('roomMissingNew'), 'warn');
@@ -3212,6 +3222,7 @@
         }
         participantId = result.participantId || participantId;
         persistParticipantId(participantId, targetRoomId);
+        syncRouteBootstrapIdentityFromRoom(result.room, targetRoomId);
         syncOwnDisplayNameFromRoom(result.room, targetRoomId);
         renderRoomForTarget(result.room, targetRoomId);
       });
@@ -3427,6 +3438,14 @@
       return currentRoom?.participants?.find((candidate) => candidate.id === participantId) || null;
     }
 
+    function findRoomParticipant(room, targetParticipantId) {
+      const normalizedParticipantId = String(targetParticipantId || '').trim();
+      if (!normalizedParticipantId || !Array.isArray(room?.participants)) {
+        return null;
+      }
+      return room.participants.find((candidate) => candidate.id === normalizedParticipantId) || null;
+    }
+
     function hasValidDisplayName(nameValue) {
       const name = String(nameValue || '').trim();
       return Boolean(name) && name !== '未命名';
@@ -3437,9 +3456,7 @@
     }
 
     function syncOwnDisplayNameFromRoom(room, targetRoomId = roomId) {
-      const ownParticipant = Array.isArray(room?.participants)
-        ? room.participants.find((candidate) => candidate.id === participantId)
-        : null;
+      const ownParticipant = findRoomParticipant(room, participantId);
       const roomDisplayName = String(ownParticipant?.displayName || '').trim();
       const inputDisplayName = String(elements.displayNameInput.value || '').trim();
       if (!hasValidDisplayName(displayName) && !hasValidDisplayName(inputDisplayName) && hasValidDisplayName(roomDisplayName)) {
@@ -3447,6 +3464,25 @@
         elements.displayNameInput.value = displayName;
         persistDisplayName(displayName, targetRoomId);
       }
+    }
+
+    function syncRouteBootstrapIdentityFromRoom(room, targetRoomId = roomId) {
+      if (!ownerBootstrapToken || room?.routeBootstrapRole !== 'owner') {
+        return false;
+      }
+      const routeParticipantId = String(room.routeBootstrapParticipantId || '').trim();
+      const routeParticipant = findRoomParticipant(room, routeParticipantId);
+      if (!routeParticipant) {
+        return false;
+      }
+      participantId = routeParticipant.id;
+      persistParticipantId(participantId, targetRoomId);
+      if (hasValidDisplayName(routeParticipant.displayName)) {
+        displayName = routeParticipant.displayName;
+        elements.displayNameInput.value = displayName;
+        persistDisplayName(displayName, targetRoomId);
+      }
+      return true;
     }
 
     function isOwner(room = currentRoom) {

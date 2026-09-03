@@ -585,3 +585,42 @@ Validation evidence:
 Next resume point:
 
 - Commit and push this owner-bootstrap lock, deploy Zeabur again, then verify live owner URL opens with merchant controls immediately and customer route remains read-only/English-only.
+
+## 2026-09-04 07:18 Verified Route Bootstrap Closeout
+
+Scope:
+
+- Owner project: `<project-root>`
+- Changed artifacts: `server.js`, `public/index.html`
+
+Direct cause:
+
+- The owner URL could briefly render as a non-owner before the socket join acknowledged the owner token. After the join settled, the page became correct, but the first visible state was poor for recording and could look like a role leak.
+
+Root cause:
+
+- The frontend loaded and rendered `/api/rooms/:roomId` before it had a token-validated participant identity. The route token was verified during socket join, not during the first room read, so the first render had to guess from local route state.
+
+DONE_CONFIRMED:
+
+- `GET /api/rooms/:roomId` now accepts an owner bootstrap token and only returns `routeBootstrapParticipantId` when the server verifies the token.
+- The frontend no longer reads old owner participant ids from storage before token verification.
+- The frontend adopts the server-verified owner participant before the first room render, then persists that scoped owner identity.
+- Invalid bootstrap tokens do not return route bootstrap identity.
+
+Validation evidence:
+
+- `node --check server.js`: passed.
+- inline `public/index.html` script syntax check: passed.
+- `git diff --check`: passed.
+- Valid/invalid local owner token API check passed on room `ca29fb85`: valid token returned owner bootstrap identity; invalid token returned no route bootstrap identity.
+- Local browser owner route smoke passed on `http://127.0.0.1:3224/?_owner_bootstrap=85831932353b&room=ca29fb85&lang=en`: within the first settled render, merchant name was present, `Publish To Customers` was enabled, the owner hint was visible, and the English route had no Chinese drink-option text.
+- Local customer-publishing stress passed `4/4`: `/private/tmp/webmcp-route-bootstrap-verified-customer-stress/customer-publishing-stress-2026-09-03T23-17-42-466Z.md`.
+- `npm run verify:adaptive-contracts`: passed with contracts `13`, prompt nodes `17`, guardrails `19`, scenarios `12`.
+- `npm run audit:tasks`: passed with code release blocking gaps `0`; one submission-only gap remains for the final YouTube demo URL.
+- `release-boundary-safety-gate`: PASS, blocking `0`; evidence `/private/tmp/webmcp-release-boundary-route-bootstrap-verified/release-boundary-report-2026-09-03T23-17-51-936Z.json`.
+- `ai-security-rules deploy-gate`: pass, blocking `0`, P0 `0`, P1 `0`, P2 `0`; evidence `/private/tmp/webmcp-ai-security-deploy-gate-route-bootstrap-verified/local_security_design_gate_deploy_gate.md`.
+
+Next resume point:
+
+- Commit and push this verified route bootstrap patch, deploy Zeabur again, then verify live owner route initial state and customer read-only route before telling the operator recording is ready.

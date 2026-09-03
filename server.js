@@ -6100,10 +6100,14 @@ function buildRoomFormulaSnapshot(room) {
   };
 }
 
-function serializeRoom(room) {
+function serializeRoom(room, options = {}) {
   const formulaSnapshot = buildRoomFormulaSnapshot(room);
+  const routeBootstrapParticipantId = typeof options.routeBootstrapParticipantId === 'string'
+    && options.routeBootstrapParticipantId.length <= 80
+    ? options.routeBootstrapParticipantId
+    : '';
 
-  return {
+  const state = {
     id: room.id,
     menuLoaded: room.menuLoaded,
     itemsOpenForMembers: Boolean(room.itemsOpenForMembers),
@@ -6163,6 +6167,11 @@ function serializeRoom(room) {
     updatedAt: room.updatedAt,
     parsedAt: room.parsedAt
   };
+  if (routeBootstrapParticipantId) {
+    state.routeBootstrapParticipantId = routeBootstrapParticipantId;
+    state.routeBootstrapRole = 'owner';
+  }
+  return state;
 }
 
 function getExportLanguage(value) {
@@ -7238,8 +7247,12 @@ app.get('/api/rooms/:roomId', (req, res) => {
     res.status(404).json({ error: '找不到房間，請重新建立共享空間' });
     return;
   }
+  const routeBootstrapParticipantId = resolveOwnerBootstrapParticipantId(
+    room,
+    req.query?.ownerBootstrapToken || req.query?._owner_bootstrap
+  );
   touchRoom(room, 'room_read', false);
-  res.json(serializeRoom(room));
+  res.json(serializeRoom(room, { routeBootstrapParticipantId }));
 });
 
 app.get('/api/rooms/:roomId/export.html', (req, res) => {
