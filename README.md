@@ -198,6 +198,7 @@ The table below describes the room types and what the app can safely calculate t
 | Codex LLM visual review | authorized evidence and OCR text | structured draft only | no | no | no | no |
 | Authorized local bridge | target room and reviewed draft | proposal only | no | no | no | no |
 | WebMCP agent | yes | proposal only | no | no | no | no |
+| Route role lock | current URL role only | scoped identity only | no | no | no | no |
 | Customer | yes | no | no | own selections only | no | no |
 | Merchant | yes | yes | before customer confirmation | own selections only | same-card human review | yes |
 | Server | validates | stores limited drafts | checks merchant authority | checks each customer only confirms themself | records review result | saves local room summary |
@@ -252,38 +253,27 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-  L0[Menu Or Service Evidence] --> B0[Local OCR Bridge]
-  B0 --> B1[Local OCR Text]
-  B1 --> B2[Codex LLM Visual Review]
-  B2 --> B3[Structured Draft]
-  B3 --> L1[Merchant Draft Review]
-  L1 --> L2[Business Flow Lock]
-  L2 --> L3[Room Rules]
-  L3 --> L4[Draft Row Review]
-  L4 --> L5[Number Cleanup]
-  L5 --> L6[Safety Check List]
-  L6 --> L7[Merchant Review Gate]
-  L7 --> L8[Merchant Review Decision]
-  L8 --> L9[Private Customer Link Published]
-  L9 --> L10[Customer Own Selection Confirmed]
-  L10 --> L11[Merchant Sends Order Or Service Sheet]
-  L11 --> L12[HTML or PDF Review Export]
-
-  L7 --> W[Review Note]
-  W --> RW[Merchant Accepts Review Note]
-  RW --> L9
-
-  B1 --> OB[OCR-only Stop]
-  OB --> HR[LLM visual review or human repair required]
-  HR --> B3
-
-  L7 --> S[Must Edit Or Remove]
-  S --> ER[Edit or Remove Required]
-  ER --> L8
-
-  S -. blocks .-> RISK[Phone, date, address, tax id, business hours]
-  S -. blocks .-> RISK_NON_CURRENCY[Non-currency numbers near forbidden context]
-  S -. blocks .-> RISK_FORMULA[Unresolved tax, deposit, service fee, tier formula]
+  Evidence[Menu Or Service Evidence] --> Bridge[Authorized Local Bridge]
+  Bridge --> OCR[Local OCR]
+  OCR --> Codex[Codex LLM Visual Review]
+  OCR --> OcrStop[OCR-only Stop]
+  OcrStop --> Codex
+  Codex --> Draft[Structured Review Draft]
+  Draft --> Zeabur[Zeabur Private Room Runtime]
+  Zeabur --> WebMCP[WebMCP Scoped Room Tools]
+  WebMCP --> Codex
+  Zeabur --> RoleLock[Route Role Lock]
+  RoleLock --> Owner[Merchant Owner Tab]
+  RoleLock --> Customer[Customer Link]
+  Owner --> Gate[Merchant Approval Gate]
+  Gate -->|approve| Published[Published Customer List]
+  Gate -->|fix needed| Fix[Edit Or Remove Row]
+  Fix --> Gate
+  Gate -->|blocked| Stop[Blocked Until Merchant Decision]
+  Published --> CustomerOrder[Customer Chooses And Confirms]
+  CustomerOrder --> Final[Merchant Finalizes Summary]
+  Final --> Export[HTML Or PDF Export]
+  Stop -. prevents .-> Published
 ```
 
 The detailed architecture diagram and contract boundaries are in [`docs/architecture/ADAPTIVE_CONTRACT_MCP.md`](docs/architecture/ADAPTIVE_CONTRACT_MCP.md).

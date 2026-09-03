@@ -69,6 +69,7 @@ sequenceDiagram
 | Authorized local bridge | Local OCR output, LLM review JSON, target room id, merchant participant id | One review draft proposal | Create final commitments, bypass merchant review, or expose private OCR reports in the repo |
 | WebMCP page tools | Current browser room state | Proposal-only draft creation | Edit parsed items, approve drafts, publish items to customers, finalize, or export on behalf of the user |
 | Zeabur room runtime | Uploaded evidence details, proposals, room state | Stores room state and applies an approved structured draft after merchant review | Run local OCR/LLM by default, charge payments, submit bookings, or auto-approve |
+| Route role lock | The role implied by the current URL: owner token, named customer, or guest | Scoped participant identity for that room and role | Reuse merchant identity from another tab, promote customers to merchant, or leak merchant draft panels |
 | Merchant | Evidence, draft, customers, totals | Review decisions, item edits, customer publishing, final summary | Confirm another customer's selection |
 | Customer | Published selectable items and own selection | Own quantity/options and own confirmation | Edit evidence, approve AI drafts, publish the list, or finalize |
 
@@ -76,38 +77,27 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-  L0[Menu Or Service Evidence] --> B0[Local OCR Bridge]
-  B0 --> B1[Local OCR Text]
-  B1 --> B2[Codex LLM Visual Review]
-  B2 --> B3[Structured Draft]
-  B3 --> L1[Merchant Draft Review]
-  L1 --> L2[Business Flow Lock]
-  L2 --> L3[Room Rules]
-  L3 --> L4[Draft Row Review]
-  L4 --> L5[Number Cleanup]
-  L5 --> L6[Safety Check List]
-  L6 --> L7[Merchant Review Gate]
-  L7 --> L8[Merchant Review Decision]
-  L8 --> L9[Private Customer Link Published]
-  L9 --> L10[Customer Own Selection Confirmed]
-  L10 --> L11[Merchant Sends Order Or Service Sheet]
-  L11 --> L12[HTML or PDF Review Export]
-
-  L7 --> W[Review Note]
-  W --> RW[Merchant Accepts Review Note]
-  RW --> L9
-
-  B1 --> OB[OCR-only Stop]
-  OB --> HR[LLM visual review or human repair required]
-  HR --> B3
-
-  L7 --> S[Must Edit Or Remove]
-  S --> ER[Edit or Remove Required]
-  ER --> L8
-
-  S -. blocks .-> RISK[Phone, date, address, tax id, business hours]
-  S -. blocks .-> RISK_NON_CURRENCY[Non-currency numbers near forbidden context]
-  S -. blocks .-> RISK_FORMULA[Unresolved tax, deposit, service fee, tier formula]
+  Evidence[Menu Or Service Evidence] --> Bridge[Authorized Local Bridge]
+  Bridge --> OCR[Local OCR]
+  OCR --> Codex[Codex LLM Visual Review]
+  OCR --> OcrStop[OCR-only Stop]
+  OcrStop --> Codex
+  Codex --> Draft[Structured Review Draft]
+  Draft --> Zeabur[Zeabur Private Room Runtime]
+  Zeabur --> WebMCP[WebMCP Scoped Room Tools]
+  WebMCP --> Codex
+  Zeabur --> RoleLock[Route Role Lock]
+  RoleLock --> Owner[Merchant Owner Tab]
+  RoleLock --> Customer[Customer Link]
+  Owner --> Gate[Merchant Approval Gate]
+  Gate -->|approve| Published[Published Customer List]
+  Gate -->|fix needed| Fix[Edit Or Remove Row]
+  Fix --> Gate
+  Gate -->|blocked| Stop[Blocked Until Merchant Decision]
+  Published --> CustomerOrder[Customer Chooses And Confirms]
+  CustomerOrder --> Final[Merchant Finalizes Summary]
+  Final --> Export[HTML Or PDF Export]
+  Stop -. prevents .-> Published
 ```
 
 ## Semantic Visual Anchor

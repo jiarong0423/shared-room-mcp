@@ -236,11 +236,67 @@ const agentProposalStatuses = new Set([
 ]);
 const optionGroupTypes = new Set(['size', 'addon', 'custom']);
 const optionSelectionTypes = new Set(['single', 'multiple']);
-const sweetnessOptions = ['正常糖', '少糖', '半糖', '微糖', '無糖'];
-const iceOptions = ['正常冰', '少冰', '微冰', '去冰', '熱'];
+const drinkOptionCatalog = {
+  sweetness: [
+    {
+      id: 'regular_sugar',
+      labels: { zh: '正常糖', en: 'Regular sugar' },
+      aliases: ['normal sugar', 'full sugar', 'standard sugar', 'regular', 'normal', '正常甜']
+    },
+    {
+      id: 'less_sugar',
+      labels: { zh: '少糖', en: 'Less sugar' },
+      aliases: ['less sugar', '少甜']
+    },
+    {
+      id: 'half_sugar',
+      labels: { zh: '半糖', en: 'Half sugar' },
+      aliases: ['half sugar', '50% sugar']
+    },
+    {
+      id: 'light_sugar',
+      labels: { zh: '微糖', en: 'Light sugar' },
+      aliases: ['slight sugar', 'low sugar', '微甜']
+    },
+    {
+      id: 'no_sugar',
+      labels: { zh: '無糖', en: 'No sugar' },
+      aliases: ['no sugar', 'sugar free', 'unsweetened']
+    }
+  ],
+  ice: [
+    {
+      id: 'regular_ice',
+      labels: { zh: '正常冰', en: 'Regular ice' },
+      aliases: ['normal ice', 'standard ice', 'regular', 'normal']
+    },
+    {
+      id: 'less_ice',
+      labels: { zh: '少冰', en: 'Less ice' },
+      aliases: ['less ice']
+    },
+    {
+      id: 'light_ice',
+      labels: { zh: '微冰', en: 'Light ice' },
+      aliases: ['slight ice', 'low ice']
+    },
+    {
+      id: 'no_ice',
+      labels: { zh: '去冰', en: 'No ice' },
+      aliases: ['no ice', 'without ice']
+    },
+    {
+      id: 'hot',
+      labels: { zh: '熱', en: 'Hot' },
+      aliases: ['hot', 'warm']
+    }
+  ]
+};
+const sweetnessOptions = drinkOptionCatalog.sweetness.map((option) => option.id);
+const iceOptions = drinkOptionCatalog.ice.map((option) => option.id);
 const defaultDrinkOptions = {
-  sweetness: '正常糖',
-  ice: '正常冰'
+  sweetness: 'regular_sugar',
+  ice: 'regular_ice'
 };
 const nonMenuPriceFieldPattern = /總糖量|糖量|總熱量|熱量|大卡|卡路里|營養|公克|克數|容量|毫升|ml|ML|代碼|編號|期限|效期|日期|使用期限|有效期限|電話|地址|營業|外送|回饋|點數|儲值|送點|建議表|統一編號|統編|發票號碼|收據號碼|卡號|末四碼|交易序號|機台|桌號|小計|總計|合計|實收|找零|服務費率|稅率|折扣率|入住|退房/;
 const addonOnlyItemPattern = /^(加料|加購|加價|升級|免費升級|飲品免費升級|珍珠|波霸|椰果|仙草|布丁|蘆薈|脆纖果|百年仙草凍|鮮奶酪|奶蓋|加珍珠|加波霸|加椰果|加仙草|加布丁|加蘆薈|pearl\s*topping|tapioca\s*topping|boba\s*topping|oat\s*milk\s*upgrade|milk\s*upgrade|extra\s*shot|add-?on|topping|upgrade)$/i;
@@ -2271,10 +2327,34 @@ function normalizeQty(qty) {
   return Math.max(0, Math.min(99, Math.floor(value)));
 }
 
+function normalizeDrinkOptionToken(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[\s_-]+/g, '')
+    .trim();
+}
+
 function normalizeDrinkOption(value, options, fallback) {
-  const cleaned = String(value || '').replace(/\s+/g, '').trim();
-  const match = options.find((option) => option.replace(/\s+/g, '') === cleaned);
-  return match || fallback;
+  const allowedIds = new Set(Array.isArray(options) ? options : []);
+  const cleaned = normalizeDrinkOptionToken(value);
+  if (!cleaned) {
+    return fallback;
+  }
+  for (const option of Object.values(drinkOptionCatalog).flat()) {
+    if (!allowedIds.has(option.id)) {
+      continue;
+    }
+    const terms = [
+      option.id,
+      option.labels.zh,
+      option.labels.en,
+      ...(Array.isArray(option.aliases) ? option.aliases : [])
+    ];
+    if (terms.some((term) => normalizeDrinkOptionToken(term) === cleaned)) {
+      return option.id;
+    }
+  }
+  return fallback;
 }
 
 function groupUsesMultipleSelection(group) {
@@ -5580,6 +5660,8 @@ function ensureParticipant(room, participantId, displayName) {
   const id = typeof participantId === 'string' && participantId.length <= 80
     ? participantId
     : randomUUID();
+  const displayNameText = String(displayName || '').replace(/\s+/g, ' ').trim();
+  const shouldApplyDisplayName = displayNameText && hasUsableDisplayName(displayNameText);
   const name = normalizeDisplayName(displayName);
   let participant = room.participants.get(id);
 
@@ -5595,7 +5677,9 @@ function ensureParticipant(room, participantId, displayName) {
     };
     room.participants.set(id, participant);
   } else {
-    participant.displayName = name;
+    if (shouldApplyDisplayName) {
+      participant.displayName = name;
+    }
     participant.confirmed = Boolean(participant.confirmed);
     participant.confirmedAt = participant.confirmedAt || null;
     participant.updatedAt = nowIso();
@@ -7455,7 +7539,15 @@ io.on('connection', (socket) => {
     }
 
     const bootstrapParticipantId = resolveOwnerBootstrapParticipantId(room, payload?.ownerBootstrapToken);
-    const participant = ensureParticipant(room, bootstrapParticipantId || payload?.participantId, payload?.displayName);
+    const requestedParticipantId = String(payload?.participantId || '').trim();
+    const ownerReuseWithoutBootstrap = Boolean(
+      !bootstrapParticipantId
+      && room.ownerBootstrapTokenHash
+      && room.ownerParticipantId
+      && requestedParticipantId === room.ownerParticipantId
+    );
+    const effectiveParticipantId = ownerReuseWithoutBootstrap ? '' : requestedParticipantId;
+    const participant = ensureParticipant(room, bootstrapParticipantId || effectiveParticipantId, payload?.displayName);
     if (bootstrapParticipantId) {
       room.ownerParticipantId = bootstrapParticipantId;
       room.ownerBootstrapUsedAt = nowIso();

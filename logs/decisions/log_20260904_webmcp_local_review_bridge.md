@@ -495,3 +495,46 @@ Validation evidence:
 Next resume point:
 
 - Commit, push `main`, deploy Zeabur, create a fresh live Codex OCR+LLM room, and continue the merchant/customer recording flow.
+
+## 2026-09-04 06:33 Route Role Lock And Demo Language Closeout
+
+Scope:
+
+- Owner project: `<project-root>`
+- Changed artifacts: `public/index.html`, `server.js`, `scripts/prepare-codex-ocr-llm-demo.mjs`, `README.md`, `docs/architecture/ADAPTIVE_CONTRACT_MCP.md`
+
+Direct cause:
+
+- Customer and merchant tabs could reuse the same room participant identity through shared browser storage, and the English demo route could still show Chinese drink options or internal review wording from stored room state.
+
+Root cause:
+
+- Route role, display language, WebMCP writable tool exposure, and drink-option labels were not treated as one locked boundary. The app rendered from mixed room state plus browser storage instead of a route-scoped owner/customer identity and language contract.
+
+DONE_CONFIRMED:
+
+- Added route-scoped identity storage keyed by room and role: owner token, named customer, or guest.
+- Added a backend guard so a no-token customer route cannot reuse the merchant participant id.
+- Customer routes no longer register the writable `create_action_proposal` WebMCP tool and no longer render merchant draft-review panels.
+- Public room links now preserve the active `lang` route and never copy `_owner_bootstrap` into the customer link.
+- Added stable drink option ids with bilingual labels, so English pages render `Regular sugar`, `Light sugar`, `Regular ice`, and `Light ice` instead of Chinese labels or duplicated aliases.
+- Simplified the Mermaid flowchart into one non-duplicated route with Codex, Zeabur, WebMCP, and route-role-lock nodes.
+
+Validation evidence:
+
+- `npm run check`: passed.
+- inline `public/index.html` script syntax check: passed.
+- `git diff --check`: passed.
+- `npm run verify:adaptive-contracts`: passed with contracts `13`, prompt nodes `17`, guardrails `19`, scenarios `12`.
+- `npm run audit:tasks`: passed with code release blocking gaps `0`; one submission-only gap remains for the final YouTube demo URL.
+- Local Codex OCR+LLM demo passed: `/private/tmp/webmcp-role-i18n-demo-final/codex-ocr-llm-demo-2026-09-03T22-30-56-393Z.json`; room `cbc9b684`, OCR chars `767`, structured items `18`, Codex visual-review node completed, customer publishing stayed closed before merchant publish.
+- Local browser owner/customer smoke passed on room `cbc9b684`: merchant published via the page button; customer route had no merchant draft panel, no writable WebMCP tool, no internal slug text, no Chinese drink-option leak, and all English drink labels rendered.
+- Local customer-publishing stress passed `8/8`: `/private/tmp/webmcp-role-i18n-customer-stress-final/customer-publishing-stress-2026-09-03T22-32-18-612Z.md`.
+- Mermaid flowchart node scan passed for `README.md` and `docs/architecture/ADAPTIVE_CONTRACT_MCP.md`; sequence diagrams were excluded from duplicate-node checks.
+- `release-boundary-safety-gate`: PASS, blocking `0`; evidence `/private/tmp/webmcp-release-boundary-role-i18n-after-alias/release-boundary-report-2026-09-03T22-33-45-194Z.json`.
+- `ai-security-rules deploy-gate`: pass, blocking `0`, P0 `0`, P1 `0`, P2 `0`; evidence `/private/tmp/webmcp-ai-security-deploy-gate-role-i18n-after-alias/local_security_design_gate_deploy_gate.md`.
+- Fresh `npm audit --audit-level=high --omit=dev` was attempted but the npm registry did not return before operator cutoff; package files were unchanged in this route/language fix.
+
+Next resume point:
+
+- Commit and push `main`, wait for Zeabur to redeploy, then verify live `/healthz`, hosted markers, live Codex OCR+LLM room creation, customer route read-only WebMCP tools, and English customer ordering.

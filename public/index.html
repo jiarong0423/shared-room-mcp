@@ -2065,6 +2065,10 @@
         enterNameApplied: '請先輸入名稱並套用',
         noUsableItems: '尚無可用品項',
         selectedQty: '已選',
+        qtySettledError: '此房間已完成，不能再修改數量。',
+        qtyNameError: '請先輸入名稱並套用名稱再選擇項目。',
+        qtyConfirmedError: '顧客選擇已確認，請先取消確認再修改數量。',
+        qtyUpdateFailed: '更新數量失敗',
         selectedImage: '已選擇 1 張圖片，確認後才會上傳解析。',
         imageOnly: '請選擇圖片檔案。',
         alreadyLoaded: '此房間已經有證據照片，請先清空房間再選擇新圖片。',
@@ -2074,8 +2078,9 @@
         copiedSettlement: '摘要已複製。',
         nameSaved: '名稱已套用。',
         missingName: '請先輸入名稱。',
-        roomMissingNew: '原房間已不存在，已建立新房間。'
-        ,
+        roomMissingNew: '原房間已不存在，已建立新房間。',
+        roomLoadFailed: '讀取房間失敗',
+        joinRoomFailed: '加入房間失敗',
         reconnecting: '重新連線中',
         billTitle: '點餐摘要',
         status: '狀態',
@@ -2386,6 +2391,10 @@
         enterNameApplied: 'Enter and apply your name first',
         noUsableItems: 'No usable items yet',
         selectedQty: 'Selected',
+        qtySettledError: 'This room is finalized. Quantities cannot be changed.',
+        qtyNameError: 'Enter and apply your name before choosing items.',
+        qtyConfirmedError: 'Your selection is already confirmed. Cancel confirmation before changing quantity.',
+        qtyUpdateFailed: 'Failed to update quantity',
         selectedImage: 'Selected 1 image. It will upload only after confirmation.',
         imageOnly: 'Please choose an image file.',
         alreadyLoaded: 'This room already has a menu photo. Reset the room before choosing a new image.',
@@ -2396,6 +2405,8 @@
         nameSaved: 'Name applied.',
         missingName: 'Enter your name first.',
         roomMissingNew: 'The original room no longer exists. A new room was created.',
+        roomLoadFailed: 'Failed to load room',
+        joinRoomFailed: 'Failed to join room',
         reconnecting: 'Reconnecting',
         billTitle: 'Order Summary',
         status: 'Status',
@@ -2563,14 +2574,86 @@
     let roomId = pageParams.get('room');
     const ownerBootstrapToken = String(pageParams.get('_owner_bootstrap') || '').trim().slice(0, 128);
     const memberParam = String(pageParams.get('member') || '').trim().slice(0, 40);
-    const memberScopedStorageKey = memberParam && roomId
-      ? `${storageKeys.participantId}:${roomId}:${memberParam.toLowerCase()}`
-      : '';
-    let participantId = memberScopedStorageKey
-      ? sessionStorage.getItem(memberScopedStorageKey)
-      : localStorage.getItem(storageKeys.participantId);
-    let displayName = memberParam || localStorage.getItem(storageKeys.displayName) || '';
-    let currentLanguage = translations[localStorage.getItem(storageKeys.language)] ? localStorage.getItem(storageKeys.language) : 'en';
+    const routeLanguage = normalizeRouteLanguage(pageParams.get('lang'));
+
+    function normalizeRouteLanguage(value) {
+      const normalized = String(value || '').trim().toLowerCase();
+      if (normalized === 'zh' || normalized === 'zh-tw' || normalized === 'zh-hant') {
+        return 'zh';
+      }
+      if (normalized === 'en' || normalized === 'english') {
+        return 'en';
+      }
+      return '';
+    }
+
+    function getPageIdentityRole() {
+      if (ownerBootstrapToken) {
+        return 'owner';
+      }
+      if (memberParam) {
+        return `member:${memberParam.toLowerCase()}`;
+      }
+      return 'guest';
+    }
+
+    function getScopedStorageKey(baseKey, targetRoomId = roomId) {
+      const normalizedRoomId = String(targetRoomId || '').trim();
+      if (!normalizedRoomId) {
+        return '';
+      }
+      return `${baseKey}:${normalizedRoomId}:${getPageIdentityRole()}`;
+    }
+
+    function readStoredParticipantId() {
+      const scopedKey = getScopedStorageKey(storageKeys.participantId);
+      if (!scopedKey) {
+        return '';
+      }
+      return sessionStorage.getItem(scopedKey)
+        || (ownerBootstrapToken ? localStorage.getItem(scopedKey) : '')
+        || '';
+    }
+
+    function persistParticipantId(nextParticipantId, targetRoomId = roomId) {
+      const scopedKey = getScopedStorageKey(storageKeys.participantId, targetRoomId);
+      const normalizedParticipantId = String(nextParticipantId || '').trim();
+      if (!scopedKey || !normalizedParticipantId) {
+        return;
+      }
+      sessionStorage.setItem(scopedKey, normalizedParticipantId);
+      if (ownerBootstrapToken) {
+        localStorage.setItem(scopedKey, normalizedParticipantId);
+      }
+    }
+
+    function readStoredDisplayName() {
+      if (memberParam) {
+        return memberParam;
+      }
+      const scopedKey = getScopedStorageKey(storageKeys.displayName);
+      return (scopedKey ? sessionStorage.getItem(scopedKey) : '')
+        || (ownerBootstrapToken && scopedKey ? localStorage.getItem(scopedKey) : '')
+        || '';
+    }
+
+    function persistDisplayName(nextDisplayName, targetRoomId = roomId) {
+      const normalizedDisplayName = String(nextDisplayName || '').trim();
+      const scopedKey = getScopedStorageKey(storageKeys.displayName, targetRoomId);
+      if (scopedKey && normalizedDisplayName) {
+        sessionStorage.setItem(scopedKey, normalizedDisplayName);
+      }
+      if (ownerBootstrapToken && normalizedDisplayName) {
+        if (scopedKey) {
+          localStorage.setItem(scopedKey, normalizedDisplayName);
+        }
+      }
+    }
+
+    let participantId = readStoredParticipantId();
+    let displayName = readStoredDisplayName();
+    let currentLanguage = routeLanguage
+      || (translations[localStorage.getItem(storageKeys.language)] ? localStorage.getItem(storageKeys.language) : 'en');
     let currentRoom = null;
     let pendingProposalReview = null;
     let isUploading = false;
@@ -2598,11 +2681,67 @@
       pinchOriginY: 0
     };
     const sourceImagePointers = new Map();
-    const sweetnessOptions = ['正常糖', '少糖', '半糖', '微糖', '無糖'];
-    const iceOptions = ['正常冰', '少冰', '微冰', '去冰', '熱'];
+    const drinkOptionCatalog = {
+      sweetness: [
+        {
+          id: 'regular_sugar',
+          labels: { zh: '正常糖', en: 'Regular sugar' },
+          aliases: ['normal sugar', 'full sugar', 'standard sugar', 'regular', 'normal', '正常甜']
+        },
+        {
+          id: 'less_sugar',
+          labels: { zh: '少糖', en: 'Less sugar' },
+          aliases: ['less sugar', '少甜']
+        },
+        {
+          id: 'half_sugar',
+          labels: { zh: '半糖', en: 'Half sugar' },
+          aliases: ['half sugar', '50% sugar']
+        },
+        {
+          id: 'light_sugar',
+          labels: { zh: '微糖', en: 'Light sugar' },
+          aliases: ['slight sugar', 'low sugar', '微甜']
+        },
+        {
+          id: 'no_sugar',
+          labels: { zh: '無糖', en: 'No sugar' },
+          aliases: ['no sugar', 'sugar free', 'unsweetened']
+        }
+      ],
+      ice: [
+        {
+          id: 'regular_ice',
+          labels: { zh: '正常冰', en: 'Regular ice' },
+          aliases: ['normal ice', 'standard ice', 'regular', 'normal']
+        },
+        {
+          id: 'less_ice',
+          labels: { zh: '少冰', en: 'Less ice' },
+          aliases: ['less ice']
+        },
+        {
+          id: 'light_ice',
+          labels: { zh: '微冰', en: 'Light ice' },
+          aliases: ['slight ice', 'low ice']
+        },
+        {
+          id: 'no_ice',
+          labels: { zh: '去冰', en: 'No ice' },
+          aliases: ['no ice', 'without ice']
+        },
+        {
+          id: 'hot',
+          labels: { zh: '熱', en: 'Hot' },
+          aliases: ['hot', 'warm']
+        }
+      ]
+    };
+    const sweetnessOptions = drinkOptionCatalog.sweetness.map((option) => option.id);
+    const iceOptions = drinkOptionCatalog.ice.map((option) => option.id);
     const defaultDrinkOptions = {
-      sweetness: '正常糖',
-      ice: '正常冰'
+      sweetness: 'regular_sugar',
+      ice: 'regular_ice'
     };
     const menuModeLabelKeys = {
       auto: 'modeAuto',
@@ -2778,11 +2917,7 @@
 
     if (!participantId) {
       participantId = crypto.randomUUID();
-      if (memberScopedStorageKey) {
-        sessionStorage.setItem(memberScopedStorageKey, participantId);
-      } else {
-        localStorage.setItem(storageKeys.participantId, participantId);
-      }
+      persistParticipantId(participantId);
     }
 
     elements.displayNameInput.value = displayName;
@@ -2837,11 +2972,26 @@
     function setLanguage(language) {
       currentLanguage = translations[language] ? language : 'en';
       localStorage.setItem(storageKeys.language, currentLanguage);
+      const url = new URL(window.location.href);
+      url.searchParams.set('lang', currentLanguage);
+      window.history.replaceState({}, '', url.toString());
       applyLanguage();
       renderThresholdProgress(currentRoom);
       if (currentRoom) {
         renderRoom(currentRoom);
       }
+    }
+
+    function buildPublicRoomUrl(targetRoomId = roomId, memberName = '') {
+      const url = new URL(window.location.href);
+      url.search = '';
+      url.searchParams.set('room', String(targetRoomId || ''));
+      url.searchParams.set('lang', currentLanguage);
+      const normalizedMemberName = String(memberName || '').trim();
+      if (normalizedMemberName) {
+        url.searchParams.set('member', normalizedMemberName);
+      }
+      return url.toString();
     }
 
     function formatMoney(value) {
@@ -3032,7 +3182,7 @@
         setMessage(t('roomMissingNew'), 'warn');
         return data;
       }
-      const data = await readJsonResponse(response, '讀取房間失敗');
+      const data = await readJsonResponse(response, t('roomLoadFailed'));
       return data;
     }
 
@@ -3057,15 +3207,12 @@
             recoverMissingRoom();
             return;
           }
-          setMessage(result?.error || '加入房間失敗', 'error');
+          setMessage(result?.error || t('joinRoomFailed'), 'error');
           return;
         }
         participantId = result.participantId || participantId;
-        if (memberScopedStorageKey) {
-          sessionStorage.setItem(memberScopedStorageKey, participantId);
-        } else {
-          localStorage.setItem(storageKeys.participantId, participantId);
-        }
+        persistParticipantId(participantId, targetRoomId);
+        syncOwnDisplayNameFromRoom(result.room, targetRoomId);
         renderRoomForTarget(result.room, targetRoomId);
       });
     }
@@ -3084,7 +3231,7 @@
         setMessage(t('roomMissingNew'), 'info');
         shouldJoinRoom = true;
       } catch (error) {
-        setMessage(error.message || '建立新房間失敗', 'error');
+        setMessage(error.message || t('createRoomFailed'), 'error');
       } finally {
         isRecoveringRoom = false;
         isSwitchingRoom = false;
@@ -3111,10 +3258,58 @@
       return getOwnOrderEntry(itemId).qty;
     }
 
+    function normalizeDrinkOptionToken(value) {
+      return String(value || '')
+        .toLowerCase()
+        .replace(/[\s_-]+/g, '')
+        .trim();
+    }
+
+    function getDrinkOptionDefinition(optionType, value) {
+      const options = Array.isArray(drinkOptionCatalog[optionType])
+        ? drinkOptionCatalog[optionType]
+        : [];
+      const cleaned = normalizeDrinkOptionToken(value);
+      return options.find((option) => {
+        const terms = [
+          option.id,
+          option.labels.zh,
+          option.labels.en,
+          ...(Array.isArray(option.aliases) ? option.aliases : [])
+        ];
+        return terms.some((term) => normalizeDrinkOptionToken(term) === cleaned);
+      }) || null;
+    }
+
     function normalizeDrinkOption(value, options, fallback) {
-      const cleaned = String(value || '').replace(/\s+/g, '').trim();
-      const match = options.find((option) => option.replace(/\s+/g, '') === cleaned);
-      return match || fallback;
+      const allowedIds = new Set(Array.isArray(options) ? options : []);
+      const cleaned = normalizeDrinkOptionToken(value);
+      if (!cleaned) {
+        return fallback;
+      }
+      for (const option of Object.values(drinkOptionCatalog).flat()) {
+        if (!allowedIds.has(option.id)) {
+          continue;
+        }
+        const terms = [
+          option.id,
+          option.labels.zh,
+          option.labels.en,
+          ...(Array.isArray(option.aliases) ? option.aliases : [])
+        ];
+        if (terms.some((term) => normalizeDrinkOptionToken(term) === cleaned)) {
+          return option.id;
+        }
+      }
+      return fallback;
+    }
+
+    function getDrinkOptionLabel(optionType, value) {
+      const option = getDrinkOptionDefinition(optionType, value);
+      if (!option) {
+        return String(value || '');
+      }
+      return option.labels[currentLanguage] || option.labels.en || option.id;
     }
 
     function groupUsesMultipleSelection(group) {
@@ -3239,6 +3434,19 @@
 
     function hasSavedDisplayName() {
       return hasValidDisplayName(getOwnParticipant()?.displayName);
+    }
+
+    function syncOwnDisplayNameFromRoom(room, targetRoomId = roomId) {
+      const ownParticipant = Array.isArray(room?.participants)
+        ? room.participants.find((candidate) => candidate.id === participantId)
+        : null;
+      const roomDisplayName = String(ownParticipant?.displayName || '').trim();
+      const inputDisplayName = String(elements.displayNameInput.value || '').trim();
+      if (!hasValidDisplayName(displayName) && !hasValidDisplayName(inputDisplayName) && hasValidDisplayName(roomDisplayName)) {
+        displayName = roomDisplayName;
+        elements.displayNameInput.value = displayName;
+        persistDisplayName(displayName, targetRoomId);
+      }
     }
 
     function isOwner(room = currentRoom) {
@@ -3455,6 +3663,13 @@
           error: 'room_not_ready'
         });
       }
+      if (!ownerBootstrapToken || !isOwner(currentRoom)) {
+        return JSON.stringify({
+          ok: false,
+          error: 'merchant_owner_route_required',
+          boundary: 'read_only_customer_route'
+        });
+      }
 
       const targetRoomId = currentRoom.id;
       const response = await fetch(`/api/rooms/${encodeURIComponent(targetRoomId)}/agent-proposals`, {
@@ -3571,8 +3786,11 @@
           description: 'Suggest safe next steps from the room state, photo-reading status, locked business flow, totals, and confirmations.',
           inputSchema: emptyInputSchema,
           execute: async () => JSON.stringify(getAgentNextActions())
-        },
-        {
+        }
+      ];
+
+      if (ownerBootstrapToken) {
+        tools.push({
           name: 'create_action_proposal',
           title: 'Create merchant draft',
           description: 'Create a draft for merchant review before anything changes for customers.',
@@ -3614,8 +3832,8 @@
           },
           annotations: proposalAnnotations,
           execute: createActionProposal
-        }
-      ];
+        });
+      }
 
       for (const tool of tools) {
         try {
@@ -3838,6 +4056,17 @@
       return visibleCountText(count, t('rulesNeedCheck'), 'rule to check', 'rules to check');
     }
 
+    function getPlainTaskTypeName(taskType) {
+      const normalized = String(taskType || '').trim().toLowerCase();
+      return getTaskTypeDisplayName(normalized || 'auto');
+    }
+
+    function getPlainTaskConflictMessage(selected, inferred) {
+      return currentLanguage === 'en'
+        ? `The room is set to ${getPlainTaskTypeName(selected)}, but the photo looks closer to ${getPlainTaskTypeName(inferred)}. Check it before publishing.`
+        : `目前選的是 ${getPlainTaskTypeName(selected)}，但照片看起來比較接近 ${getPlainTaskTypeName(inferred)}，請先確認。`;
+    }
+
     function humanizeVisibleText(value) {
       const zh = currentLanguage !== 'en';
       let text = String(value || '').trim();
@@ -3846,6 +4075,9 @@
       }
 
       text = text
+        .replace(/The\s+selected\s+room\s+type\s+is\s+([^,]+),\s+but\s+the\s+evidence\s+looks\s+closer\s+to\s+([^.]+)\.\s+Please\s+check\s+before\s+settling\.?/gi, (_match, selected, inferred) => getPlainTaskConflictMessage(selected, inferred))
+        .replace(/The\s+selected\s+room\s+type\s+is\s+([^,]+),\s+but\s+the\s+photo\s+looks\s+closer\s+to\s+([^.]+)\.\s+Please\s+check\s+before\s+publishing\.?/gi, (_match, selected, inferred) => getPlainTaskConflictMessage(selected, inferred))
+        .replace(legacyTaskConflictPattern, (_match, selected, inferred) => getPlainTaskConflictMessage(selected, inferred))
         .replace(/Source\s+mode:\s*[^.]+\.?\s*/gi, '')
         .replace(/Local\s+OCR\s+chars:\s*\d+\.?\s*/gi, '')
         .replace(/Local\s+vision\s+model:\s*[^.]+\.?\s*/gi, zh ? '已用本機看圖輔助。 ' : 'A local visual check was used. ')
@@ -3873,8 +4105,6 @@
         .replace(/此房間已完成，不能再移除品項/gi, zh ? '此房間已完成，不能再移除品項。' : 'This room is finalized. Items cannot be removed.')
         .replace(/此房間已完成，不能再修改確認狀態/gi, zh ? '此房間已完成，不能再修改確認狀態。' : 'This room is finalized. Confirmation cannot be changed.')
         .replace(/目前沒有任何費用項目，不能完成空明細/gi, zh ? '目前沒有任何項目，不能完成空明細。' : 'There are no items yet. The summary cannot be finalized.')
-        .replace(/The\s+selected\s+room\s+type\s+is\s+([^,]+),\s+but\s+the\s+evidence\s+looks\s+closer\s+to\s+([^.]+)\.\s+Please\s+check\s+before\s+settling\.?/gi, (_match, selected, inferred) => zh ? `目前選的是 ${getTaskTypeDisplayName(selected)}，但照片看起來比較接近 ${getTaskTypeDisplayName(inferred)}，請先確認。` : `The selected room type is ${getTaskTypeDisplayName(selected)}, but the photo looks closer to ${getTaskTypeDisplayName(inferred)}. Please check before publishing.`)
-        .replace(legacyTaskConflictPattern, (_match, selected, inferred) => zh ? `目前選的是 ${getTaskTypeDisplayName(selected)}，但照片看起來比較接近 ${getTaskTypeDisplayName(inferred)}，請先確認。` : `The selected room type is ${getTaskTypeDisplayName(selected)}, but the photo looks closer to ${getTaskTypeDisplayName(inferred)}. Please check before publishing.`)
         .replace(/本地\s+OCR\s+偵測到多個價格，請確認尺寸欄位。/gi, zh ? '這一列有多個價格，請確認尺寸或選項。' : 'This row has several prices. Please check the size or option.')
         .replace(/本地\s+OCR\s+偵測到多欄價格列，已拆成候選項目，請.+?逐項複查。/gi, zh ? '這一列有多個價格，請逐項核對。' : 'This photo row appears to contain several prices. Please check each draft item against the photo.')
         .replace(/Local\s+vision\s+correction\s+was\s+unavailable\s+or\s+produced\s+no\s+structured\s+items\.?/gi, zh ? '看圖核對還沒有產生可用清單。' : 'The photo check did not return usable rows.')
@@ -4299,6 +4529,14 @@
     }
 
     function renderAgentProposals(room) {
+      if (!isOwner(room)) {
+        pendingProposalReview = null;
+        elements.proposalPanel.dataset.visible = 'false';
+        elements.proposalCountChip.textContent = '0';
+        elements.proposalCountChip.dataset.tone = 'good';
+        elements.proposalList.innerHTML = '';
+        return;
+      }
       const proposals = Array.isArray(room?.agentProposals) ? room.agentProposals : [];
       const seenPendingTypes = new Set();
       const visibleProposals = proposals.filter((proposal) => {
@@ -4374,8 +4612,9 @@
         return;
       }
 
+      syncOwnDisplayNameFromRoom(room, room.id || roomId);
       currentRoom = room;
-      elements.roomCode.textContent = `${t('roomLabel')} ${room.id} · ${window.location.origin}${window.location.pathname}?room=${room.id}`;
+      elements.roomCode.textContent = `${t('roomLabel')} ${room.id} · ${buildPublicRoomUrl(room.id)}`;
       elements.grandTotal.textContent = formatMoney(room.totals?.grandTotal || 0);
       const billableParticipants = Array.from(room.participants || [])
         .filter((participant) => Number(participant.total || 0) > 0 || participant.confirmed);
@@ -4741,6 +4980,17 @@
     }
 
     function renderOptionPill(itemId, optionType, option, selected, disabled) {
+      const optionValue = normalizeDrinkOption(
+        option,
+        optionType === 'ice' ? iceOptions : sweetnessOptions,
+        option
+      );
+      const selectedValue = normalizeDrinkOption(
+        selected,
+        optionType === 'ice' ? iceOptions : sweetnessOptions,
+        optionValue
+      );
+      const label = getDrinkOptionLabel(optionType, optionValue);
       return `
         <button
           class="option-pill"
@@ -4748,10 +4998,10 @@
           data-action="set-option"
           data-item-id="${escapeHtml(itemId)}"
           data-option-type="${escapeHtml(optionType)}"
-          data-option-value="${escapeHtml(option)}"
-          data-active="${option === selected ? 'true' : 'false'}"
+          data-option-value="${escapeHtml(optionValue)}"
+          data-active="${optionValue === selectedValue ? 'true' : 'false'}"
           ${disabled ? 'disabled' : ''}
-        >${escapeHtml(option)}</button>
+        >${escapeHtml(label)}</button>
       `;
     }
 
@@ -5000,9 +5250,7 @@
         return;
       }
       if (currentRoom.settled) {
-        setMessage(currentLanguage === 'en'
-          ? 'This room is finalized. Quantities cannot be changed.'
-          : '此房間已完成，不能再修改數量。', 'error');
+        setMessage(t('qtySettledError'), 'error');
         return;
       }
       if (!currentRoom.itemsOpenForMembers) {
@@ -5010,16 +5258,12 @@
         return;
       }
       if (!hasSavedDisplayName()) {
-        setMessage(currentLanguage === 'en'
-          ? 'Enter and apply your name before choosing items.'
-          : '請先輸入名稱並套用名稱再選擇項目。', 'error');
+        setMessage(t('qtyNameError'), 'error');
         elements.displayNameInput.focus();
         return;
       }
       if (getOwnParticipant()?.confirmed) {
-        setMessage(currentLanguage === 'en'
-          ? 'Your selection is already confirmed. Cancel confirmation before changing quantity.'
-          : '顧客選擇已確認，請先取消確認再修改數量。', 'error');
+        setMessage(t('qtyConfirmedError'), 'error');
         return;
       }
       const nextQty = Math.max(0, Math.min(99, getOwnQty(itemId) + delta));
@@ -5034,7 +5278,7 @@
           return;
         }
         if (!result || !result.ok) {
-          setMessage(result?.error || '更新數量失敗', 'error');
+          setMessage(result?.error || t('qtyUpdateFailed'), 'error');
         }
       });
     }
@@ -5231,10 +5475,10 @@
       if (!hasValidDisplayName(currentInputName)) {
         displayName = 'Demo Merchant';
         elements.displayNameInput.value = displayName;
-        localStorage.setItem(storageKeys.displayName, displayName);
+        persistDisplayName(displayName, targetRoomId);
       } else {
         displayName = currentInputName;
-        localStorage.setItem(storageKeys.displayName, displayName);
+        persistDisplayName(displayName, targetRoomId);
       }
 
       setUploading(true);
@@ -5272,7 +5516,7 @@
     }
 
     function copyRoomLink() {
-      const url = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(roomId)}`;
+      const url = buildPublicRoomUrl(roomId);
       navigator.clipboard.writeText(url)
         .then(() => setMessage(t('copiedLink'), 'info'))
         .catch(() => setMessage(url, 'info'));
@@ -5322,9 +5566,14 @@
         parts.push(`${label}:${values.join('+')}`);
       }
       if (shouldShowDrinkOptions(item, room)) {
-        parts.push(entry.sweetness, entry.ice);
+        parts.push(getDrinkOptionLabel('sweetness', entry.sweetness), getDrinkOptionLabel('ice', entry.ice));
       }
-      return parts.length > 0 ? `（${parts.join('、')}）` : '';
+      if (parts.length === 0) {
+        return '';
+      }
+      return currentLanguage === 'en'
+        ? ` (${parts.join(', ')})`
+        : `（${parts.join('、')}）`;
     }
 
     function buildOrderText(room = currentRoom) {
@@ -5659,7 +5908,7 @@
       }
       displayName = nextName;
       elements.displayNameInput.value = displayName;
-      localStorage.setItem(storageKeys.displayName, displayName);
+      persistDisplayName(displayName);
       joinRoom();
     }
 

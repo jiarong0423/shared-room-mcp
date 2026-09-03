@@ -808,7 +808,8 @@ async function main() {
     )
     : null;
   const finalRoom = acceptedRoom || await readRoom(args.baseUrl, roomId, args.timeoutMs);
-  const roomUrl = `${args.baseUrl}/?_owner_bootstrap=${encodeURIComponent(args.ownerBootstrapToken)}&room=${encodeURIComponent(roomId)}`;
+  const roomUrl = `${args.baseUrl}/?_owner_bootstrap=${encodeURIComponent(args.ownerBootstrapToken)}&room=${encodeURIComponent(roomId)}&lang=en`;
+  const customerUrl = `${args.baseUrl}/?room=${encodeURIComponent(roomId)}&lang=en&member=Jamie`;
   const report = {
     ok: true,
     acceptForTest: args.acceptForTest,
@@ -816,6 +817,7 @@ async function main() {
     reviewExecution,
     roomId,
     roomUrl,
+    customerUrl,
     participantId: args.participantId,
     displayName: args.displayName,
     imagePath: args.imagePath,
