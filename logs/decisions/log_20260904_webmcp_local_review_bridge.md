@@ -164,6 +164,49 @@ INTENTIONALLY_NOT_DO:
 Next resume point:
 
 - After push, run `zeabur deploy --service-id 6a96fb0bd72bd6309d74fb9b --environment-id 69d93c5c474db8a99d6de959 --json --interactive=false`, then verify the live home page and current test room no longer render engineering copy.
+
+## 2026-09-04 02:11 Final Plain-Language UI Deployment
+
+Scope:
+
+- Owner project: `/Users/sunjiarong/Developer/webmcp`
+- Runtime commit pushed to GitHub: `782653f`
+- Zeabur service: `shared-room-mcp-next`
+- Zeabur service ID: `6a96fb0bd72bd6309d74fb9b`
+- Zeabur production environment ID: `69d93c5c474db8a99d6de959`
+
+DONE_CONFIRMED:
+
+- Plain-language OCR/review UI deployed to Zeabur.
+  - evidence: live HTML fetched with cache buster `_plain_ui=782653f` contained the new subtitle, `Calculate Here`, short evidence-photo hint, WebMCP plain descriptions, and count helpers.
+- Legacy visible engineering wording was removed from the shipped HTML source.
+  - evidence: live HTML scan returned zero hits for `item(s)`, `Source mode:`, `Local OCR chars:`, `Local review draft prepared`, `Keep Math Local`, `not a cropped item thumbnail`, `Number type`, `Audit Anchor`, `Review Gate`, `Image Zone`, and `Detected Type`.
+- Live deployment health is still aligned with the local-review bridge boundary.
+  - evidence: `/healthz` returned `providerOrder=["local_vision","gemini","openai"]`, `localVisionConfigured=false`, `allowRemoteVisionFallback=false`, `roomPersistenceEnabled=true`, and `roomStorePath=/data/rooms.json`.
+- Low-rate Zeabur room flow still works after the UI wording changes.
+  - evidence: `npm run stress:member-release -- --base-url https://shared-room-mcp-next.zeabur.app --rounds 1 --fail-fast --output-dir /private/tmp/webmcp-live-plain-ui-member-release-final` passed `4/4`.
+- Pending host-review room blocker copy is plain-language.
+  - evidence: live sample room `bc682343` had `itemsOpenForMembers=false` and blocker details `1 photo row needs host review before members can use the list.` and `1 fee, total, discount, or threshold note needs host review.`; JSON scan returned forbidden hits `0`.
+
+WATCH_LATER:
+
+- In-app browser hidden-tab navigation intermittently timed out or showed stale empty-room state during Zeabur reloads.
+  - trigger to revisit: if the user-visible right panel shows the same stale state after a manual refresh. HTTP `/api/rooms`, live HTML, and Socket.IO stress were used as the authoritative gates for this closeout.
+
+PRIORITY_INDEX:
+
+- Final YouTube demo URL still must be inserted after upload.
+  - next action: update README/submission docs with the final URL.
+  - risk if ignored: code and deployment are ready, but Devpost submission remains incomplete.
+
+INTENTIONALLY_NOT_DO:
+
+- Did not rename WebMCP tool names or JSON enum values.
+  - reason: those are compatibility contracts. Visible titles, descriptions, proposal summaries, blocker messages, and review UI text were changed instead.
+
+Next resume point:
+
+- Open `https://shared-room-mcp-next.zeabur.app/` for the final demo room, then insert the YouTube demo URL after upload.
 - Deploy the committed changes to Zeabur and recheck the live `/healthz` plus hosted room flow. The repository is push-prepared, but the current Zeabur production URL must not be described as updated until that deployment check passes.
 
 ## Zeabur Post-Deploy Recheck
