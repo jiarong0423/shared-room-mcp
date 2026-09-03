@@ -6,22 +6,32 @@ This file summarizes checks that were actually run before submission. The goal i
 
 Raw runtime logs stay out of the public repository because `logs/runtime/` is ignored. The repeat counts below come from local run outputs and tracked security notes.
 
+Verification levels:
+
+- `current_live_smoke`: low-rate checks run against the public Zeabur URL after the latest deployment.
+- `current_local_regression`: repeatable local scripts run after the local review bridge gate was added.
+- `historical_local_regression`: earlier local stress evidence retained for continuity; it is not a current live-capacity claim.
+- `deterministic_oracle`: checksum-backed fixtures validate contract wiring and HITL behavior, not OCR or provider accuracy.
+
 ## Check Summary
 
 | area | result | source | what was checked |
 |---|---:|---|---|
+| Current Zeabur post-deploy health | PASS | live `/healthz` on 2026-09-04 Asia/Taipei | deployed service returned `providerOrder=["local_vision","gemini","openai"]`, `localVisionConfigured=false`, `allowRemoteVisionFallback=false`, `/data/rooms.json`, and no provider key flags |
+| Current Zeabur room/member/export smoke | 4/4 passed | `/private/tmp/webmcp-live-postdeploy-member-release/member-release-stress-2026-09-03T17-35-53-670Z.md` | generated live test rooms passed host proposal review, Member-Visibility Release, member confirmation, owner finalization, HTML export, and PDF export |
+| Current Zeabur local bridge proposal smoke | PASS | `/private/tmp/webmcp-live-postdeploy-bridge/webmcp-local-review-bridge-2026-09-03T17-37-16-139Z.json` | authorized local bridge used local OCR plus a mock local-vision endpoint and wrote one `semantic_repair_draft` to a generated live room; proposal remained pending host confirmation |
 | Current local contract stress after local-review bridge gate | 60/60 passed | `/private/tmp/webmcp-full-validation-v3/stress-local-contracts/local-contract-stress-2026-09-03T17-08-58-593Z.md` | 20 Chinese and English scenarios, 3 rounds each, no provider keys; OCR-only parser output remains review-required |
 | Current HITL Member-Visibility Release after local vision proof gate | 12/12 passed | `/private/tmp/webmcp-full-validation-v3/stress-member-release/member-release-stress-2026-09-03T17-09-00-638Z.md` | valid local-vision-backed `semantic_repair_draft` clears only the OCR-only blocker, then host release, member confirmation, owner finalization, HTML export, and PDF export pass |
 | OCR-only cloud proposal negative gate | PASS | local direct API probe against `http://127.0.0.1:3212` | direct `semantic_repair_draft` with `sourceMode=local_ocr_only_bridge_draft` returned HTTP 422 and did not create a cloud review draft |
 | Local review bridge CLI gates | PASS | `/private/tmp/webmcp-full-validation-v3/bridge-write/` and `/private/tmp/webmcp-full-validation-v3/bridge-default-dry-run/` | bridge defaults to dry-run, requires `--write-cloud-proposal` and explicit `--base-url` for writes, refuses repo output paths, and writes a proposal only after local vision returns structured items |
 | Current deterministic image-oracle integration benchmark | 115/115 passed | `/private/tmp/webmcp-full-validation-v3/image-matrix-oracle-v2/image-matrix-stress-2026-09-03T17-12-54-459Z.json` | external PNG artifacts were verified by SHA-256; full parser candidates, calculation rules, member-visible masks, forbidden-number checks, and HITL wiring passed in `image-plus-oracle-text` mode |
-| Main room flow | 400/400 passed | `logs/runtime/local-contract-stress-2026-09-01T00-10-12-135Z.md`, summarized in `docs/security/SECURITY_SCAN_EVIDENCE.md` | 20 Chinese and English scenarios, 20 rounds each, no provider keys |
-| Member-Visibility Release | 80/80 passed | summarized in `docs/security/SECURITY_SCAN_EVIDENCE.md` | AI draft stays closed, host reviews first, members can claim only after release |
-| Save queue follow-up | 20/20 passed | summarized local run | same host-review flow after the save queue change |
+| Historical main room flow | 400/400 passed | `logs/runtime/local-contract-stress-2026-09-01T00-10-12-135Z.md`, summarized in `docs/security/SECURITY_SCAN_EVIDENCE.md` | historical local regression: 20 Chinese and English scenarios, 20 rounds each, no provider keys |
+| Historical Member-Visibility Release | 80/80 passed | summarized in `docs/security/SECURITY_SCAN_EVIDENCE.md` | historical local regression: AI draft stays closed, host reviews first, members can claim only after release |
+| Historical save queue follow-up | 20/20 passed | summarized local run | historical local regression: same host-review flow after the save queue change |
 | Short burst of room creation | 25/25 saved | local command output on 2026-09-01 after `ROOM_PERSIST_DEBOUNCE_MS=35` and `ROOM_PERSIST_JITTER_MS=120` | 25 simultaneous room creates were all present in the saved JSON file |
-| Split-language scenarios | 240/240 passed | `fixtures/adaptive-parser-matrix.json` plus `npm run regression:adaptive-parser` | 12 additional scenarios, Chinese and English separated, 20 rounds each |
-| Host-only draft review | 200/200 denied for non-hosts | `docs/security/SECURITY_SCAN_EVIDENCE.md` | non-host users cannot create or approve host drafts |
-| Load Sample Room | 120/120 passed | `docs/security/SECURITY_SCAN_EVIDENCE.md` | sample data stays as a draft and does not settle, pay, or call outside services |
+| Historical split-language scenarios | 240/240 passed | `fixtures/adaptive-parser-matrix.json` plus `npm run regression:adaptive-parser` | historical local regression: 12 additional scenarios, Chinese and English separated, 20 rounds each |
+| Historical host-only draft review | 200/200 denied for non-hosts | `docs/security/SECURITY_SCAN_EVIDENCE.md` | historical local regression: non-host users cannot create or approve host drafts |
+| Historical Load Sample Room | 120/120 passed | `docs/security/SECURITY_SCAN_EVIDENCE.md` | historical local regression: sample data stays as a draft and does not settle, pay, or call outside services |
 | Frontend review screen | PASS | summarized in `docs/security/SECURITY_SCAN_EVIDENCE.md` | sample room shows 6 items, 6 review controls, no horizontal overflow |
 | Superseded hosted flow | 4/4 passed | historical run against a retired Zeabur URL | deployed app kept the same host-review and member-confirmation flow |
 | Superseded post-deploy live check | RUNNING and 4/4 passed | historical live `/healthz` plus retired-host flow | live `/healthz` showed `/data/rooms.json`, save smoothing `35/120`, no provider keys, and the deployed host-review flow still passed |

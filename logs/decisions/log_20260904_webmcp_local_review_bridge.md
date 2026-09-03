@@ -111,3 +111,25 @@ Remaining before public submission:
 
 - Insert the final uploaded YouTube demo URL.
 - Deploy the committed changes to Zeabur and recheck the live `/healthz` plus hosted room flow. The repository is push-prepared, but the current Zeabur production URL must not be described as updated until that deployment check passes.
+
+## Zeabur Post-Deploy Recheck
+
+Completion timestamp: 2026-09-04 01:38 Asia/Taipei
+
+Deployment and evidence recheck:
+
+- Deployed local project to Zeabur service `shared-room-mcp-next` with explicit service ID `6a96fb0bd72bd6309d74fb9b` and production environment ID `69d93c5c474db8a99d6de959`.
+- Updated non-secret runtime variable `AI_PROVIDER_ORDER=local_vision,gemini,openai`.
+- Deployment `6a99af6bc3fffb61baebf183` reached `RUNNING`; previous deployment was removed.
+- Live `/healthz` confirmed current code and env: `providerOrder=["local_vision","gemini","openai"]`, `localVisionConfigured=false`, `allowRemoteVisionFallback=false`, `roomStorePath=/data/rooms.json`, and no provider key flags.
+- Live low-rate Member-Visibility Release smoke passed `4/4` against generated test rooms. Evidence: `/private/tmp/webmcp-live-postdeploy-member-release/member-release-stress-2026-09-03T17-35-53-670Z.md`.
+- Live authorized local bridge proposal smoke passed. Evidence: `/private/tmp/webmcp-live-postdeploy-bridge/webmcp-local-review-bridge-2026-09-03T17-37-16-139Z.json`; generated room `3b62ab55`, proposal `proposal_d46949ef`, `structuredItemCount=2`, status `pending_host_confirmation`.
+
+Documentation correction:
+
+- README and validation evidence now separate `current_live_smoke`, `current_local_regression`, `historical_local_regression`, and `deterministic_oracle`.
+- Large repeat counts such as `400/400`, `240/240`, `200/200`, and `120/120` are labeled historical/local regression evidence, not live production capacity claims.
+
+Remaining before public submission:
+
+- Insert the final uploaded YouTube demo URL.

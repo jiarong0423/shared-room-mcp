@@ -28,22 +28,24 @@ WebMCP is a good fit because the assistant can enter the same private task room 
 
 ## How We Checked It
 
-The demo is not only a single happy-path recording. Before submission, the room flow was repeated locally and against deployed versions of the app.
+The demo is not only a single happy-path recording. Before submission, the room flow was checked in two layers:
+
+- Current live smoke checks against the Zeabur URL after deployment.
+- Repeatable local regression scripts with higher test-only rate limits.
+
+Large repeat counts are local regression evidence, not claims of live production capacity.
 
 The full check summary is in [`docs/testing/VALIDATION_EVIDENCE.md`](docs/testing/VALIDATION_EVIDENCE.md).
 
-| check | result | what was checked |
-|---|---:|---|
-| Main room flow | 400/400 passed | 20 Chinese and English scenarios repeated 20 times each |
-| Member-Visibility Release | 80/80 passed | members cannot claim items until the host releases the reviewed list |
-| Save queue follow-up | 20/20 passed | host-review flow still works after the save queue change |
-| Short burst of room creation | 25/25 saved | simultaneous room creates were present in the saved JSON file |
-| Split-language scenarios | 240/240 passed | Chinese and English cases stay separated and still end in host review |
-| Host-only draft review | 200/200 denied for non-hosts | non-host users cannot create or approve host drafts |
-| Load Sample Room | 120/120 passed | sample data stays as a draft and does not settle, pay, or call outside services |
-| Current Zeabur production flow | pending fresh post-deploy recheck | hosted health, WebMCP, member-confirmation, finalized summary, and HTML/PDF export flow must be rechecked after the local review bridge changes are deployed |
-| Same-tab room switch | 2/2 passed | a new room gets clean controls, and late updates from the old room are ignored |
-| Image oracle integration benchmark | 115 deterministic cases passed | image-plus-oracle-text contract test, not OCR/provider accuracy |
+| check | current claim | verification method |
+|---|---|---|
+| Zeabur post-deploy health | PASS on 2026-09-04 | live `/healthz` returned `providerOrder=["local_vision","gemini","openai"]`, `localVisionConfigured=false`, `allowRemoteVisionFallback=false`, and `/data/rooms.json` persistence |
+| Zeabur room/member/export smoke | 4/4 passed | `npm run stress:member-release -- --base-url https://shared-room-mcp-next.zeabur.app --rounds 1 --fail-fast` against generated test rooms |
+| Zeabur local bridge proposal smoke | PASS | local bridge wrote one local OCR plus mock local-vision `semantic_repair_draft` to a generated live test room; proposal stayed pending host confirmation |
+| Local contract regression | 60/60 current bridge-gate run; older 400/400 historical run retained as regression evidence | `npm run stress:contracts` with test-only local rate limits; raw runtime logs stay ignored and are summarized in validation evidence |
+| Local HITL Member-Visibility Release regression | 12/12 current bridge-gate run; older 80/80 historical run retained as regression evidence | `npm run stress:member-release`; verifies draft gate, host release, member confirmation, owner finalization, HTML export, and PDF export |
+| Deterministic image oracle integration | 115/115 passed | `npm run stress:image-matrix -- --mode image-plus-oracle-text` with `IMAGE_MATRIX_ROOT`; checksum-backed contract test, not OCR/provider accuracy |
+| Security and release boundary | PASS | local `release-boundary-safety-gate`, `ai-security-rules rules-check`, and `npm audit` checks reported no blocking findings |
 
 These checks show that the assistant workflow is repeatable and no-key by default. They are not a claim of production-scale database capacity. The default JSON save layer is for a single demo service; production traffic should use Redis or PostgreSQL.
 
