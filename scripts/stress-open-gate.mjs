@@ -38,8 +38,8 @@ const scenarios = [
       '珍珠奶茶 微糖微冰 65',
       '四季春青茶 去冰無糖 45',
       '黑糖珍珠鮮奶 85',
-      '外送滿 700 免運',
-      '加購袋子 2'
+      '蜂蜜檸檬 常溫 55',
+      '冬瓜青茶 少冰 50'
     ].join('\n'),
     editName: '珍珠奶茶 大杯',
     editPrice: 70
@@ -87,7 +87,9 @@ function parseArgs(argv) {
     rounds: 20,
     timeoutMs: 20000,
     outputDir: defaultOutputDir,
-    failFast: true
+    failFast: true,
+    retryAttempts: 4,
+    retryDelayMs: 8000
   };
 
   for (let index = 2; index < argv.length; index += 1) {
@@ -107,6 +109,12 @@ function parseArgs(argv) {
       index += 1;
     } else if (arg === '--continue-on-failure') {
       args.failFast = false;
+    } else if (arg === '--retry-attempts' && next) {
+      args.retryAttempts = Math.max(0, Math.min(8, Number(next) || 0));
+      index += 1;
+    } else if (arg === '--retry-delay-ms' && next) {
+      args.retryDelayMs = Math.max(1000, Number(next) || args.retryDelayMs);
+      index += 1;
     }
   }
 
@@ -147,6 +155,27 @@ async function fetchJson(url, options = {}, timeoutMs = 20000) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function fetchJsonWithRetry(url, options, args, label) {
+  let lastResponse = null;
+  for (let attempt = 0; attempt <= args.retryAttempts; attempt += 1) {
+    const response = await fetchJson(url, options, args.timeoutMs);
+    if (response.status !== 429) {
+      return response;
+    }
+    lastResponse = response;
+    if (attempt < args.retryAttempts) {
+      await sleep(args.retryDelayMs * (attempt + 1));
+    }
+  }
+  if (lastResponse) {
+    lastResponse.data = {
+      ...(lastResponse.data || {}),
+      error: `${label || 'request'} rate limited after ${args.retryAttempts + 1} attempt(s): ${lastResponse.data?.error || 'HTTP 429'}`
+    };
+  }
+  return lastResponse;
 }
 
 async function fetchText(url, options = {}, timeoutMs = 20000) {
@@ -269,25 +298,25 @@ async function emitWithAck(baseUrl, connection, eventName, payload, timeoutMs) {
   return pollSocketIoForAck(baseUrl, connection.sid, ackId, timeoutMs);
 }
 
-async function createRoom(baseUrl, timeoutMs) {
-  const response = await fetchJson(`${baseUrl}/api/rooms`, {
+async function createRoom(baseUrl, args) {
+  const response = await fetchJsonWithRetry(`${baseUrl}/api/rooms`, {
     method: 'POST'
-  }, timeoutMs);
+  }, args, 'create room');
   assertCondition(response.ok, `create room failed: HTTP ${response.status} ${response.data?.error || ''}`);
   assertCondition(response.data?.id, 'create room response missing room id');
   return response.data;
 }
 
-async function uploadPriceText(baseUrl, roomId, scenario, timeoutMs) {
+async function uploadPriceText(baseUrl, roomId, scenario, args) {
   const form = new FormData();
   form.append('menuImage', new Blob([onePixelPng], { type: 'image/png' }), `${scenario.id}.png`);
   form.append('ocrText', scenario.text);
   form.append('taskType', scenario.taskType);
 
-  const response = await fetchJson(`${baseUrl}/api/rooms/${encodeURIComponent(roomId)}/menu`, {
+  const response = await fetchJsonWithRetry(`${baseUrl}/api/rooms/${encodeURIComponent(roomId)}/menu`, {
     method: 'POST',
     body: form
-  }, timeoutMs);
+  }, args, 'upload price text');
   assertCondition(response.ok, `upload failed: HTTP ${response.status} ${response.data?.error || ''}`);
   assertCondition(response.data?.menuLoaded === true, 'upload response did not mark menuLoaded=true');
   assertCondition(response.data?.itemsOpenForMembers === false, 'items should stay closed after AI/OCR draft creation');
@@ -355,9 +384,28 @@ async function createProposal(baseUrl, room, ownerParticipantId, scenario, timeo
   return after;
 }
 
-async function runScenarioRound(baseUrl, scenario, round, timeoutMs) {
+async function acceptLatestReviewProposal(baseUrl, connection, room, ownerParticipantId, timeoutMs) {
+  const proposal = Array.isArray(room.agentProposals)
+    ? room.agentProposals.find((candidate) => candidate.status === 'pending_host_confirmation')
+    : null;
+  assertCondition(proposal?.id, 'missing pending host review proposal');
+  const reviewed = await emitWithAck(baseUrl, connection, 'reviewAgentProposal', {
+    roomId: room.id,
+    participantId: ownerParticipantId,
+    proposalId: proposal.id,
+    action: 'accept'
+  }, timeoutMs);
+  assertCondition(reviewed?.ok, `host proposal accept failed: ${reviewed?.error || 'unknown error'}`);
+  assertCondition(reviewed.room?.itemsOpenForMembers === false, 'host proposal accept opened items unexpectedly');
+  const remainingBlocks = Array.isArray(reviewed.room?.antiPollution?.blocks) ? reviewed.room.antiPollution.blocks : [];
+  assertCondition(remainingBlocks.length === 0, `host proposal accept left anti-pollution blocks: ${remainingBlocks.map((block) => block.id || block.detail || 'unknown').join(', ')}`);
+  return reviewed.room;
+}
+
+async function runScenarioRound(baseUrl, scenario, round, args) {
+  const timeoutMs = args.timeoutMs;
   const startedAt = Date.now();
-  const room = await createRoom(baseUrl, timeoutMs);
+  const room = await createRoom(baseUrl, args);
   const hostConnection = await connectSocket(baseUrl, timeoutMs);
   const hostJoin = await emitWithAck(baseUrl, hostConnection, 'joinRoom', {
     roomId: room.id,
@@ -368,7 +416,7 @@ async function runScenarioRound(baseUrl, scenario, round, timeoutMs) {
   const ownerParticipantId = getOwnerParticipantId(hostJoin.room);
   assertCondition(ownerParticipantId, 'missing owner participant id');
 
-  const uploaded = await uploadPriceText(baseUrl, room.id, scenario, timeoutMs);
+  const uploaded = await uploadPriceText(baseUrl, room.id, scenario, args);
   const drafted = await createProposal(baseUrl, uploaded, ownerParticipantId, scenario, timeoutMs);
 
   const memberConnection = await connectSocket(baseUrl, timeoutMs);
@@ -414,6 +462,17 @@ async function runScenarioRound(baseUrl, scenario, round, timeoutMs) {
     participantId: memberParticipantId
   }, timeoutMs);
   assertCondition(memberOpenAttempt?.ok === false, 'member was able to open list');
+
+  const antiBlocksBeforeReview = Array.isArray(drafted.antiPollution?.blocks) ? drafted.antiPollution.blocks : [];
+  if (antiBlocksBeforeReview.length > 0) {
+    const blockedHostOpenBeforeReview = await emitWithAck(baseUrl, hostConnection, 'openItemsForMembers', {
+      roomId: room.id,
+      participantId: ownerParticipantId
+    }, timeoutMs);
+    assertCondition(blockedHostOpenBeforeReview?.ok === false, 'host was able to open list while anti-pollution review was still pending');
+  }
+
+  const reviewed = await acceptLatestReviewProposal(baseUrl, hostConnection, drafted, ownerParticipantId, timeoutMs);
 
   const hostOpen = await emitWithAck(baseUrl, hostConnection, 'openItemsForMembers', {
     roomId: room.id,
@@ -561,6 +620,8 @@ function renderMarkdown(args, summary, results, plannedTotal) {
   lines.push('', '## Checked Boundaries', '');
   lines.push('- AI/OCR upload creates a draft list and keeps member claiming closed.');
   lines.push('- Agent proposal stays `pending_host_confirmation` and does not open or mutate final state.');
+  lines.push('- The host cannot open the list while parser candidates or rule candidates still require review.');
+  lines.push('- The script accepts the pending review proposal before opening the list so the positive flow follows the HITL recording path.');
   lines.push('- A room member cannot edit parsed items.');
   lines.push('- A room member cannot claim items before the host opens the reviewed list.');
   lines.push('- Only the host can edit parsed items before opening the reviewed list.');
@@ -611,7 +672,7 @@ async function main() {
   for (let index = 0; index < tasks.length; index += 1) {
     const { scenario, round } = tasks[index];
     try {
-      const result = await runScenarioRound(args.baseUrl, scenario, round, args.timeoutMs);
+      const result = await runScenarioRound(args.baseUrl, scenario, round, args);
       results.push(result);
       console.log(`[${index + 1}/${tasks.length}] ${scenario.id} round ${round} OK ${result.elapsedMs}ms`);
     } catch (error) {

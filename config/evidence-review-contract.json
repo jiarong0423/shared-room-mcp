@@ -1,0 +1,207 @@
+{
+  "version": "shared-room-evidence-review-contract.v1",
+  "layers": [
+    "EvidenceAsset",
+    "OcrObservation",
+    "ParserCandidate",
+    "SelectableItem",
+    "CalculationRule",
+    "ProviderOnlyField",
+    "ReceiverRequiredField",
+    "AvailabilitySlot",
+    "ReviewGate",
+    "ReviewDecision",
+    "SettlementSnapshot"
+  ],
+  "candidateStatuses": [
+    "pending",
+    "accepted",
+    "rejected",
+    "modified",
+    "blocked"
+  ],
+  "displaySurfaces": [
+    "member_selectable",
+    "host_rule_panel",
+    "audit_anchor",
+    "metadata_only",
+    "provider_only",
+    "receiver_required",
+    "availability_slot",
+    "review_gate",
+    "blocked_noise"
+  ],
+  "priceRoles": [
+    "line_item",
+    "shared_fixed_fee",
+    "tax_rate",
+    "tax_fixed_fee",
+    "service_rate",
+    "service_fixed_fee",
+    "discount_rate",
+    "discount_amount",
+    "discount",
+    "tax_and_fee",
+    "deposit",
+    "prepayment_down",
+    "aggregate_subtotal",
+    "aggregate_grand_total",
+    "subtotal_observation",
+    "grand_total_observation",
+    "threshold_amount",
+    "points_value",
+    "non_price_context"
+  ],
+  "sourceNumberClasses": [
+    "currency_amount",
+    "percentage_rate",
+    "age_range",
+    "itinerary_index",
+    "capacity",
+    "quantity",
+    "duration",
+    "distance",
+    "date_time",
+    "receipt_total",
+    "payment_amount",
+    "identifier",
+    "points",
+    "points_value",
+    "unknown"
+  ],
+  "ocrObservationFields": [
+    "id",
+    "roomId",
+    "assetId",
+    "lineIndex",
+    "rawText",
+    "normalizedText",
+    "bbox",
+    "boundingZone",
+    "detectedTypeHint",
+    "auditAnchor",
+    "auditAnchors",
+    "reviewGates",
+    "confidence",
+    "source",
+    "manualEdited",
+    "createdAt"
+  ],
+  "parserCandidateFields": [
+    "id",
+    "roomId",
+    "scenarioContractId",
+    "taskType",
+    "sourceAssetId",
+    "sourceObservationIds",
+    "proposedItemId",
+    "label",
+    "amount",
+    "currency",
+    "quantity",
+    "unit",
+    "priceRole",
+    "sourceNumberClass",
+    "displaySurface",
+    "conditions",
+    "category",
+    "optionGroups",
+    "confidence",
+    "reviewFlags",
+    "boundingZone",
+    "detectedTypeHint",
+    "auditAnchor",
+    "auditAnchors",
+    "reviewGates",
+    "status",
+    "rawTextEvidence",
+    "createdAt",
+    "reviewedAt",
+    "reviewedBy"
+  ],
+  "reviewGateFields": [
+    "id",
+    "severity",
+    "reason",
+    "fields",
+    "resolvedByHost"
+  ],
+  "guardrailMemoryFields": [
+    "patternScope",
+    "contractId",
+    "language",
+    "evidenceType",
+    "matcherStrength",
+    "actionOnMatch",
+    "patternType",
+    "matcher",
+    "forbiddenStorage"
+  ],
+  "antiPollutionRules": [
+    {
+      "id": "parser_writes_candidates_first",
+      "severity": "block",
+      "description": "Parser output must become ParserCandidate records before it can become member-selectable items or calculation rules."
+    },
+    {
+      "id": "member_items_require_evidence_pointer",
+      "severity": "block",
+      "description": "Every member-selectable item must retain a source evidence asset and OCR observation pointer."
+    },
+    {
+      "id": "rule_roles_not_member_selectable",
+      "severity": "block",
+      "description": "Discounts, taxes, service fees, deposits, prepayments, thresholds, receipt totals, tendered payments, points, and context-only numbers route to CalculationRule, AuditAnchor, Metadata, or ForbiddenLeak."
+    },
+    {
+      "id": "pending_candidates_block_member_open",
+      "severity": "block",
+      "description": "Rooms open to members after parser candidates reach an accepted or rejected review decision."
+    },
+    {
+      "id": "text_shadow_is_not_primary_image_evidence",
+      "severity": "warn",
+      "description": "Pasted text can assist OCR review; primary evidence remains the uploaded image or explicitly labeled text-only fixture."
+    },
+    {
+      "id": "host_blueprint_options_only",
+      "severity": "block",
+      "description": "Member-facing options must originate from host-provided ServiceBlueprint options or reviewed evidence candidates."
+    },
+    {
+      "id": "sparse_evidence_routes_unknowns_to_review",
+      "severity": "block",
+      "description": "Details absent from sparse DM, menu, price-list, booking-form, or receipt evidence route to ReceiverRequiredField or ReviewGate."
+    },
+    {
+      "id": "complex_formula_routes_to_review",
+      "severity": "block",
+      "description": "Taxes, service fees, deposits, prepayments, thresholds, tiered discounts, shipping splits, and headcount-dependent formulas cannot become member-selectable line items before host review."
+    },
+    {
+      "id": "review_gate_blocks_member_open",
+      "severity": "block",
+      "description": "Member-visible items carrying blocking ReviewGate entries cannot be released until the host resolves or removes them."
+    },
+    {
+      "id": "guardrail_memory_records_negative_patterns_only",
+      "severity": "block",
+      "description": "Guardrail memory stores reusable negative patterns such as phone/date/deposit-as-price mistakes, never corrected answers, raw identifiers, or final prices."
+    },
+    {
+      "id": "structural_review_gate_requires_edit_or_remove",
+      "severity": "block",
+      "description": "Forbidden leaks, non-currency member prices, and unresolved formulas cannot be released by plain accept; the host must edit or remove the candidate."
+    },
+    {
+      "id": "canonical_number_normalizer_before_forbidden_match",
+      "severity": "block",
+      "description": "Candidate and oracle numbers must be normalized by stripping currency signs, separators, and non-numeric characters before forbidden-number matching."
+    },
+    {
+      "id": "forbidden_context_keywords_cover_address_tax_time",
+      "severity": "block",
+      "description": "Address numbers, tax identifiers, business numbers, contact numbers, dates, and time ranges are forbidden context numbers and must route to structural review instead of member-visible prices."
+    }
+  ]
+}

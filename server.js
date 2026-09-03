@@ -4,7 +4,7 @@ import http from 'http';
 import multer from 'multer';
 import path from 'path';
 import sharp from 'sharp';
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 import { fileURLToPath } from 'url';
 import { Server } from 'socket.io';
 import { GoogleGenAI, Type } from '@google/genai';
@@ -77,7 +77,7 @@ const trustLayerSpreadsheetUrl = trustLayerSpreadsheetId
 const roomPersistenceEnabled = String(process.env.ROOM_PERSISTENCE || 'json').toLowerCase() !== 'memory';
 const roomStorePath = path.resolve(__dirname, process.env.ROOM_STORE_PATH || 'data/rooms.json');
 const guardrailMemoryPath = path.resolve(__dirname, process.env.GUARDRAIL_MEMORY_PATH || 'data/guardrail-memory.json');
-const roomStoreVersion = 'group-room-json-store.v1';
+const roomStoreVersion = 'adaptive-contract-room-store.v1';
 const guardrailMemoryVersion = 'shared-room-guardrail-memory.v1';
 const roomPersistDebounceMs = Math.max(0, Math.min(1000, Number(process.env.ROOM_PERSIST_DEBOUNCE_MS || 35)));
 const roomPersistJitterMs = Math.max(0, Math.min(2000, Number(process.env.ROOM_PERSIST_JITTER_MS || 120)));
@@ -123,11 +123,11 @@ const defaultTaskRouter = Object.freeze({
   splitMode: 'individual_items',
   evidenceStrength: 'medium',
   reviewStatus: 'needs_human_review',
-  fixedTaxonomyVersion: 'group-room-task-router.v1'
+  fixedTaxonomyVersion: 'adaptive-contract-task-router.v1'
 });
-const taskRouterContractVersion = 'group-room-task-router-contract.v1';
-const formulaContractVersion = 'group-room-formula-contract.v1';
-const formulaResultVersion = 'group-room-formula.v1';
+const taskRouterContractVersion = 'adaptive-contract-task-router-contract.v1';
+const formulaContractVersion = 'adaptive-contract-formula-contract.v1';
+const formulaResultVersion = 'adaptive-contract-formula.v1';
 const formulaModuleContracts = Object.freeze([
   {
     id: 'participantSubtotal',
@@ -190,10 +190,11 @@ const formulaModuleContracts = Object.freeze([
     outputField: 'formulaResults.tierDiscount'
   }
 ]);
-const trustLayerContractVersion = 'group-room-trust-layer-contract.v1';
-const webMcpToolSurfaceVersion = 'group-room-webmcp-tools.v2';
-const evidenceContractVersion = 'group-room-evidence-ocr-contract.v1';
-const agentProposalContractVersion = 'group-room-agent-proposal-contract.v1';
+const trustLayerContractVersion = 'adaptive-contract-trust-layer-contract.v1';
+const webMcpToolSurfaceVersion = 'adaptive-contract-webmcp-tools.v2';
+const evidenceContractVersion = 'adaptive-contract-evidence-ocr-contract.v1';
+const serviceBlueprintContractVersion = 'shared-room-service-blueprint.v1';
+const agentProposalContractVersion = 'adaptive-contract-agent-proposal-contract.v1';
 const rateLimitBuckets = new Map();
 const agentProposalTypes = new Set([
   'claim_assignment',
@@ -229,7 +230,7 @@ const largeDrinkSizePattern = /大杯|特大杯|分享瓶|瓶裝|加大|大瓶|\
 const localOcrPricePattern = /(?:NT\$?\s*)?([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{1,4})(?:\s*(?:元|圓|塊))?/g;
 const localOcrRuleAmountPattern = /(?:NT\$?\s*)?([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{1,6})(?:\s*(?:元|圓|塊))?/g;
 const localOcrSectionPattern = /^(飯類|麵類|粥品|湯品|湯類|小菜|點心|炸物|主餐|套餐|便當|飲品|飲料|咖啡|茶飲|鮮奶茶|果汁|冰沙|甜點|加料|配料|包廂|場地|場租|票券|門票|活動|課程|器材|租借|低消|服務費|Toppings?|Add-?ons?|Meals?|Drinks?|Coffee|Tea|Rooms?|Tickets?|Rentals?|Activities?|Courts?|Venues?)$/i;
-const localOcrSkipLinePattern = /總糖量|糖量|總熱量|熱量|大卡|卡路里|營養|公克|克數|容量|毫升|ml|ML|電話|地址|營業|回饋|點數|儲值|送\s*[0-9,]+\s*點|送點|建議表|使用期限|有效期限|統一編號|統編|發票號碼|收據號碼|卡號|末四碼|交易序號|機台|桌號|小計|總計|合計|實收|找零|服務費率|稅率|每梯次|名額|人數|限額|行程約|%/;
+const localOcrSkipLinePattern = /總糖量|糖量|總熱量|熱量|大卡|卡路里|營養|公克|克數|容量|毫升|ml|ML|電話|电话|手機|手机|聯絡|联系|聯繫|客服|tel|phone|cell|mobile|fax|地址|住址|門牌|门牌|路段|街|巷|弄|號|号|address|addr|營業|营业|營業時間|营业时间|business hours|opening hours|service hours|統一編號|统一编号|統編|税号|稅號|tax id|vat|business number|發票號碼|发票号码|invoice|booking id|reservation no|order no|預約編號|预约编号|回饋|點數|儲值|送\s*[0-9,]+\s*點|送點|建議表|使用期限|有效期限|卡號|末四碼|交易序號|機台|桌號|小計|總計|合計|實收|找零|服務費率|稅率|每梯次|名額|人數|限額|行程約|%/i;
 const localOcrPaymentLinePattern = /^(?:現金|刷卡|信用卡|付款|支付|cash|card|paid)\s*(?:NT\$?\s*)?[0-9,]+/i;
 const localOcrQuantityContextPattern = /^(?:\s*(?:cups?|qty|quantity|count|pcs?|pieces?|orders?|sets?|boxes?|packs?|items?|people|persons?|pax|players?|attendees?|tickets?|hours?|hrs?|days?|人|位|杯|瓶|份|件|個|張|名|小時|鐘|天|組|盒|包|套|桶|次|顆)\b|\s*(?:人|位|杯|瓶|份|件|個|張|名|小時|鐘|天|組|盒|包|套|桶|次|顆))/i;
 const localOcrQuantityPrefixPattern = /(?:^|\s)(?:qty|quantity|count|subtotal|total\s*qty|數量|小計|合計|總杯數|總數|人數)\s*$/i;
@@ -258,25 +259,65 @@ const menuCategories = new Set([
 ]);
 const priceRoles = new Set([
   'line_item',
+  'shared_fixed_fee',
+  'tax_rate',
+  'tax_fixed_fee',
+  'service_rate',
+  'service_fixed_fee',
+  'discount_rate',
+  'discount_amount',
   'discount',
   'tax_and_fee',
   'deposit',
   'prepayment_down',
   'aggregate_subtotal',
-  'aggregate_grand_total'
+  'aggregate_grand_total',
+  'subtotal_observation',
+  'grand_total_observation',
+  'threshold_amount',
+  'points_value',
+  'non_price_context'
 ]);
 const sourceNumberClasses = new Set([
   'currency_amount',
   'age_range',
   'itinerary_index',
   'percentage_rate',
+  'capacity',
   'receipt_total',
   'payment_amount',
+  'identifier',
+  'points',
   'points_value',
   'distance',
   'duration',
+  'date_time',
   'quantity',
   'unknown'
+]);
+const displaySurfaces = new Set([
+  'member_selectable',
+  'host_rule_panel',
+  'audit_anchor',
+  'metadata_only',
+  'blocked_noise'
+]);
+const parserCandidateStatuses = new Set([
+  'pending',
+  'accepted',
+  'rejected',
+  'modified',
+  'blocked'
+]);
+const reviewGateSeverities = new Set([
+  'info',
+  'warn',
+  'block'
+]);
+const structuralReviewGateIds = new Set([
+  'forbidden_context_number',
+  'member_item_non_currency_number_review',
+  'unresolved_formula_requires_edit'
 ]);
 const reviewFlagTypes = new Set([
   'multiple_price_candidates',
@@ -961,6 +1002,12 @@ function serializeRoomForStore(room) {
     menuLoaded: Boolean(room.menuLoaded),
     itemsOpenForMembers: Boolean(room.itemsOpenForMembers),
     items: Array.isArray(room.items) ? room.items : [],
+    evidenceAssets: Array.isArray(room.evidenceAssets) ? room.evidenceAssets : [],
+    ocrObservations: Array.isArray(room.ocrObservations) ? room.ocrObservations : [],
+    parserCandidates: Array.isArray(room.parserCandidates) ? room.parserCandidates : [],
+    calculationRules: Array.isArray(room.calculationRules) ? room.calculationRules : [],
+    reviewDecisions: Array.isArray(room.reviewDecisions) ? room.reviewDecisions : [],
+    settlementSnapshots: Array.isArray(room.settlementSnapshots) ? room.settlementSnapshots : [],
     menuType: room.menuType || 'general',
     menuMode: room.menuMode || 'auto',
     taskRouter: room.taskRouter || { ...defaultTaskRouter },
@@ -1050,6 +1097,12 @@ function hydrateRoomFromStore(record) {
     menuLoaded: Boolean(record.menuLoaded),
     itemsOpenForMembers: Boolean(record.itemsOpenForMembers),
     items: Array.isArray(record.items) ? record.items : [],
+    evidenceAssets: Array.isArray(record.evidenceAssets) ? record.evidenceAssets : [],
+    ocrObservations: Array.isArray(record.ocrObservations) ? record.ocrObservations : [],
+    parserCandidates: Array.isArray(record.parserCandidates) ? record.parserCandidates : [],
+    calculationRules: Array.isArray(record.calculationRules) ? record.calculationRules : [],
+    reviewDecisions: Array.isArray(record.reviewDecisions) ? record.reviewDecisions : [],
+    settlementSnapshots: Array.isArray(record.settlementSnapshots) ? record.settlementSnapshots : [],
     menuType: menuTypes.has(record.menuType) ? record.menuType : 'general',
     menuMode: menuModes.has(record.menuMode) ? record.menuMode : 'auto',
     taskRouter: record.taskRouter && typeof record.taskRouter === 'object'
@@ -1182,13 +1235,10 @@ function appendGuardrailMemoryEvent(event) {
   if (!roomPersistenceEnabled) {
     return;
   }
-  const nextEvent = {
-    id: `guardrail_${randomUUID().slice(0, 8)}`,
-    createdAt: nowIso(),
-    status: 'candidate',
-    source: 'human_review_loop',
-    ...event
-  };
+  const nextEvent = buildGuardrailMemoryPatternEvent(event);
+  if (!nextEvent) {
+    return;
+  }
   const payload = readGuardrailMemoryPayload();
   const nextPayload = {
     version: guardrailMemoryVersion,
@@ -1200,10 +1250,11 @@ function appendGuardrailMemoryEvent(event) {
     fs.mkdirSync(path.dirname(guardrailMemoryPath), { recursive: true });
     fs.writeFileSync(tempPath, `${JSON.stringify(nextPayload, null, 2)}\n`, 'utf8');
     fs.renameSync(tempPath, guardrailMemoryPath);
-    writeLog('info', 'guardrail_memory_event_recorded', {
+    writeLog('info', 'guardrail_memory_pattern_recorded', {
       eventId: nextEvent.id,
       roomId: nextEvent.roomId || null,
-      eventType: nextEvent.eventType || 'unknown'
+      eventType: nextEvent.eventType || 'unknown',
+      patternType: nextEvent.patternType || 'unknown'
     });
   } catch (error) {
     writeLog('error', 'guardrail_memory_write_failed', {
@@ -1211,6 +1262,89 @@ function appendGuardrailMemoryEvent(event) {
       error: error.message
     });
   }
+}
+
+function maskNumbersForGuardrailMemory(value) {
+  return normalizeShortText(String(value || '').replace(/[0-9][0-9,./:\-()\s]{0,24}/g, '{NUMBER}'), 180);
+}
+
+function inferGuardrailPatternType(event) {
+  const issueTypes = Array.isArray(event?.issueTypes) ? event.issueTypes.map(String) : [];
+  const flags = [
+    ...(Array.isArray(event?.previousItem?.reviewFlags) ? event.previousItem.reviewFlags : []),
+    ...(Array.isArray(event?.nextItem?.reviewFlags) ? event.nextItem.reviewFlags : [])
+  ].map(String);
+  const rawText = event?.nextItem?.rawTextEvidence || event?.previousItem?.rawTextEvidence || event?.rawTextEvidence || '';
+  const detectedTypeHint = detectOcrObservationType(rawText);
+  if (issueTypes.includes('forbidden_context_number') || ['phone_number', 'date_time'].includes(detectedTypeHint)) {
+    return 'context_identifier_must_not_be_price';
+  }
+  if (issueTypes.some((type) => /deposit|prepayment|tax|fee|discount|threshold|formula/i.test(type))
+    || flags.some((flag) => /deposit|prepayment|tax|fee|discount/i.test(flag))
+    || ['deposit_or_security', 'prepayment', 'tax_or_fee_rate', 'tax_or_fee_amount', 'discount_or_threshold_rule'].includes(detectedTypeHint)) {
+    return 'complex_rule_must_route_to_review';
+  }
+  if (event?.eventType === 'parsed_item_removed') {
+    return 'removed_candidate_should_not_reappear';
+  }
+  if (event?.eventType === 'parsed_item_updated') {
+    return 'human_edit_requires_future_review_hint';
+  }
+  if (Array.isArray(event?.blockingReasons) && event.blockingReasons.length > 0) {
+    return 'blocked_open_gate_should_remain_blocking';
+  }
+  return 'review_loop_negative_pattern';
+}
+
+function buildGuardrailMemoryPatternEvent(event = {}) {
+  const rawText = event?.nextItem?.rawTextEvidence
+    || event?.previousItem?.rawTextEvidence
+    || event?.removedItem?.rawTextEvidence
+    || event?.rawTextEvidence
+    || '';
+  const previousItem = event?.previousItem && typeof event.previousItem === 'object' ? event.previousItem : {};
+  const nextItem = event?.nextItem && typeof event.nextItem === 'object' ? event.nextItem : {};
+  const patternType = inferGuardrailPatternType(event);
+  const nextEvent = {
+    id: `guardrail_${randomUUID().slice(0, 8)}`,
+    createdAt: nowIso(),
+    status: 'candidate',
+    source: 'human_review_loop',
+    storageClass: 'negative_pattern_registry',
+    eventType: normalizeShortText(event.eventType || 'review_event', 64),
+    roomId: event.roomId || null,
+    taskType: event.taskType || null,
+    scenarioContract: event.scenarioContract || null,
+    contractId: event.contractId || event.scenarioContract || null,
+    language: event.language || null,
+    evidenceType: event.evidenceType || 'price_evidence',
+    patternScope: event.scenarioContract ? 'CONTRACT_LOCAL' : 'ARCHETYPE_GLOBAL',
+    matcherStrength: patternType === 'context_identifier_must_not_be_price' || patternType === 'complex_rule_must_route_to_review'
+      ? 'HARD_BLOCK'
+      : 'SOFT_WARNING',
+    actionOnMatch: 'ROUTE_TO_REVIEW_GATE',
+    patternType,
+    matcher: {
+      textPattern: maskNumbersForGuardrailMemory(rawText),
+      detectedTypeHint: detectOcrObservationType(rawText),
+      previousPriceRole: previousItem.priceRole || null,
+      nextPriceRole: nextItem.priceRole || null,
+      previousSourceNumberClass: previousItem.sourceNumberClass || null,
+      nextSourceNumberClass: nextItem.sourceNumberClass || null,
+      issueTypes: Array.isArray(event.issueTypes) ? event.issueTypes.map((issue) => normalizeShortText(issue, 64)).filter(Boolean).slice(0, 12) : [],
+      blockingReasons: Array.isArray(event.blockingReasons) ? event.blockingReasons.map((reason) => normalizeShortText(reason, 80)).filter(Boolean).slice(0, 12) : []
+    },
+    instruction: patternType === 'complex_rule_must_route_to_review'
+      ? 'Route matching rule/formula numbers to ReviewGate; never store the corrected amount as reusable truth.'
+      : 'Treat matching observations as negative patterns requiring review; do not memorize corrected answers.',
+    forbiddenStorage: [
+      'corrected_answer',
+      'final_item_price',
+      'full_source_text',
+      'raw_personal_identifier'
+    ]
+  };
+  return nextEvent;
 }
 
 function loadPersistedRooms() {
@@ -1681,6 +1815,12 @@ function createRoom() {
     menuLoaded: false,
     itemsOpenForMembers: false,
     items: [],
+    evidenceAssets: [],
+    ocrObservations: [],
+    parserCandidates: [],
+    calculationRules: [],
+    reviewDecisions: [],
+    settlementSnapshots: [],
     menuType: 'general',
     menuMode: 'auto',
     taskRouter: { ...defaultTaskRouter },
@@ -1724,6 +1864,103 @@ const sampleRoomOcrLines = Object.freeze([
   'Extra dessert cup 7',
   'Shared table fee 6'
 ]);
+
+const demoSampleScenarios = Object.freeze([
+  {
+    id: 'zh-ticket-age-itinerary',
+    language: 'zh',
+    contractId: 'ticket_activity_matrix',
+    taskType: 'ticket_activity',
+    title: '非凡旅遊 一日遊票價表',
+    menuType: 'general',
+    textLines: [
+      '非凡旅遊 一日遊票價表',
+      '行程 1：太平雲梯一日遊',
+      '會員費用 假日（六或日）四排椅 NT$ 830 / 人',
+      '非會員費用 假日（六或日）四排椅 NT$ 1830 / 人',
+      '嬰兒 0 歲～未滿 1 歲 NT$ 200 / 人（含保險，不佔餐、車位）',
+      '幼兒 1 歲～未滿 2 歲 NT$ 1300 / 人（含保險、門票、車位，不佔餐）',
+      '小童 2 歲～6 歲（含）NT$ 1800 / 人（含保險、門票、車位、餐費）',
+      '行程 2：雲彰文化一日遊',
+      '會員費用 假日（六或日）四排椅 NT$ 470 / 人',
+      '非會員費用 假日（六或日）四排椅 NT$ 1470 / 人',
+      '嬰兒 0 歲～未滿 1 歲 NT$ 150 / 人（含保險，不佔餐、車位）',
+      '幼兒 1 歲～未滿 2 歲 NT$ 655 / 人（含保險、門票、車位，不佔餐）',
+      '小童 2 歲～6 歲（含）NT$ 1170 / 人（含保險、門票、車位、餐費）'
+    ],
+    summary: '中文旅遊票券示範已載入。請檢查行程、年齡區間與金額欄位，確認無誤後再開放成員選擇。',
+    rationale: '這份 sample 用來展示頁面/情境辨識：中文頁面與票券用途必須載入中文票價證據，不可載入英文餐點資料。'
+  },
+  {
+    id: 'en-restaurant-shared-fee',
+    language: 'en',
+    contractId: 'menu_size_option_matrix',
+    taskType: 'restaurant_split',
+    title: 'Restaurant lunch meal sample menu',
+    menuType: 'mixed',
+    textLines: sampleRoomOcrLines,
+    summary: 'Sample room is ready. Review the shared items, then ask members to claim their own costs.',
+    rationale: 'This draft shows the safe loop: the assistant prepares a review note, while the host keeps the final approval button.'
+  }
+]);
+
+function normalizeSampleLanguage(value) {
+  const language = String(value || '').trim().toLowerCase();
+  if (language === 'zh' || language === 'zh-tw' || language === 'zh-hant') {
+    return 'zh';
+  }
+  return 'en';
+}
+
+function selectDemoSampleScenario(input = {}) {
+  const language = normalizeSampleLanguage(input.language);
+  const taskType = normalizeRoomTaskType(input.taskType);
+  return demoSampleScenarios.find((scenario) => scenario.language === language && scenario.taskType === taskType)
+    || demoSampleScenarios.find((scenario) => scenario.language === language)
+    || demoSampleScenarios.find((scenario) => scenario.language === 'en');
+}
+
+function escapeSvgText(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+async function renderDemoSampleImage(scenario) {
+  const isZh = scenario.language === 'zh';
+  const width = isZh ? 1500 : 1200;
+  const lineHeight = isZh ? 52 : 46;
+  const fontSize = isZh ? 31 : 30;
+  const titleSize = isZh ? 42 : 38;
+  const rows = scenario.textLines.slice(1, 20).map((line, index) => {
+    const y = 150 + (index * lineHeight);
+    return `<text x="72" y="${y}" class="row">${escapeSvgText(line)}</text>`;
+  }).join('\n');
+  const height = Math.max(720, 210 + (scenario.textLines.length * lineHeight));
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  <rect width="100%" height="100%" fill="${isZh ? '#fffaf2' : '#fbfaf7'}"/>
+  <rect x="34" y="34" width="${width - 68}" height="${height - 68}" rx="18" fill="none" stroke="${isZh ? '#8d6b42' : '#2f3a35'}" stroke-width="5"/>
+  <text x="72" y="95" class="title">${escapeSvgText(scenario.title)}</text>
+  <text x="72" y="126" class="meta">${escapeSvgText(scenario.contractId)} · ${escapeSvgText(scenario.taskType)}</text>
+  ${rows}
+  <style>
+    .title { font: 700 ${titleSize}px -apple-system, BlinkMacSystemFont, "Noto Sans TC", "Noto Sans", Arial, sans-serif; fill: #1d1d1f; }
+    .meta { font: 500 20px -apple-system, BlinkMacSystemFont, "Noto Sans TC", "Noto Sans", Arial, sans-serif; fill: #6e6a61; }
+    .row { font: 500 ${fontSize}px -apple-system, BlinkMacSystemFont, "Noto Sans TC", "Noto Sans", Arial, sans-serif; fill: #27231d; }
+  </style>
+</svg>`;
+  const buffer = await sharp(Buffer.from(svg)).png().toBuffer();
+  const metadata = await sharp(buffer).metadata();
+  return {
+    buffer,
+    mimetype: 'image/png',
+    width: metadata.width || width,
+    height: metadata.height || height
+  };
+}
 
 function buildSampleRoomItems() {
   return normalizeParsedItems([
@@ -1780,44 +2017,83 @@ function buildSampleRoomItems() {
   ], 1, null);
 }
 
-function loadSampleRoom(room, input = {}) {
+async function loadSampleRoom(room, input = {}) {
   const participant = ensureParticipant(room, input.participantId, input.displayName || 'Demo Host');
   if (!room.ownerParticipantId) {
     room.ownerParticipantId = participant.id;
   }
 
-  const sampleText = sampleRoomOcrLines.join('\n');
-  const items = buildSampleRoomItems();
-  room.items = items;
-  room.menuType = normalizeMenuType('mixed', items);
+  const scenario = selectDemoSampleScenario(input);
+  const sampleText = scenario.textLines.join('\n');
+  const parsed = scenario.id === 'en-restaurant-shared-fee'
+    ? {
+      items: buildSampleRoomItems(),
+      menuType: scenario.menuType,
+      metrics: {
+        enabled: true,
+        lineCount: scenario.textLines.length,
+        candidateCount: sampleRoomOcrLines.length - 1,
+        itemCount: sampleRoomOcrLines.length - 1,
+        ruleLineCount: 0,
+        ruleHints: []
+      }
+    }
+    : parseLocalOcrMenuCandidates(sampleText, 1, {
+      taskType: scenario.taskType
+    });
+  const image = await renderDemoSampleImage(scenario);
+  const parsedItems = parsed.items;
+  room.menuType = normalizeMenuType(parsed.menuType || scenario.menuType, parsedItems);
   room.menuMode = 'auto';
   room.taskRouter = buildRoomTaskRouter({
-    taskType: 'restaurant_split',
+    taskType: scenario.taskType,
     localOcrText: sampleText,
-    items
+    items: parsedItems
   });
   room.warnings = [
-    'Sample room loaded for quick review. The assistant may draft suggestions, but the host keeps final approval.'
+    scenario.language === 'zh'
+      ? '已依目前頁面語系與房間用途載入中文示範證據。請先檢查欄位，再開放給成員。'
+      : 'Sample room loaded for quick review. The assistant may draft suggestions, but the host keeps final approval.'
   ];
   room.parseQuality = evaluateMenuParseQuality({
-    items,
+    items: parsedItems,
     menuType: room.menuType,
     taskRouter: room.taskRouter
   });
   room.localOcr = {
     enabled: true,
-    lineCount: sampleRoomOcrLines.length,
-    candidateCount: items.length,
-    itemCount: items.length,
-    ruleLineCount: 0,
-    ruleHints: []
+    lineCount: scenario.textLines.length,
+    candidateCount: parsedItems.length,
+    itemCount: parsedItems.length,
+    ruleLineCount: parsed.metrics?.ruleLineCount || 0,
+    ruleHints: parsed.metrics?.ruleHints || [],
+    sampleId: scenario.id,
+    language: scenario.language,
+    contractId: scenario.contractId
   };
-  room.menuImages = [];
-  room.menuImageBuffer = null;
-  room.menuImageMimeType = null;
-  room.menuImageWidth = null;
-  room.menuImageHeight = null;
+  room.menuImages = [{
+    index: 0,
+    buffer: image.buffer,
+    mimeType: image.mimetype,
+    width: image.width,
+    height: image.height,
+    originalBytes: image.buffer.length,
+    processedBytes: image.buffer.length
+  }];
+  room.menuImageBuffer = image.buffer;
+  room.menuImageMimeType = image.mimetype;
+  room.menuImageWidth = image.width;
+  room.menuImageHeight = image.height;
   room.itemImageCache = new Map();
+  applyEvidenceReviewLayers(room, parsedItems, {
+    images: room.menuImages,
+    localOcrText: sampleText,
+    taskType: scenario.taskType,
+    scenarioContractId: scenario.contractId,
+    evidenceKind: 'generated_demo_image',
+    sourceLabel: scenario.title,
+    ocrSource: 'generated_demo_text'
+  });
   room.menuLoaded = true;
   room.itemsOpenForMembers = false;
   room.settled = false;
@@ -1827,13 +2103,19 @@ function loadSampleRoom(room, input = {}) {
 
   const proposal = createAgentProposal(room, {
     proposalType: 'evidence_review',
-    summary: 'Sample room is ready. Review the shared items, then ask members to claim their own costs.',
-    rationale: 'This draft shows the safe loop: the assistant prepares a review note, while the host keeps the final approval button.',
+    summary: scenario.summary,
+    rationale: scenario.rationale,
     riskLevel: 'needs_human_review',
     payload: {
       demo: true,
       source: 'load_sample_room',
-      nextHumanAction: 'Host reviews the sample items and confirms or rejects this draft.',
+      sampleId: scenario.id,
+      language: scenario.language,
+      taskType: scenario.taskType,
+      contractId: scenario.contractId,
+      nextHumanAction: scenario.language === 'zh'
+        ? '發起者檢查 sample 圖片與欄位是否一致，確認或拒絕草稿。'
+        : 'Host reviews the sample items and confirms or rejects this draft.',
       safeBoundary: 'No payment, booking, external form submission, formula change, or final settlement is performed by the assistant.'
     }
   });
@@ -2193,6 +2475,189 @@ function splitLocalOcrLines(text) {
     .filter(Boolean);
 }
 
+function detectOcrObservationType(text) {
+  const value = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!value) {
+    return 'empty';
+  }
+  if (/(?:電話|电话|手機|手机|客服|聯絡|联系|聯繫|tel|phone|cell|mobile|fax)\s*[:：]?\s*(?:\+?[0-9][0-9\-()\s]{6,}|[0-9]{2,4}[-\s][0-9]{3,4}[-\s]?[0-9]{3,4})/i.test(value)
+    || /(?:\+?886[-\s]?)?0[0-9]{1,2}[-\s]?[0-9]{3,4}[-\s]?[0-9]{3,4}/.test(value)) {
+    return 'phone_number';
+  }
+  if (/(?:統一編號|统一编号|統編|稅號|税号|營業人統編|tax\s*id|vat|business\s*(?:no|number|id))\s*[:：#]?\s*[A-Z0-9\- ]{6,}/i.test(value)) {
+    return 'tax_identifier';
+  }
+  if (/(?:地址|住址|門牌|门牌|address|addr)\s*[:：]?\s*[A-Z0-9\u4e00-\u9fff ,.\-]{2,}/i.test(value) && /[0-9]/.test(value)) {
+    return 'address_number';
+  }
+  if (/(?:縣|县|市|區|区|鄉|乡|鎮|镇)[\u4e00-\u9fff0-9\s]*(?:路|街|巷|弄|號|号|樓|楼)[\u4e00-\u9fff0-9\s]*/.test(value)
+    && /[0-9]/.test(value)) {
+    return 'address_number';
+  }
+  if (/(?:section|sec\.?|street|st\.|road|rd\.|lane|alley)\s+[A-Z0-9 ,.\-]{2,}/i.test(value)
+    && /(?:address|addr|city|district|floor|suite|no\.|#)/i.test(value)
+    && /[0-9]/.test(value)) {
+    return 'address_number';
+  }
+  if (/(?:營業時間|营业时间|服務時間|開放時間|开放时间|時段|时段|場次|出發|返回|business\s*hours|opening\s*hours|open\s*time|service\s*hours|hours?)\s*[:：]?\s*(?:[0-9]{1,2}\s*[:：]?\s*[0-9]{0,2}\s*(?:-|~|至|到)\s*[0-9]{1,2}\s*[:：]?\s*[0-9]{0,2}|[0-9]{1,2}\s*(?:am|pm))/i.test(value)) {
+    return 'time_range';
+  }
+  if (/(?:日期|時間|營業時間|場次|出發|返回|date|time)\s*[:：]?/i.test(value)
+    || /(?:20[0-9]{2}|19[0-9]{2})[\/.-][0-9]{1,2}[\/.-][0-9]{1,2}/.test(value)
+    || /[0-9]{1,2}\s*[:：]\s*[0-9]{2}/.test(value)) {
+    return 'date_time';
+  }
+  if (/(?:發票|发票|收據|收据|單號|单号|訂單|订单|預約編號|预约编号|booking\s*id|reservation\s*(?:no|number|id)|invoice|receipt|order\s*(?:no|number|id)|no\.|#)\s*[:：#]?\s*[A-Z0-9\-]{4,}/i.test(value)) {
+    return 'booking_or_invoice_identifier';
+  }
+  if (/(?:押金|保證金|deposit|security deposit)/i.test(value)) {
+    return 'deposit_or_security';
+  }
+  if (/(?:訂金|預付|預收|prepay|prepaid|down payment)/i.test(value)) {
+    return 'prepayment';
+  }
+  if (/(?:服務費|服務料|稅|營業稅|tax|service charge|service fee|surcharge)/i.test(value)) {
+    return /%|％/.test(value) ? 'tax_or_fee_rate' : 'tax_or_fee_amount';
+  }
+  if (/(?:滿\s*(?:NT\$?|\$|[0-9])|達\s*(?:NT\$?|\$|[0-9])|[0-9]\s*(?:件|人|位|份|組|杯|個)\s*以上|免運|折扣|[0-9]\s*折|優惠|門檻|threshold|minimum|discount|free shipping)/i.test(value)) {
+    return 'discount_or_threshold_rule';
+  }
+  if (/(?:歲|年齡|幼兒|兒童|成人|child|adult|years? old)/i.test(value)) {
+    return 'age_range';
+  }
+  if (/(?:人|位|名|pax|people|persons?|capacity)/i.test(value) && !/(?:NT\$?|\$|元|圓|塊|TWD|USD)/i.test(value)) {
+    return 'capacity_or_quantity';
+  }
+  if (/(?:公里|里程|km|mile|分鐘|小時|hours?|mins?|minutes?)/i.test(value) && !/(?:NT\$?|\$|元|圓|塊|TWD|USD)/i.test(value)) {
+    return 'distance_or_duration';
+  }
+  if (/(?:NT\$?|\$|元|圓|塊|TWD|USD)\s*[0-9]|[0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]+)?\s*(?:元|圓|塊|TWD|USD)/i.test(value)) {
+    return 'currency_amount';
+  }
+  if (/[0-9]+(?:\.[0-9]+)?\s*(?:%|％)/.test(value)) {
+    return 'percentage_rate';
+  }
+  if (/[0-9]/.test(value)) {
+    return 'numeric_context';
+  }
+  return 'text_context';
+}
+
+function inferObservationBoundingZone(lineIndex, totalLines, detectedTypeHint) {
+  const index = Number(lineIndex);
+  const total = Number(totalLines);
+  if (['phone_number', 'date_time', 'time_range', 'address_number', 'tax_identifier', 'booking_or_invoice_identifier'].includes(detectedTypeHint) && index <= 2) {
+    return 'header_top';
+  }
+  if (['phone_number', 'date_time', 'time_range', 'address_number', 'tax_identifier', 'booking_or_invoice_identifier'].includes(detectedTypeHint) && Number.isFinite(total) && index >= Math.max(0, total - 3)) {
+    return 'footer_bottom';
+  }
+  if (['deposit_or_security', 'prepayment', 'tax_or_fee_rate', 'tax_or_fee_amount', 'discount_or_threshold_rule'].includes(detectedTypeHint)) {
+    return 'rules_or_notes';
+  }
+  if (['age_range', 'capacity_or_quantity', 'distance_or_duration', 'numeric_context'].includes(detectedTypeHint)) {
+    return 'context_column';
+  }
+  return 'body_table';
+}
+
+function buildAuditAnchor(observation, index = 0) {
+  return {
+    id: `anchor_${observation.id}_${index + 1}`,
+    anchorType: 'ocr_line',
+    sourceAssetId: observation.assetId || null,
+    sourceObservationId: observation.id,
+    boundingZone: observation.boundingZone || 'unknown',
+    bbox: observation.bbox || null,
+    detectedTypeHint: observation.detectedTypeHint || 'unknown',
+    auditAnchor: normalizeShortText(observation.normalizedText || observation.rawText || '', 160)
+  };
+}
+
+function normalizeAuditAnchors(anchors, fallbackObservation = null) {
+  const source = Array.isArray(anchors) ? anchors : [];
+  const normalized = source.map((anchor, index) => ({
+    id: normalizeShortText(anchor?.id || `anchor_${index + 1}`, 64),
+    anchorType: normalizeShortText(anchor?.anchorType || 'ocr_line', 32),
+    sourceAssetId: anchor?.sourceAssetId || fallbackObservation?.assetId || null,
+    sourceObservationId: anchor?.sourceObservationId || fallbackObservation?.id || null,
+    boundingZone: normalizeShortText(anchor?.boundingZone || fallbackObservation?.boundingZone || 'unknown', 40),
+    bbox: anchor?.bbox && typeof anchor.bbox === 'object' ? anchor.bbox : null,
+    detectedTypeHint: normalizeShortText(anchor?.detectedTypeHint || fallbackObservation?.detectedTypeHint || 'unknown', 48),
+    auditAnchor: normalizeShortText(anchor?.auditAnchor || fallbackObservation?.normalizedText || fallbackObservation?.rawText || '', 160)
+  })).filter((anchor) => anchor.auditAnchor || anchor.sourceObservationId || anchor.sourceAssetId);
+
+  if (normalized.length === 0 && fallbackObservation) {
+    normalized.push(buildAuditAnchor(fallbackObservation));
+  }
+  return normalized.slice(0, 6);
+}
+
+function makeReviewGate(id, reason, severity = 'warn', fields = [], resolvedByHost = false) {
+  return {
+    id,
+    severity: reviewGateSeverities.has(severity) ? severity : 'warn',
+    reason: normalizeShortText(reason, 180),
+    fields: Array.isArray(fields) ? fields.map((field) => normalizeShortText(field, 48)).filter(Boolean).slice(0, 8) : [],
+    resolvedByHost: Boolean(resolvedByHost)
+  };
+}
+
+function normalizeReviewGates(gates) {
+  return (Array.isArray(gates) ? gates : [])
+    .map((gate) => makeReviewGate(
+      gate?.id || 'review_gate',
+      gate?.reason || gate?.detail || 'Needs host review before release.',
+      gate?.severity || 'warn',
+      gate?.fields || [],
+      gate?.resolvedByHost
+    ))
+    .filter((gate) => gate.reason)
+    .slice(0, 8);
+}
+
+function buildObservationReviewGates(detectedTypeHint, text) {
+  const gates = [];
+  const value = String(text || '');
+  if (['phone_number', 'date_time', 'time_range', 'address_number', 'tax_identifier'].includes(detectedTypeHint)) {
+    gates.push(makeReviewGate(
+      'forbidden_context_number',
+      'Identifier, address, date, time, tax, or contact-like numbers must not become member prices.',
+      'block',
+      ['price', 'sourceNumberClass']
+    ));
+  }
+  if (detectedTypeHint === 'booking_or_invoice_identifier') {
+    gates.push(makeReviewGate(
+      'identifier_number_review',
+      'Booking, invoice, receipt, or order identifiers are context metadata and should not become member prices.',
+      'warn',
+      ['price', 'sourceNumberClass']
+    ));
+  }
+  if (['deposit_or_security', 'prepayment', 'tax_or_fee_rate', 'tax_or_fee_amount', 'discount_or_threshold_rule'].includes(detectedTypeHint)) {
+    const formulaGateId = /(?:未含|另計|另收|外加|加收|依人數|每人|每位|per\s*person|per\s*pax|split|allocate)/i.test(value)
+      ? 'unresolved_formula_requires_edit'
+      : 'complex_formula_or_rule_review';
+    gates.push(makeReviewGate(
+      formulaGateId,
+      'Deposits, prepayments, taxes, fees, discounts, and thresholds must route to host review before member release.',
+      'block',
+      ['priceRole', 'displaySurface']
+    ));
+  }
+  if (['age_range', 'capacity_or_quantity', 'distance_or_duration', 'percentage_rate', 'numeric_context'].includes(detectedTypeHint)
+    && !/(?:NT\$?|\$|元|圓|塊|TWD|USD)/i.test(value)) {
+    gates.push(makeReviewGate(
+      'non_price_number_review',
+      'The number looks like age, capacity, duration, distance, percentage, or context metadata instead of a selectable price.',
+      'warn',
+      ['sourceNumberClass']
+    ));
+  }
+  return gates;
+}
+
 function cleanLocalOcrName(value) {
   return String(value || '')
     .replace(/[.:：。]+$/g, '')
@@ -2326,6 +2791,672 @@ function classifyLocalOcrRuleLine(line) {
   }
 
   return null;
+}
+
+function hashBuffer(buffer) {
+  return Buffer.isBuffer(buffer)
+    ? createHash('sha256').update(buffer).digest('hex')
+    : '';
+}
+
+function normalizeDisplaySurface(value) {
+  const surface = String(value || '').trim();
+  return displaySurfaces.has(surface) ? surface : 'member_selectable';
+}
+
+function normalizeParserCandidateStatus(value) {
+  const status = String(value || '').trim();
+  return parserCandidateStatuses.has(status) ? status : 'pending';
+}
+
+function inferDisplaySurface(item = {}, taskType = '') {
+  const role = normalizePriceRole(item.priceRole, item, taskType);
+  const sourceClass = normalizeSourceNumberClass(item.sourceNumberClass, item);
+  const text = `${item.name || ''} ${item.sectionName || ''} ${item.note || ''} ${item.rawTextEvidence || ''}`.toLowerCase();
+  const tenderedPaymentText = /^(?:現金|刷卡|信用卡|找零)|(?:cash|change|credit\s*card)\b/i.test(text)
+    && !/現金價|cash\s*price/i.test(text);
+
+  if (taskType === 'parse_transport_share' && /起步價|每公里|夜間加成|過路費|停車費|base\s*fare|per\s*km|toll|parking|surcharge/i.test(text)) {
+    return 'host_rule_panel';
+  }
+  if (['aggregate_subtotal', 'aggregate_grand_total', 'subtotal_observation', 'grand_total_observation'].includes(role)
+    || ['receipt_total', 'payment_amount'].includes(sourceClass)
+    || /小計|總計|合計|實付|subtotal|grand\s*total/i.test(text)
+    || tenderedPaymentText) {
+    return 'audit_anchor';
+  }
+  if (['discount', 'discount_rate', 'discount_amount', 'tax_and_fee', 'tax_rate', 'tax_fixed_fee', 'service_rate', 'service_fixed_fee', 'shared_fixed_fee', 'deposit', 'prepayment_down', 'threshold_amount', 'points_value'].includes(role)) {
+    return 'host_rule_panel';
+  }
+  if (['percentage_rate', 'distance', 'duration', 'quantity', 'capacity', 'identifier', 'points'].includes(sourceClass)
+    && role !== 'line_item') {
+    return 'metadata_only';
+  }
+  if (role === 'non_price_context') {
+    return 'metadata_only';
+  }
+  return 'member_selectable';
+}
+
+function buildEvidenceAssetsFromImages(room, images = [], options = {}) {
+  return images.map((image, index) => {
+    const buffer = image?.buffer || null;
+    return {
+      id: `asset_${index + 1}`,
+      roomId: room.id,
+      kind: options.kind || 'uploaded_image',
+      mimeType: image?.mimeType || image?.mimetype || 'image/jpeg',
+      sha256: hashBuffer(buffer),
+      width: image?.width || image?.processedWidth || null,
+      height: image?.height || image?.processedHeight || null,
+      byteSize: Buffer.isBuffer(buffer) ? buffer.length : Number(image?.processedBytes || image?.originalBytes || 0),
+      sourceLabel: normalizeShortText(options.sourceLabel || `evidence image ${index + 1}`, 80),
+      storagePolicy: 'processed_room_evidence',
+      createdAt: nowIso()
+    };
+  });
+}
+
+function buildOcrObservationsFromText(room, localOcrText = '', evidenceAssets = [], source = 'user_pasted_text') {
+  const assetId = evidenceAssets[0]?.id || null;
+  const lines = splitLocalOcrLines(localOcrText);
+  return lines.map((line, index) => {
+    const normalizedText = normalizeShortText(line.replace(/\s+/g, ' ').trim(), 260);
+    const detectedTypeHint = detectOcrObservationType(normalizedText);
+    const observation = {
+      id: `ocr_${index + 1}`,
+      roomId: room.id,
+      assetId,
+      lineIndex: index,
+      rawText: normalizeShortText(line, 260),
+      normalizedText,
+      bbox: null,
+      boundingZone: inferObservationBoundingZone(index, lines.length, detectedTypeHint),
+      detectedTypeHint,
+      confidence: source === 'user_pasted_text' ? 0.72 : 0.86,
+      source,
+      auditAnchor: normalizedText,
+      auditAnchors: [],
+      reviewGates: buildObservationReviewGates(detectedTypeHint, normalizedText),
+      manualEdited: source === 'manual_edit',
+      createdAt: nowIso()
+    };
+    observation.auditAnchors = normalizeAuditAnchors([], observation);
+    return observation;
+  });
+}
+
+function findObservationsByIds(observationIds = [], observations = []) {
+  const idSet = new Set(Array.isArray(observationIds) ? observationIds : []);
+  return observations.filter((observation) => idSet.has(observation.id));
+}
+
+function mergeReviewGates(...gateGroups) {
+  const merged = [];
+  const seen = new Set();
+  for (const gate of gateGroups.flatMap((group) => Array.isArray(group) ? group : [])) {
+    const normalized = normalizeReviewGates([gate])[0];
+    if (!normalized || seen.has(normalized.id)) {
+      continue;
+    }
+    seen.add(normalized.id);
+    merged.push(normalized);
+  }
+  return merged.slice(0, 8);
+}
+
+function buildCandidateAuditAnchors(observationIds = [], observations = []) {
+  return findObservationsByIds(observationIds, observations)
+    .flatMap((observation) => normalizeAuditAnchors(observation.auditAnchors, observation))
+    .slice(0, 6);
+}
+
+function buildCandidateReviewGates(candidate, observations = []) {
+  const matchedObservations = findObservationsByIds(candidate?.sourceObservationIds, observations);
+  const gates = matchedObservations.flatMap((observation) => normalizeReviewGates(observation.reviewGates));
+  const fallbackEvidenceText = [
+    candidate?.rawTextEvidence,
+    candidate?.auditAnchor,
+    candidate?.label,
+    candidate?.name
+  ].filter(Boolean).join(' ');
+  if (fallbackEvidenceText) {
+    const fallbackDetectedType = detectOcrObservationType(fallbackEvidenceText);
+    gates.push(...buildObservationReviewGates(fallbackDetectedType, fallbackEvidenceText));
+  }
+  const priceRole = String(candidate?.priceRole || 'line_item');
+  const sourceNumberClass = String(candidate?.sourceNumberClass || 'unknown');
+  const displaySurface = String(candidate?.displaySurface || 'member_selectable');
+  const reviewFlags = Array.isArray(candidate?.reviewFlags) ? candidate.reviewFlags : [];
+  if (displaySurface !== 'member_selectable') {
+    gates.push(makeReviewGate(
+      'non_member_surface_requires_host_review',
+      'This candidate is a host rule, audit value, metadata, or review-only field and must not be released as a member option before host review.',
+      'block',
+      ['displaySurface', 'priceRole']
+    ));
+  }
+  if (priceRole !== 'line_item') {
+    gates.push(makeReviewGate(
+      'non_line_item_price_role_requires_review',
+      'The extracted number is not a normal line-item price and needs host confirmation.',
+      'block',
+      ['priceRole']
+    ));
+  }
+  if (sourceNumberClass !== 'currency_amount' && displaySurface === 'member_selectable') {
+    gates.push(makeReviewGate(
+      'member_item_non_currency_number_review',
+      'A member-visible item must be backed by a currency amount, not age, quantity, date, duration, distance, or identifier text.',
+      'block',
+      ['sourceNumberClass']
+    ));
+  }
+  if (reviewFlags.length > 0 || Number(candidate?.confidence || 1) < 0.82) {
+    gates.push(makeReviewGate(
+      'low_confidence_or_flagged_candidate_review',
+      'The parser marked this field as uncertain or low-confidence; host review is required before release.',
+      'warn',
+      ['confidence', 'reviewFlags']
+    ));
+  }
+  return mergeReviewGates(gates);
+}
+
+function resolveReviewGatesAfterHostDecision(gates, action = 'accept') {
+  if (!['accept', 'modify'].includes(action)) {
+    return normalizeReviewGates(gates);
+  }
+  return normalizeReviewGates(gates).map((gate) => {
+    if (action === 'accept' && structuralReviewGateIds.has(gate.id)) {
+      return gate;
+    }
+    if (gate.severity !== 'block') {
+      return gate;
+    }
+    return {
+      ...gate,
+      severity: 'warn',
+      resolvedByHost: true,
+      reason: normalizeShortText(`${gate.reason} Host reviewed this gate before member release.`, 180)
+    };
+  });
+}
+
+function getUnresolvedStructuralReviewGates(candidate) {
+  return normalizeReviewGates(candidate?.reviewGates)
+    .filter((gate) => gate.severity === 'block' && structuralReviewGateIds.has(gate.id) && !gate.resolvedByHost);
+}
+
+function findObservationIdsForEvidence(rawTextEvidence, observations = [], label = '') {
+  const evidence = String(rawTextEvidence || '').replace(/\s+/g, ' ').trim();
+  const normalizedLabel = String(label || '').replace(/\s+/g, ' ').trim();
+  if (!evidence && !normalizedLabel) {
+    return [];
+  }
+  const exact = observations.find((observation) => observation.normalizedText === evidence || observation.rawText === evidence);
+  if (exact) {
+    return [exact.id];
+  }
+  const partial = observations.find((observation) => {
+    const text = String(observation.normalizedText || observation.rawText || '');
+    return text.includes(evidence) || evidence.includes(text);
+  });
+  if (partial) {
+    return [partial.id];
+  }
+  const labelMatch = normalizedLabel
+    ? observations.find((observation) => String(observation.normalizedText || observation.rawText || '').includes(normalizedLabel))
+    : null;
+  return labelMatch ? [labelMatch.id] : [];
+}
+
+function extractFirstNumberFromText(text) {
+  const match = String(text || '').match(/([0-9]{1,3}(?:,[0-9]{3})+|[0-9]+(?:\.[0-9]+)?)/);
+  if (!match) {
+    return null;
+  }
+  const value = Number(String(match[1]).replace(/,/g, ''));
+  return Number.isFinite(value) ? value : null;
+}
+
+function inferRuleCandidateFromObservation(room, observation, options = {}) {
+  const text = String(observation?.normalizedText || observation?.rawText || '').replace(/\s+/g, ' ').trim();
+  if (!text) {
+    return null;
+  }
+
+  const amount = extractLocalOcrRuleAmount(text) ?? extractFirstNumberFromText(text);
+  const currencyAmounts = Array.from(text.matchAll(/(?:NT\$?\s*)?([0-9]{1,3}(?:,[0-9]{3})+|[0-9]+)\s*(?:元|圓|塊)?/gi))
+    .map((match) => Number(String(match[1] || '').replace(/,/g, '')))
+    .filter((value) => Number.isFinite(value));
+  const base = {
+    roomId: room.id,
+    scenarioContractId: options.scenarioContractId || room.parseQuality?.adaptiveConfidence?.featureProfile?.scenarioContract || null,
+    taskType: options.taskType || room.taskRouter?.taskType || room.menuType,
+    sourceAssetId: observation.assetId || null,
+    sourceObservationIds: [observation.id],
+    proposedItemId: null,
+    label: normalizeShortText(text.replace(/(?:NT\$?\s*)?[0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]+)?\s*(?:%|折|元|圓|塊)?/g, '').trim() || text, 80),
+    amount: Number.isFinite(amount) ? amount : 0,
+    currency: 'TWD',
+    quantity: 1,
+    unit: inferUnitFromText(text),
+    conditions: normalizeConditions([], text),
+    category: 'service',
+    optionGroups: [],
+    confidence: 0.82,
+    reviewFlags: ['review_required'],
+    boundingZone: observation.boundingZone || 'unknown',
+    detectedTypeHint: observation.detectedTypeHint || detectOcrObservationType(text),
+    auditAnchor: observation.auditAnchor || normalizeShortText(text, 160),
+    auditAnchors: normalizeAuditAnchors(observation.auditAnchors, observation),
+    reviewGates: normalizeReviewGates(observation.reviewGates),
+    rawTextEvidence: normalizeShortText(text, 260),
+    createdAt: nowIso(),
+    status: 'pending',
+    reviewedAt: null,
+    reviewedBy: null
+  };
+
+  const ruleHint = classifyLocalOcrRuleLine(text);
+  if (ruleHint?.type === 'free_shipping_threshold' || ruleHint?.type === 'minimum_threshold') {
+    return {
+      ...base,
+      label: normalizeShortText(ruleHint.text, 80),
+      amount: Number(ruleHint.amount || amount || 0),
+      priceRole: 'threshold_amount',
+      sourceNumberClass: 'currency_amount',
+      displaySurface: 'host_rule_panel'
+    };
+  }
+  if (ruleHint?.type === 'discount_rule') {
+    const discountAmount = currencyAmounts.length > 1
+      ? currencyAmounts[currencyAmounts.length - 1]
+      : Number(ruleHint.amount || amount || 0);
+    const isQuantityDiscount = /買\s*[0-9]+\s*送\s*[0-9]+|[0-9]+\s*for\s*[0-9]+/i.test(text);
+    return {
+      ...base,
+      label: normalizeShortText(ruleHint.text, 80),
+      amount: discountAmount,
+      priceRole: isQuantityDiscount ? 'discount' : /折/.test(text) && !/NT\$?|元|圓|塊/.test(text) ? 'discount_rate' : 'discount_amount',
+      sourceNumberClass: isQuantityDiscount ? 'quantity' : /%|折/.test(text) ? 'percentage_rate' : 'currency_amount',
+      displaySurface: 'host_rule_panel'
+    };
+  }
+  if (/服務費率|服務費\s*[0-9.]+\s*%|[0-9.]+\s*%\s*(?:服務費|服務料|加收)|service\s*(?:rate|charge)[^0-9]*[0-9.]+\s*%|[0-9.]+\s*%\s*service\s*(?:rate|charge|fee)/i.test(text)) {
+    return {
+      ...base,
+      priceRole: 'service_rate',
+      sourceNumberClass: 'percentage_rate',
+      displaySurface: 'host_rule_panel'
+    };
+  }
+  if (/營業稅|含稅|稅率|稅\s*[0-9.]+\s*%|[0-9.]+\s*%\s*(?:稅|營業稅)|tax[^0-9]*[0-9.]+\s*%|[0-9.]+\s*%\s*tax/i.test(text)) {
+    return {
+      ...base,
+      priceRole: 'tax_rate',
+      sourceNumberClass: 'percentage_rate',
+      displaySurface: /已含|included/i.test(text) ? 'audit_anchor' : 'host_rule_panel'
+    };
+  }
+  if (/押金|保證金|deposit|security\s*deposit/i.test(text)) {
+    return {
+      ...base,
+      priceRole: 'deposit',
+      sourceNumberClass: 'currency_amount',
+      displaySurface: 'host_rule_panel'
+    };
+  }
+  if (/訂金|預付|prepay|down\s*payment/i.test(text)) {
+    return {
+      ...base,
+      priceRole: 'prepayment_down',
+      sourceNumberClass: 'currency_amount',
+      displaySurface: 'host_rule_panel'
+    };
+  }
+  if (/小計|subtotal/i.test(text)) {
+    return {
+      ...base,
+      priceRole: 'subtotal_observation',
+      sourceNumberClass: 'receipt_total',
+      displaySurface: 'audit_anchor'
+    };
+  }
+  if (/總計|合計|實付|應付|grand\s*total|total/i.test(text)) {
+    return {
+      ...base,
+      priceRole: 'grand_total_observation',
+      sourceNumberClass: 'receipt_total',
+      displaySurface: 'audit_anchor'
+    };
+  }
+  if (/^(?:現金|刷卡|信用卡|找零)|(?:cash|change|credit\s*card)\b/i.test(text) && !/現金價|cash\s*price/i.test(text)) {
+    return {
+      ...base,
+      priceRole: 'non_price_context',
+      sourceNumberClass: 'payment_amount',
+      displaySurface: 'audit_anchor'
+    };
+  }
+  if (/行程約|距離|公里|km|mile/i.test(text) && !/(?:NT\$?|元|圓|塊)/i.test(text)) {
+    return {
+      ...base,
+      priceRole: 'non_price_context',
+      sourceNumberClass: 'distance',
+      displaySurface: 'metadata_only',
+      status: 'accepted',
+      reviewedAt: nowIso(),
+      reviewedBy: 'system_metadata_router'
+    };
+  }
+  if (/每梯次|限\s*[0-9]+\s*人|[0-9]+\s*人(?:以上|以下)?|capacity|pax/i.test(text) && !/(?:NT\$?|元|圓|塊)/i.test(text)) {
+    return {
+      ...base,
+      priceRole: 'non_price_context',
+      sourceNumberClass: 'capacity',
+      displaySurface: 'metadata_only',
+      status: 'accepted',
+      reviewedAt: nowIso(),
+      reviewedBy: 'system_metadata_router'
+    };
+  }
+  if (/點數|點|points?/i.test(text) && !/(?:NT\$?|元|圓|塊|cash\s*price)/i.test(text)) {
+    return {
+      ...base,
+      priceRole: 'points_value',
+      sourceNumberClass: 'points_value',
+      displaySurface: 'host_rule_panel'
+    };
+  }
+
+  return null;
+}
+
+function buildRuleCandidatesFromObservations(room, observations = [], existingCandidates = [], options = {}) {
+  const seen = new Set(existingCandidates.map((candidate) => `${candidate.priceRole}|${candidate.rawTextEvidence}`));
+  const candidates = [];
+  for (const observation of observations) {
+    const candidate = inferRuleCandidateFromObservation(room, observation, options);
+    if (!candidate) {
+      continue;
+    }
+    const key = `${candidate.priceRole}|${candidate.rawTextEvidence}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    const nextCandidate = {
+      ...candidate,
+      id: `candidate_${existingCandidates.length + candidates.length + 1}`
+    };
+    nextCandidate.reviewGates = mergeReviewGates(
+      nextCandidate.reviewGates,
+      buildCandidateReviewGates(nextCandidate, observations)
+    );
+    candidates.push(nextCandidate);
+  }
+  return candidates;
+}
+
+function buildParserCandidatesFromItems(room, items = [], observations = [], options = {}) {
+  const taskType = options.taskType || room.taskRouter?.taskType || room.menuType;
+  return (Array.isArray(items) ? items : []).map((item, index) => {
+    const priceRole = normalizePriceRole(item.priceRole, item, taskType);
+    const sourceNumberClass = normalizeSourceNumberClass(item.sourceNumberClass, item);
+    const displaySurface = inferDisplaySurface({
+      ...item,
+      priceRole,
+      sourceNumberClass
+    }, taskType);
+    const sourceObservationIds = findObservationIdsForEvidence(item.rawTextEvidence, observations, item.name);
+    const matchedObservations = findObservationsByIds(sourceObservationIds, observations);
+    const primaryObservation = matchedObservations[0] || null;
+    const auditAnchors = normalizeAuditAnchors(
+      Array.isArray(item.auditAnchors) ? item.auditAnchors : buildCandidateAuditAnchors(sourceObservationIds, observations),
+      primaryObservation
+    );
+    const candidateDraft = {
+      priceRole,
+      sourceNumberClass,
+      displaySurface,
+      sourceObservationIds,
+      reviewFlags: normalizeFlagList(item.reviewFlags, reviewFlagTypes, 12),
+      confidence: normalizeConfidence(item.confidence)
+    };
+    const reviewGates = mergeReviewGates(
+      item.reviewGates,
+      buildCandidateReviewGates(candidateDraft, observations)
+    );
+    return {
+      id: `candidate_${index + 1}`,
+      roomId: room.id,
+      scenarioContractId: options.scenarioContractId || room.parseQuality?.adaptiveConfidence?.featureProfile?.scenarioContract || null,
+      taskType,
+      sourceAssetId: observations.find((observation) => sourceObservationIds.includes(observation.id))?.assetId || null,
+      sourceObservationIds,
+      proposedItemId: item.id || null,
+      label: normalizeShortText(item.name, 80),
+      amount: Number(item.price || 0),
+      currency: normalizeShortText(item.currency || 'TWD', 12).toUpperCase() || 'TWD',
+      quantity: Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 1,
+      unit: normalizeShortText(item.unit || '', 24),
+      priceRole,
+      sourceNumberClass,
+      displaySurface,
+      conditions: Array.isArray(item.conditions) ? item.conditions : [],
+      category: item.category || 'other',
+      optionGroups: Array.isArray(item.optionGroups) ? item.optionGroups : [],
+      confidence: candidateDraft.confidence,
+      reviewFlags: candidateDraft.reviewFlags,
+      boundingZone: primaryObservation?.boundingZone || normalizeShortText(item.boundingZone || 'unknown', 40),
+      detectedTypeHint: primaryObservation?.detectedTypeHint || detectOcrObservationType(item.rawTextEvidence || item.name),
+      auditAnchor: primaryObservation?.auditAnchor || normalizeShortText(item.rawTextEvidence || item.name, 160),
+      auditAnchors,
+      reviewGates,
+      status: displaySurface === 'member_selectable' ? 'accepted' : 'pending',
+      rawTextEvidence: normalizeShortText(item.rawTextEvidence, 260),
+      createdAt: nowIso(),
+      reviewedAt: displaySurface === 'member_selectable' ? nowIso() : null,
+      reviewedBy: displaySurface === 'member_selectable' ? 'system_candidate_router' : null
+    };
+  });
+}
+
+function buildCalculationRulesFromCandidates(candidates = []) {
+  return candidates
+    .filter((candidate) => ['host_rule_panel', 'audit_anchor'].includes(candidate.displaySurface))
+    .map((candidate, index) => ({
+      id: `rule_${index + 1}`,
+      candidateId: candidate.id,
+      roomId: candidate.roomId,
+      ruleType: candidate.priceRole,
+      displaySurface: candidate.displaySurface,
+      targetScope: candidate.displaySurface === 'audit_anchor' ? 'audit_only' : 'room_total',
+      amount: candidate.amount,
+      currency: candidate.currency,
+      sourceNumberClass: candidate.sourceNumberClass,
+      sourceObservationIds: candidate.sourceObservationIds,
+      auditAnchors: normalizeAuditAnchors(candidate.auditAnchors),
+      reviewGates: normalizeReviewGates(candidate.reviewGates),
+      status: candidate.status,
+      reviewRequired: candidate.status !== 'accepted',
+      createdAt: candidate.createdAt
+    }));
+}
+
+function buildSelectableItemsFromCandidates(items = [], candidates = []) {
+  const selectableIds = new Set(candidates
+    .filter((candidate) => candidate.displaySurface === 'member_selectable' && ['accepted', 'modified'].includes(candidate.status))
+    .map((candidate) => candidate.proposedItemId)
+    .filter(Boolean));
+  return (Array.isArray(items) ? items : [])
+    .filter((item) => selectableIds.has(item.id))
+    .map((item) => {
+      const candidate = candidates.find((entry) => entry.proposedItemId === item.id);
+      return {
+        ...item,
+        parserCandidateId: candidate?.id || null,
+        displaySurface: 'member_selectable',
+        sourceAssetId: candidate?.sourceAssetId || null,
+        sourceObservationIds: candidate?.sourceObservationIds || [],
+        boundingZone: candidate?.boundingZone || item.boundingZone || 'unknown',
+        detectedTypeHint: candidate?.detectedTypeHint || item.detectedTypeHint || 'unknown',
+        auditAnchor: candidate?.auditAnchor || item.auditAnchor || item.rawTextEvidence || '',
+        auditAnchors: normalizeAuditAnchors(candidate?.auditAnchors || item.auditAnchors),
+        reviewGates: normalizeReviewGates(candidate?.reviewGates || item.reviewGates)
+      };
+    });
+}
+
+function applyEvidenceReviewLayers(room, parsedItems = [], options = {}) {
+  const evidenceAssets = buildEvidenceAssetsFromImages(room, options.images || room.menuImages || [], {
+    kind: options.evidenceKind || 'uploaded_image',
+    sourceLabel: options.sourceLabel || 'price evidence'
+  });
+  const ocrObservations = buildOcrObservationsFromText(room, options.localOcrText || '', evidenceAssets, options.ocrSource || 'user_pasted_text');
+  const itemCandidates = buildParserCandidatesFromItems(room, parsedItems, ocrObservations, {
+    taskType: options.taskType,
+    scenarioContractId: options.scenarioContractId
+  });
+  const ruleCandidates = buildRuleCandidatesFromObservations(room, ocrObservations, itemCandidates, {
+    taskType: options.taskType,
+    scenarioContractId: options.scenarioContractId
+  });
+  const parserCandidates = itemCandidates.concat(ruleCandidates);
+  const calculationRules = buildCalculationRulesFromCandidates(parserCandidates);
+  const selectableItems = buildSelectableItemsFromCandidates(parsedItems, itemCandidates);
+
+  room.evidenceAssets = evidenceAssets;
+  room.ocrObservations = ocrObservations;
+  room.parserCandidates = parserCandidates;
+  room.calculationRules = calculationRules;
+  room.reviewDecisions = Array.isArray(room.reviewDecisions) ? room.reviewDecisions : [];
+  room.settlementSnapshots = Array.isArray(room.settlementSnapshots) ? room.settlementSnapshots : [];
+  room.items = selectableItems;
+  return {
+    evidenceAssets,
+    ocrObservations,
+    parserCandidates,
+    calculationRules,
+    selectableItems
+  };
+}
+
+function getAntiPollutionBlocks(room) {
+  const blocks = [];
+  const candidates = Array.isArray(room?.parserCandidates) ? room.parserCandidates : [];
+  const rules = Array.isArray(room?.calculationRules) ? room.calculationRules : [];
+  const selectableItems = Array.isArray(room?.items) ? room.items : [];
+  const pendingCandidates = candidates.filter((candidate) => !['accepted', 'modified', 'rejected'].includes(normalizeParserCandidateStatus(candidate.status)));
+  if (pendingCandidates.length > 0) {
+    blocks.push({
+      id: 'pending_candidates_block_member_open',
+      severity: 'block',
+      detail: `${pendingCandidates.length} parser candidate(s) still need host review.`
+    });
+  }
+  const pollutedItems = selectableItems.filter((item) => inferDisplaySurface(item, room?.taskRouter?.taskType) !== 'member_selectable');
+  if (pollutedItems.length > 0) {
+    blocks.push({
+      id: 'rule_roles_not_member_selectable',
+      severity: 'block',
+      detail: `${pollutedItems.length} rule-like item(s) are still member selectable.`
+    });
+  }
+  const missingEvidenceItems = selectableItems.filter((item) => !item.sourceAssetId && (!Array.isArray(item.sourceObservationIds) || item.sourceObservationIds.length === 0));
+  if (missingEvidenceItems.length > 0) {
+    blocks.push({
+      id: 'member_items_require_evidence_pointer',
+      severity: 'block',
+      detail: `${missingEvidenceItems.length} selectable item(s) lack evidence pointers.`
+    });
+  }
+  const unreviewedRules = rules.filter((rule) => rule.reviewRequired || normalizeParserCandidateStatus(rule.status) === 'pending');
+  if (unreviewedRules.length > 0) {
+    blocks.push({
+      id: 'unreviewed_rules_block_member_open',
+      severity: 'block',
+      detail: `${unreviewedRules.length} rule/audit candidate(s) need host decision.`
+    });
+  }
+  const blockedReviewGateItems = selectableItems.filter((item) => {
+    return normalizeReviewGates(item.reviewGates).some((gate) => gate.severity === 'block');
+  });
+  if (blockedReviewGateItems.length > 0) {
+    blocks.push({
+      id: 'review_gate_blocks_member_open',
+      severity: 'block',
+      detail: `${blockedReviewGateItems.length} member item(s) still carry blocking review gates.`
+    });
+  }
+  return blocks.concat(getStructuralReviewBlocks(room));
+}
+
+function recordReviewDecision(room, input = {}) {
+  const decisions = Array.isArray(room.reviewDecisions) ? room.reviewDecisions : [];
+  const decision = {
+    id: `decision_${randomUUID().slice(0, 8)}`,
+    roomId: room.id,
+    candidateId: input.candidateId || null,
+    action: input.action || 'accept',
+    previousPayload: input.previousPayload || null,
+    nextPayload: input.nextPayload || null,
+    reviewerId: input.reviewerId || null,
+    reason: normalizeShortText(input.reason || '', 160),
+    createdAt: nowIso()
+  };
+  room.reviewDecisions = [decision, ...decisions].slice(0, 200);
+  return decision;
+}
+
+function acceptPendingParserCandidates(room, reviewerId, reason = 'host accepted evidence review draft') {
+  const now = nowIso();
+  let acceptedCount = 0;
+  room.parserCandidates = (Array.isArray(room.parserCandidates) ? room.parserCandidates : []).map((candidate) => {
+    if (normalizeParserCandidateStatus(candidate.status) !== 'pending') {
+      return candidate;
+    }
+    acceptedCount += 1;
+    const nextCandidate = {
+      ...candidate,
+      reviewGates: resolveReviewGatesAfterHostDecision(candidate.reviewGates, 'accept'),
+      status: 'accepted',
+      reviewedAt: now,
+      reviewedBy: reviewerId
+    };
+    recordReviewDecision(room, {
+      candidateId: candidate.id,
+      action: 'accept',
+      previousPayload: candidate,
+      nextPayload: nextCandidate,
+      reviewerId,
+      reason
+    });
+    return nextCandidate;
+  });
+  room.calculationRules = buildCalculationRulesFromCandidates(room.parserCandidates);
+  room.items = buildSelectableItemsFromCandidates(room.items, room.parserCandidates);
+  return acceptedCount;
+}
+
+function getStructuralReviewBlocks(room) {
+  const candidates = Array.isArray(room?.parserCandidates) ? room.parserCandidates : [];
+  return candidates
+    .map((candidate) => ({
+      candidate,
+      gates: getUnresolvedStructuralReviewGates(candidate)
+    }))
+    .filter((entry) => entry.gates.length > 0)
+    .map((entry) => ({
+      id: 'structural_review_gate_requires_edit_or_remove',
+      severity: 'block',
+      candidateId: entry.candidate.id || null,
+      label: entry.candidate.label || entry.candidate.name || '',
+      gateIds: entry.gates.map((gate) => gate.id),
+      detail: `${entry.candidate.label || entry.candidate.name || 'Candidate'} has structural review gates that require edit/remove before accept.`
+    }));
 }
 
 function inferLocalOcrMenuType(items) {
@@ -2527,7 +3658,7 @@ function buildRoomTaskRouter(input = {}) {
     conflictTaskType: hasTaskConflict ? inferredTaskType : null,
     riskPolicy: lowConfidence || ['ktv_room', 'sports_venue', 'ticket_activity', 'rental_share'].includes(taskType) ? 'conservative' : 'normal',
     reviewStatus: lowConfidence ? 'needs_human_review' : 'dry_run_generated',
-    fixedTaxonomyVersion: 'group-room-task-router.v1',
+    fixedTaxonomyVersion: 'adaptive-contract-task-router.v1',
     ...config
   };
 }
@@ -3429,7 +4560,10 @@ function normalizePriceRole(value, item = {}, taskType = '') {
   if (priceRoles.has(explicit)) {
     return explicit;
   }
-  const text = `${item?.name || ''} ${item?.sectionName || ''} ${item?.note || ''}`.toLowerCase();
+  const text = `${item?.name || ''} ${item?.sectionName || ''} ${item?.note || ''} ${item?.rawTextEvidence || ''}`.toLowerCase();
+  if (taskType === 'parse_transport_share' && /起步價|每公里|過路費|停車費|base\s*fare|per\s*km|toll|parking/i.test(text)) {
+    return 'shared_fixed_fee';
+  }
   if (/押金|保證金|deposit|security\s*deposit/.test(text)) {
     return 'deposit';
   }
@@ -3632,6 +4766,7 @@ function normalizeParsedItems(items, imageCount = 1, addonSection = null) {
     const conditions = normalizeConditions(item?.conditions, evidenceText);
     const reviewFlags = normalizeFlagList(item?.reviewFlags, reviewFlagTypes, 12);
     const confidence = normalizeConfidence(item?.confidence);
+    const detectedTypeHint = detectOcrObservationType(evidenceText);
     const rawOptionGroups = supportsDrinkOptions
       ? appendGlobalAddonGroup(item?.optionGroups, globalAddonGroup)
       : item?.optionGroups;
@@ -3656,6 +4791,11 @@ function normalizeParsedItems(items, imageCount = 1, addonSection = null) {
       reviewFlags,
       rawTextEvidence: evidenceText,
       confidence,
+      boundingZone: normalizeShortText(item?.boundingZone || inferObservationBoundingZone(0, 1, detectedTypeHint), 40),
+      detectedTypeHint: normalizeShortText(item?.detectedTypeHint || detectedTypeHint, 48),
+      auditAnchor: normalizeShortText(item?.auditAnchor || evidenceText, 160),
+      auditAnchors: normalizeAuditAnchors(item?.auditAnchors),
+      reviewGates: normalizeReviewGates(item?.reviewGates),
       supportsDrinkOptions,
       category,
       sectionName,
@@ -4003,6 +5143,38 @@ function buildFormulaContract(room) {
   };
 }
 
+function buildServiceBlueprintContract() {
+  return {
+    contractVersion: serviceBlueprintContractVersion,
+    externalName: 'ServiceBlueprint',
+    internalAlias: 'hostTask',
+    roomMode: 'single_direction_private_task_room',
+    hostRole: 'company_vendor_shop_provider_or_organizer',
+    receiverRole: 'select_host_provided_options_and_fill_required_fields',
+    evidencePolicy: 'sparse_evidence_candidate_first',
+    unknownFieldDecision: 'receiver_required_field_or_review_gate',
+    hostProvidedOptionRequired: true,
+    archetypes: [
+      'menu_unit_pricing',
+      'tiered_slot_booking',
+      'threshold_incentive',
+      'posthoc_audit_split'
+    ],
+    commercialFieldRoles: [
+      'SelectableItem',
+      'CalculationRule',
+      'AuditAnchor',
+      'Metadata',
+      'ForbiddenLeak',
+      'ProviderOnlyField',
+      'ReceiverRequiredField',
+      'AvailabilitySlot',
+      'ReviewGate'
+    ],
+    p0Rule: 'Sparse DM, menu, price-list, booking-form, receipt, or PDF evidence supports basic service tasks; missing details route to receiver input or review gates.'
+  };
+}
+
 function buildTrustLayerContract() {
   return {
     contractVersion: trustLayerContractVersion,
@@ -4113,6 +5285,7 @@ function buildWebMcpToolSurface(room) {
     activeRoomId: room?.id || null,
     readOnlyByDefault: true,
     proposalDraftCreationAllowed: true,
+    serviceBlueprintContract: buildServiceBlueprintContract(),
     finalStateMutationAllowed: false,
     parsedItemMutationAllowedForAgent: false,
     moneyCalculationAllowed: false,
@@ -4226,7 +5399,7 @@ function buildRoomFormulaSnapshot(room) {
     return counts;
   }, {});
   const audit = {
-    claimAuditVersion: 'group-room-claim-audit.v1',
+    claimAuditVersion: 'adaptive-contract-claim-audit.v1',
     sharedCandidateTotal,
     personalClaimTotal,
     claimedOrderCount,
@@ -4294,9 +5467,22 @@ function serializeRoom(room) {
     taskRouter: room.taskRouter || { ...defaultTaskRouter },
     taskRouterContract: buildTaskRouterContract(room),
     evidenceContract: buildEvidenceContract(room),
+    serviceBlueprintContract: buildServiceBlueprintContract(),
     webMcpToolSurface: buildWebMcpToolSurface(room),
     trustLayerContract: buildTrustLayerContract(),
     items: room.items,
+    evidenceAssets: Array.isArray(room.evidenceAssets) ? room.evidenceAssets : [],
+    ocrObservations: Array.isArray(room.ocrObservations) ? room.ocrObservations : [],
+    parserCandidates: Array.isArray(room.parserCandidates) ? room.parserCandidates : [],
+    calculationRules: Array.isArray(room.calculationRules) ? room.calculationRules : [],
+    reviewDecisions: Array.isArray(room.reviewDecisions) ? room.reviewDecisions : [],
+    settlementSnapshots: Array.isArray(room.settlementSnapshots) ? room.settlementSnapshots : [],
+    antiPollution: {
+      contractVersion: 'shared-room-anti-pollution-gate.v1',
+      blocks: getAntiPollutionBlocks(room),
+      parserWritesCandidatesFirst: true,
+      memberItemsRequireEvidencePointer: true
+    },
     menuImages: Array.isArray(room.menuImages)
       ? room.menuImages.map((image, index) => ({
         index,
@@ -4611,7 +5797,7 @@ function buildMenuParsePrompt(options = {}) {
     taskRouter
   });
   const promptLines = [
-    '你正在處理多人揪團消費的現場價格證據圖片，不限餐飲。',
+    '你正在處理 host 發起的私密任務房價格證據圖片，不限餐飲、票券、預約、租借或現場費用。',
     `任務判別模組已鎖定 taskType=${taskRouter.taskType || 'generic_split'}，thresholdKind=${taskRouter.thresholdKind || 'custom'}，splitMode=${taskRouter.splitMode || 'individual_items'}，riskPolicy=${taskRouter.riskPolicy || 'conservative'}。`,
     '你只能在這個任務邊界內修補 OCR 與欄位，不要把任務重新發散成其他產品；若圖片訊號與 taskType 衝突，請用 manual_review 與 note 標記，不要自行改任務。',
     '本次只會有一張圖片。每個項目的 sourceImageIndex 一律輸出 1。',
@@ -4620,7 +5806,7 @@ function buildMenuParsePrompt(options = {}) {
     '請只輸出可選擇、可分攤或可列入費用的項目與單價，不要把電話、地址、營業時間、分類標題、方案說明或廣告文案當成獨立項目。',
     '自由價格證據規則：圖片可能是餐飲菜單、飲料單、KTV 包廂價目表、運動場地費率、票券表、課程/活動報名表、器材租借表、低消/服務費公告、優惠券格、套餐卡片或混合圖。請以視覺邊界與價格欄關係建立項目，不要只依照逐行 OCR 文字。',
     '欄位收斂規則：category 只能輸出 main、side、snack、soup、dessert、drink、set、service、ticket、rental、venue、addon、other；sectionName 放圖片上的區塊標題；sizeLabel 只放該列固定份量、時段、人數或規格；temperature 只能輸出 冷、熱、常溫、冷熱皆可、未標示；spiceLevel 只能輸出 none、mild、medium、hot、extra_hot、unknown。',
-    '通用揪團欄位規則：KTV 包廂、運動場地、球場、泳道、包場輸出 category=venue；票券、門票、報名、活動、課程輸出 category=ticket；器材、球拍、鞋、裝備、麥克風租借輸出 category=rental；服務費、清潔費、低消、人頭費、計時費輸出 category=service；多人方案、包套、組合、共享方案輸出 category=set。',
+    '通用服務欄位規則：KTV 包廂、運動場地、球場、泳道、包場輸出 category=venue；票券、門票、報名、活動、課程輸出 category=ticket；器材、球拍、鞋、裝備、麥克風租借輸出 category=rental；服務費、清潔費、低消、人頭費、計時費輸出 category=service；多人方案、包套、組合、共享方案輸出 category=set。',
     '餐飲欄位規則：飯、麵、粥、便當、漢堡、吐司、蛋餅、咖哩、燴飯、披薩、主餐歸 category=main；湯/鍋/羹歸 soup；小菜/炸物/配菜歸 side 或 snack；甜點/冰品歸 dessert；多人餐、套餐、組合餐、優惠券格歸 set。',
     '餐廳規格規則：若有大/小、單人/雙人、乾/湯、飯/麵、加麵、加飯、升級套餐、換飲料、加蛋、加起司、加肉，請優先放在 optionGroups；若價格是固定商品差異，才拆成不同品項。',
     '飲料欄位規則：手搖、咖啡、茶、鮮奶、拿鐵、果汁、冰沙、氣泡飲歸 category=drink。咖啡因、無咖啡因、季節限定、招牌、熱賣、新品、甜度冰塊、冷熱、瓶裝、分享瓶、容量、加料都要收斂到 supportsDrinkOptions、temperature、tags、dietaryFlags、sizeLabel、optionGroups 或 note，不要塞進品名造成重複。',
@@ -4632,6 +5818,7 @@ function buildMenuParsePrompt(options = {}) {
     '模糊規則 4：「加料、加購、加價升級、免費升級、珍珠、波霸、椰果、仙草、布丁、蘆薈」這類加料或升級選項不是主品項，除非它在菜單上明確是可單點商品。',
     '模糊規則 5：優惠券、套餐、多人組合、包廂方案、場地方案、活動方案以可見邊界為一個項目；同一個邊界內的內容要合併寫在同一個 name，price 使用該邊界最醒目的價格。',
     '模糊規則 6：同一品項有不同冷熱、尺寸或規格造成不同價格時，若它是固定欄位或可選規格，請用 optionGroups；若它是完全不同商品，才拆成多列並把差異寫進 name。英文尺寸同義：S/Small/Short=小杯，M/Medium/Med/Regular/Reg=中杯，L/Large=大杯，XL/Extra Large/X-Large=特大杯，瓶=瓶裝。',
+    '複雜計費 hard-stop：稅率、服務費、押金、訂金、滿額門檻、滿件門檻、階梯折扣、運費分攤、人數門檻或需要公式的規則，不得輸出為 member_selectable line_item；請改用非 line_item 的 priceRole、reviewFlags 加 manual_review，並放入 host review / calculation rule 脈絡。',
     'price 必須是整數新台幣價格，不含 NT$、元、逗號或其他符號。',
     'supportsDrinkOptions 只給飲料店品項或可調甜度冰塊的飲品 true；一般餐點、便當、麵飯、小菜、甜點都給 false。',
     '若整張是飲料店菜單，所有飲料品項的 supportsDrinkOptions 應為 true。',
@@ -5016,6 +6203,8 @@ app.get('/healthz', (req, res) => {
     roomPersistDebounceMs,
     roomPersistJitterMs,
     evidenceContractVersion,
+    serviceBlueprintContractVersion,
+    serviceBlueprintArchetypes: buildServiceBlueprintContract().archetypes,
     trustLayerConfigured: Boolean(trustLayerSpreadsheetId),
     trustLayerContractVersion,
     webMcpToolSurfaceVersion,
@@ -5117,7 +6306,7 @@ app.post('/api/rooms/:roomId/agent-proposals', (req, res) => {
   });
 });
 
-app.post('/api/rooms/:roomId/sample', createRateLimitMiddleware('room_sample', roomCreateRateLimitMax), (req, res) => {
+app.post('/api/rooms/:roomId/sample', createRateLimitMiddleware('room_sample', roomCreateRateLimitMax), async (req, res) => {
   const room = getRoom(req.params.roomId);
   if (!room) {
     res.status(404).json({ error: 'Room not found. Create a new shared room first.' });
@@ -5138,23 +6327,36 @@ app.post('/api/rooms/:roomId/sample', createRateLimitMiddleware('room_sample', r
     return;
   }
 
-  const { proposal } = loadSampleRoom(room, {
-    participantId: requesterId,
-    displayName: req.body?.displayName || 'Demo Host'
-  });
-  const state = serializeRoom(room);
-  io.to(room.id).emit('roomState', state);
-  writeLog('info', 'sample_room_loaded', {
-    roomId: room.id,
-    proposalId: proposal.id,
-    itemCount: room.items.length,
-    taskType: room.taskRouter?.taskType || null
-  });
-  res.status(201).json({
-    ok: true,
-    proposal,
-    room: state
-  });
+  try {
+    const { proposal } = await loadSampleRoom(room, {
+      participantId: requesterId,
+      displayName: req.body?.displayName || 'Demo Host',
+      language: req.body?.language,
+      taskType: req.body?.taskType
+    });
+    const state = serializeRoom(room);
+    io.to(room.id).emit('roomState', state);
+    writeLog('info', 'sample_room_loaded', {
+      roomId: room.id,
+      proposalId: proposal.id,
+      itemCount: room.items.length,
+      taskType: room.taskRouter?.taskType || null,
+      sampleId: room.localOcr?.sampleId || null,
+      language: room.localOcr?.language || null,
+      contractId: room.localOcr?.contractId || null
+    });
+    res.status(201).json({
+      ok: true,
+      proposal,
+      room: state
+    });
+  } catch (error) {
+    writeLog('error', 'sample_room_load_failed', {
+      roomId: room.id,
+      error: error.message
+    });
+    res.status(500).json({ error: 'Failed to load a page-matched sample room.' });
+  }
 });
 
 app.post('/api/rooms/:roomId/menu', createRateLimitMiddleware('menu_parse', menuParseRateLimitMax), upload.single('menuImage'), async (req, res, next) => {
@@ -5181,7 +6383,6 @@ app.post('/api/rooms/:roomId/menu', createRateLimitMiddleware('menu_parse', menu
       localOcrText,
       taskType: requestedTaskType
     });
-    room.items = parsed.items;
     room.menuType = parsed.menuType;
     room.menuMode = 'auto';
     room.taskRouter = parsed.taskRouter || buildRoomTaskRouter({
@@ -5212,6 +6413,15 @@ app.post('/api/rooms/:roomId/menu', createRateLimitMiddleware('menu_parse', menu
     room.menuImageWidth = preparedImages[0].processedWidth;
     room.menuImageHeight = preparedImages[0].processedHeight;
     room.itemImageCache = new Map();
+    applyEvidenceReviewLayers(room, parsed.items, {
+      images: room.menuImages,
+      localOcrText,
+      taskType: room.taskRouter?.taskType || requestedTaskType,
+      scenarioContractId: room.parseQuality?.adaptiveConfidence?.featureProfile?.scenarioContract || null,
+      evidenceKind: 'uploaded_image',
+      sourceLabel: 'uploaded price evidence',
+      ocrSource: localOcrText ? 'user_pasted_text' : 'local_ocr'
+    });
     room.menuLoaded = true;
     room.itemsOpenForMembers = false;
     room.settled = false;
@@ -5594,6 +6804,19 @@ io.on('connection', (socket) => {
       ack?.({ ok: false, error: '沒有可開放的品項' });
       return;
     }
+    const antiPollutionBlocks = getAntiPollutionBlocks(room);
+    if (antiPollutionBlocks.length > 0) {
+      appendGuardrailMemoryEvent({
+        eventType: 'open_members_blocked',
+        roomId: room.id,
+        taskType: room.taskRouter?.taskType || null,
+        scenarioContract: room.parseQuality?.adaptiveConfidence?.featureProfile?.scenarioContract || null,
+        blockingReasons: antiPollutionBlocks.map((block) => block.id),
+        issueTypes: antiPollutionBlocks.map((block) => block.id)
+      });
+      ack?.({ ok: false, error: `資料仍有 ${antiPollutionBlocks.length} 個候選/規則未完成審核，請先處理後再開放給成員。` });
+      return;
+    }
     room.parseQuality = evaluateMenuParseQuality({
       items: room.items,
       menuType: room.menuType,
@@ -5707,6 +6930,31 @@ io.on('connection', (socket) => {
     item.spiceLevel = normalizeSpiceLevel(item.spiceLevel, nextName);
     item.tags = normalizeFlagList(item.tags, allowedItemTags, 8);
     item.note = normalizeShortText(item.note, 60);
+    item.reviewGates = resolveReviewGatesAfterHostDecision(item.reviewGates, 'modify');
+    const linkedCandidate = Array.isArray(room.parserCandidates)
+      ? room.parserCandidates.find((candidate) => candidate.proposedItemId === item.id || candidate.id === item.parserCandidateId)
+      : null;
+    if (linkedCandidate) {
+      const previousCandidate = { ...linkedCandidate };
+      linkedCandidate.label = item.name;
+      linkedCandidate.amount = item.price;
+      linkedCandidate.priceRole = item.priceRole;
+      linkedCandidate.sourceNumberClass = item.sourceNumberClass;
+      linkedCandidate.displaySurface = inferDisplaySurface(item, room.taskRouter?.taskType || room.menuType);
+      linkedCandidate.reviewGates = resolveReviewGatesAfterHostDecision(linkedCandidate.reviewGates, 'modify');
+      linkedCandidate.status = 'modified';
+      linkedCandidate.reviewedAt = nowIso();
+      linkedCandidate.reviewedBy = participantId;
+      recordReviewDecision(room, {
+        candidateId: linkedCandidate.id,
+        action: 'modify',
+        previousPayload: previousCandidate,
+        nextPayload: { ...linkedCandidate },
+        reviewerId: participantId,
+        reason: 'host edited parsed item before member open'
+      });
+      room.calculationRules = buildCalculationRulesFromCandidates(room.parserCandidates);
+    }
     room.parseQuality = evaluateMenuParseQuality({
       items: room.items,
       menuType: room.menuType,
@@ -5785,6 +7033,29 @@ io.on('connection', (socket) => {
     }
 
     room.items = room.items.filter((candidate) => candidate.id !== itemId);
+    if (Array.isArray(room.parserCandidates)) {
+      room.parserCandidates = room.parserCandidates.map((candidate) => {
+        if (candidate.proposedItemId !== itemId && candidate.id !== item.parserCandidateId) {
+          return candidate;
+        }
+        const nextCandidate = {
+          ...candidate,
+          status: 'rejected',
+          reviewedAt: nowIso(),
+          reviewedBy: participantId
+        };
+        recordReviewDecision(room, {
+          candidateId: candidate.id,
+          action: 'reject',
+          previousPayload: candidate,
+          nextPayload: nextCandidate,
+          reviewerId: participantId,
+          reason: 'host removed parsed item before member open'
+        });
+        return nextCandidate;
+      });
+      room.calculationRules = buildCalculationRulesFromCandidates(room.parserCandidates);
+    }
     room.parseQuality = evaluateMenuParseQuality({
       items: room.items,
       menuType: room.menuType,
@@ -5957,6 +7228,27 @@ io.on('connection', (socket) => {
       ack?.({ ok: false, error: 'AI 複查發現高風險解析問題，請先修正清單後再確認草稿。' });
       return;
     }
+    if (action === 'accept' && ['semantic_repair_draft', 'evidence_review', 'task_router_review'].includes(String(proposal.proposalType || ''))) {
+      const structuralBlocks = getStructuralReviewBlocks(room);
+      if (structuralBlocks.length > 0) {
+        appendGuardrailMemoryEvent({
+          eventType: 'proposal_accept_blocked',
+          roomId: room.id,
+          proposalId,
+          proposalType: proposal.proposalType || null,
+          taskType: room.taskRouter?.taskType || null,
+          scenarioContract: room.parseQuality?.adaptiveConfidence?.featureProfile?.scenarioContract || null,
+          blockingReasons: structuralBlocks.map((block) => block.id),
+          issueTypes: structuralBlocks.flatMap((block) => block.gateIds || [])
+        });
+        ack?.({ ok: false, error: '有結構性風險欄位必須先修改或移除，不能只按同意放行。' });
+        return;
+      }
+    }
+    let acceptedCandidateCount = 0;
+    if (action === 'accept' && ['semantic_repair_draft', 'evidence_review', 'task_router_review'].includes(String(proposal.proposalType || ''))) {
+      acceptedCandidateCount = acceptPendingParserCandidates(room, reviewerId, `proposal ${proposalId} accepted by host`);
+    }
 
     proposal.status = nextStatus;
     proposal.reviewedAt = nowIso();
@@ -5970,7 +7262,8 @@ io.on('connection', (socket) => {
       roomId: room.id,
       proposalId,
       status: nextStatus,
-      reviewedBy: reviewerId
+      reviewedBy: reviewerId,
+      acceptedCandidateCount
     });
     ack?.({ ok: true, room: state });
   });
@@ -5990,6 +7283,12 @@ io.on('connection', (socket) => {
     room.menuLoaded = false;
     room.itemsOpenForMembers = false;
     room.items = [];
+    room.evidenceAssets = [];
+    room.ocrObservations = [];
+    room.parserCandidates = [];
+    room.calculationRules = [];
+    room.reviewDecisions = [];
+    room.settlementSnapshots = [];
     room.menuType = 'general';
     room.menuMode = 'auto';
     room.taskRouter = { ...defaultTaskRouter };

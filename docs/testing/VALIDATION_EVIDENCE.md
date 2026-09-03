@@ -26,11 +26,13 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 | Single draft card regression | 60/60 passed | `logs/runtime/local-contract-stress-2026-09-01T11-24-48-624Z.md` local run | every case creates two same-type assistant drafts and verifies only the latest pending draft remains |
 | Same-card review flow | 20/20 passed | `logs/runtime/open-gate-stress-2026-09-01T11-22-05-897Z.md` local run | host review stays before member claiming; member and settlement boundaries still pass after the draft-card cleanup |
 | Final open-gate and export recheck | 20/20 passed | `logs/runtime/open-gate-stress-2026-09-01T12-05-44-080Z.md` local run | the official flow now also checks completed-room HTML and PDF exports after host settlement |
+| Pre-push HITL open-gate repair recheck | 20/20 passed | `/private/tmp/webmcp_open_gate_patch_check_v4/open-gate-stress-2026-09-03T07-35-47-266Z.md` local isolated run | the stress flow now accepts the pending review proposal before opening; anti-pollution pending candidates/rules still block direct open |
 | Final superseded-host open-gate and export recheck | 4/4 passed | `logs/runtime/open-gate-stress-2026-09-01T12-10-11-461Z.md` local run against a retired Zeabur URL | live service passed the same host-review, member-confirmation, settlement, HTML export, and PDF export flow |
 | Historical retired-host production low-rate flow | 5/5 passed | sequential production browser/API check summarized in `docs/decisions/2026Q2/DEVELOPMENT_LOG.md` | superseded historical evidence only; the retired host was removed before recording and the live demo now runs on Zeabur |
 | Current Zeabur production pre-recording flow | PASS | live browser/API check on 2026-09-02 against `https://shared-room-mcp-next.zeabur.app/` | `/healthz` reported `/data/rooms.json`; WebMCP inspect passed; finalized room HTML/PDF downloads passed; browser console errors and warnings were empty |
 | Same-tab room transition | 2/2 local and 2/2 production passed | isolated and low-rate production browser regressions summarized in `docs/decisions/2026Q2/DEVELOPMENT_LOG.md` | a loaded room can switch to a clean empty room, and a late update from the old room cannot overwrite the new room |
 | Final bilingual export repair | 4/4 local flows passed | isolated local run on 2026-09-02, summarized in the development log | Chinese and English flows finalized, HTML/PDF exports passed, and PDFs include separate readable Latin and CJK fonts |
+| Deterministic image-oracle integration benchmark | 115/115 passed | `/private/tmp/webmcp_image_matrix_full_oracle_text_v4/image-matrix-stress-2026-09-03T07-13-27-394Z.json` local isolated run | external PNG artifacts were verified by SHA-256 and matched scenario/language/contract/member-visible oracle expectations in `image-plus-oracle-text` mode; this is not a raw OCR accuracy benchmark |
 
 ## What This Means
 
@@ -45,6 +47,7 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 - Asynchronous responses and Socket.IO events are applied only when they still belong to the room shown in the URL.
 - The default JSON save layer is suitable for a single demo service and short write bursts, not production-scale traffic.
 - The recording runbook now fixes the human/agent handoff: the agent handles routine page actions, while the human performs the same-card two-click review, personal confirmation, owner finalization, and final downloads.
+- The image fixture runner now keeps large generated PNGs outside the main repository while preserving a checksum-backed oracle and quarantine output path.
 
 ## What This Does Not Claim
 
@@ -53,3 +56,4 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 - This is not a payment, booking, banking, or vendor-ordering system.
 - Exported records are local review summaries. They do not submit forms or change external systems.
 - Production deployments should add real authentication and replace the JSON save layer with Redis or PostgreSQL.
+- The 115/115 image fixture oracle result is not a Zeabur image-only OCR benchmark. It proves artifact integrity and oracle wiring; production OCR/provider quality still needs a separate low-rate `image-only` run.

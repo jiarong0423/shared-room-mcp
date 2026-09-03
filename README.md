@@ -1,24 +1,30 @@
 # Shared Room MCP
 
-Shared Room MCP is an open-source trust boundary layer for the agent-native web. It gives people and AI assistants one shared page where agents can prepare real-world work, while humans keep final authority over commitments.
+Powered by Adaptive Contract MCP.
+
+Shared Room MCP is the reference application for Adaptive Contract MCP, an open-source trust boundary layer for form-based async state rooms on the agent-native web. It is not a chatroom, messaging app, payment gateway, or auto-booking agent. A host creates a single-direction private task from evidence, the assistant prepares structured review drafts, and invited members only act on their own assigned or selected part.
 
 Live demo: https://shared-room-mcp-next.zeabur.app/
 
 The app is English-first for judging and demo review. A Chinese UI dictionary remains available for local use, but the default page language, initial HTML, README, and submission packet are English.
 
-Core claim: AI prepares the work. Humans approve the commitment. The assistant can read the room, spot missing details, and prepare structured drafts. The host and members still confirm what is true before any final action.
+Core claim: AI prepares the evidence review. Humans approve the commitment. The assistant can read the room, spot missing details, and prepare structured drafts. The host controls publication to members, and each member confirms only their own task/cost state.
 
 Language boundary: WebMCP tool names, schemas, descriptions, and JSON keys stay in English so the browser/sidebar agent receives a stable tool contract. User-provided evidence keeps its original language, so a Chinese group-buy post can still produce Chinese item names in the room.
 
-In the browser sidebar, the assistant uses WebMCP tools from the page itself. It can inspect the room and place draft suggestions on the page. It cannot finish a split, submit a booking, make a payment, approve regulated purchases, post publicly, or confirm for another person.
+In the browser sidebar, the assistant uses WebMCP tools from the page itself. Here WebMCP means a page-local state reader and draft generator, not a browser agent that clicks or submits final actions for the user. It inspects the private room state and places draft suggestions on the page for human review.
 
-The intended loop is WebMCP plus Codex, not a public write API. Codex can inspect the room, compare the price evidence against the current list, and create a field-fix draft when a price list is read incorrectly, for example when quantity, subtotal, size, or add-on notes are confused with item prices. That draft waits for host review. The app does not silently apply it, settle money, submit a booking, or sync an external platform.
+The intended loop is WebMCP plus Codex as a private task-review layer. Codex can inspect the room, compare the price evidence against the current list, and create a field-fix draft when a price list is read incorrectly, for example when quantity, subtotal, size, or add-on notes are confused with item prices. That draft waits for host review before the member-facing task list changes.
+
+The review layer uses Semantic Visual Anchors: each extracted field keeps its evidence snippet, logical image zone, detected type hint, and review-gate reason so the host can compare the candidate against the source context. Pixel-level crop and bounding-box overlays are reserved in the schema as a roadmap extension; they are not required for the current deterministic integration benchmark.
+
+Semantic Visual Anchor Notice: this system currently implements semantic visual anchoring with hierarchical logical zones (`boundingZone`) paired with contextual snippets (`auditAnchor`). Pixel-level spatial boxes (`bbox`) and crop overlays are reserved protocol fields for a future visual review overlay.
 
 ## Why This Fits WebMCP
 
-Many real-world commitments now start from messy web or social context: chat threads, creator posts, price images, service forms, booking pages, campaign notes, receipts, or copied text. These flows rarely have stable APIs or clean data. The user often has only a screenshot, a public post, a partial form, or a conversation.
+Many real-world commitments now start from messy evidence: creator posts, price images, service forms, booking pages, campaign notes, receipts, copied text, or screenshots. These flows rarely have stable APIs or clean data. The host often has only a screenshot, a public post, or a partial form.
 
-WebMCP is a good fit because the assistant can enter the same browser room as the user, read the current state through page tools, find missing confirmations, and prepare the next action without scraping the screen or taking over the final decision.
+WebMCP is a good fit because the assistant can enter the same private task room as the host, read the current state through page tools, find missing confirmations, and prepare the next review action from structured room state.
 
 ## How We Checked It
 
@@ -37,19 +43,22 @@ The full check summary is in [`docs/testing/VALIDATION_EVIDENCE.md`](docs/testin
 | Load Sample Room | 120/120 passed | sample data stays as a draft and does not settle, pay, or call outside services |
 | Current Zeabur production flow | PASS | hosted health, WebMCP, member-confirmation, finalized summary, and HTML/PDF export flow |
 | Same-tab room switch | 2/2 passed | a new room gets clean controls, and late updates from the old room are ignored |
+| Image oracle integration benchmark | 115/115 passed | deterministic image-plus-oracle-text contract test, not a raw OCR accuracy benchmark |
 
 These checks show that the assistant workflow is repeatable and no-key by default. They are not a claim of production-scale database capacity. The default JSON save layer is for a single demo service; production traffic should use Redis or PostgreSQL.
 
 ## Core Product Boundary
 
-This is not a vendor ordering app and does not require store integration. It is a shared action-preparation room where humans provide evidence, review structured drafts, confirm their own claims, and keep control of the final commitment.
+This is a single-direction task room. The host provides evidence and performs the Member-Visibility Release after review; members select or confirm only their own part; final commitment stays behind the host/member review gates.
+
+`Shared Room MCP` is the demo application and repository slug. `Adaptive Contract MCP` is the underlying contract, routing, prompt, guardrail, and HITL state-machine layer. The architecture name is used where the project discusses reusable scenario contracts, image-fixture oracles, enterprise submission gates, and anti-pollution review controls.
 
 AI provider keys are optional:
 
 - Pasted text and local rule-based parsing run first.
 - Gemini or OpenAI support is only an optional image/text repair example.
 - The core WebMCP workflow must work without any paid API key.
-- AI cannot decide who owes money, confirm for people, change the rules, settle disputes, or write payment data.
+- AI output remains evidence review, field repair, proposal drafting, and state guidance.
 - WebMCP is the primary agent integration; external model APIs are not required for the agent workflow.
 
 ## Open Source Tool-Layer Positioning
@@ -58,9 +67,9 @@ This repository is intended to be a clean, forkable WebMCP starter project. It d
 
 Deployment owners can keep the default no-key flow, remove the optional provider code, or replace it with their own OCR, vision, browser, commerce, spreadsheet, or private-community integrations. The stable part is the shared room workflow and the WebMCP tools, not any paid API.
 
-External developers should be able to fork the template and plug in their own integrations without asking for access to a central service. High-risk actions such as booking submission, payment, account access, claims, and settlement should stay behind explicit human confirmation.
+External developers should be able to fork the template and plug in their own integrations without asking for access to a central service. High-risk commitments stay behind explicit host/member confirmation.
 
-Reviewed rooms can export a local HTML or PDF review record. Exporting a record does not submit a form, call a payment provider, change Google Sheets, or write to an external service.
+Reviewed rooms can export a local HTML or PDF review record as evidence of the private room decision state.
 
 ## Future Extension Modules
 
@@ -68,18 +77,18 @@ The group cost room is the first reference use case, not the product boundary. T
 
 Core extension examples:
 
-- Activity signup draft: collect attendee names, ticket classes, dietary notes, and prepare a registration proposal.
+- Activity signup draft: collect attendee names, ticket classes, dietary notes, and prepare a registration task proposal.
 - Community purchase comparison: summarize options, threshold rules, and member interest before anyone pays.
 - Maintenance or warranty request draft: organize receipt text, product model, photos, and contact fields for human review.
-- Private community task coordination: turn chat decisions into tasks, owners, and review steps.
-- Shared booking draft: collect time slots, member availability, room/court/package options, and prepare a proposal before anyone confirms.
+- Private community task coordination: turn host-provided evidence into tasks, owners, and review steps.
+- Shared booking draft: collect time slots, member availability, room/court/package options, and prepare a booking task proposal.
 
 Possible future integrations:
 
-- Auto repair appointment draft: collect car model, symptoms, preferred time, shop notes, and create a booking proposal for the owner to confirm.
-- Nail, hair salon, clinic, or local service reservation draft: gather service type, preferred time, staff preference, notes, and prepare a click/form-fill proposal without submitting the appointment.
+- Auto repair appointment draft: collect car model, symptoms, preferred time, shop notes, and create a booking task proposal for the owner to confirm.
+- Nail, hair salon, clinic, or local service reservation draft: gather service type, preferred time, staff preference, notes, and prepare a reservation task proposal. Service details remain structured notes for the provider, not an in-room conversation channel.
 
-The hackathon demo should focus on the group room workflow. Booking and service examples are future fork ideas. In every extension, the assistant may inspect state and prepare drafts. The human keeps control over submission, payment, legal commitment, account access, and final confirmation.
+The hackathon demo should focus on the single-direction room workflow: host creates the task, assistant prepares evidence review, invited members act on their own rows, and final confirmation remains human-controlled.
 
 Repository slug: `shared-room-mcp`.
 
@@ -95,7 +104,7 @@ Potential integration categories:
 - Trust integrations for whitelist checks, short-lived invite validation, review logs, and organization policy checks.
 - Provider integrations for OCR, vision, translation, summarization, and field repair.
 
-This keeps the template useful for developers and safer for users: the project can support future business workflows while leaving payment, final booking submission, credit-card handling, and regulated financial commitments to the appropriate partner systems and explicit human confirmation.
+This keeps the template useful for developers and safer for users: the project can support future business workflows while keeping irreversible commitments in purpose-built partner systems and explicit human review gates.
 
 ## WebMCP Tools
 
@@ -111,33 +120,33 @@ Implemented tools:
 - `suggest_next_actions`
 - `create_action_proposal`
 
-The `suggest_next_actions` tool is the main way for the assistant to read the room and suggest what should happen next. It can point out missing reviews or confirmations. It cannot change the room and cannot invent new money values.
+The `suggest_next_actions` tool is the main way for the assistant to read the room and suggest what should happen next. It points out missing reviews, missing confirmations, and evidence/field mismatches from structured room state.
 
-The `create_action_proposal` tool only creates a draft for the host. Supported drafts include claim review, missing confirmation, evidence review, room type review, booking or service drafts, activity signup drafts, and field-fix drafts when Codex notices a reading mistake. The page keeps only one pending draft per draft type, so the host sees one clear card for one decision. The host presses the same card button to arm and confirm the review. Accepting a draft does not automatically change orders, claims, calculation rules, settlement, payment data, Google Sheets, bookings, or external systems.
+The `create_action_proposal` tool creates a host-reviewed draft. Supported drafts include claim review, missing confirmation, evidence review, room type review, activity signup drafts, and field-fix drafts when Codex notices a reading mistake. The page keeps only one pending draft per draft type, so the host sees one clear card for one decision. The host presses the same card button to arm and confirm the review before the room state changes.
 
 ## Safety Flow
 
-The UI uses plain language, and the code keeps the same order every time: AI prepares a draft, the host reviews the list, the host opens it to the group, members confirm their own costs, and only then can the host finalize the room summary. Later steps may stop and ask for review, but they cannot silently rewrite earlier decisions.
+The UI uses plain language, and the code keeps the same order every time: AI prepares a draft, the host reviews the list, the host opens it to invited members, members confirm their own costs, and only then can the host finalize the room summary. Later steps may stop and ask for review, while accepted human decisions remain explicit state transitions.
 
 | step | what happens | what is blocked |
 |---|---|---|
-| Assistant prepares | AI stores a draft for host review | AI cannot edit items, open the list, confirm claims, or settle |
-| Host reviews | Host fixes or removes parsed rows before group access | Members cannot choose items before the host opens the reviewed list |
+| Assistant prepares | AI stores a draft for host review | Draft remains pending until host review |
+| Host reviews | Host fixes or removes parsed rows before member access | Member list opens only after review |
 | Host opens | Host explicitly opens the reviewed list | Parsed item editing is locked after opening |
-| Members confirm | Each member confirms only their own costs | AI and host cannot confirm for someone else |
-| Host finalizes | Host finalizes after human confirmations | No payment, booking, external form submission, or card handling |
-| Optional integrations | Deployment owner may add OCR, Sheets, booking, or trust helpers | Core demo must not require paid keys or vendor lock-in |
+| Members confirm | Each member confirms only their own costs | Confirmation is scoped to the current member |
+| Host finalizes | Host finalizes after human confirmations | Export reads the reviewed room summary |
+| Optional integrations | Deployment owner may add OCR, Sheets, booking, or trust helpers | Core demo works with local-first parsing |
 
 The project has six fixed safety checks. Each check passes a limited result forward. Later checks may mark something for review, but they cannot silently rewrite earlier choices.
 
-| safety check | job | what it cannot do |
+| safety check | job | output boundary |
 |---|---|---|
-| Choose the room type | Selects or infers the scenario | AI cannot silently switch the room type |
-| Read the price evidence | Extracts item and price candidates from image or copied text | Price reading cannot calculate totals or assign cost owners |
-| Calculate locally | Calculates totals inside the app | Sheets, external AI, Notion, and screen scraping cannot become the calculator |
-| Repair unclear fields | Creates a review draft only when the input is unclear | AI cannot settle disputes, assign claims, or change calculation rules |
-| Check confirmations | Tracks shared items and extra personal claims | AI cannot confirm claims on behalf of humans |
-| Keep AI in draft mode | Exposes read tools plus draft creation | AI cannot finalize room state or write payment data |
+| Choose the room type | Selects or infers the scenario | Room type changes require review state |
+| Read the price evidence | Extracts item and price candidates from image or copied text | Parser output starts as candidate evidence |
+| Calculate locally | Calculates totals inside the app | Calculation remains in the room contract |
+| Repair unclear fields | Creates a review draft only when the input is unclear | Repairs move through host proposal state |
+| Check confirmations | Tracks shared items and extra personal claims | Confirmations are member-scoped |
+| Keep AI in draft mode | Exposes read tools plus draft creation | Agent output is proposal or state guidance |
 
 ## Supported Room Types
 
@@ -321,10 +330,11 @@ Local validation entrypoints:
 
 ```bash
 npm run verify:adaptive-contracts
+npm run build:image-fixture-manifest
 npm run regression:adaptive-parser -- --base-url http://127.0.0.1:4180 --repeat 5
 ```
 
-The matching design contract is in `config/enterprise-submit-gate.json`.
+The matching design contract is in `config/enterprise-submit-gate.json`. The image fixture manifest is a checksum-backed oracle for external image artifacts; the large PNG set can stay outside the main repository while the repo keeps the repeatable runner and expected contract.
 
 ## Fast Review Sample
 
@@ -378,9 +388,21 @@ The expensive endpoint is image/OCR parsing, not WebMCP inspection. The public d
 npm run check
 npm run audit:tasks
 npm run stress:contracts -- --base-url http://127.0.0.1:3000 --rounds 20 --concurrency 4 --output-dir logs/runtime
+npm run build:image-fixture-manifest
+npm run stress:image-matrix -- --base-url http://127.0.0.1:3000 --mode image-plus-oracle-text --output-dir logs/runtime/image-matrix
 ```
 
+For repeated local stress runs, start the local server with test-only rate limits so the test measures state-machine behavior instead of the public-demo throttle:
+
+```bash
+ROOM_CREATE_RATE_LIMIT_MAX=500 MENU_PARSE_RATE_LIMIT_MAX=500 API_RATE_LIMIT_MAX=1000 npm start
+```
+
+The hosted public demo should keep the lower public-demo limits shown above.
+
 The repeated room-flow check covers 20 non-duplicate Traditional Chinese and English scenarios, with 20 rounds per scenario. It checks room creation, local copied-text OCR parsing, stable room-type selection, draft creation, and the final human approval rule.
+
+The image-matrix runner is a deterministic contract-driven integration benchmark using 115 paired image-oracle artifacts. Each test verifies the image SHA-256, scenario id, language, contract id, archetype, expected member-visible items, rule counts, forbidden member-visible numbers, evidence pointers, and Semantic Visual Anchor fields. `image-plus-oracle-text` validates the HITL state transition and oracle chain without provider keys. It must not be described as raw OCR accuracy, zero-shot OCR accuracy, or unconstrained vision extraction accuracy; a production `image-only` run against Zeabur is a separate OCR/provider check and should use the runner's default slow pacing and quarantine output.
 
 Expected audit state:
 
@@ -389,7 +411,7 @@ Expected audit state:
 - local calculation rules ready
 - member confirmation checks ready
 - WebMCP tools ready
-- Google Sheets trust option ready
+- Google Sheets trust option design documented
 - submission local package ready
 
 ## Demo Script
@@ -425,12 +447,14 @@ The detailed timed runbook is in [`docs/submission/WEBMCP_SUBMISSION.md`](docs/s
 - No payment processing.
 - No raw device fingerprinting.
 - No raw OCR, images, raw device IDs, payment identifiers, or social account identifiers are written to Google Sheets.
-- Google Sheets is only a short-lived hash whitelist and audit-log trust layer.
+- Google Sheets is only a design-level short-lived hash whitelist and audit-log trust layer in this public core; production check/enroll/revoke adapters are roadmapped extensions.
 
 ## Known MVP Limits
 
 - Room data is saved to a local JSON file by default. On a hosted service, attach a volume and set `ROOM_STORE_PATH=/data/rooms.json`; otherwise a platform restart can still clear room state.
 - The current save layer is meant for one demo service instance. It smooths short write bursts by merging nearby changes and adding a small millisecond delay before saving, but a hard crash can still lose the latest tiny write window. Production traffic should move to Redis or PostgreSQL.
 - Room ownership is demo-grade. Production deployments should add signed sessions or a real login system.
-- OCR quality depends on image clarity.
-- Advanced rules such as shipping split, hourly venue fee, room minimum, deposit include/exclude, and tier discounts still require manual review before a production owner hardens them.
+- OCR quality depends on image clarity. If a live provider call times out or produces sparse evidence, the app should fall back to manual review instead of inventing missing fields.
+- Advanced rules such as shipping split, hourly venue fee, room minimum, deposit include/exclude, tax/service formulas, and tier discounts route to host review. The current MVP does not claim fully automated complex formula calculation.
+- Google Sheets trust-layer check/enroll/revoke adapters are design-level roadmap extensions, not production-ready identity infrastructure in this public core.
+- Pixel-level visual crop overlays are reserved in the schema roadmap. The current UI uses semantic anchors and contextual snippets.

@@ -490,6 +490,23 @@
       overflow-wrap: anywhere;
     }
 
+    .gate-review-hint {
+      display: none;
+      margin: 8px 0 12px;
+      border: 1px solid rgba(180, 83, 9, 0.24);
+      border-radius: 8px;
+      background: #fff7ed;
+      color: var(--warn);
+      padding: 9px 11px;
+      font-size: 12px;
+      line-height: 1.45;
+      white-space: pre-line;
+    }
+
+    .gate-review-hint[data-visible="true"] {
+      display: block;
+    }
+
     .proposal-panel {
       display: none;
       gap: 10px;
@@ -881,6 +898,44 @@
       color: var(--muted);
       overflow-wrap: anywhere;
       word-break: break-word;
+    }
+
+    .item-review-evidence-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 8px;
+    }
+
+    .item-review-anchor,
+    .item-review-gates {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+      border: 1px solid #eadfce;
+      border-radius: 8px;
+      background: rgba(255, 253, 249, 0.72);
+      padding: 7px;
+    }
+
+    .item-review-anchor-title {
+      color: var(--ink);
+      font-weight: 900;
+    }
+
+    .item-review-anchor-line,
+    .item-review-gate {
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .item-review-gate[data-severity="block"] {
+      color: #8d2f1e;
+      font-weight: 850;
+    }
+
+    .item-review-gate[data-severity="warn"] {
+      color: #7a4a0e;
+      font-weight: 800;
     }
 
     .menu-row-side {
@@ -1431,6 +1486,10 @@
         grid-template-columns: 1fr;
       }
 
+      .item-review-evidence-grid {
+        grid-template-columns: 1fr;
+      }
+
       .menu-item-block {
         grid-template-columns: 76px minmax(0, 1fr);
       }
@@ -1633,6 +1692,7 @@
               </div>
               <button class="button" id="openItemsButton" type="button" data-i18n="openToMembers">Open To Members</button>
             </div>
+            <div class="gate-review-hint" id="gateReviewHint"></div>
             <div class="menu-list" id="menuBody"></div>
             <div class="order-confirm-row">
               <span class="order-status" id="ownOrderStatus" data-i18n="noItemsSelected">No items selected</span>
@@ -1735,6 +1795,7 @@
       menuModeHint: document.getElementById('menuModeHint'),
       menuModeToggle: document.getElementById('menuModeToggle'),
       openItemsButton: document.getElementById('openItemsButton'),
+      gateReviewHint: document.getElementById('gateReviewHint'),
       menuBody: document.getElementById('menuBody'),
       ownOrderStatus: document.getElementById('ownOrderStatus'),
       confirmOrderButton: document.getElementById('confirmOrderButton'),
@@ -1988,6 +2049,10 @@
         sampleRoomLoadFailed: '載入示範房間失敗',
         sampleRoomNeedsEmpty: '此房間已有資料，請建立新房間再載入示範。',
         parseImageFailed: '圖片解析失敗',
+        parseImageTimeout: '圖片解析逾時，請改貼 OCR 文字或手動建立草稿後由發起者審核放行。',
+        rateLimited: '請求太頻繁，請稍後再試。',
+        retryAfterPrefix: '請等',
+        retryAfterSeconds: '秒後重試。',
         newRoomConfirm: '建立新房間會產生新的隨機連結，原房間連結不會清空。確定建立嗎？',
         newRoomCreated: '已建立新的隨機房間連結。',
         createRoomFailed: '建立新房間失敗',
@@ -2012,14 +2077,31 @@
         itemSourceClass: '來源類型',
         itemConfidence: '信心',
         itemEvidence: '來源',
+        itemAuditAnchor: '視覺錨點',
+        itemReviewGate: '審核阻擋',
+        itemBoundingZone: '圖面區域',
+        itemDetectedType: '偵測類型',
+        itemNoReviewGate: '沒有阻擋原因',
         itemReviewFlags: '疑點',
         priceRoleline_item: '可分攤品項',
+        priceRoleshared_fixed_fee: '共享固定費',
+        priceRoletax_rate: '稅率',
+        priceRoletax_fixed_fee: '固定稅費',
+        priceRoleservice_rate: '服務費率',
+        priceRoleservice_fixed_fee: '固定服務費',
+        priceRolediscount_rate: '折扣率',
+        priceRolediscount_amount: '折扣金額',
         priceRolediscount: '折扣',
         priceRoletax_and_fee: '稅費/服務費',
         priceRoledeposit: '押金',
         priceRoleprepayment_down: '訂金',
         priceRoleaggregate_subtotal: '小計',
         priceRoleaggregate_grand_total: '總計',
+        priceRolesubtotal_observation: '小計對帳',
+        priceRolegrand_total_observation: '總計對帳',
+        priceRolethreshold_amount: '門檻金額',
+        priceRolepoints_value: '點數價值',
+        priceRolenon_price_context: '非價格脈絡',
         sourceNumberClasscurrency_amount: '金額',
         sourceNumberClassage_range: '年齡',
         sourceNumberClassitinerary_index: '行程編號',
@@ -2043,6 +2125,9 @@
         reviewFlagpercentage_near_price: '百分比靠近價格',
         reviewFlagpoints_cash_confusion: '點數與現金可能混淆',
         reviewFlagreview_required: '需要人工複查',
+        antiPollutionGate: '候選分流',
+        parserCandidates: '候選',
+        calculationRules: '規則/對帳',
         removeItem: '移除',
         itemReviewSaved: '項目已修正。',
         itemRemoved: '項目已移除。',
@@ -2266,6 +2351,10 @@
         sampleRoomLoadFailed: 'Failed to load sample room',
         sampleRoomNeedsEmpty: 'This room already has data. Create a new room before loading the sample.',
         parseImageFailed: 'Failed to read the evidence photo',
+        parseImageTimeout: 'Image parsing timed out. Paste OCR text or create a manual draft for host review.',
+        rateLimited: 'Too many requests. Please try again later.',
+        retryAfterPrefix: 'Wait',
+        retryAfterSeconds: 'seconds and retry.',
         newRoomConfirm: 'Create a new random room link? The current room link will not be cleared.',
         newRoomCreated: 'New random room link created.',
         createRoomFailed: 'Failed to create a new room',
@@ -2290,14 +2379,31 @@
         itemSourceClass: 'Source Type',
         itemConfidence: 'Confidence',
         itemEvidence: 'Evidence',
+        itemAuditAnchor: 'Audit Anchor',
+        itemReviewGate: 'Review Gate',
+        itemBoundingZone: 'Image Zone',
+        itemDetectedType: 'Detected Type',
+        itemNoReviewGate: 'No blocking reason',
         itemReviewFlags: 'Flags',
         priceRoleline_item: 'billable item',
+        priceRoleshared_fixed_fee: 'shared fixed fee',
+        priceRoletax_rate: 'tax rate',
+        priceRoletax_fixed_fee: 'fixed tax',
+        priceRoleservice_rate: 'service rate',
+        priceRoleservice_fixed_fee: 'fixed service fee',
+        priceRolediscount_rate: 'discount rate',
+        priceRolediscount_amount: 'discount amount',
         priceRolediscount: 'discount',
         priceRoletax_and_fee: 'tax / fee',
         priceRoledeposit: 'deposit',
         priceRoleprepayment_down: 'down payment',
         priceRoleaggregate_subtotal: 'subtotal',
         priceRoleaggregate_grand_total: 'grand total',
+        priceRolesubtotal_observation: 'subtotal audit',
+        priceRolegrand_total_observation: 'grand total audit',
+        priceRolethreshold_amount: 'threshold amount',
+        priceRolepoints_value: 'points value',
+        priceRolenon_price_context: 'non-price context',
         sourceNumberClasscurrency_amount: 'money',
         sourceNumberClassage_range: 'age',
         sourceNumberClassitinerary_index: 'itinerary index',
@@ -2321,6 +2427,9 @@
         reviewFlagpercentage_near_price: 'percentage near price',
         reviewFlagpoints_cash_confusion: 'points/cash confusion',
         reviewFlagreview_required: 'human review required',
+        antiPollutionGate: 'candidate routing',
+        parserCandidates: 'candidates',
+        calculationRules: 'rules/audit',
         removeItem: 'Remove',
         itemReviewSaved: 'Item updated.',
         itemRemoved: 'Item removed.',
@@ -2692,13 +2801,24 @@
       }
     }
 
-    async function createRoom() {
-      const response = await fetch('/api/rooms', { method: 'POST' });
-      const data = await response.json();
+    async function readJsonResponse(response, fallbackMessage) {
+      const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(data.error || '建立房間失敗');
+        const retryAfterSeconds = Number(data?.retryAfterSeconds || response.headers.get('Retry-After') || 0);
+        if (response.status === 429) {
+          const waitHint = retryAfterSeconds > 0
+            ? ` ${t('retryAfterPrefix')} ${Math.ceil(retryAfterSeconds)} ${t('retryAfterSeconds')}`
+            : '';
+          throw new Error(`${data?.error || t('rateLimited')}${waitHint}`);
+        }
+        throw new Error(data?.error || fallbackMessage);
       }
       return data;
+    }
+
+    async function createRoom() {
+      const response = await fetch('/api/rooms', { method: 'POST' });
+      return readJsonResponse(response, t('createRoomFailed'));
     }
 
     function isSameRoomTarget(targetRoomId, room = null) {
@@ -2755,10 +2875,7 @@
         setMessage(t('roomMissingNew'), 'warn');
         return data;
       }
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || '讀取房間失敗');
-      }
+      const data = await readJsonResponse(response, '讀取房間失敗');
       return data;
     }
 
@@ -3013,6 +3130,7 @@
         taskRouter: currentRoom?.taskRouter || null,
         taskRouterContract: currentRoom?.taskRouterContract || null,
         evidenceContract: currentRoom?.evidenceContract || null,
+        serviceBlueprintContract: currentRoom?.serviceBlueprintContract || null,
         formulaContract: currentRoom?.formulaContract || null,
         formulaResults: currentRoom?.formulaResults || null,
         audit: currentRoom?.audit || null,
@@ -3154,7 +3272,16 @@
           participantId
         })
       });
-      const result = await response.json();
+      let result = null;
+      try {
+        result = await readJsonResponse(response, 'proposal_failed');
+      } catch (error) {
+        return JSON.stringify({
+          ok: false,
+          error: error.message || 'proposal_failed',
+          boundary: 'draft_only_pending_host_confirmation'
+        });
+      }
       const responseIsCurrent = isCurrentRoomTarget(targetRoomId, result?.room);
       if (result?.room && responseIsCurrent) {
         renderRoomForTarget(result.room, targetRoomId);
@@ -3199,24 +3326,25 @@
         {
           name: 'inspect_room',
           title: 'Inspect room',
-          description: 'Read the current shared room: selected purpose, totals, confirmations, price-reading quality, and current warnings. This tool never calculates money outside the app and never writes to Google Sheets.',
+          description: 'Read the current private task room: ServiceBlueprint boundary, selected purpose, totals, confirmations, price-reading quality, and current warnings.',
           inputSchema: emptyInputSchema,
           execute: async () => JSON.stringify(getWebMcpRoomSnapshot())
         },
         {
           name: 'get_task_router',
           title: 'Get room purpose',
-          description: 'Read the selected room purpose and whether the price evidence appears to match it. This is read-only and cannot change the room purpose.',
+          description: 'Read the selected room purpose and whether the sparse evidence appears to match the host-provided task boundary.',
           inputSchema: emptyInputSchema,
           execute: async () => JSON.stringify({
             taskRouter: currentRoom?.taskRouter || null,
-            taskRouterContract: currentRoom?.taskRouterContract || null
+            taskRouterContract: currentRoom?.taskRouterContract || null,
+            serviceBlueprintContract: currentRoom?.serviceBlueprintContract || null
           })
         },
         {
           name: 'get_claim_audit',
           title: 'Get confirmations',
-          description: 'Read who still needs to confirm their own costs. This is read-only and cannot assign people or finalize the room.',
+          description: 'Read which receivers still need to confirm their own selected or assigned rows.',
           inputSchema: emptyInputSchema,
           execute: async () => JSON.stringify({
             audit: currentRoom?.audit || null
@@ -3225,7 +3353,7 @@
         {
           name: 'get_formula_contract',
           title: 'Get local calculation rules',
-          description: 'Read the local calculation rules and current totals. Google Sheets, external AI, Notion, and screen scraping are not allowed to become the calculator.',
+          description: 'Read the local calculation rules and current totals produced by the room contract.',
           inputSchema: emptyInputSchema,
           execute: async () => JSON.stringify({
             formulaContract: currentRoom?.formulaContract || null,
@@ -3235,7 +3363,7 @@
         {
           name: 'get_trust_layer_contract',
           title: 'Get trust settings',
-          description: 'Read the optional trust settings for short-lived whitelist and review status. This tool never reads or writes payment data.',
+          description: 'Read the optional trust settings for short-lived whitelist and review status.',
           inputSchema: emptyInputSchema,
           execute: async () => JSON.stringify({
             trustLayerContract: currentRoom?.trustLayerContract || null,
@@ -3245,14 +3373,14 @@
         {
           name: 'suggest_next_actions',
           title: 'Suggest next actions',
-          description: 'Return read-only suggestions based on the room state, price-reading quality, selected purpose, local calculation rules, and confirmations. This tool cannot change the room and cannot invent new money values.',
+          description: 'Return state guidance based on ServiceBlueprint boundary, sparse evidence quality, selected purpose, local calculation rules, and confirmations.',
           inputSchema: emptyInputSchema,
           execute: async () => JSON.stringify(getAgentNextActions())
         },
         {
           name: 'create_action_proposal',
           title: 'Create host draft',
-          description: 'Create a draft for the room host to review. The draft waits for host confirmation and cannot change claims, calculation rules, settlement, payment, booking submission, Google Sheets, or external systems.',
+          description: 'Create a draft proposal for the room host to review before member-facing state changes.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -3398,6 +3526,11 @@
           return `<div>${escapeHtml(`${t('blockingReasons')} · ${reason.detail || reason.type || t('needsReview')}${target}`)}</div>`;
         }).join('')
         : '';
+      const antiPollution = room.antiPollution || {};
+      const antiBlocks = Array.isArray(antiPollution.blocks) ? antiPollution.blocks : [];
+      const antiRows = antiBlocks.slice(0, 4).map((block) => {
+        return `<div>${escapeHtml(`${t('antiPollutionGate')} · ${block.detail || block.id || t('needsReview')}`)}</div>`;
+      }).join('');
       const ruleHints = Array.isArray(localOcr?.ruleHints) ? localOcr.ruleHints : [];
       const ruleRows = ruleHints.slice(0, 4).map((rule) => {
         const sourceText = rule?.text ? `：${rule.text}` : '';
@@ -3440,6 +3573,9 @@
         : t('localOcrMissing');
       const ruleCount = Number(localOcr?.ruleLineCount || ruleHints.length || 0);
       const ruleText = ruleCount > 0 ? ` · ${t('rulesKeptSeparate')} ${ruleCount}` : '';
+      const candidateText = room.menuLoaded
+        ? ` · ${t('parserCandidates')} ${Array.isArray(room.parserCandidates) ? room.parserCandidates.length : 0} · ${t('calculationRules')} ${Array.isArray(room.calculationRules) ? room.calculationRules.length : 0}`
+        : '';
       const taskText = getTaskRouterText(room);
       const audit = room.audit || {};
       const auditText = Number(audit.claimLedgerCount || 0) === 0
@@ -3452,11 +3588,12 @@
       elements.qualityPanel.innerHTML = `
         <div class="quality-title">
           ${escapeHtml(getQualityStatusLabel(quality?.status))}
-          <span>${escapeHtml(`${taskText} · ${localOcrText} · ${auditText} · ${t('suspicious')} ${Number(quality?.issueCount || 0)} · ${t('optionGroups')} ${Number(quality?.optionGroupCount || 0)}${ruleText}`)}</span>
+          <span>${escapeHtml(`${taskText} · ${localOcrText} · ${auditText} · ${t('suspicious')} ${Number(quality?.issueCount || 0)} · ${t('optionGroups')} ${Number(quality?.optionGroupCount || 0)}${ruleText}${candidateText}`)}</span>
         </div>
         ${breakdownRows}
         ${arithmeticRows ? `<div class="quality-issues">${arithmeticRows}</div>` : ''}
         ${ruleRows ? `<div class="quality-issues">${ruleRows}</div>` : ''}
+        ${antiRows ? `<div class="quality-issues">${antiRows}</div>` : ''}
         ${blockingRows ? `<div class="quality-issues">${blockingRows}</div>` : ''}
         ${issueRows ? `<div class="quality-issues">${issueRows}</div>` : ''}
       `;
@@ -3482,12 +3619,24 @@
 
     const itemPriceRoleOptions = [
       'line_item',
+      'shared_fixed_fee',
+      'tax_rate',
+      'tax_fixed_fee',
+      'service_rate',
+      'service_fixed_fee',
+      'discount_rate',
+      'discount_amount',
       'discount',
       'tax_and_fee',
       'deposit',
       'prepayment_down',
       'aggregate_subtotal',
-      'aggregate_grand_total'
+      'aggregate_grand_total',
+      'subtotal_observation',
+      'grand_total_observation',
+      'threshold_amount',
+      'points_value',
+      'non_price_context'
     ];
 
     function getPriceRoleText(priceRole) {
@@ -3512,9 +3661,11 @@
       const role = String(item?.priceRole || 'line_item');
       const sourceClass = String(item?.sourceNumberClass || 'unknown');
       const flags = Array.isArray(item?.reviewFlags) ? item.reviewFlags : [];
+      const gates = Array.isArray(item?.reviewGates) ? item.reviewGates : [];
       return role !== 'line_item'
         || sourceClass !== 'currency_amount'
         || flags.length > 0
+        || gates.some((gate) => ['block', 'warn'].includes(String(gate?.severity || '')))
         || Number(item?.confidence || 1) < 0.82;
     }
 
@@ -3530,7 +3681,24 @@
       return Boolean(quality && (quality.status === 'review_required' || Number(quality.highIssueCount || 0) > 0));
     }
 
+    function hasAntiPollutionBlocks(room = currentRoom) {
+      return Array.isArray(room?.antiPollution?.blocks) && room.antiPollution.blocks.length > 0;
+    }
+
+    function getStructuralReviewBlocks(room = currentRoom) {
+      const blocks = Array.isArray(room?.antiPollution?.blocks) ? room.antiPollution.blocks : [];
+      return blocks.filter((block) => String(block?.id || '') === 'structural_review_gate_requires_edit_or_remove');
+    }
+
     function getBlockingReviewMessage(room = currentRoom) {
+      const antiBlocks = Array.isArray(room?.antiPollution?.blocks) ? room.antiPollution.blocks : [];
+      if (antiBlocks.length > 0) {
+        const details = antiBlocks.slice(0, 3)
+          .map((block) => block.detail || block.id || t('needsReview'))
+          .filter(Boolean)
+          .join('\n');
+        return `${t('aiReviewBlocksDraft')}\n${details}`;
+      }
       const quality = room?.parseQuality || null;
       const reasons = Array.isArray(quality?.blockingReasons) ? quality.blockingReasons : [];
       if (reasons.length === 0) {
@@ -3541,6 +3709,46 @@
         .filter(Boolean)
         .join('\n');
       return `${t('aiReviewBlocksDraft')}\n${details}`;
+    }
+
+    function renderItemAuditAnchors(item) {
+      const anchors = Array.isArray(item?.auditAnchors) ? item.auditAnchors.slice(0, 3) : [];
+      const fallbackAnchor = String(item?.auditAnchor || item?.rawTextEvidence || '').trim();
+      const zone = String(item?.boundingZone || anchors[0]?.boundingZone || 'unknown');
+      const detectedType = String(item?.detectedTypeHint || anchors[0]?.detectedTypeHint || 'unknown');
+      const anchorLines = anchors.length > 0
+        ? anchors.map((anchor) => {
+          const anchorText = String(anchor?.auditAnchor || '').trim();
+          const anchorZone = String(anchor?.boundingZone || zone || 'unknown');
+          const anchorType = String(anchor?.detectedTypeHint || detectedType || 'unknown');
+          return `<div class="item-review-anchor-line">${escapeHtml(`${anchorZone} · ${anchorType}${anchorText ? ` · ${anchorText}` : ''}`)}</div>`;
+        }).join('')
+        : (fallbackAnchor ? `<div class="item-review-anchor-line">${escapeHtml(fallbackAnchor)}</div>` : '');
+      return `
+        <div class="item-review-anchor">
+          <div class="item-review-anchor-title">${escapeHtml(t('itemAuditAnchor'))}</div>
+          <div class="item-review-anchor-line">${escapeHtml(`${t('itemBoundingZone')}: ${zone}`)}</div>
+          <div class="item-review-anchor-line">${escapeHtml(`${t('itemDetectedType')}: ${detectedType}`)}</div>
+          ${anchorLines}
+        </div>
+      `;
+    }
+
+    function renderItemReviewGates(item) {
+      const gates = Array.isArray(item?.reviewGates) ? item.reviewGates.slice(0, 4) : [];
+      const gateRows = gates.length > 0
+        ? gates.map((gate) => {
+          const severity = String(gate?.severity || 'warn');
+          const fields = Array.isArray(gate?.fields) && gate.fields.length > 0 ? ` [${gate.fields.join(', ')}]` : '';
+          return `<div class="item-review-gate" data-severity="${escapeHtml(severity)}">${escapeHtml(`${severity}: ${gate?.reason || gate?.id || ''}${fields}`)}</div>`;
+        }).join('')
+        : `<div class="item-review-gate">${escapeHtml(t('itemNoReviewGate'))}</div>`;
+      return `
+        <div class="item-review-gates">
+          <div class="item-review-anchor-title">${escapeHtml(t('itemReviewGate'))}</div>
+          ${gateRows}
+        </div>
+      `;
     }
 
     function proposalNeedsAiReviewGate(proposal) {
@@ -3585,14 +3793,15 @@
         const acceptArmed = owner && reviewAction === 'accept';
         const rejectArmed = owner && reviewAction === 'reject';
         const reviewStage = acceptArmed ? 'accept' : rejectArmed ? 'reject' : '';
-        const blockedByAiReview = isPending && proposalNeedsAiReviewGate(proposal) && hasBlockingParseQuality(room);
+        const structuralBlocks = getStructuralReviewBlocks(room);
+        const blockedByAiReview = isPending && proposalNeedsAiReviewGate(proposal) && (hasBlockingParseQuality(room) || structuralBlocks.length > 0);
         const acceptButtonClass = rejectArmed ? 'button secondary' : `button ${acceptArmed ? 'confirm-approval' : ''}`;
         const controls = isPending
           ? `
             <div class="proposal-actions">
               <button class="${escapeHtml(acceptButtonClass)}" type="button" data-proposal-action="accept" data-proposal-confirm="${acceptArmed ? 'true' : 'false'}" data-proposal-blocked="${blockedByAiReview ? 'true' : 'false'}" data-proposal-id="${escapeHtml(proposal.id)}" ${owner ? '' : 'disabled'}>${escapeHtml(t(acceptArmed ? 'confirmHumanApproval' : 'approveDraft'))}</button>
               <button class="button secondary ${rejectArmed ? 'confirm-reject' : ''}" type="button" data-proposal-action="reject" data-proposal-confirm="${rejectArmed ? 'true' : 'false'}" data-proposal-id="${escapeHtml(proposal.id)}" ${owner ? '' : 'disabled'}>${escapeHtml(t(rejectArmed ? 'confirmRejectDraft' : 'rejectDraft'))}</button>
-              ${blockedByAiReview ? `<span class="proposal-meta">${escapeHtml(t('aiReviewBlocksDraft'))}</span>` : ''}
+              ${blockedByAiReview ? `<span class="proposal-meta">${escapeHtml(structuralBlocks.length > 0 ? structuralBlocks[0].detail : t('aiReviewBlocksDraft'))}</span>` : ''}
               ${owner ? '' : `<span class="proposal-meta">${escapeHtml(t('ownerOnlyDraftReview'))}</span>`}
             </div>
           `
@@ -3677,11 +3886,13 @@
       });
       const owner = isOwner(room);
       const isOpen = Boolean(room.itemsOpenForMembers);
-      const blockedByAiReview = hasBlockingParseQuality(room);
+      const blockedByAiReview = hasBlockingParseQuality(room) || hasAntiPollutionBlocks(room);
       elements.openItemsButton.textContent = isOpen ? t('openedToMembers') : t('openToMembers');
       elements.openItemsButton.disabled = !owner || isOpen || room.settled || !Array.isArray(room.items) || room.items.length === 0 || blockedByAiReview;
       elements.openItemsButton.title = blockedByAiReview ? getBlockingReviewMessage(room) : '';
       elements.openItemsButton.dataset.tone = isOpen ? 'good' : 'warn';
+      elements.gateReviewHint.textContent = blockedByAiReview ? getBlockingReviewMessage(room) : '';
+      elements.gateReviewHint.dataset.visible = blockedByAiReview ? 'true' : 'false';
     }
 
     function renderSourceMenu(room) {
@@ -3838,6 +4049,8 @@
         ? reviewFlags.map((flag) => `<span class="item-review-pill" data-tone="${escapeHtml(getReviewFlagTone(flag))}">${escapeHtml(getReviewFlagText(flag))}</span>`).join('')
         : '';
       const confidenceText = confidence === null ? '' : `${t('itemConfidence')} ${Math.round(confidence * 100)}%`;
+      const anchorPanel = renderItemAuditAnchors(item);
+      const gatePanel = renderItemReviewGates(item);
       return `
         <div class="item-review-controls" aria-label="${escapeHtml(t('reviewParsedItems'))}">
           <label class="item-review-field">
@@ -3864,7 +4077,13 @@
               ${confidenceText ? `<span class="item-review-pill" data-tone="${confidence < 0.82 ? 'warn' : ''}">${escapeHtml(confidenceText)}</span>` : ''}
               ${flagRows}
             </div>
-            ${rawTextEvidence ? `<div class="item-review-evidence">${escapeHtml(`${t('itemEvidence')}: ${rawTextEvidence}`)}</div>` : ''}
+            <div class="item-review-evidence-grid">
+              <div>
+                ${rawTextEvidence ? `<div class="item-review-evidence">${escapeHtml(`${t('itemEvidence')}: ${rawTextEvidence}`)}</div>` : ''}
+                ${anchorPanel}
+              </div>
+              ${gatePanel}
+            </div>
           </div>
         </div>
       `;
@@ -4390,16 +4609,16 @@
 
       setUploading(true);
       setMessage('', 'warn');
+      const uploadController = new AbortController();
+      const uploadTimeout = window.setTimeout(() => uploadController.abort(), 15000);
 
       try {
         const response = await fetch(`/api/rooms/${encodeURIComponent(targetRoomId)}/menu`, {
           method: 'POST',
-          body: formData
+          body: formData,
+          signal: uploadController.signal
         });
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || t('parseImageFailed'));
-        }
+        const data = await readJsonResponse(response, t('parseImageFailed'));
         if (!isCurrentRoomTarget(targetRoomId, data)) {
           return;
         }
@@ -4407,9 +4626,11 @@
         renderRoomForTarget(data, targetRoomId);
       } catch (error) {
         if (isCurrentRoomTarget(targetRoomId)) {
-          setMessage(error.message, 'error');
+          const isTimeout = error && error.name === 'AbortError';
+          setMessage(isTimeout ? t('parseImageTimeout') : error.message, 'error');
         }
       } finally {
+        window.clearTimeout(uploadTimeout);
         if (String(targetRoomId) === String(roomId)) {
           setUploading(false);
         }
@@ -4450,13 +4671,12 @@
           },
           body: JSON.stringify({
             participantId,
-            displayName
+            displayName,
+            language: currentLanguage,
+            taskType: selectedTaskType
           })
         });
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || t('sampleRoomLoadFailed'));
-        }
+        const data = await readJsonResponse(response, t('sampleRoomLoadFailed'));
         if (!isCurrentRoomTarget(targetRoomId, data.room)) {
           return;
         }
@@ -4831,7 +5051,7 @@
       if (isSwitchingRoom || !currentRoom?.menuLoaded || !isOwner(currentRoom) || currentRoom.itemsOpenForMembers) {
         return;
       }
-      if (hasBlockingParseQuality(currentRoom)) {
+      if (hasBlockingParseQuality(currentRoom) || hasAntiPollutionBlocks(currentRoom)) {
         const message = getBlockingReviewMessage(currentRoom);
         window.alert(message);
         setMessage(message, 'error');

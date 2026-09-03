@@ -1,0 +1,135 @@
+{
+  "version": "shared-room-service-blueprint.v1",
+  "externalName": "ServiceBlueprint",
+  "internalAlias": "hostTask",
+  "boundary": {
+    "roomMode": "single_direction_private_task_room",
+    "hostRole": "company_vendor_shop_provider_or_organizer",
+    "receiverRole": "select_host_provided_options_and_fill_required_fields",
+    "evidencePolicy": "sparse_evidence_candidate_first",
+    "unknownFieldDecision": "receiver_required_field_or_review_gate",
+    "hostProvidedOptionRequired": true
+  },
+  "requiredTopLevelSections": [
+    "provider",
+    "serviceBlueprint",
+    "serviceOptions",
+    "availabilitySlots",
+    "pricingRules",
+    "receiverRequiredFields",
+    "providerOnlyFields",
+    "evidencePolicy",
+    "reviewGates",
+    "privacyPolicy",
+    "fixtures"
+  ],
+  "fieldRoles": [
+    "SelectableItem",
+    "CalculationRule",
+    "AuditAnchor",
+    "Metadata",
+    "ForbiddenLeak",
+    "ProviderOnlyField",
+    "ReceiverRequiredField",
+    "AvailabilitySlot",
+    "ReviewGate"
+  ],
+  "archetypes": [
+    {
+      "id": "menu_unit_pricing",
+      "priority": "P0",
+      "description": "Visible menu items, options, and simple unit/rule pricing from sparse DM or menu evidence.",
+      "scenarioContractIds": [
+        "menu_size_option_matrix",
+        "service_tax_fee_structure"
+      ],
+      "minimumSections": [
+        "provider",
+        "serviceOptions",
+        "pricingRules",
+        "receiverRequiredFields",
+        "reviewGates"
+      ],
+      "unknownFieldDecision": "review_gate"
+    },
+    {
+      "id": "tiered_slot_booking",
+      "priority": "P0_lite",
+      "description": "Visible package, ticket, room, rental, lodging, class, or activity tiers with basic receiver-filled date, quantity, or slot fields.",
+      "scenarioContractIds": [
+        "ticket_activity_matrix",
+        "venue_rate_matrix",
+        "rental_deposit_key_value",
+        "lodging_extra_person_rate",
+        "workshop_course_fee"
+      ],
+      "minimumSections": [
+        "provider",
+        "serviceOptions",
+        "availabilitySlots",
+        "pricingRules",
+        "receiverRequiredFields",
+        "reviewGates"
+      ],
+      "unknownFieldDecision": "receiver_required_field_or_review_gate"
+    },
+    {
+      "id": "threshold_incentive",
+      "priority": "P0",
+      "description": "Visible threshold, reward, discount, points, or incentive rules with explicit stacking review.",
+      "scenarioContractIds": [
+        "group_buy_threshold_policy",
+        "discount_voucher_policy",
+        "membership_points_value"
+      ],
+      "minimumSections": [
+        "provider",
+        "pricingRules",
+        "receiverRequiredFields",
+        "reviewGates",
+        "privacyPolicy"
+      ],
+      "unknownFieldDecision": "review_gate"
+    },
+    {
+      "id": "posthoc_audit_split",
+      "priority": "review_gate_first",
+      "description": "Receipt, bill, transport, or post-event evidence where totals and line items are audit-first and member-facing rows require explicit review.",
+      "scenarioContractIds": [
+        "receipt_ocr_summary",
+        "transport_rideshare_fee"
+      ],
+      "minimumSections": [
+        "provider",
+        "serviceOptions",
+        "pricingRules",
+        "evidencePolicy",
+        "reviewGates",
+        "privacyPolicy"
+      ],
+      "unknownFieldDecision": "review_gate"
+    }
+  ],
+  "sparseEvidenceRules": [
+    {
+      "id": "visible_options_only",
+      "severity": "block",
+      "description": "Selectable options must be visible in host-provided evidence or already declared in the ServiceBlueprint."
+    },
+    {
+      "id": "dm_missing_detail_routes_to_review",
+      "severity": "block",
+      "description": "Details absent from a DM, menu, price list, booking form, or receipt route to ReceiverRequiredField or ReviewGate."
+    },
+    {
+      "id": "provider_backend_detail_not_p0",
+      "severity": "warn",
+      "description": "Provider-only inventory, staff notes, passwords, private ids, or backend state stay out of P0 receiver-facing fields."
+    },
+    {
+      "id": "no_custom_consultation_from_sparse_evidence",
+      "severity": "block",
+      "description": "Sparse evidence supports basic service tasks and review gates, not custom consultation or generated service promises."
+    }
+  ]
+}

@@ -36,7 +36,7 @@ const expectedTaskTypes = [
 
 const expectedTaskRouterContractFields = [
   'taskRouterContract',
-  'group-room-task-router-contract.v1',
+  'adaptive-contract-task-router-contract.v1',
   'contractVersion',
   'supportedTaskTypes',
   'selectedTaskType',
@@ -72,8 +72,8 @@ const expectedFormulaModules = [
 
 const expectedFormulaContractFields = [
   'formulaContract',
-  'group-room-formula-contract.v1',
-  'group-room-formula.v1',
+  'adaptive-contract-formula-contract.v1',
+  'adaptive-contract-formula.v1',
   'formulaModuleContracts',
   'deterministicOnly',
   'activeModules',
@@ -93,7 +93,7 @@ const expectedFormulaContractFields = [
 
 const expectedEvidenceContractFields = [
   'evidenceContract',
-  'group-room-evidence-ocr-contract.v1',
+  'adaptive-contract-evidence-ocr-contract.v1',
   'evidenceLine',
   'localFirst',
   'localOcr',
@@ -163,9 +163,9 @@ const requiredWebMcpToolNames = [
   'document.modelContext',
   'registerTool',
   'webMcpToolSurface',
-  'group-room-webmcp-tools.v2',
+  'adaptive-contract-webmcp-tools.v2',
   'trustLayerContract',
-  'group-room-trust-layer-contract.v1',
+  'adaptive-contract-trust-layer-contract.v1',
   'check_whitelist',
   'enroll_device',
   'revoke_device'
@@ -298,10 +298,10 @@ function main() {
   const testingEvidence = hasAll(allSource, expectedTestingFields);
   const hasFormulaSnapshot = contents.server.includes('function buildRoomFormulaSnapshot')
     && contents.server.includes('formulaResults')
-    && contents.server.includes('group-room-formula.v1');
+    && contents.server.includes('adaptive-contract-formula.v1');
   const hasFormulaContract = [
     'formulaContract',
-    'group-room-formula-contract.v1',
+    'adaptive-contract-formula-contract.v1',
     'formulaModuleContracts',
     'deterministicOnly',
     'activeModules',

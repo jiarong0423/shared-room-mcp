@@ -104,8 +104,8 @@ function assertCondition(condition, message) {
 
 function summarizeItems(items) {
   return items.map((item) => ({
-    name: item.name,
-    price: item.price,
+    name: item.name || item.label,
+    price: item.price ?? item.amount,
     priceRole: item.priceRole,
     sourceNumberClass: item.sourceNumberClass,
     currency: item.currency,
@@ -116,12 +116,21 @@ function summarizeItems(items) {
     rawTextEvidence: item.rawTextEvidence,
     confidence: item.confidence,
     category: item.category,
-    optionGroups: item.optionGroups || []
+    displaySurface: item.displaySurface,
+    status: item.status,
+    sourceAssetId: item.sourceAssetId,
+    sourceObservationIds: item.sourceObservationIds || [],
+    optionGroups: item.optionGroups || [],
+    boundingZone: item.boundingZone || null,
+    detectedTypeHint: item.detectedTypeHint || null,
+    auditAnchor: item.auditAnchor || null,
+    auditAnchors: item.auditAnchors || [],
+    reviewGates: item.reviewGates || []
   }));
 }
 
 function assertExpectedPrices(scenario, items, expectedPrices) {
-  const prices = items.map((item) => Number(item.price)).sort((a, b) => a - b);
+  const prices = items.map((item) => Number(item.price ?? item.amount)).sort((a, b) => a - b);
   const expected = [...expectedPrices].sort((a, b) => a - b);
   assertCondition(JSON.stringify(prices) === JSON.stringify(expected), `${scenario.id} prices drifted: ${JSON.stringify(prices)}`);
 }
@@ -129,7 +138,7 @@ function assertExpectedPrices(scenario, items, expectedPrices) {
 function assertRequiredSizeItems(scenario, items, requiredSizeItems) {
   for (const requiredName of requiredSizeItems) {
     const item = items.find((candidate) => {
-      return new RegExp(`^${requiredName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i').test(String(candidate.name || ''));
+      return new RegExp(`^${requiredName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i').test(String(candidate.name || candidate.label || ''));
     });
     assertCondition(item, `${scenario.id} missing size item ${requiredName}`);
     assertCondition(
@@ -142,13 +151,13 @@ function assertRequiredSizeItems(scenario, items, requiredSizeItems) {
 function assertForbiddenNamePatterns(scenario, items, patterns) {
   for (const pattern of patterns) {
     const regexp = new RegExp(pattern, 'i');
-    assertCondition(!items.some((item) => regexp.test(String(item.name || ''))), `${scenario.id} forbidden name pattern leaked: ${pattern}`);
+    assertCondition(!items.some((item) => regexp.test(String(item.name || item.label || ''))), `${scenario.id} forbidden name pattern leaked: ${pattern}`);
   }
 }
 
 function assertExpectedPriceRoles(scenario, items, expectedRoles) {
   for (const [name, expectedRole] of Object.entries(expectedRoles || {})) {
-    const item = items.find((candidate) => String(candidate.name || '') === name);
+    const item = items.find((candidate) => String(candidate.name || candidate.label || '') === name);
     assertCondition(item, `${scenario.id} missing role assertion item: ${name}`);
     assertCondition(item.priceRole === expectedRole, `${scenario.id} ${name} role drifted: expected ${expectedRole}, got ${item.priceRole}`);
   }
@@ -157,14 +166,15 @@ function assertExpectedPriceRoles(scenario, items, expectedRoles) {
 function validateScenario(scenario, items) {
   const expect = scenario.expect && typeof scenario.expect === 'object' ? scenario.expect : {};
   for (const item of items) {
-    assertCondition(typeof item.priceRole === 'string' && item.priceRole.length > 0, `${scenario.id} item missing priceRole: ${item.name}`);
-    assertCondition(typeof item.sourceNumberClass === 'string' && item.sourceNumberClass.length > 0, `${scenario.id} item missing sourceNumberClass: ${item.name}`);
-    assertCondition(typeof item.currency === 'string' && item.currency.length > 0, `${scenario.id} item missing currency: ${item.name}`);
-    assertCondition(Number.isFinite(Number(item.quantity)) && Number(item.quantity) >= 1, `${scenario.id} item missing valid quantity: ${item.name}`);
-    assertCondition(Array.isArray(item.conditions), `${scenario.id} item conditions must be an array: ${item.name}`);
-    assertCondition(Array.isArray(item.reviewFlags), `${scenario.id} item reviewFlags must be an array: ${item.name}`);
-    assertCondition(typeof item.rawTextEvidence === 'string' && item.rawTextEvidence.length > 0, `${scenario.id} item missing rawTextEvidence: ${item.name}`);
-    assertCondition(Number.isFinite(Number(item.confidence)), `${scenario.id} item missing confidence: ${item.name}`);
+    const name = item.name || item.label;
+    assertCondition(typeof item.priceRole === 'string' && item.priceRole.length > 0, `${scenario.id} item missing priceRole: ${name}`);
+    assertCondition(typeof item.sourceNumberClass === 'string' && item.sourceNumberClass.length > 0, `${scenario.id} item missing sourceNumberClass: ${name}`);
+    assertCondition(typeof item.currency === 'string' && item.currency.length > 0, `${scenario.id} item missing currency: ${name}`);
+    assertCondition(Number.isFinite(Number(item.quantity || 1)) && Number(item.quantity || 1) >= 1, `${scenario.id} item missing valid quantity: ${name}`);
+    assertCondition(Array.isArray(item.conditions), `${scenario.id} item conditions must be an array: ${name}`);
+    assertCondition(Array.isArray(item.reviewFlags), `${scenario.id} item reviewFlags must be an array: ${name}`);
+    assertCondition(typeof item.rawTextEvidence === 'string' && item.rawTextEvidence.length > 0, `${scenario.id} item missing rawTextEvidence: ${name}`);
+    assertCondition(Number.isFinite(Number(item.confidence)), `${scenario.id} item missing confidence: ${name}`);
   }
   if (Number.isInteger(expect.itemCount)) {
     assertCondition(items.length === expect.itemCount, `${scenario.id} expected ${expect.itemCount} items, got ${items.length}`);
@@ -172,8 +182,8 @@ function validateScenario(scenario, items) {
   if (Number.isInteger(expect.itemCountAtLeast)) {
     assertCondition(items.length >= expect.itemCountAtLeast, `${scenario.id} expected at least ${expect.itemCountAtLeast} items, got ${items.length}`);
   }
-  if (Array.isArray(expect.prices)) {
-    assertExpectedPrices(scenario, items, expect.prices);
+  if (Array.isArray(expect.candidatePrices)) {
+    assertExpectedPrices(scenario, items, expect.candidatePrices);
   }
   if (expect.priceRoles && typeof expect.priceRoles === 'object') {
     assertExpectedPriceRoles(scenario, items, expect.priceRoles);
@@ -182,18 +192,107 @@ function validateScenario(scenario, items) {
     const allowed = new Set(expect.allCategories);
     assertCondition(items.every((item) => allowed.has(item.category)), `${scenario.id} produced category outside ${expect.allCategories.join(',')}`);
   }
-  if (Array.isArray(expect.forbiddenPrices) && expect.forbiddenPrices.length > 0) {
-    const forbidden = new Set(expect.forbiddenPrices.map((price) => Number(price)));
-    assertCondition(!items.some((item) => forbidden.has(Number(item.price))), `${scenario.id} non-price number leaked into price`);
+  if (Array.isArray(expect.forbiddenCandidatePrices) && expect.forbiddenCandidatePrices.length > 0) {
+    const forbidden = new Set(expect.forbiddenCandidatePrices.map((price) => Number(price)));
+    assertCondition(!items.some((item) => forbidden.has(Number(item.price ?? item.amount))), `${scenario.id} non-price number leaked into price`);
   }
   if (Array.isArray(expect.requiredSizeItems)) {
     assertRequiredSizeItems(scenario, items, expect.requiredSizeItems);
   }
-  if (Array.isArray(expect.forbiddenNamePatterns)) {
-    assertForbiddenNamePatterns(scenario, items, expect.forbiddenNamePatterns);
+  if (Array.isArray(expect.forbiddenCandidateNamePatterns)) {
+    assertForbiddenNamePatterns(scenario, items, expect.forbiddenCandidateNamePatterns);
   }
   if (Array.isArray(expect.forbiddenBaseItemPatterns)) {
     assertForbiddenNamePatterns(scenario, items, expect.forbiddenBaseItemPatterns);
+  }
+}
+
+function validateAntiPollutionState(scenario, state, candidates, memberItems) {
+  const expect = scenario.expect && typeof scenario.expect === 'object' ? scenario.expect : {};
+  const serviceBlueprint = state.serviceBlueprintContract && typeof state.serviceBlueprintContract === 'object'
+    ? state.serviceBlueprintContract
+    : null;
+  const forbiddenMemberRoles = new Set([
+    'shared_fixed_fee',
+    'tax_rate',
+    'tax_fixed_fee',
+    'service_rate',
+    'service_fixed_fee',
+    'discount_rate',
+    'discount_amount',
+    'discount',
+    'tax_and_fee',
+    'deposit',
+    'prepayment_down',
+    'aggregate_subtotal',
+    'aggregate_grand_total',
+    'subtotal_observation',
+    'grand_total_observation',
+    'threshold_amount',
+    'points_value',
+    'non_price_context'
+  ]);
+  assertCondition(Array.isArray(state.evidenceAssets), `${scenario.id} missing evidenceAssets`);
+  assertCondition(Array.isArray(state.ocrObservations), `${scenario.id} missing ocrObservations`);
+  assertCondition(Array.isArray(state.parserCandidates), `${scenario.id} missing parserCandidates`);
+  assertCondition(Array.isArray(state.calculationRules), `${scenario.id} missing calculationRules`);
+  assertCondition(serviceBlueprint?.contractVersion === 'shared-room-service-blueprint.v1', `${scenario.id} missing service blueprint contract`);
+  assertCondition(serviceBlueprint?.roomMode === 'single_direction_private_task_room', `${scenario.id} service blueprint room mode drifted`);
+  assertCondition(serviceBlueprint?.hostProvidedOptionRequired === true, `${scenario.id} service blueprint must require host-provided options`);
+  assertCondition(Array.isArray(serviceBlueprint?.archetypes) && serviceBlueprint.archetypes.includes(scenario.archetypeId), `${scenario.id} service blueprint does not expose archetype ${scenario.archetypeId}`);
+  assertCondition(state.evidenceAssets.length >= 1, `${scenario.id} expected at least one evidence asset`);
+  assertCondition(state.ocrObservations.length >= 1, `${scenario.id} expected OCR observations`);
+  for (const observation of state.ocrObservations) {
+    assertCondition(typeof observation.boundingZone === 'string' && observation.boundingZone.length > 0, `${scenario.id} OCR observation missing boundingZone`);
+    assertCondition(typeof observation.detectedTypeHint === 'string' && observation.detectedTypeHint.length > 0, `${scenario.id} OCR observation missing detectedTypeHint`);
+    assertCondition(typeof observation.auditAnchor === 'string', `${scenario.id} OCR observation missing auditAnchor`);
+    assertCondition(Array.isArray(observation.auditAnchors), `${scenario.id} OCR observation auditAnchors must be an array`);
+    assertCondition(Array.isArray(observation.reviewGates), `${scenario.id} OCR observation reviewGates must be an array`);
+  }
+  if (Number.isInteger(expect.memberItemCount)) {
+    assertCondition(memberItems.length === expect.memberItemCount, `${scenario.id} expected ${expect.memberItemCount} member items, got ${memberItems.length}`);
+  }
+  if (Number.isInteger(expect.memberItemCountAtLeast)) {
+    assertCondition(memberItems.length >= expect.memberItemCountAtLeast, `${scenario.id} expected at least ${expect.memberItemCountAtLeast} member items, got ${memberItems.length}`);
+  }
+  if (Number.isInteger(expect.calculationRuleCount)) {
+    assertCondition(state.calculationRules.length === expect.calculationRuleCount, `${scenario.id} expected ${expect.calculationRuleCount} calculation rules, got ${state.calculationRules.length}`);
+  }
+  if (Number.isInteger(expect.calculationRuleCountAtLeast)) {
+    assertCondition(state.calculationRules.length >= expect.calculationRuleCountAtLeast, `${scenario.id} expected at least ${expect.calculationRuleCountAtLeast} calculation rules, got ${state.calculationRules.length}`);
+  }
+  for (const candidate of candidates) {
+    assertCondition(typeof candidate.displaySurface === 'string' && candidate.displaySurface.length > 0, `${scenario.id} candidate missing displaySurface: ${candidate.label}`);
+    assertCondition(typeof candidate.status === 'string' && candidate.status.length > 0, `${scenario.id} candidate missing status: ${candidate.label}`);
+    assertCondition(Array.isArray(candidate.sourceObservationIds), `${scenario.id} candidate sourceObservationIds must be an array: ${candidate.label}`);
+    assertCondition(typeof candidate.boundingZone === 'string' && candidate.boundingZone.length > 0, `${scenario.id} candidate missing boundingZone: ${candidate.label}`);
+    assertCondition(typeof candidate.detectedTypeHint === 'string' && candidate.detectedTypeHint.length > 0, `${scenario.id} candidate missing detectedTypeHint: ${candidate.label}`);
+    assertCondition(typeof candidate.auditAnchor === 'string', `${scenario.id} candidate missing auditAnchor: ${candidate.label}`);
+    assertCondition(Array.isArray(candidate.auditAnchors), `${scenario.id} candidate auditAnchors must be an array: ${candidate.label}`);
+    assertCondition(Array.isArray(candidate.reviewGates), `${scenario.id} candidate reviewGates must be an array: ${candidate.label}`);
+  }
+  for (const item of memberItems) {
+    assertCondition(item.displaySurface === 'member_selectable', `${scenario.id} member item has invalid displaySurface: ${item.name}`);
+    assertCondition(typeof item.sourceAssetId === 'string' && item.sourceAssetId.length > 0, `${scenario.id} member item missing sourceAssetId: ${item.name}`);
+    assertCondition(Array.isArray(item.sourceObservationIds) && item.sourceObservationIds.length > 0, `${scenario.id} member item missing sourceObservationIds: ${item.name}`);
+    assertCondition(typeof item.boundingZone === 'string' && item.boundingZone.length > 0, `${scenario.id} member item missing boundingZone: ${item.name}`);
+    assertCondition(typeof item.detectedTypeHint === 'string' && item.detectedTypeHint.length > 0, `${scenario.id} member item missing detectedTypeHint: ${item.name}`);
+    assertCondition(Array.isArray(item.auditAnchors), `${scenario.id} member item auditAnchors must be an array: ${item.name}`);
+    assertCondition(Array.isArray(item.reviewGates), `${scenario.id} member item reviewGates must be an array: ${item.name}`);
+    assertCondition(!forbiddenMemberRoles.has(item.priceRole), `${scenario.id} rule-like role leaked into member item: ${item.name}`);
+  }
+  if (Array.isArray(expect.memberPrices)) {
+    assertExpectedPrices(scenario, memberItems, expect.memberPrices);
+  }
+  if (Array.isArray(expect.forbiddenMemberPrices) && expect.forbiddenMemberPrices.length > 0) {
+    const forbidden = new Set(expect.forbiddenMemberPrices.map((price) => Number(price)));
+    assertCondition(!memberItems.some((item) => forbidden.has(Number(item.price ?? item.amount))), `${scenario.id} forbidden rule/audit price leaked into member items`);
+  }
+  const forbiddenMemberNamePatterns = Array.isArray(expect.forbiddenMemberNamePatterns)
+    ? expect.forbiddenMemberNamePatterns
+    : Array.isArray(expect.forbiddenNamePatterns) ? expect.forbiddenNamePatterns : [];
+  if (forbiddenMemberNamePatterns.length > 0) {
+    assertForbiddenNamePatterns(scenario, memberItems, forbiddenMemberNamePatterns);
   }
 }
 
@@ -209,8 +308,10 @@ async function main() {
       if (!response.ok) {
         throw new Error(`${scenario.id} run ${run} failed in room ${roomId}: ${response.data?.error || `HTTP ${response.status}`}`);
       }
-      const items = Array.isArray(response.data?.items) ? response.data.items : [];
-      validateScenario(scenario, items);
+      const memberItems = Array.isArray(response.data?.items) ? response.data.items : [];
+      const candidates = Array.isArray(response.data?.parserCandidates) ? response.data.parserCandidates : memberItems;
+      validateScenario(scenario, candidates);
+      validateAntiPollutionState(scenario, response.data, candidates, memberItems);
       const scenarioStats = stability[scenario.id] || {
         id: scenario.id,
         runs: 0,
@@ -223,7 +324,7 @@ async function main() {
       scenarioStats.pass += 1;
       const status = response.data?.parseQuality?.status || 'unknown';
       const highIssueCount = String(response.data?.parseQuality?.highIssueCount || 0);
-      const itemCount = String(items.length);
+      const itemCount = String(candidates.length);
       scenarioStats.statuses[status] = (scenarioStats.statuses[status] || 0) + 1;
       scenarioStats.highIssueCounts[highIssueCount] = (scenarioStats.highIssueCounts[highIssueCount] || 0) + 1;
       scenarioStats.itemCounts[itemCount] = (scenarioStats.itemCounts[itemCount] || 0) + 1;
@@ -232,12 +333,17 @@ async function main() {
         id: scenario.id,
         run,
         roomId,
-        itemCount: items.length,
+        itemCount: candidates.length,
+        memberItemCount: memberItems.length,
+        calculationRuleCount: Array.isArray(response.data?.calculationRules) ? response.data.calculationRules.length : 0,
         parseStatus: status,
         highIssueCount: response.data?.parseQuality?.highIssueCount || 0,
         confidenceScore: response.data?.parseQuality?.adaptiveConfidence?.score ?? null,
         scenarioContract: response.data?.parseQuality?.adaptiveConfidence?.featureProfile?.scenarioContract || null,
-        items: summarizeItems(items)
+        archetypeId: scenario.archetypeId,
+        serviceBlueprint: response.data?.serviceBlueprintContract?.contractVersion || null,
+        candidates: summarizeItems(candidates),
+        memberItems: summarizeItems(memberItems)
       });
     }
   }

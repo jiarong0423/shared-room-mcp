@@ -5,6 +5,7 @@
       "id": "zh-ticket-age-itinerary",
       "language": "zh-TW",
       "contractId": "ticket_activity_matrix",
+      "archetypeId": "tiered_slot_booking",
       "taskType": "ticket_activity",
       "textLines": [
         "非凡旅遊 一日遊票價表",
@@ -23,6 +24,9 @@
       ],
       "expect": {
         "itemCount": 10,
+        "memberItemCount": 10,
+        "calculationRuleCount": 0,
+        "memberPrices": [150, 200, 470, 655, 830, 1170, 1300, 1470, 1800, 1830],
         "prices": [150, 200, 470, 655, 830, 1170, 1300, 1470, 1800, 1830],
         "allCategories": ["ticket"],
         "forbiddenPrices": [0, 1, 2, 6],
@@ -34,6 +38,7 @@
       "id": "en-drink-size-options",
       "language": "en",
       "contractId": "menu_size_option_matrix",
+      "archetypeId": "menu_unit_pricing",
       "taskType": "drink_order",
       "textLines": [
         "Coffee Stand",
@@ -45,6 +50,9 @@
       ],
       "expect": {
         "itemCountAtLeast": 3,
+        "memberItemCountAtLeast": 3,
+        "calculationRuleCount": 0,
+        "memberPrices": [70, 80, 90],
         "priceRoles": {
           "Latte": "line_item",
           "Americano": "line_item",
@@ -59,6 +67,7 @@
       "id": "zh-ktv-room-hours",
       "language": "zh-TW",
       "contractId": "venue_rate_matrix",
+      "archetypeId": "tiered_slot_booking",
       "taskType": "ktv_room",
       "textLines": [
         "KTV 包廂價目表",
@@ -70,19 +79,24 @@
       ],
       "expect": {
         "itemCount": 5,
+        "memberItemCount": 4,
+        "calculationRuleCount": 1,
+        "memberPrices": [600, 900, 900, 1200],
         "prices": [300, 600, 900, 900, 1200],
         "priceRoles": {
           "清潔費": "tax_and_fee"
         },
         "allCategories": ["venue", "service"],
         "forbiddenPrices": [4, 8],
-        "forbiddenNamePatterns": []
+        "forbiddenMemberPrices": [300],
+        "forbiddenNamePatterns": ["清潔費"]
       }
     },
     {
       "id": "zh-rental-deposit",
       "language": "zh-TW",
       "contractId": "rental_deposit_key_value",
+      "archetypeId": "tiered_slot_booking",
       "taskType": "rental_share",
       "textLines": [
         "露營器材租借表",
@@ -94,19 +108,24 @@
       ],
       "expect": {
         "itemCount": 5,
+        "memberItemCount": 4,
+        "calculationRuleCount": 1,
+        "memberPrices": [100, 120, 150, 800],
         "prices": [100, 120, 150, 800, 2000],
         "priceRoles": {
           "雙人帳篷押金": "deposit"
         },
         "allCategories": ["rental", "service"],
         "forbiddenPrices": [1],
-        "forbiddenNamePatterns": []
+        "forbiddenMemberPrices": [2000],
+        "forbiddenNamePatterns": ["押金"]
       }
     },
     {
       "id": "zh-group-buy-threshold",
       "language": "zh-TW",
       "contractId": "group_buy_threshold_policy",
+      "archetypeId": "threshold_incentive",
       "taskType": "group_buy",
       "textLines": [
         "手工餅乾團購",
@@ -117,9 +136,13 @@
         "禮盒組 NT$ 520 / 組"
       ],
       "expect": {
-        "itemCount": 4,
+        "itemCount": 5,
+        "memberItemCount": 4,
+        "calculationRuleCount": 1,
+        "memberPrices": [180, 220, 260, 520],
         "prices": [180, 220, 260, 520],
         "forbiddenPrices": [1200],
+        "forbiddenMemberPrices": [1200],
         "forbiddenNamePatterns": ["免運", "滿"]
       }
     },
@@ -127,6 +150,7 @@
       "id": "zh-service-tax-fee",
       "language": "zh-TW",
       "contractId": "service_tax_fee_structure",
+      "archetypeId": "menu_unit_pricing",
       "taskType": "extract_fee_structure",
       "textLines": [
         "餐廳內用費用",
@@ -137,19 +161,24 @@
         "營業稅已含 5%"
       ],
       "expect": {
-        "itemCount": 3,
+        "itemCount": 5,
+        "memberItemCount": 2,
+        "calculationRuleCount": 3,
+        "memberPrices": [260, 300],
         "prices": [56, 260, 300],
         "priceRoles": {
           "服務費": "tax_and_fee"
         },
         "forbiddenPrices": [5, 10],
-        "forbiddenNamePatterns": ["服務費率", "營業稅已含"]
+        "forbiddenMemberPrices": [5, 10, 56],
+        "forbiddenNamePatterns": ["服務費", "服務費率", "營業稅已含"]
       }
     },
     {
       "id": "zh-discount-voucher-policy",
       "language": "zh-TW",
       "contractId": "discount_voucher_policy",
+      "archetypeId": "threshold_incentive",
       "taskType": "parse_discount_policy",
       "textLines": [
         "週末團購優惠",
@@ -161,9 +190,13 @@
         "買 3 送 1"
       ],
       "expect": {
-        "itemCount": 3,
+        "itemCount": 6,
+        "memberItemCount": 3,
+        "calculationRuleCount": 3,
+        "memberPrices": [260, 480, 520],
         "prices": [260, 480, 520],
         "forbiddenPrices": [1, 3, 88, 200, 2000],
+        "forbiddenMemberPrices": [1, 3, 88, 200, 2000],
         "forbiddenNamePatterns": ["VIP", "買", "滿"]
       }
     },
@@ -171,6 +204,7 @@
       "id": "zh-receipt-ocr-summary",
       "language": "zh-TW",
       "contractId": "receipt_ocr_summary",
+      "archetypeId": "posthoc_audit_split",
       "taskType": "parse_ocr_bill",
       "textLines": [
         "好食商店 收據",
@@ -185,9 +219,13 @@
         "卡號末四碼 4321"
       ],
       "expect": {
-        "itemCount": 3,
+        "itemCount": 6,
+        "memberItemCount": 3,
+        "calculationRuleCount": 3,
+        "memberPrices": [80, 90, 120],
         "prices": [80, 90, 120],
         "forbiddenPrices": [210, 290, 500, 1432, 4321],
+        "forbiddenMemberPrices": [210, 290, 500, 1432, 4321],
         "forbiddenNamePatterns": ["統一編號", "日期", "小計", "現金", "找零", "卡號"]
       }
     },
@@ -195,6 +233,7 @@
       "id": "zh-lodging-extra-person",
       "language": "zh-TW",
       "contractId": "lodging_extra_person_rate",
+      "archetypeId": "tiered_slot_booking",
       "taskType": "parse_lodging_rate",
       "textLines": [
         "山城民宿房型表",
@@ -206,11 +245,15 @@
       ],
       "expect": {
         "itemCount": 4,
+        "memberItemCount": 3,
+        "calculationRuleCount": 1,
+        "memberPrices": [600, 2800, 3600],
         "prices": [500, 600, 2800, 3600],
         "priceRoles": {
           "住宿清潔費": "tax_and_fee"
         },
         "forbiddenPrices": [2, 11, 15],
+        "forbiddenMemberPrices": [500],
         "forbiddenNamePatterns": ["入住", "退房 11"]
       }
     },
@@ -218,6 +261,7 @@
       "id": "zh-workshop-course-fee",
       "language": "zh-TW",
       "contractId": "workshop_course_fee",
+      "archetypeId": "tiered_slot_booking",
       "taskType": "parse_course_fee",
       "textLines": [
         "手作陶藝體驗",
@@ -228,12 +272,16 @@
         "每梯次 12 人"
       ],
       "expect": {
-        "itemCount": 4,
+        "itemCount": 5,
+        "memberItemCount": 3,
+        "calculationRuleCount": 1,
+        "memberPrices": [300, 1200, 2000],
         "prices": [300, 500, 1200, 2000],
         "priceRoles": {
           "預付訂金": "prepayment_down"
         },
         "forbiddenPrices": [1, 2, 12],
+        "forbiddenMemberPrices": [500],
         "allCategories": ["ticket", "service", "set", "other"]
       }
     },
@@ -241,6 +289,7 @@
       "id": "zh-transport-rideshare",
       "language": "zh-TW",
       "contractId": "transport_rideshare_fee",
+      "archetypeId": "posthoc_audit_split",
       "taskType": "parse_transport_share",
       "textLines": [
         "拼車費用表",
@@ -252,9 +301,13 @@
         "行程約 12 公里"
       ],
       "expect": {
-        "itemCount": 4,
+        "itemCount": 5,
+        "memberItemCount": 0,
+        "calculationRuleCount": 4,
+        "memberPrices": [],
         "prices": [25, 60, 80, 100],
         "forbiddenPrices": [12, 20],
+        "forbiddenMemberPrices": [12, 20, 25, 60, 80, 100],
         "forbiddenNamePatterns": ["夜間加成", "行程約"]
       }
     },
@@ -262,6 +315,7 @@
       "id": "zh-membership-points-value",
       "language": "zh-TW",
       "contractId": "membership_points_value",
+      "archetypeId": "threshold_incentive",
       "taskType": "parse_membership_value",
       "textLines": [
         "會員儲值方案",
@@ -272,9 +326,13 @@
         "會員卡工本費 NT$ 100"
       ],
       "expect": {
-        "itemCount": 3,
+        "itemCount": 4,
+        "memberItemCount": 3,
+        "calculationRuleCount": 1,
+        "memberPrices": [100, 120, 300],
         "prices": [100, 120, 300],
         "forbiddenPrices": [50, 500],
+        "forbiddenMemberPrices": [50, 500],
         "forbiddenNamePatterns": ["點數兌換"]
       }
     }

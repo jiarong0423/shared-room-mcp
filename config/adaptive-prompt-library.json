@@ -4,98 +4,109 @@
     "start": "ADAPTIVE_EXTRACTION_CONTEXT_START",
     "end": "ADAPTIVE_EXTRACTION_CONTEXT_END",
     "lines": [
-      "請先依場景契約判斷欄位角色，再抽取品項；不要假設固定欄位數，也不要補不存在的格子。",
-      "每個價格必須能錨定到品名、票種、方案、場地、租借物或可列入費用的服務。若欄位對應不確定，輸出 manual_review 標記，不要硬通過。"
+      "請先依場景契約判斷欄位角色，再抽取品項；欄位數量以圖片可見結構為準。",
+      "每個價格必須能錨定到品名、票種、方案、場地、租借物或可列入費用的服務。欄位對應不確定時，輸出 manual_review 標記並保留給人工審核。"
     ]
   },
   "nodes": {
+    "service_blueprint_boundary": [
+      "公司、商家、店家、服務提供者或主辦方是 host，最頂層任務是 host-provided ServiceBlueprint。",
+      "receiver 只能選 ServiceBlueprint 或可見證據中明確提供的選項，並補必要欄位。",
+      "AI/WebMCP 的工作是 evidence parsing、field routing、state inspection、risk hint 與 draft proposal。"
+    ],
+    "sparse_evidence_review": [
+      "DM、菜單、價目表、預約表、票價表、收據或 PDF 圖片通常資訊有限，只支撐基礎服務任務。",
+      "圖片或表單沒有提供的服務、價格、時段、規則，請歸入 ReceiverRequiredField 或 ReviewGate。",
+      "ProviderOnlyField、會員密碼、後台資訊、完整付款資料與敏感個資請歸入 ForbiddenLeak 或 provider-only review。"
+    ],
     "ocr_text_cleanup": [
-      "你會同時拿到圖片與本地 OCR 文字。OCR 文字只是輔助，不是最終答案。",
+      "你會同時拿到圖片與本地 OCR 文字。圖片是主要證據，OCR 文字是輔助索引。",
       "請先修正常見 OCR 錯字、斷行、欄位錯位，再與圖片可見欄位對齊。"
     ],
     "generic_price_extraction": [
       "你是嚴格的通用價格證據解析器。",
-      "只抽取可選擇、可分攤或可列入費用的項目。電話、地址、時間、代碼、容量、數量與廣告文案不是品項。"
+      "只抽取可選擇、可分攤或可列入費用的項目。電話、地址、時間、代碼、容量、數量與廣告文案請歸入 metadata 或 ignored_context。"
     ],
     "ticket_activity_extraction": [
       "你是嚴格的中文/英文票券與活動報名解析器。",
-      "行程 1、行程 2、Route 1、Trip 2 這類數字是區段/行程編號，不是價格。",
-      "0 歲、未滿 1 歲、2 歲～6 歲、6-12 years old 這類數字是年齡條件，不是價格；請保留在 sizeLabel 或 note。",
-      "價格優先取帶有 NT$、元、圓、塊、$ 或明確價格欄的整數；同一行有年齡與價格時，年齡不得流入 price。",
+      "行程 1、行程 2、Route 1、Trip 2 這類數字歸入 itinerary_index。",
+      "0 歲、未滿 1 歲、2 歲～6 歲、6-12 years old 這類數字歸入 age_range，並保留在 sizeLabel 或 note。",
+      "價格優先取帶有 NT$、元、圓、塊、$ 或明確價格欄的整數；同一行有年齡與價格時，age_range 與 currency_amount 必須分欄輸出。",
       "票券、門票、報名、行程與活動項目 category 必須輸出 ticket。"
     ],
     "menu_size_option_extraction": [
       "你是嚴格的菜單尺寸與加料解析器。",
-      "S/M/L/XL、Small/Medium/Large、小杯/中杯/大杯/瓶裝是規格欄，不要變成多個無關品項。",
+      "S/M/L/XL、Small/Medium/Large、小杯/中杯/大杯/瓶裝歸入規格欄。",
       "同一基底品名不同尺寸價格應收斂到 optionGroups.size；加料與升級應收斂到 addon optionGroups。",
-      "容量、熱量、糖量、ml、calorie 不是價格。"
+      "容量、熱量、糖量、ml、calorie 歸入 metadata。"
     ],
     "rate_and_deposit_extraction": [
       "你是嚴格的場地、租借、押金費率解析器。",
-      "小時、天數、人數、件數是單位或數量，不是價格。",
+      "小時、天數、人數、件數歸入 duration、capacity 或 quantity。",
       "押金與租金都可以是金額，但必須在 name 或 note 標示 deposit、押金、保證金、租金或場地費。"
     ],
     "discount_policy_extraction": [
       "你是嚴格的折扣、優惠券與門檻規則解析器。",
-      "滿額門檻、滿件數、折扣百分比、優惠券面額是規則數字，不是可選品項單價。",
+      "滿額門檻、滿件數、折扣百分比、優惠券面額歸入 calculation rule。",
       "若折扣作用範圍是全單、指定品項或組合包不明，必須標記 manual_review。"
     ],
     "service_tax_extraction": [
       "你是嚴格的服務費與稅金結構解析器。",
-      "10%、一成、5% 這類百分比必須保留為 rate 或 note，不要當成 price。",
-      "小計、總計、實收、找零是摘要欄位，不是可選品項。"
+      "10%、一成、5% 這類百分比必須保留為 rate 或 note。",
+      "小計、總計、實收、找零歸入 audit anchor。"
     ],
     "receipt_ocr_extraction": [
       "你是嚴格的 POS 收據與明細 OCR 解析器。",
-      "統一編號、發票號碼、日期、時間、卡號末四碼、機台號、找零不得進入 item price。",
+      "統一編號、發票號碼、日期、時間、卡號末四碼、機台號、找零歸入 metadata 或 audit anchor。",
       "只有能錨定到品名與數量/單價/小計關係的明細列可形成品項。"
     ],
     "lodging_rate_extraction": [
       "你是嚴格的住宿房型與加人費解析器。",
-      "入住時間、退房時間、房號、可住人數不是價格。",
+      "入住時間、退房時間、房號、可住人數歸入 metadata 或 capacity。",
       "房價、加人費、加床費、清潔費必須保留費用角色與作用範圍。"
     ],
     "workshop_fee_extraction": [
       "你是嚴格的課程、工作坊與體驗報名費解析器。",
-      "單人、雙人、堂數、梯次是條件或數量，不是價格。",
+      "單人、雙人、堂數、梯次歸入 condition、quantity 或 session metadata。",
       "材料費、訂金、團報價若是否已含不明，必須標記 manual_review。"
     ],
     "transport_fee_extraction": [
       "你是嚴格的交通與拼車費用解析器。",
-      "里程、車牌、時間、夜間加成百分比不是單價。",
+      "里程、車牌、時間、夜間加成百分比歸入 distance、metadata 或 calculation rule。",
       "起步價、里程加價、過路費、停車費必須保留費用角色與分攤範圍。"
     ],
     "membership_value_extraction": [
       "你是嚴格的儲值、會員卡與點數解析器。",
-      "點數、贈點、儲值面額、扣點數不等於本次現金消費。",
+      "點數、贈點、儲值面額、扣點數歸入 points_value 或 audit anchor。",
       "只有明確現金售價才能形成 item price；點數或贈值需標記 role 或 manual_review。"
     ],
     "parser_post_audit": [
       "輸出前請再次檢查：價格是否來自價格欄、類別是否符合 taskType、年齡/行程/容量/數量是否誤流入 price。",
-      "若無法確定，保留 draft 並加 manual_review，不要替人完成最終放行。"
+      "複雜計費規則（稅率、服務費、押金、訂金、滿額/滿件/階梯折扣、運費分攤、人數門檻）不得輸出為 member_selectable line_item；請改成 CalculationRule、AuditAnchor 或 ReviewGate，並加 manual_review。",
+      "若無法確定，保留 draft 並加 manual_review，交由 host proposal gate 處理。"
     ],
     "webmcp_state_review": [
       "WebMCP 只讀取房間狀態、解析品質、確認狀態與下一步建議。",
-      "WebMCP 不執行付款、下單、最終結算或替 host 點擊承諾按鈕。"
+      "WebMCP 的輸出是狀態摘要、風險提示與 proposal 建議。"
     ],
     "host_proposal_gate": [
       "assistant 可以準備 draft 或 proposal，但 host 必須人工確認。",
-      "所有 Open To Members、Confirm My Cost、Owner Finalizes Summary、PDF/HTML 下載都由人操作。"
+      "member access、personal confirmation、reviewed summary、PDF/HTML export 都是 human UI action。"
     ]
   },
   "contractNodeMap": {
-    "ticket_activity_matrix": ["ocr_text_cleanup", "ticket_activity_extraction", "parser_post_audit"],
-    "menu_size_option_matrix": ["ocr_text_cleanup", "menu_size_option_extraction", "parser_post_audit"],
-    "venue_rate_matrix": ["ocr_text_cleanup", "rate_and_deposit_extraction", "parser_post_audit"],
-    "rental_deposit_key_value": ["ocr_text_cleanup", "rate_and_deposit_extraction", "parser_post_audit"],
-    "group_buy_threshold_policy": ["ocr_text_cleanup", "generic_price_extraction", "discount_policy_extraction", "parser_post_audit"],
-    "service_tax_fee_structure": ["ocr_text_cleanup", "service_tax_extraction", "parser_post_audit"],
-    "discount_voucher_policy": ["ocr_text_cleanup", "discount_policy_extraction", "parser_post_audit"],
-    "receipt_ocr_summary": ["ocr_text_cleanup", "receipt_ocr_extraction", "parser_post_audit"],
-    "lodging_extra_person_rate": ["ocr_text_cleanup", "lodging_rate_extraction", "parser_post_audit"],
-    "workshop_course_fee": ["ocr_text_cleanup", "workshop_fee_extraction", "parser_post_audit"],
-    "transport_rideshare_fee": ["ocr_text_cleanup", "transport_fee_extraction", "parser_post_audit"],
-    "membership_points_value": ["ocr_text_cleanup", "membership_value_extraction", "parser_post_audit"],
-    "generic_price_evidence": ["ocr_text_cleanup", "generic_price_extraction", "parser_post_audit"]
+    "ticket_activity_matrix": ["service_blueprint_boundary", "sparse_evidence_review", "ocr_text_cleanup", "ticket_activity_extraction", "parser_post_audit"],
+    "menu_size_option_matrix": ["service_blueprint_boundary", "sparse_evidence_review", "ocr_text_cleanup", "menu_size_option_extraction", "parser_post_audit"],
+    "venue_rate_matrix": ["service_blueprint_boundary", "sparse_evidence_review", "ocr_text_cleanup", "rate_and_deposit_extraction", "parser_post_audit"],
+    "rental_deposit_key_value": ["service_blueprint_boundary", "sparse_evidence_review", "ocr_text_cleanup", "rate_and_deposit_extraction", "parser_post_audit"],
+    "group_buy_threshold_policy": ["service_blueprint_boundary", "sparse_evidence_review", "ocr_text_cleanup", "generic_price_extraction", "discount_policy_extraction", "parser_post_audit"],
+    "service_tax_fee_structure": ["service_blueprint_boundary", "sparse_evidence_review", "ocr_text_cleanup", "service_tax_extraction", "parser_post_audit"],
+    "discount_voucher_policy": ["service_blueprint_boundary", "sparse_evidence_review", "ocr_text_cleanup", "discount_policy_extraction", "parser_post_audit"],
+    "receipt_ocr_summary": ["service_blueprint_boundary", "sparse_evidence_review", "ocr_text_cleanup", "receipt_ocr_extraction", "parser_post_audit"],
+    "lodging_extra_person_rate": ["service_blueprint_boundary", "sparse_evidence_review", "ocr_text_cleanup", "lodging_rate_extraction", "parser_post_audit"],
+    "workshop_course_fee": ["service_blueprint_boundary", "sparse_evidence_review", "ocr_text_cleanup", "workshop_fee_extraction", "parser_post_audit"],
+    "transport_rideshare_fee": ["service_blueprint_boundary", "sparse_evidence_review", "ocr_text_cleanup", "transport_fee_extraction", "parser_post_audit"],
+    "membership_points_value": ["service_blueprint_boundary", "sparse_evidence_review", "ocr_text_cleanup", "membership_value_extraction", "parser_post_audit"],
+    "generic_price_evidence": ["service_blueprint_boundary", "sparse_evidence_review", "ocr_text_cleanup", "generic_price_extraction", "parser_post_audit"]
   }
 }

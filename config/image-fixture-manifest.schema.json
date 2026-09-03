@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jiarong0423/shared-room-mcp/config/image-fixture-manifest.schema.json",
+  "title": "Adaptive Contract MCP Image Fixture Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "project",
+    "generatedAt",
+    "artifactPolicy",
+    "tests"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "adaptive-contract-mcp-image-fixture-oracle.v1"
+    },
+    "project": {
+      "type": "string",
+      "const": "Adaptive Contract MCP"
+    },
+    "generatedAt": {
+      "type": "string"
+    },
+    "artifactPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "largeImagesExternal",
+        "checksumRequired",
+        "oracleReadOnly",
+        "actualOutputQuarantinedOnFail"
+      ],
+      "properties": {
+        "largeImagesExternal": {
+          "type": "boolean",
+          "const": true
+        },
+        "checksumRequired": {
+          "type": "boolean",
+          "const": true
+        },
+        "oracleReadOnly": {
+          "type": "boolean",
+          "const": true
+        },
+        "actualOutputQuarantinedOnFail": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "tests": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "scenarioId",
+          "sourceScenarioId",
+          "language",
+          "contractId",
+          "archetypeId",
+          "taskType",
+          "sourceKind",
+          "variantId",
+          "ocrRiskLevel",
+          "image",
+          "oracle"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{3,4}_[a-z0-9_]+_v[0-9]{2}$"
+          },
+          "scenarioId": {
+            "type": "string",
+            "pattern": "^[SE][0-9]{2}$"
+          },
+          "sourceScenarioId": {
+            "type": "string",
+            "pattern": "^S[0-9]{2}$"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "zh-TW",
+              "en",
+              "en-US"
+            ]
+          },
+          "contractId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "archetypeId": {
+            "type": "string",
+            "enum": [
+              "menu_unit_pricing",
+              "tiered_slot_booking",
+              "threshold_incentive",
+              "posthoc_audit_split"
+            ]
+          },
+          "taskType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sourceKind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "variantId": {
+            "type": "string",
+            "pattern": "^v[0-9]{2}$"
+          },
+          "ocrRiskLevel": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "image": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "relativePath",
+              "sha256",
+              "byteSize"
+            ],
+            "properties": {
+              "relativePath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "byteSize": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          },
+          "oracle": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "expectedSelectableItems",
+              "expectedCalculationRules",
+              "forbiddenNumbers",
+              "forbiddenMemberVisibleItems",
+              "textLines"
+            ],
+            "properties": {
+              "expectedSelectableItems": {
+                "type": "object"
+              },
+              "expectedCalculationRules": {
+                "type": "object"
+              },
+              "forbiddenNumbers": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "forbiddenParserCandidateNumbers": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "forbiddenMemberNumbers": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "forbiddenMemberVisibleItems": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "textLines": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # WebMCP Hackathon Submission Packet
 
-Project name: Shared Room MCP
+Project name: Shared Room MCP, powered by Adaptive Contract MCP
 
 Live URL: https://shared-room-mcp-next.zeabur.app/
 
@@ -12,29 +12,31 @@ License: MIT
 
 ## One-Line Pitch
 
-Shared Room MCP is an open-source trust boundary layer for the agent-native web. AI prepares the work; humans approve the commitment.
+Shared Room MCP is an open-source trust boundary layer for the agent-native web, powered by the Adaptive Contract MCP contract and guardrail engine. AI prepares the work; humans approve the commitment.
 
 ## Devpost Text Description Draft
 
-Shared Room MCP is an open-source trust boundary layer for the agent-native web. It creates one shared page where people and AI assistants can work together before anyone pays, books, signs up, posts publicly, or makes another real-world commitment. From the browser sidebar, the assistant uses WebMCP tools from the page itself to read the room, spot missing details, and place draft suggestions directly on the page.
+Shared Room MCP is an open-source trust boundary layer for form-based async state rooms on the agent-native web. It is not a chatroom, messaging app, payment gateway, or auto-booking agent. A host creates a single-direction private task from messy evidence, the assistant prepares structured review drafts, and invited members act only on their own assigned or selected part. From the browser sidebar, the assistant uses WebMCP tools from the page itself to read the private room state, spot missing details, and place draft suggestions directly on the page.
 
-The core safety idea is simple: AI prepares the work; humans approve the commitment. The assistant handles context gathering and repetitive draft work, while settlement, payment, booking submission, signup submission, regulated purchase approval, public posting, and final commitment remain behind human confirmation.
+The core safety idea is simple: AI prepares the evidence review; humans approve the commitment. The assistant handles context gathering, field extraction, risk hints, and repetitive draft work. Host/member review gates control the committed state.
+
+`Shared Room MCP` is the reference app and repository slug. `Adaptive Contract MCP` is the reusable architecture layer: scenario contracts, routing, prompt constraints, image-oracle verification, anti-pollution guardrails, and HITL state-machine enforcement.
 
 This brings WebMCP capability to real-world workflows, combining agent productivity with human control.
 
-Shared Room MCP is built for messy real-world coordination: group buys, drink orders, restaurant splits, KTV rooms, sports venues, tickets, rentals, appointment drafts, service requests, activity signups, and other pre-commitment workflows. These workflows usually start from a chat message, social post, evidence photo, receipt, partial form, or copied text rather than a clean store API.
+Shared Room MCP is built for messy real-world coordination: group buys, drink orders, restaurant splits, KTV rooms, sports venues, tickets, rentals, appointment drafts, service requests, activity signups, and other pre-commitment workflows. These workflows usually start from a social post, evidence photo, receipt, partial form, copied text, or screenshot rather than a clean store API.
 
-The project gives the assistant page-local WebMCP tools. The assistant can inspect the room, read the selected scenario, find missing confirmations, review price-reading quality, and create a draft for the host. Codex can also create a field-fix draft when the price list is read incorrectly, such as quantity, subtotal, size, or add-on columns being confused with item prices. It cannot silently apply that repair, calculate money outside the app, assign claimants, submit bookings, write payment data, or finalize settlement.
+The project gives the assistant page-local WebMCP tools. The assistant can inspect the room, read the selected scenario, find missing confirmations, review price-reading quality, and create a draft for the host. Codex can also create a field-fix draft when the price list is read incorrectly, such as quantity, subtotal, size, or add-on columns being confused with item prices. Repairs become visible host-reviewed proposals before they affect member-facing rows.
 
 The core demo works without any paid API key: users can paste copied text from a price image, the app creates structured items, and local room logic keeps totals and confirmation state inside the app. Optional model providers are only replaceable helpers for image/text repair, not the required agent workflow.
 
-After human review, the room can export a local HTML or PDF review record. Export is read-only: it does not submit a form, call a payment provider, change Google Sheets, or write to external services.
+After human review, the room can export a local HTML or PDF review record of the private task state.
 
 The broader idea is an open-source pattern for the agent-native web: tools that are useful enough for AI assistants to prepare real work, but narrow enough that humans keep control over final commitments.
 
 ## WebMCP Fit
 
-The app exposes page-local tools through `document.modelContext.registerTool()` when WebMCP is available. Most tools are read-only: the assistant can inspect the room, the selected plan, the local math rules, confirmation status, and trust settings, but it cannot calculate money externally, assign claims, overwrite rules, finalize settlement, or write payment data. One draft tool can create a small JSON proposal for host review without applying it.
+The app exposes page-local tools through `document.modelContext.registerTool()` when WebMCP is available. In this project, WebMCP is a state reader and draft generator, not a browser-control agent that clicks or submits final actions. Most tools are read-only: the assistant can inspect the room, the selected plan, the local math rules, confirmation status, and trust settings. One draft tool can create a small JSON proposal for host review. Applied state changes pass through host/member UI transitions and the Member-Visibility Release.
 
 This is a WebMCP starter project, not a paid API wrapper. Manual input, `Load Sample Room`, copied OCR text, and local parsing are the default path. Cloud OCR, vision, model, spreadsheet, commerce, booking, CRM, or community integrations are optional and owned by the deployment owner.
 
@@ -50,9 +52,9 @@ Implemented WebMCP tools:
 
 ## Human And Agent Collaboration
 
-The human controls the room, task type, uploaded evidence, copied text, parsed item review, group opening, participant names, claim confirmation, and settlement. The assistant helps by reading the current state, identifying conflicts, explaining missing claims, guiding the next action from the WebMCP tool output, and preparing drafts for the host. The `suggest_next_actions` tool is the main read path. The `create_action_proposal` tool is the safe draft path: it stores a waiting-for-host JSON proposal under `room.agentProposals[]`, including field-fix drafts when Codex detects a reading mistake. The host can edit or remove parsed item rows before opening the list to members. Owner review stays on one visible draft card; repeated same-type drafts replace the previous pending card instead of stacking duplicate decisions. Review does not change orders, formulas, settlement, payment, Google Sheets, or external services.
+The human controls the room, task type, uploaded evidence, copied text, parsed item review, member opening, participant names, claim confirmation, and final summary. The assistant helps by reading the current state, identifying conflicts, explaining missing claims, guiding the next action from the WebMCP tool output, and preparing drafts for the host. The `suggest_next_actions` tool is the main read path. The `create_action_proposal` tool stores a waiting-for-host JSON proposal under `room.agentProposals[]`, including field-fix drafts when Codex detects a reading mistake. The host can edit or remove parsed item rows before opening the list to members. Owner review stays on one visible draft card; repeated same-type drafts replace the previous pending card instead of stacking duplicate decisions. Accepted reviews are explicit room-state transitions.
 
-Provider AI is optional and limited to image/text repair helpers. It cannot decide who owes money, change calculation rules, assign cost pools, or settle disputes. Future forks can reuse the same draft-first pattern for booking drafts, repair appointment drafts, salon reservation drafts, activity signup drafts, and other pre-commitment workflows, but final submission and payment should remain human-controlled.
+Provider AI is optional and limited to image/text repair helpers. Future forks can reuse the same draft-first pattern for booking drafts, repair appointment drafts, salon reservation drafts, activity signup drafts, and other pre-commitment workflows while keeping commitments behind host/member review gates.
 
 ## Official Requirement Alignment
 
@@ -69,7 +71,7 @@ Checked against the WebMCP Challenge page on 2026-09-01.
 | Repository contains `document.modelContext.registerTool(...)` | Ready: `public/index.html` |
 | WebMCP use beyond a trivial proof of concept | Ready: read-only tools plus a host-reviewed draft tool |
 | Complete coherent product experience | Ready for local and live smoke |
-| Specific real-world audience/problem | Ready: messy shared workflows before payment, booking, signup, posting, or commitment |
+| Specific real-world audience/problem | Ready: messy private task workflows before commitment |
 | Local record export | Ready: reviewed rooms can export HTML and PDF summaries |
 
 ## What Changed After August 25, 2026
@@ -81,7 +83,7 @@ This project existed earlier as a group menu ordering room. The WebMCP hackathon
 - Local money math that stays inside the app.
 - AI repair and conflict checks that stop for human review when the input is unclear.
 - Member confirmation records for shared items and extra personal claims.
-- WebMCP read-only inspection tools, one host-reviewed draft tool, and a hash-only Google Sheets trust option.
+- WebMCP read-only inspection tools, one host-reviewed draft tool, and a hash-only trust option.
 - Open-source extension path for future social, commerce, booking, OCR, spreadsheet, and private-community integrations.
 - No-key `Load Sample Room` entrypoint for fast judging and smoke testing.
 
@@ -138,13 +140,27 @@ Deployment owners should replace secrets only in the hosting provider secret man
 npm install
 npm run check
 npm run audit:tasks
+npm run build:image-fixture-manifest
+npm run stress:image-matrix -- --base-url http://127.0.0.1:3000 --mode image-plus-oracle-text --output-dir logs/runtime/image-matrix
 npm run stress:contracts -- --base-url http://127.0.0.1:3000 --rounds 20 --concurrency 4 --output-dir logs/runtime
 npm start
 ```
 
+For repeated local stress runs, run `npm start` with test-only rate limits:
+
+```bash
+ROOM_CREATE_RATE_LIMIT_MAX=500 MENU_PARSE_RATE_LIMIT_MAX=500 API_RATE_LIMIT_MAX=1000 npm start
+```
+
+The Zeabur public demo keeps the lower public-demo throttle. A local 429 during rapid repeated tests means the runner is measuring the throttle, not the HITL state machine.
+
 The repeated room-flow check covers 20 non-duplicate Traditional Chinese and English scenarios, with 20 rounds per scenario. It checks room creation, local copied-text OCR parsing, stable room-type selection, draft creation, and the final human approval rule.
 
-The public evidence summary is tracked in `docs/testing/VALIDATION_EVIDENCE.md`. It records only checks that were actually run: local repeated flows, host-only draft review, Load Sample Room, hosted smoke checks, and short JSON save-burst checks.
+The image-matrix command is a deterministic contract-driven integration benchmark. It verifies checksum-backed image-oracle artifacts and HITL state behavior in `image-plus-oracle-text` mode; it is not a raw OCR accuracy, zero-shot OCR accuracy, or unconstrained vision extraction benchmark.
+
+Semantic Visual Anchor Notice: the current protocol records logical `boundingZone` values and contextual `auditAnchor` snippets for host review. Pixel-level `bbox` crop overlays are reserved roadmap fields and are not part of the current release claim.
+
+The public evidence summary is tracked in `docs/testing/VALIDATION_EVIDENCE.md`. It records only checks that were actually run: local repeated flows, host-only draft review, Load Sample Room, hosted smoke checks, deterministic image-oracle integration, and short JSON save-burst checks.
 
 Open `http://localhost:3000`, create a room, choose a task type, paste OCR text or upload an image, add participants, claim items, and inspect the audit panel.
 
@@ -239,7 +255,7 @@ Operator rule for recording:
 - No authenticated vendor cookies or private ordering sessions.
 - No payment processing.
 - No raw OCR, images, raw device IDs, payment identifiers, or social account identifiers are written to Google Sheets.
-- Google Sheets is only a short-lived hash whitelist and audit-log trust layer.
+- Google Sheets is only a design-level short-lived hash whitelist and audit-log trust layer in this public core; production check/enroll/revoke adapters are roadmapped extensions.
 
 ## Remaining Submission Checklist
 

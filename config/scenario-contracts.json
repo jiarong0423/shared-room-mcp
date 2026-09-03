@@ -113,7 +113,12 @@
         "conditions",
         "reviewFlags",
         "rawTextEvidence",
-        "confidence"
+        "confidence",
+        "boundingZone",
+        "detectedTypeHint",
+        "auditAnchor",
+        "auditAnchors",
+        "reviewGates"
       ]
     },
     {
@@ -217,7 +222,12 @@
         "conditions",
         "reviewFlags",
         "rawTextEvidence",
-        "confidence"
+        "confidence",
+        "boundingZone",
+        "detectedTypeHint",
+        "auditAnchor",
+        "auditAnchors",
+        "reviewGates"
       ]
     },
     {
@@ -317,7 +327,12 @@
         "conditions",
         "reviewFlags",
         "rawTextEvidence",
-        "confidence"
+        "confidence",
+        "boundingZone",
+        "detectedTypeHint",
+        "auditAnchor",
+        "auditAnchors",
+        "reviewGates"
       ]
     },
     {
@@ -405,7 +420,12 @@
         "conditions",
         "reviewFlags",
         "rawTextEvidence",
-        "confidence"
+        "confidence",
+        "boundingZone",
+        "detectedTypeHint",
+        "auditAnchor",
+        "auditAnchors",
+        "reviewGates"
       ]
     },
     {
@@ -495,7 +515,12 @@
         "conditions",
         "reviewFlags",
         "rawTextEvidence",
-        "confidence"
+        "confidence",
+        "boundingZone",
+        "detectedTypeHint",
+        "auditAnchor",
+        "auditAnchors",
+        "reviewGates"
       ]
     },
     {
@@ -584,7 +609,12 @@
         "conditions",
         "reviewFlags",
         "rawTextEvidence",
-        "confidence"
+        "confidence",
+        "boundingZone",
+        "detectedTypeHint",
+        "auditAnchor",
+        "auditAnchors",
+        "reviewGates"
       ]
     },
     {
@@ -673,7 +703,12 @@
         "conditions",
         "reviewFlags",
         "rawTextEvidence",
-        "confidence"
+        "confidence",
+        "boundingZone",
+        "detectedTypeHint",
+        "auditAnchor",
+        "auditAnchors",
+        "reviewGates"
       ]
     },
     {
@@ -771,7 +806,12 @@
         "conditions",
         "reviewFlags",
         "rawTextEvidence",
-        "confidence"
+        "confidence",
+        "boundingZone",
+        "detectedTypeHint",
+        "auditAnchor",
+        "auditAnchors",
+        "reviewGates"
       ]
     },
     {
@@ -865,7 +905,12 @@
         "conditions",
         "reviewFlags",
         "rawTextEvidence",
-        "confidence"
+        "confidence",
+        "boundingZone",
+        "detectedTypeHint",
+        "auditAnchor",
+        "auditAnchors",
+        "reviewGates"
       ]
     },
     {
@@ -956,7 +1001,12 @@
         "conditions",
         "reviewFlags",
         "rawTextEvidence",
-        "confidence"
+        "confidence",
+        "boundingZone",
+        "detectedTypeHint",
+        "auditAnchor",
+        "auditAnchors",
+        "reviewGates"
       ]
     },
     {
@@ -1048,7 +1098,12 @@
         "conditions",
         "reviewFlags",
         "rawTextEvidence",
-        "confidence"
+        "confidence",
+        "boundingZone",
+        "detectedTypeHint",
+        "auditAnchor",
+        "auditAnchors",
+        "reviewGates"
       ]
     },
     {
@@ -1135,7 +1190,12 @@
         "conditions",
         "reviewFlags",
         "rawTextEvidence",
-        "confidence"
+        "confidence",
+        "boundingZone",
+        "detectedTypeHint",
+        "auditAnchor",
+        "auditAnchors",
+        "reviewGates"
       ]
     },
     {
@@ -1214,7 +1274,12 @@
         "conditions",
         "reviewFlags",
         "rawTextEvidence",
-        "confidence"
+        "confidence",
+        "boundingZone",
+        "detectedTypeHint",
+        "auditAnchor",
+        "auditAnchors",
+        "reviewGates"
       ]
     }
   ]

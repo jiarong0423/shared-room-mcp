@@ -9,4 +9,8 @@ pnpm-debug.log*
 logs/runtime/
 data/
 output/
+coverage/
+quarantine/
+docs/ai-generated/
 docs/ai-generated/**/*.json
+archive/

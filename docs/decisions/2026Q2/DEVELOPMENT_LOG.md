@@ -100,7 +100,7 @@
 - 新增 JSON room persistence，Zeabur 可掛 volume 並設定 `ROOM_STORE_PATH=/data/rooms.json`，避免 MVP room state 因服務重啟直接遺失。
 - 新增 `create_action_proposal` WebMCP proposal-only tool。Agent 可建立 bounded JSON draft，暫存於 `room.agentProposals[]`，狀態固定為 `pending_host_confirmation`。
 - 新增 Host Draft Review UI。只有房間發起者可將 Agent 草稿標記為 `accepted_by_host` 或 `rejected_by_host`；採納草稿不會自動改 orders、claims、formulas、task routing、settlement、payment、Google Sheets、booking 或外部服務。
-- `webMcpToolSurfaceVersion` 升級為 `group-room-webmcp-tools.v2`，並在 README、submission packet、task gap audit 中同步標記 proposal-only tool。
+- `webMcpToolSurfaceVersion` 當時升級為 superseded pre-Adaptive tool-surface version，並在 README、submission packet、task gap audit 中同步標記 proposal-only tool。
 - Submission packet public repository URL 已改為 pending，等最終 GitHub repository name 確認後再填。
 - 已 commit 並 push：`fd26055 Add proposal-only WebMCP draft tool`。
 
@@ -111,7 +111,7 @@
 - `public/index.html` inline script syntax check 通過。
 - `git diff --check` 通過。
 - 本地 HTTP smoke 通過：`POST /api/rooms` 回 201，`POST /api/rooms/:roomId/agent-proposals` 回 201，讀回 `proposalCount=1`、`firstProposalStatus=pending_host_confirmation`、`allowedEffect=draft_only`、`moneyTotalUnchanged=true`。
-- 重啟 smoke 通過：同一個 `ROOM_STORE_PATH` 重啟後載入 `loadedCount=1`，同一 room 讀回 `proposalCount=1`、`agentProposalContract=group-room-agent-proposal-contract.v1`、`webMcpVersion=group-room-webmcp-tools.v2`。
+- 重啟 smoke 通過：同一個 `ROOM_STORE_PATH` 重啟後載入 `loadedCount=1`，同一 room 讀回 `proposalCount=1`、superseded pre-Adaptive proposal contract version 與 superseded pre-Adaptive WebMCP version。
 - secret scan 當時只命中文件 placeholder，沒有真實 API key。
 
 ## 2026-09-01 Public Submission Security Hardening
@@ -748,3 +748,379 @@ WATCH_LATER:
 Next resume point:
 
 - Use `https://shared-room-mcp-next.zeabur.app/` as the only active demo, recording, and validation URL unless a future DNS migration is explicitly performed and revalidated.
+
+## 2026-09-03 P0 Schema Decoupling Local Gate
+
+Scope:
+
+- Local-only architecture work after the recording flow exposed that text-only/parser-direct output can pollute member-selectable items.
+- No GitHub push.
+- No Zeabur deployment.
+- No temporary production patch.
+
+Direct cause:
+
+- Parser output, review state, rule/audit rows, and member-selectable items were too close together. Some scenarios could pass regression while still hiding whether a number came from an image line, a rule, an audit total, or an actual selectable item.
+
+Root cause:
+
+- The earlier demo path optimized for fast recording and item extraction. It did not make the EvidenceAsset -> OcrObservation -> ParserCandidate -> Human Review -> SelectableItem/CalculationRule boundary explicit enough for enterprise-style scenario contracts.
+
+DONE_CONFIRMED:
+
+- Added a P0 evidence review contract under `config/evidence-review-contract.json`.
+- Added runtime room layers for evidence assets, OCR observations, parser candidates, calculation rules, review decisions, and settlement snapshots.
+- Added OCR-derived rule candidates for thresholds, discount policies, tax/service rates, deposits, prepayments, receipt totals, tendered cash/change, points, and transport rules.
+- Added anti-pollution blocking before member open: pending candidates/rules, rule-like member rows, and missing evidence pointers block the flow.
+- Updated frontend labels and the review panel so parser candidate count, calculation rule count, and anti-pollution blockers are visible.
+- Updated the 12-scenario regression matrix so candidate counts, member item counts, rule counts, and member-layer forbidden values are checked separately.
+
+VALIDATION:
+
+- `npm run check`: PASS.
+- `npm run verify:adaptive-contracts`: PASS.
+- `npm run regression:adaptive-parser -- --base-url http://127.0.0.1:3181 --repeat 1 --timeout-ms 25000`: PASS.
+- `npm run regression:adaptive-parser -- --base-url http://127.0.0.1:3181 --repeat 5 --timeout-ms 25000`: PASS with test-only local rate-limit overrides.
+
+WATCH_LATER:
+
+- Build the full P0.5 UI split for non-member ParserCandidate rows: per-candidate accept, reject, modify, and source focus.
+- Add OCR bounding boxes and crop highlights when the OCR layer can provide geometry.
+- Freeze SettlementSnapshot before PDF/HTML export so exports read immutable settlement evidence rather than live mutable room state.
+
+Next resume point:
+
+- Continue local P0.5 UI split and targeted browser QA.
+- Do not push or deploy until the UI gate is reviewed locally.
+
+## 2026-09-03 ServiceBlueprint P0 Final Lock Check
+
+Scope:
+
+- Locked the product boundary as a single-direction private task room.
+- Added `ServiceBlueprint` as the external contract name and `hostTask` as the internal alias.
+- Compressed the 12 scenario contracts into 4 reusable archetypes: `menu_unit_pricing`, `tiered_slot_booking`, `threshold_incentive`, and `posthoc_audit_split`.
+- Kept `taskType` as an internal routing signal, but required every fixture to bind `language + contractId + archetypeId`.
+
+Direct cause:
+
+- The earlier scenario expansion could drift toward chat, negotiation, or bespoke back-office workflows instead of host-published tasks with receiver-side selection/confirmation.
+
+Root cause:
+
+- Scenario contracts, prompt nodes, WebMCP tool descriptions, and runtime room state did not share one explicit top-level commercial boundary. This made it possible for correct individual parsers to still imply the wrong product model.
+
+DONE_CONFIRMED:
+
+- Added `config/service-blueprint-contract.json`.
+- Exposed `serviceBlueprintContractVersion=shared-room-service-blueprint.v1` through `/healthz`, room serialization, and the WebMCP tool surface.
+- Updated WebMCP tool wording to private task room and ServiceBlueprint boundary language.
+- Updated adaptive prompts so sparse evidence routes unknown or provider-only details to review instead of inventing hidden official options.
+- Updated the 12-scenario fixture matrix so each case declares a known archetype and contract mapping.
+- Removed the remaining agent-facing parser prompt wording that described the task as generic multi-person discussion-style coordination.
+
+VALIDATION:
+
+- `npm run verify:adaptive-contracts`: PASS, including 13 scenario contracts, 17 prompt nodes, 19 guardrails, 7 submit-gate stages, 11 evidence review layers, 4 ServiceBlueprint archetypes, and 12 scenarios.
+- `node --check server.js`: PASS.
+- `node --check scripts/regression-adaptive-parser.mjs`: PASS.
+- Local `/healthz` on `127.0.0.1:4180`: PASS, returned `shared-room-service-blueprint.v1` and all 4 archetypes.
+- `npm run regression:adaptive-parser -- --base-url http://127.0.0.1:4180 --repeat 1 --timeout-ms 25000`: PASS.
+- `npm run regression:adaptive-parser -- --base-url http://127.0.0.1:4181 --repeat 5 --timeout-ms 25000`: PASS with test-only local rate-limit overrides.
+- Residue scan for retired non-Zeabur host tokens and retired custom-domain tokens in active docs/config/fixtures/public/server/scripts: PASS, no active hits.
+- Residue scan for chat/discussion wording in agent-facing active surfaces: PASS, no active hits.
+- Fixture scan for empty `language`, `contractId`, or `archetypeId`: PASS.
+
+LOCK_STATUS:
+
+- Local project gate: OK.
+- GitHub push: not performed in this lock check.
+- Zeabur deployment: not performed in this lock check.
+
+## 2026-09-03 Image-Matrix Oracle Gate
+
+Scope:
+
+- Ingested the external architecture review verdict that the previous state was `RISKY`.
+- Added a checksum-backed image fixture oracle layer without committing the full large PNG matrix into the main repository.
+- Kept the large generated image assets external to the source tree while making the repo able to validate them by manifest and runner.
+
+Direct cause:
+
+- Text-only regression was too easy to overclaim because copied OCR text already resembles the answer.
+- The 115 generated PNGs existed as recording artifacts, but the code repository did not have a repeatable script that tied each image to scenario, language, contract, expected member-visible items, forbidden numbers, and quarantine output.
+
+Root cause:
+
+- The earlier test surface mixed artifact existence, parser behavior, OCR/provider quality, and release readiness into one claim. That made it possible to say "image matrix exists" without proving that each image has a stable oracle and repeatable execution path.
+
+DONE_CONFIRMED:
+
+- Added `config/image-fixture-manifest.schema.json`.
+- Added `scripts/build-image-fixture-manifest.mjs`.
+- Added `scripts/stress-image-matrix.mjs`.
+- Added `fixtures/image-fixture-manifest.json` with 115 checksum-bound tests:
+  - 60 English tests.
+  - 55 Traditional Chinese tests.
+  - 12 scenario contracts covered.
+  - 5 OCR-risk/layout variants per covered language/scenario lane.
+- Added production-safe pacing and 429 retry/backoff to the image-matrix runner.
+- Split oracle assertions so parser candidates may contain rule/audit/non-price context, while member-visible items remain strictly checked for forbidden prices and forbidden names.
+- Updated README and validation evidence to state that the 115/115 run is an oracle-chain check, not a Zeabur image-only OCR benchmark.
+
+VALIDATION:
+
+- `npm run build:image-fixture-manifest`: PASS, produced 115 tests.
+- `node --check scripts/build-image-fixture-manifest.mjs`: PASS.
+- `node --check scripts/stress-image-matrix.mjs`: PASS.
+- Isolated local server used `ROOM_STORE_PATH=/private/tmp/webmcp_image_matrix_rooms_v3.json` with local-only high rate limits.
+- `node scripts/stress-image-matrix.mjs --manifest fixtures/image-fixture-manifest.json --mode image-plus-oracle-text --delay-ms 0 --continue-on-failure --output-dir /private/tmp/webmcp_image_matrix_full_oracle_text_v4`: PASS, 115/115.
+
+WATCH_LATER:
+
+- Run a Zeabur production `image-only` pass at low rate after deployment, using the default slow runner pacing and quarantine output.
+- Add a host-proposal accept step to the open-gate stress flow so the test state machine matches the stricter anti-pollution gate.
+- Add front-end pre-open block reasons for pending parser candidates and calculation rules.
+
+LOCK_STATUS:
+
+- Local image oracle chain: OK.
+- Zeabur image-only OCR/provider benchmark: not performed.
+- GitHub push: not performed in this lock check.
+- Zeabur deployment: not performed in this lock check.
+
+## 2026-09-03 15:36 Pre-Push HITL And Export Boundary Closeout
+
+Scope:
+
+- Owner project: `/Users/sunjiarong/Developer/webmcp`
+- Changed artifacts: `.gitignore`, `.zeaburignore`, `README.md`, `docs/security/public-export-manifest.md`, `docs/submission/WEBMCP_SUBMISSION.md`, `docs/testing/VALIDATION_EVIDENCE.md`, `public/index.html`, `scripts/stress-open-gate.mjs`
+- Latest validation evidence: `/private/tmp/webmcp_open_gate_patch_check_v4/open-gate-stress-2026-09-03T07-35-47-266Z.md`
+
+DONE_CONFIRMED:
+
+- Fixed the `stress-open-gate` lifecycle simulation so the positive flow accepts the pending host review proposal before opening the member-facing list.
+  - evidence: `npm run stress:open-gate -- --base-url http://127.0.0.1:3186 --rounds 5 --concurrency 2 --output-dir /private/tmp/webmcp_open_gate_patch_check_v4` passed 20/20.
+- Preserved anti-pollution behavior for pending parser candidates and rule candidates.
+  - evidence: the repaired open-gate script now explicitly checks that direct host open is rejected when `room.antiPollution.blocks` is non-empty.
+- Added a visible frontend gate hint for pre-open AI/HITL review blocks.
+  - evidence: extracted inline frontend script passed `node --check /private/tmp/webmcp_index_inline_after_patch.mjs`.
+- Clarified public wording so the 115-image result is a deterministic contract-driven image-oracle integration benchmark, not a raw OCR accuracy benchmark.
+  - evidence: `README.md`, `docs/submission/WEBMCP_SUBMISSION.md`, and `docs/testing/VALIDATION_EVIDENCE.md` now use the deterministic image-oracle wording.
+- Updated public export boundaries for the new Adaptive Contract MCP artifacts.
+  - evidence: `docs/security/public-export-manifest.md` now includes the evidence review contract, service blueprint contract, image-fixture schema, image manifest, and image runner scripts while excluding full PNG matrices and quarantine outputs.
+- Added ignore coverage for generated coverage/quarantine folders.
+  - evidence: `.gitignore` and `.zeaburignore` now exclude `coverage/` and `quarantine/`.
+
+VALIDATION:
+
+- `npm run check`: PASS.
+- `node --check /private/tmp/webmcp_index_inline_after_patch.mjs`: PASS.
+- `node --check scripts/stress-open-gate.mjs`: PASS.
+- `npm run verify:adaptive-contracts`: PASS with 13 contracts, 17 prompt nodes, 19 guardrails, 7 submit-gate stages, 11 evidence review layers, 4 ServiceBlueprint archetypes, and 12 scenarios.
+- `node scripts/build-image-fixture-manifest.mjs --out /private/tmp/webmcp_image_fixture_manifest_check_final.json`: PASS, produced 115 tests.
+- Manifest reproducibility check ignoring only `generatedAt`: PASS.
+- `git diff --check`: PASS.
+- `node /Users/sunjiarong/.codex/skills/release-boundary-safety-gate/scripts/release_boundary_scan.mjs --root /Users/sunjiarong/Developer/webmcp --out /private/tmp/webmcp_prepush_release_boundary_20260903 --minSeverity MEDIUM`: PASS, 0 findings.
+- `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/Users/sunjiarong/Developer/ai-security-rules/src python3 -m ai_security_rules agent-review /Users/sunjiarong/Developer/webmcp --output-dir /private/tmp/webmcp_prepush_ai_security_agent_review_20260903`: PASS, P0=0, P1=0, P2=67.
+
+PRIORITY_INDEX:
+
+- Production `image-only` OCR/provider run is still separate from the 115/115 oracle benchmark.
+  - next action: after GitHub push and Zeabur redeploy, run a low-rate `stress:image-matrix` production pass in `image-only` mode with quarantine output.
+  - risk if ignored: public evidence remains integration-oracle evidence only, not hosted OCR/provider quality evidence.
+- LocalGuard produced 105 MEDIUM/HIGH findings, mostly low-confidence entropy/API-route/client-role/cache heuristics over ignored runtime outputs, docs, route maps, and package strings.
+  - next action: review or tune LocalGuard false positives before final public export packaging; do not treat this as a blocking secret finding because release-boundary and ai-security agent-review passed.
+  - risk if ignored: noisy security scan output can distract reviewers from the actual public-export boundary.
+
+INTENTIONALLY_NOT_DO:
+
+- GitHub push was not performed in this closeout.
+  - reason: this stage was a pre-push preventive audit and local repair pass.
+- Zeabur redeploy was not performed in this closeout.
+  - reason: deployment should happen only after the user approves the cleaned Git diff.
+
+Next resume point:
+
+- Review `git diff`, then commit and push if accepted; after that, redeploy Zeabur and run the production `image-only` smoke separately.
+
+## 2026-09-03 16:05 Full Preventive Rescan Closeout
+
+Scope:
+
+- Re-scanned the project from source, docs, public export boundary, local runtime scripts, ignored runtime artifacts, and security scanners before GitHub push or Zeabur redeploy.
+
+Findings:
+
+- P1 fixed: active runtime and audit code still exposed superseded pre-Adaptive contract version names. The behavior was not broken, but health/WebMCP/audit output could carry stale architecture language after the project was locked as Shared Room MCP powered by Adaptive Contract MCP.
+- P1 fixed: `stress-open-gate` could fail with HTTP 429 when run quickly beside other local stress tests under public-demo rate limits. This was a test configuration/rate-limit interaction, not a HITL state-machine failure.
+- P1 remaining: `docs/submission/WEBMCP_SUBMISSION.md` still contains `TODO_YOUTUBE_DEMO_URL`; replace it only after the final public demo video is uploaded.
+- P1 remaining: production `image-only` OCR/provider benchmark is still separate from the 115/115 deterministic image-oracle integration result.
+- P1 product gap remaining: formula controls for service fee, hourly venue fee, deposit include/exclude, shipping allocation, group discount, and headcount threshold are still manual-review scope.
+
+Changes:
+
+- Renamed active contract version strings to `adaptive-contract-*` in runtime and task-gap audit expectations.
+- Added HTTP 429 retry/backoff to `scripts/stress-open-gate.mjs` for JSON create/upload calls.
+- Documented that repeated local stress runs should use test-only rate limits, while Zeabur keeps lower public-demo throttles.
+- Tightened the public export manifest so `docs/ai-generated/` and `docs/decisions/` are excluded from the judge-facing public export surface as historical/internal evidence.
+
+Validation:
+
+- `npm run check`: PASS.
+- `npm run audit:tasks`: PASS, 8/8 checks ready, 1 open gap, 2 partial gaps.
+- `npm run verify:adaptive-contracts`: PASS, 13 contracts, 17 prompt nodes, 19 guardrails, 7 submit-gate stages, 11 evidence-review layers, 4 service-blueprint archetypes, 12 scenarios.
+- `node --check` for stress/open-gate, image-matrix, manifest builder, regression parser, and task-gap audit: PASS.
+- `git diff --check`: PASS.
+- `npm audit --audit-level=high`: PASS, 0 vulnerabilities.
+- release-boundary scan: PASS, 0 findings.
+- ai-security-rules agent review: PASS, P0=0, P1=0, P2=67.
+- Local open-gate runtime stress with test-only rate limits: PASS, 20/20.
+- Local image-oracle runtime sample with test-only rate limits: PASS, 23/23.
+- Active-source stale pre-Adaptive version names, retired non-Zeabur host tokens, and retired-domain scan: no matches in the judge-facing source/documentation surface.
+- Historical/internal stale-string scan: expected hits remain only under `docs/ai-generated/` and `docs/decisions/`, which are excluded from the public export surface.
+
+## 2026-09-03 17:31 Gemini Review Reconciliation Closeout
+
+Scope:
+
+- Reconciled the pasted external pre-launch security and architecture review against the actual local codebase.
+- Owner project: `/Users/sunjiarong/Developer/webmcp`.
+
+Adopted fixes:
+
+- Public wording now defines Shared Room MCP as a form-based async state room, not a chatroom, messaging app, payment gateway, or auto-booking agent.
+- Public wording now defines WebMCP as a page-local state reader and draft generator, not a browser-control agent that clicks final actions.
+- Host open wording is documented as Member-Visibility Release while preserving the existing `Open To Members` UI label used by the locked demo flow.
+- Prompt and evidence review contracts now include a complex-formula hard-stop: tax, service fee, deposit, prepayment, threshold, tiered discount, shipping split, and headcount formulas cannot become member-selectable line items before host review.
+- Frontend fetch handling now renders explicit 429 retry guidance using the server's JSON `retryAfterSeconds` value instead of a generic failure message.
+- Image-matrix oracle assertions now normalize currency/commas in price-like fields so formatted values cannot bypass forbidden-number checks.
+- `docs/ai-generated/` was removed from the Git index and added to `.gitignore`; local files remain available, but historical AI draft material is no longer part of the public GitHub surface.
+- Tracked-only stale-string scan no longer finds superseded version names, retired non-Zeabur host tokens, retired custom domains, overclaim wording, or Google Sheets production overclaims.
+
+Rejected or deferred:
+
+- Rejected boot-time failure when provider keys are missing. The no-key WebMCP demo is an explicit product boundary; missing optional model keys must degrade to local/manual review rather than crash.
+- Deferred a full code/API rename of `openItemsForMembers` because it would create unnecessary demo-flow risk. The architecture wording is clarified without breaking the stable button/API path.
+- The YouTube demo URL remains intentionally unresolved until the final video link exists.
+- Production `image-only` OCR/provider quality remains a separate Zeabur run; the 115-image result remains an image-plus-oracle integration benchmark.
+
+Validation:
+
+- `npm run check`: PASS.
+- `npm run verify:adaptive-contracts`: PASS, 13 contracts, 17 prompt nodes, 19 guardrails, 7 submit-gate stages, 11 evidence-review layers, 4 service-blueprint archetypes, 12 scenarios.
+- `npm run audit:tasks`: PASS, 8/8 checks ready, 1 open gap, 2 partial gaps.
+- `public/index.html` inline script extraction and `node --check`: PASS.
+- `node --check scripts/stress-image-matrix.mjs`, `node --check scripts/stress-open-gate.mjs`, and `node --check scripts/build-image-fixture-manifest.mjs`: PASS.
+- `git diff --check`: PASS.
+- Local HTTP smoke with test-only rate limits: `stress:open-gate` PASS 8/8 against `127.0.0.1:3190`.
+- Local image-oracle smoke with test-only rate limits: `stress:image-matrix --limit 6` PASS 6/6 against `127.0.0.1:3190`.
+- `ai-security-rules scan`: PASS for critical/high, with 0 critical, 0 high, 67 medium governance/config-surface findings.
+- `npm audit --audit-level=high`: not rerun in this reconciliation because the networked registry request was blocked by the security reviewer as an external dependency payload disclosure. Previous local closeout already recorded a successful npm audit; current dependency files were not changed in this reconciliation.
+
+Release decision:
+
+- Local source gate: OK except for the intentional YouTube submission placeholder and separate production image-only OCR/provider evidence gap.
+- GitHub public surface: OK after removing tracked AI-generated draft docs from the index and confirming ignored runtime/data/output/quarantine paths are not tracked.
+- Zeabur deployment: not performed in this reconciliation; deploy only after user approves the final diff and commit.
+
+## 2026-09-03 17:55 P0 HITL Schema Closeout
+
+Scope:
+
+- Implemented the P0 schema decoupling follow-up for WebMCP + LLM collaboration + human host review.
+- Owner project: `/Users/sunjiarong/Developer/webmcp`.
+
+Changes:
+
+- Added `boundingZone`, `detectedTypeHint`, `auditAnchor`, `auditAnchors`, and `reviewGates` to the OCR observation, parser candidate, calculation rule, and member-visible item path.
+- Extended `config/evidence-review-contract.json` and every scenario contract output field list so the new review fields are contract-required rather than incidental runtime metadata.
+- Strengthened Host Review UI with a two-column evidence review panel: source evidence/audit anchor on the left and suspicious-field review gate reasons on the right.
+- Frontend `Open To Members` now checks anti-pollution blocks before sending the socket mutation, so host sees the blocking reason before the backend rejects it.
+- Reworked guardrail memory writes into `negative_pattern_registry` events. The registry stores masked error patterns and routing instructions, not corrected answers, raw identifiers, or final prices.
+- Fixed the first regression from the stricter gate: host accept/modify now resolves blocking review gates into host-reviewed warnings and rebuilds member-visible items before open-gate checks.
+
+Validation:
+
+- `npm run check`: PASS.
+- `npm run verify:adaptive-contracts`: PASS, 13 contracts, 17 prompt nodes, 19 guardrails, 7 submit-gate stages, 11 evidence-review layers, 4 service-blueprint archetypes, 12 scenarios.
+- `npm run audit:tasks`: PASS, 8/8 checks ready, 1 open gap, 2 partial gaps.
+- `public/index.html` inline script extraction and `node --check`: PASS.
+- `node --check scripts/regression-adaptive-parser.mjs`, `node --check scripts/stress-open-gate.mjs`, and `node --check scripts/stress-image-matrix.mjs`: PASS.
+- Local adaptive parser regression against `127.0.0.1:4191`: PASS, 12/12 scenario lines.
+- Local open-gate HITL stress against `127.0.0.1:4191`: PASS, 80/80 cases across zh group-buy, zh drink-order, en sports-venue, and en ticket-activity.
+
+Remaining gaps:
+
+- The visual anchor currently records logical image zones and OCR-line anchors. Pixel-level crop/bbox overlay is prepared by schema but not yet implemented.
+- The open `audit:tasks` gap is still the existing final YouTube/demo artifact placeholder, not a failure of this P0 schema patch.
+- Zeabur deployment and GitHub push were intentionally not performed in this step.
+
+## 2026-09-03 18:10 P0 External Review Follow-Up
+
+Scope:
+
+- Reconciled the follow-up external review after the P0 HITL schema patch.
+
+Changes:
+
+- Refined review-gate state semantics: normal block gates can become host-reviewed warnings after explicit Host accept/modify, but structural gates cannot be released by plain accept.
+- Added structural gate classification for forbidden context numbers, member-visible non-currency numbers, and unresolved formulas. These require edit/remove before release.
+- Fixed a detector false positive where age wording such as `未滿` could be treated as a threshold/discount rule.
+- Fixed service-fee/tax rule parsing for reversed wording such as `未含 10% 服務費` and `10% tax`.
+- Expanded negative pattern registry metadata with `patternScope`, `contractId`, `language`, `evidenceType`, `matcherStrength`, and `actionOnMatch`.
+- Expanded contact keyword matching across Traditional Chinese, Simplified Chinese, and English.
+- Updated README wording to describe Semantic Visual Anchors and clarify that pixel-level crop/bbox overlays are schema-reserved roadmap work.
+- Tightened the image-matrix canonical number normalizer so oracle values such as `$2,026`, `NT$ 2,026`, `2,026元`, and `TWD 2026` normalize to `2026`.
+
+Validation:
+
+- `npm run check`: PASS.
+- `npm run verify:adaptive-contracts`: PASS, 13 contracts, 17 prompt nodes, 19 guardrails, 7 submit-gate stages, 11 evidence-review layers, 4 service-blueprint archetypes, 12 scenarios.
+- `npm run audit:tasks`: PASS, 8/8 checks ready, 1 open gap, 2 partial gaps.
+- `public/index.html` inline script extraction and `node --check`: PASS.
+- Local adaptive parser regression against `127.0.0.1:4192`: PASS, 12/12 scenario lines.
+- Local open-gate HITL stress against `127.0.0.1:4192`: PASS, 80/80 cases.
+- Negative formula gate probe: PASS. `未含 10% 服務費，依人數分攤` now produces `unresolved_formula_requires_edit:block` and `structural_review_gate_requires_edit_or_remove`.
+
+## 2026-09-03 18:35 P0 Forbidden Context Follow-Up
+
+Scope:
+
+- Reconciled the latest external release-risk review for address, tax identifier, and time-range numbers.
+- Kept this as a local release-gate patch only; no GitHub push or Zeabur deployment was performed in this step.
+
+Changes:
+
+- Added `address_number`, `tax_identifier`, `time_range`, and `booking_or_invoice_identifier` OCR observation types.
+- Routed address, tax identifier, contact, date, and time-range numbers to `forbidden_context_number:block`.
+- Routed booking, invoice, receipt, and order identifiers to a warning gate rather than a structural block.
+- Added fallback candidate review-gate detection from `rawTextEvidence`, `auditAnchor`, `label`, and `name` so provider output cannot bypass forbidden-context checks by omitting observation ids.
+- Extended local OCR skip keywords for Traditional Chinese, Simplified Chinese, and English address/tax/time/contact identifiers.
+- Added the `forbidden_context_keywords_cover_address_tax_time` anti-pollution rule to the evidence review contract and made `verify:adaptive-contracts` require it.
+- Added a frontend 15 second image-parse timeout with localized fallback text. Timeout now tells the host to paste OCR text or create a manual draft for review instead of leaving the UI hanging.
+- Updated README and submission text to state that the 115-image matrix is a deterministic contract-driven integration benchmark, not raw OCR, zero-shot OCR, or unconstrained vision accuracy.
+- Fixed the first overly broad address detector draft: generic `路` matching incorrectly classified `每公里 NT$ 25` as an address. The address detector now requires explicit address keywords or a fuller location/address structure.
+
+Validation:
+
+- `npm run check`: PASS.
+- `npm run verify:adaptive-contracts`: PASS, 13 contracts, 17 prompt nodes, 19 guardrails, 7 submit-gate stages, 11 evidence-review layers, 4 service-blueprint archetypes, 12 scenarios.
+- `public/index.html` inline script extraction and `node --check`: PASS.
+- `git diff --check`: PASS.
+- Local adaptive parser regression against `127.0.0.1:4194`: PASS, 12/12 scenario lines.
+- Local open-gate HITL stress against `127.0.0.1:4194`: PASS, 80/80 release-gate cases across zh group-buy, zh drink-order, en sports-venue, and en ticket-activity.
+- P0 forbidden-context probe against `127.0.0.1:4194`: PASS. Address, tax identifier, and time-range evidence lines each produced an OCR observation with `forbidden_context_number:block`.
+- English service-duration guard probe against `127.0.0.1:4194`: PASS. `Pitch rental two hours 220` remains a normal sports-venue item and is not misclassified as `date_time`.
+
+Observed test-only noise:
+
+- A 320-case extended open-gate run passed the first 105 cases, then hit a Socket.IO `Session ID unknown` test transport failure. The release-gate 80-case run passed afterward.
+- The first address detector draft was too broad and treated `每公里 NT$ 25` as address context because of the standalone `路` character. The final detector requires explicit address terms or fuller location structure, and avoids generic `hours` matching so service duration can remain a line item.
+- Early P0 probes used an invalid or too-small test image and failed at image preparation/minimum item gates before reaching OCR observation validation. The final probe used the same valid tiny PNG pattern as the existing stress scripts and passed.
+
+Remaining gaps:
+
+- Final YouTube demo URL remains pending.
+- Production image-only OCR/provider quality remains a separate Zeabur test. Current 115-image and text-backed checks must not be presented as zero-shot OCR accuracy.
+- Pixel-level visual crop overlay and Google Sheets trust-layer production bridge remain roadmap items.

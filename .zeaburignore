@@ -5,6 +5,8 @@ node_modules/
 logs/
 data/
 output/
+coverage/
+quarantine/
 docs/ai-generated/
 archive/
 npm-debug.log*
