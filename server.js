@@ -334,7 +334,8 @@ const reviewFlagTypes = new Set([
   'itinerary_number_near_price',
   'percentage_near_price',
   'points_cash_confusion',
-  'review_required'
+  'review_required',
+  'threshold_advisory'
 ]);
 const temperatureOptions = ['冷', '熱', '常溫', '冷熱皆可', '未標示'];
 const spiceLevels = ['none', 'mild', 'medium', 'hot', 'extra_hot', 'unknown'];
@@ -2522,11 +2523,11 @@ function detectOcrObservationType(text) {
   if (/(?:服務費|服務料|稅|營業稅|tax|service charge|service fee|surcharge)/i.test(value)) {
     return /%|％/.test(value) ? 'tax_or_fee_rate' : 'tax_or_fee_amount';
   }
-  if (/(?:滿\s*(?:NT\$?|\$|[0-9])|達\s*(?:NT\$?|\$|[0-9])|[0-9]\s*(?:件|人|位|份|組|杯|個)\s*以上|免運|折扣|[0-9]\s*折|優惠|門檻|threshold|minimum|discount|free shipping)/i.test(value)) {
-    return 'discount_or_threshold_rule';
-  }
   if (/(?:歲|年齡|幼兒|兒童|成人|child|adult|years? old)/i.test(value)) {
     return 'age_range';
+  }
+  if (/(?:^|[^未])滿\s*(?:NT\$?|\$|[0-9])|達\s*(?:NT\$?|\$|[0-9])|[0-9]\s*(?:件|人|位|份|組|杯|個)\s*以上|免運|折扣|[0-9]\s*折|優惠|門檻|threshold|minimum|discount|free shipping/i.test(value)) {
+    return 'discount_or_threshold_rule';
   }
   if (/(?:人|位|名|pax|people|persons?|capacity)/i.test(value) && !/(?:NT\$?|\$|元|圓|塊|TWD|USD)/i.test(value)) {
     return 'capacity_or_quantity';
@@ -2639,6 +2640,18 @@ function buildObservationReviewGates(detectedTypeHint, text) {
     ));
   }
   if (['deposit_or_security', 'prepayment', 'tax_or_fee_rate', 'tax_or_fee_amount', 'discount_or_threshold_rule'].includes(detectedTypeHint)) {
+    const thresholdAdvisoryOnly = detectedTypeHint === 'discount_or_threshold_rule'
+      && /(?:成團門檻|門檻|免運|最低|minimum|threshold|free\s*shipping)/i.test(value)
+      && !/(?:押金|保證金|訂金|預付|稅|服務費|另計|另收|外加|加收|deposit|prepay|tax|service\s*(?:fee|charge)|surcharge|split|allocate)/i.test(value);
+    if (thresholdAdvisoryOnly) {
+      gates.push(makeReviewGate(
+        'threshold_advisory_review',
+        'Threshold conditions are advisory context. AI flags them for host review but does not decide whether the group is committed.',
+        'warn',
+        ['displaySurface']
+      ));
+      return gates;
+    }
     const formulaGateId = /(?:未含|另計|另收|外加|加收|依人數|每人|每位|per\s*person|per\s*pax|split|allocate)/i.test(value)
       ? 'unresolved_formula_requires_edit'
       : 'complex_formula_or_rule_review';
@@ -2748,8 +2761,99 @@ function isLikelyLocalOcrQuantityMatch(line, match, nextMatch = null) {
 }
 
 function getLocalOcrPriceCandidates(line, priceMatches) {
+  const explicitCurrencyMatches = priceMatches.filter((match) => /(?:NT\$|\$|元|圓|塊|TWD|USD)/i.test(String(match.raw || '')));
+  if (explicitCurrencyMatches.length > 0) {
+    return explicitCurrencyMatches;
+  }
   const candidates = priceMatches.filter((match, index) => !isLikelyLocalOcrQuantityMatch(line, match, priceMatches[index + 1] || null));
   return candidates.length > 0 ? candidates : priceMatches;
+}
+
+function extractLocalOcrTableColumnLabels(line) {
+  const text = String(line || '').replace(/\s+/g, ' ').trim();
+  if (!text || extractLocalOcrPriceMatches(text).length > 0) {
+    return [];
+  }
+
+  const labels = [];
+  const routePattern = /(?:行程|方案|路線|Route|Trip|Tour|Plan)\s*[A-Z0-9一二三四五六七八九十]*\s*[^|｜]*?(?=\s*[|｜]|\s+備註|\s+Note|\s*$)/gi;
+  let routeMatch;
+  while ((routeMatch = routePattern.exec(text)) !== null) {
+    const label = cleanLocalOcrName(routeMatch[0]
+      .replace(/^(?:類別|條件|方案|備註|Category|Condition|Note)\s*/i, ''));
+    if (label && label.length >= 2 && !labels.includes(label)) {
+      labels.push(label);
+    }
+  }
+
+  if (labels.length >= 2) {
+    return labels.slice(0, 6);
+  }
+
+  const splitLabels = text
+    .split(/[|｜]/)
+    .map((part) => cleanLocalOcrName(part
+      .replace(/^(?:類別|條件|方案|備註|Category|Condition|Plan|Note)\s*/i, '')
+      .replace(/\s*(?:備註|Note)\s*$/i, '')))
+    .filter((part) => part.length >= 2 && !isNonMenuMetadataLabel(part));
+  return splitLabels.length >= 2 ? splitLabels.slice(0, 6) : [];
+}
+
+function shouldTreatLocalOcrLineAsMultiColumnPriceRow(taskType, name, priceCandidates) {
+  if (!Array.isArray(priceCandidates) || priceCandidates.length < 2) {
+    return false;
+  }
+  if (inferDrinkItem(name)) {
+    return false;
+  }
+  return ['ticket_activity', 'venue_booking', 'rental_share', 'service_booking', 'parse_transport_share'].includes(normalizeRoomTaskType(taskType));
+}
+
+function stripLocalOcrPriceText(line) {
+  return String(line || '')
+    .replace(localOcrPricePattern, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function buildLocalOcrMultiColumnItems(line, priceCandidates, tableColumnLabels, currentSection, selectedTaskType, imageCount) {
+  const rowLabel = cleanLocalOcrName(stripLocalOcrPriceText(line)
+    .replace(/^(?:類別|條件|方案|Category|Condition|Plan)\s*/i, '')
+    .replace(/[|｜]/g, ' '));
+  if (!rowLabel || shouldDropNonMenuPriceName(rowLabel)) {
+    return [];
+  }
+
+  return priceCandidates.slice(0, Math.max(2, tableColumnLabels.length || 2)).map((priceMatch, index) => {
+    const columnLabel = tableColumnLabels[index] || `${currentSection || '方案'} ${index + 1}`;
+    const name = cleanLocalOcrName(`${columnLabel} ${rowLabel}`);
+    return {
+      name,
+      price: priceMatch.price,
+      priceRole: normalizePriceRole('', { name, sectionName: currentSection }, selectedTaskType),
+      sourceNumberClass: normalizeSourceNumberClass('', { name, sectionName: currentSection, rawTextEvidence: line }),
+      currency: 'TWD',
+      quantity: 1,
+      unit: inferUnitFromText(line),
+      rawTextEvidence: normalizeShortText(line, 220),
+      confidence: 0.82,
+      supportsDrinkOptions: false,
+      sourceImageIndex: Math.min(1, imageCount),
+      category: selectedTaskType === 'ticket_activity'
+        ? 'ticket'
+        : normalizeMenuCategory('', `${currentSection} ${columnLabel} ${rowLabel}`, false),
+      sectionName: currentSection || cleanLocalOcrName(columnLabel),
+      sizeLabel: cleanLocalOcrName(rowLabel),
+      temperature: '未標示',
+      spiceLevel: normalizeSpiceLevel('', name),
+      dietaryFlags: [],
+      tags: ['manual_review'],
+      conditions: normalizeConditions([], line),
+      reviewFlags: ['multiple_price_candidates'],
+      note: '本地 OCR 偵測到多欄價格列，已拆成候選項目，請主揪逐項複查。',
+      optionGroups: []
+    };
+  }).filter((item) => item.name && Number.isInteger(item.price));
 }
 
 function extractLocalOcrRuleAmount(line) {
@@ -2762,6 +2866,18 @@ function extractLocalOcrRuleAmount(line) {
     }
   }
   return null;
+}
+
+function extractLocalOcrAmountNearPattern(line, markerPattern) {
+  const text = String(line || '');
+  const markerMatch = markerPattern.exec(text);
+  markerPattern.lastIndex = 0;
+  if (!markerMatch) {
+    return null;
+  }
+  const sliceStart = markerMatch.index + markerMatch[0].length;
+  const sliceEnd = Math.min(text.length, markerMatch.index + markerMatch[0].length + 28);
+  return extractLocalOcrRuleAmount(text.slice(sliceStart, sliceEnd));
 }
 
 function buildLocalOcrRuleHint(type, line, amount = null) {
@@ -2786,8 +2902,12 @@ function classifyLocalOcrRuleLine(line) {
   if (localOcrFreeShippingRulePattern.test(text) && amount) {
     return buildLocalOcrRuleHint('free_shipping_threshold', text, amount);
   }
-  if (localOcrMinimumRulePattern.test(text) && amount) {
-    return buildLocalOcrRuleHint('minimum_threshold', text, amount);
+  if (localOcrMinimumRulePattern.test(text)) {
+    const thresholdAmount = extractLocalOcrAmountNearPattern(text, /(?:成團門檻|門檻|滿額|起送|低消|最低消費|minimum\s*(?:order|spend|charge|consume)|min\.?\s*(?:order|spend|charge)|threshold)\s*[:：]?\s*(?:滿|達)?\s*/gi)
+      || amount;
+    if (thresholdAmount) {
+      return buildLocalOcrRuleHint('minimum_threshold', text, thresholdAmount);
+    }
   }
   if (localOcrDiscountRulePattern.test(text)) {
     return buildLocalOcrRuleHint('discount_rule', text);
@@ -2915,6 +3035,17 @@ function buildCandidateAuditAnchors(observationIds = [], observations = []) {
 }
 
 function buildCandidateReviewGates(candidate, observations = []) {
+  if (candidate?.priceRole === 'threshold_amount' && candidate?.displaySurface === 'host_rule_panel') {
+    return mergeReviewGates(
+      candidate.reviewGates,
+      makeReviewGate(
+        'threshold_advisory_review',
+        'Threshold conditions are advisory context. AI flags them for host review but does not decide whether the group is committed.',
+        'warn',
+        ['displaySurface']
+      )
+    );
+  }
   const matchedObservations = findObservationsByIds(candidate?.sourceObservationIds, observations);
   const gates = matchedObservations.flatMap((observation) => normalizeReviewGates(observation.reviewGates));
   const fallbackEvidenceText = [
@@ -3070,7 +3201,19 @@ function inferRuleCandidateFromObservation(room, observation, options = {}) {
       amount: Number(ruleHint.amount || amount || 0),
       priceRole: 'threshold_amount',
       sourceNumberClass: 'currency_amount',
-      displaySurface: 'host_rule_panel'
+      displaySurface: 'host_rule_panel',
+      reviewFlags: ['threshold_advisory'],
+      reviewGates: [
+        makeReviewGate(
+          'threshold_advisory_review',
+          'Threshold conditions are advisory context. AI flags them for host review but does not decide whether the group is committed.',
+          'warn',
+          ['displaySurface']
+        )
+      ],
+      status: 'accepted',
+      reviewedAt: nowIso(),
+      reviewedBy: 'system_threshold_advisory'
     };
   }
   if (ruleHint?.type === 'discount_rule') {
@@ -3376,7 +3519,25 @@ function getAntiPollutionBlocks(room) {
       detail: `${missingEvidenceItems.length} selectable item(s) lack evidence pointers.`
     });
   }
-  const unreviewedRules = rules.filter((rule) => rule.reviewRequired || normalizeParserCandidateStatus(rule.status) === 'pending');
+  const blockingRuleRoles = new Set([
+    'discount',
+    'discount_rate',
+    'discount_amount',
+    'tax_and_fee',
+    'tax_rate',
+    'tax_fixed_fee',
+    'service_rate',
+    'service_fixed_fee',
+    'shared_fixed_fee',
+    'deposit',
+    'prepayment_down',
+    'aggregate_subtotal',
+    'aggregate_grand_total'
+  ]);
+  const unreviewedRules = rules.filter((rule) => {
+    const status = normalizeParserCandidateStatus(rule.status);
+    return (rule.reviewRequired || status === 'pending') && blockingRuleRoles.has(normalizePriceRole(rule.priceRole || rule.ruleType, rule, room?.taskRouter?.taskType));
+  });
   if (unreviewedRules.length > 0) {
     blocks.push({
       id: 'unreviewed_rules_block_member_open',
@@ -3447,6 +3608,7 @@ function acceptPendingParserCandidates(room, reviewerId, reason = 'host accepted
 function getStructuralReviewBlocks(room) {
   const candidates = Array.isArray(room?.parserCandidates) ? room.parserCandidates : [];
   return candidates
+    .filter((candidate) => candidate.displaySurface === 'member_selectable' || candidate.proposedItemId)
     .map((candidate) => ({
       candidate,
       gates: getUnresolvedStructuralReviewGates(candidate)
@@ -3757,8 +3919,8 @@ function buildEvidenceContract(room) {
       'social_account_identifier'
     ],
     deterministicParser: {
-      parserVersion: 'local-ocr-price-parser.v1',
-      pricePattern: 'NTD integer price from text line',
+      parserVersion: 'local-ocr-price-parser.v2',
+      pricePattern: 'local OCR text-block and table-aware NTD integer candidates',
       sectionPattern: 'known menu/activity/venue/rental section labels',
       maxCandidateItems: 120,
       outputFields: [
@@ -3828,6 +3990,7 @@ function parseLocalOcrMenuCandidates(localOcrText, imageCount = 1, options = {})
   const rawItems = [];
   const ruleHints = [];
   let currentSection = '';
+  let tableColumnLabels = [];
   const selectedTaskType = normalizeRoomTaskType(options.taskType);
 
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
@@ -3843,6 +4006,12 @@ function parseLocalOcrMenuCandidates(localOcrText, imageCount = 1, options = {})
     }
     if (localOcrItineraryHeadingPattern.test(line)) {
       currentSection = cleanLocalOcrName(line).slice(0, 24);
+      continue;
+    }
+    const detectedTableColumnLabels = extractLocalOcrTableColumnLabels(line);
+    if (detectedTableColumnLabels.length >= 2) {
+      tableColumnLabels = detectedTableColumnLabels;
+      currentSection = cleanLocalOcrName(detectedTableColumnLabels.join(' / ')).slice(0, 24);
       continue;
     }
     if (isLikelyLocalOcrSection(line) || isLikelyLocalOcrDynamicSection(line, nextLine)) {
@@ -3871,6 +4040,10 @@ function parseLocalOcrMenuCandidates(localOcrText, imageCount = 1, options = {})
       ? 'ticket'
       : normalizeMenuCategory('', `${currentSection} ${name}`, supportsDrinkOptions);
     const optionGroups = [];
+    if (shouldTreatLocalOcrLineAsMultiColumnPriceRow(selectedTaskType, name, priceCandidates)) {
+      rawItems.push(...buildLocalOcrMultiColumnItems(line, priceCandidates, tableColumnLabels, currentSection, selectedTaskType, imageCount));
+      continue;
+    }
     if (priceCandidates.length >= 2 && supportsDrinkOptions) {
       name = stripDrinkSizeFromName(name);
       const basePrice = firstPrice.price;

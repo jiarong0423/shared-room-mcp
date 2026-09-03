@@ -54,6 +54,12 @@ Implemented WebMCP tools:
 
 The human controls the room, task type, uploaded evidence, copied text, parsed item review, Member-Visibility Release, participant names, claim confirmation, and final summary. The assistant helps by reading the current state, identifying conflicts, explaining missing claims, guiding the next action from the WebMCP tool output, and preparing drafts for the host. The `suggest_next_actions` tool is the main read path. The `create_action_proposal` tool stores a waiting-for-host JSON proposal under `room.agentProposals[]`, including field-fix drafts when Codex detects a reading mistake. The host can edit or remove parsed item rows before releasing the list to members. Owner review stays on one visible draft card; repeated same-type drafts replace the previous pending card instead of stacking duplicate decisions. Accepted reviews are explicit room-state transitions.
 
+The core loop is: OCR plus LLM-assisted parsing and text-block recognition produce a draft; WebMCP/Codex reviews the draft against room state and evidence; the human edits, confirms, and releases the final commitment.
+
+Chinese wording for review: OCR + LLM 解析 + 文字區塊辨識 = 草稿；WebMCP/Codex 複查；人工修正、確認、放行。
+
+Threshold conditions such as minimum headcount, minimum spend, and free-shipping thresholds are advisory room context. The assistant may flag a mismatch between the evidence and the current room state, but it cannot decide that the group is formed, the booking is valid, payment is complete, or settlement is final. The host can edit, override, and release the member-facing task after review.
+
 Provider AI is optional and limited to image/text repair helpers. Future forks can reuse the same draft-first pattern for booking drafts, repair appointment drafts, salon reservation drafts, activity signup drafts, and other pre-commitment workflows while keeping commitments behind host/member review gates.
 
 ## Official Requirement Alignment
@@ -142,6 +148,7 @@ npm run check
 npm run audit:tasks
 IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run build:image-fixture-manifest
 IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run stress:image-matrix -- --base-url http://127.0.0.1:3000 --mode image-plus-oracle-text --output-dir logs/runtime/image-matrix
+IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run stress:image-matrix -- --base-url https://shared-room-mcp-next.zeabur.app --mode image-plus-local-ocr --tesseract-bin /opt/homebrew/bin/tesseract --delay-ms 5000 --limit 3 --continue-on-failure --output-dir logs/runtime/image-matrix-local-ocr-canary
 npm run stress:contracts -- --base-url http://127.0.0.1:3000 --rounds 20 --concurrency 4 --output-dir logs/runtime
 npm start
 ```
@@ -156,7 +163,15 @@ The Zeabur public demo keeps the lower public-demo throttle. A local 429 during 
 
 The repeated room-flow check covers 20 non-duplicate Traditional Chinese and English scenarios, with 20 rounds per scenario. It checks room creation, copied evidence-text parsing, stable room-type selection, draft creation, and the final human approval rule.
 
-The image-matrix command is a deterministic contract-driven integration benchmark. The public repository keeps the manifest, schema, and runner; the full PNG set is supplied as an external artifact through `IMAGE_MATRIX_ROOT` or `--matrix-root`. It verifies checksum-backed image-oracle artifacts and HITL state behavior in `image-plus-oracle-text` mode; it is not a provider accuracy, zero-shot extraction, or unconstrained vision benchmark.
+The image-matrix command is a deterministic contract-driven integration benchmark. The public repository keeps the manifest, schema, and runner; the full PNG set is supplied as an external artifact through `IMAGE_MATRIX_ROOT` or `--matrix-root`.
+
+There are three separate image-test modes:
+
+- `image-only`: uploads only the image. It is a negative canary unless the deployment owner configured an image-reading provider.
+- `image-plus-local-ocr`: runs OCR on the operator machine first, then uploads the image plus locally extracted text to the hosted room. Zeabur remains the room/runtime/HITL surface, not the OCR engine. This mode is a canary for field isolation, evidence pointers, forbidden-number leakage, and advisory threshold handling; exact image-oracle price matching remains the job of `image-plus-oracle-text`.
+- `image-plus-oracle-text`: uploads the image plus locked oracle text and verifies checksum-backed image-oracle artifacts, contract routing, member-visible masks, and HITL state behavior.
+
+None of these modes should be described as provider accuracy, zero-shot extraction, unconstrained vision accuracy, or Zeabur-hosted OCR.
 
 Semantic Visual Anchor Notice: the current protocol records logical `boundingZone` values and contextual `auditAnchor` snippets for host review. Pixel-level `bbox` crop overlays are reserved roadmap fields and are not part of the current release claim.
 

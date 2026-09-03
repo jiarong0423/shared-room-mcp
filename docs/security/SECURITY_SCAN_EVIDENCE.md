@@ -20,6 +20,7 @@ SAST-equivalent local code security evidence:
 
 - Full Adaptive Contract MCP naming rescan passed on 2026-09-03. Active tracked source/docs/config/scripts passed checks for retired protocol names, retired stress script names, retired host URLs, retired custom domains, local machine paths, and known secret token prefixes.
 - Local `/healthz` on 2026-09-03 returned `acmcp-evidence-review.v1`, `acmcp-service-blueprint.v1`, `acmcp-trust-layer-contract.v1`, `acmcp-webmcp-tools.v2`, and `acmcp-room-store.v1`.
+- Local OCR canary on 2026-09-03 passed 3/3 for `S01_zh_ticket_activity_v01` through `v03` against `http://127.0.0.1:3017` using operator-machine Tesseract `chi_tra+eng`. The run verified table-aware text-block parsing, age-number leakage prevention, and threshold advisory handling. Zeabur remains the hosted room/runtime/HITL surface, not the OCR engine.
 - Local Adaptive Contract parser regression passed 12/12 scenario lines on 2026-09-03 after the protocol naming cleanup.
 - Local Member-Visibility Release stress passed 80/80 cases on 2026-09-03 after the Socket.IO polling harness was made session-expiry tolerant. The flow verified host review, member release, member confirmation, owner finalization, and HTML/PDF export.
 - The 115-image manifest builder passed on 2026-09-03 without the external PNG matrix present by validating the checked-in checksum/oracle manifest. Supplying `IMAGE_MATRIX_ROOT` still rebuilds the manifest from the external artifact.

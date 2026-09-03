@@ -33,11 +33,12 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 | Superseded Zeabur production pre-recording flow | Superseded historical evidence | live browser/API check on 2026-09-02 against `https://shared-room-mcp-next.zeabur.app/` | historical hosted evidence only; use a fresh `/healthz`, WebMCP inspect, finalized room HTML/PDF download, and browser console check after deployment |
 | Same-tab room transition | 2/2 local and 2/2 production passed | summarized historical evidence in `docs/security/SECURITY_SCAN_EVIDENCE.md` | a loaded room can switch to a clean empty room, and a late update from the old room cannot overwrite the new room |
 | Final bilingual export repair | 4/4 local flows passed | isolated local run on 2026-09-02, summarized in the development log | Chinese and English flows finalized, HTML/PDF exports passed, and PDFs include separate readable Latin and CJK fonts |
-| Deterministic image-oracle integration benchmark | 115/115 passed | isolated local image-matrix run, summarized in security evidence | external PNG artifacts were verified by SHA-256 and matched scenario/language/contract/member-visible oracle expectations in `image-plus-oracle-text` mode; this is not a provider accuracy benchmark |
+| Deterministic image-oracle integration benchmark | 115 deterministic cases passed | isolated local image-matrix run, summarized in security evidence | external PNG artifacts were verified by SHA-256 and matched scenario/language/contract/member-visible oracle expectations in `image-plus-oracle-text` mode; this is not an OCR or provider accuracy benchmark |
+| Local OCR canary | 3/3 local S01 variants passed | local isolated runner output outside the repository | operator-machine Tesseract OCR plus text-block parsing produced member-safe candidates, prevented age-number leakage, and kept group-threshold text as advisory host context rather than a Zeabur OCR claim |
 
 ## What This Means
 
-- The demo does not depend on a paid OCR or model API.
+- The demo does not depend on Zeabur-hosted OCR, a paid OCR API, or a paid model API.
 - The assistant can inspect the room and create drafts, but cannot release the member-visible list, confirm for members, finalize the room, pay, or submit bookings.
 - The host can review and fix parsed rows before members enter the claim step.
 - Duplicate assistant drafts for the same topic collapse into one visible host decision.
@@ -58,4 +59,4 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 - This is not a payment, booking, banking, or vendor-ordering system.
 - Exported records are local review summaries. They do not submit forms or change external systems.
 - Production deployments should add real authentication and replace the JSON save layer with Redis or PostgreSQL.
-- The 115/115 image fixture oracle result is not a hosted image-recognition benchmark. It proves artifact integrity, contract routing, oracle wiring, and HITL state behavior. The core demo path is WebMCP plus Codex/LLM side-panel review plus human approval, without requiring provider keys.
+- The 115-case image fixture oracle result is not a hosted image-recognition benchmark. It proves artifact integrity, contract routing, oracle wiring, and HITL state behavior. The core demo path is WebMCP plus Codex/LLM side-panel review plus human approval, without requiring provider keys. If the runner uses `image-plus-local-ocr`, OCR happens on the operator machine before the request reaches the hosted room.

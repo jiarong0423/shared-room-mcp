@@ -4,6 +4,8 @@ Shared Room MCP is the reference application. Adaptive Contract MCP is the reusa
 
 The product boundary is a form-based async private task room. It is not a chatroom, messaging app, payment gateway, booking bot, or browser-control agent. A host defines the evidence and service boundary; members fill only their own selectable or assigned parts; final release and settlement stay behind explicit human review.
 
+OCR plus LLM-assisted parsing and text-block recognition produce a draft. WebMCP/Codex reviews the draft against room state and evidence. The human edits, confirms, overrides advisory warnings, and releases the commitment. Threshold conditions such as group size or minimum spend are warnings until a host decides; AI never commits a booking, group formation, payment, or settlement.
+
 ## Runtime Loop
 
 ```mermaid
@@ -113,6 +115,6 @@ The first form prevents repeated known error patterns without poisoning future r
 
 ## Public Benchmark Scope
 
-The image matrix is a deterministic contract-driven integration benchmark. It verifies artifact integrity, scenario routing, schema adherence, member-visible masks, anti-pollution gates, and HITL state transitions under paired image and oracle evidence.
+The image matrix is a deterministic contract-driven integration benchmark. It verifies artifact integrity, scenario routing, schema adherence, member-visible masks, anti-pollution gates, and HITL state transitions under paired image and evidence text.
 
-It is not a provider accuracy benchmark and not a claim that arbitrary real-world images always parse correctly. The release claim is limited to deterministic image-plus-oracle integration and the WebMCP plus Codex plus human-review loop. External provider image-reading tests, if a deployment owner chooses to run them, are extension checks and not the Zeabur demo contract.
+It is not a provider accuracy benchmark and not a claim that arbitrary real-world images always parse correctly. The release claim is limited to deterministic image-plus-oracle integration, optional operator-machine OCR canaries, and the WebMCP plus Codex plus human-review loop. Zeabur is the hosted room/runtime/HITL surface; it is not the OCR engine unless a deployment owner explicitly installs and configures such an extension.

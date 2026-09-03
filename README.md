@@ -43,7 +43,7 @@ The full check summary is in [`docs/testing/VALIDATION_EVIDENCE.md`](docs/testin
 | Load Sample Room | 120/120 passed | sample data stays as a draft and does not settle, pay, or call outside services |
 | Current Zeabur production flow | PASS | hosted health, WebMCP, member-confirmation, finalized summary, and HTML/PDF export flow |
 | Same-tab room switch | 2/2 passed | a new room gets clean controls, and late updates from the old room are ignored |
-| Image oracle integration benchmark | 115/115 passed | deterministic image-plus-oracle-text contract test, not provider accuracy |
+| Image oracle integration benchmark | 115 deterministic cases passed | image-plus-oracle-text contract test, not OCR/provider accuracy |
 
 These checks show that the assistant workflow is repeatable and no-key by default. They are not a claim of production-scale database capacity. The default JSON save layer is for a single demo service; production traffic should use Redis or PostgreSQL.
 
@@ -53,19 +53,26 @@ This is a single-direction task room. The host provides evidence and performs th
 
 `Shared Room MCP` is the demo application and repository slug. `Adaptive Contract MCP` is the underlying contract, routing, prompt, guardrail, and HITL state-machine layer. The architecture name is used where the project discusses reusable scenario contracts, image-fixture oracles, enterprise submission gates, and anti-pollution review controls.
 
+Core loop: OCR plus LLM-assisted parsing and text-block recognition produce a draft; WebMCP/Codex reviews the draft against room state and evidence; the human edits, confirms, and releases the final commitment.
+
+中文口徑：OCR + LLM 解析 + 文字區塊辨識 = 草稿；WebMCP/Codex 複查；人工修正、確認、放行。
+
+Threshold conditions such as "minimum 12 people" are advisory context. The assistant can flag the gap between the evidence and the current room, but it cannot promise that a group has formed, that a booking is valid, that payment is complete, or that settlement is final. The host can review, override, edit, and proceed; that human action is the commitment.
+
 AI provider adapters are extension-only:
 
 - Pasted text and local rule-based parsing run first.
 - The core WebMCP workflow must work without any paid API key.
 - Codex and the browser sidebar provide the intended LLM collaboration layer: visual review, evidence comparison, field-fix suggestions, and state guidance.
 - WebMCP is the primary agent integration; external model APIs are not required for the agent workflow.
-- Server-side Gemini/OpenAI adapters exist only as replaceable examples for deployment owners who explicitly choose external OCR/schema repair outside the core demo path.
+- Server-side Gemini/OpenAI adapters exist only as replaceable examples for deployment owners who explicitly choose external image-reading or schema repair outside the core demo path.
+- Zeabur is not the OCR engine. In the hosted demo it receives uploaded evidence plus host/assistant-provided text or review proposals, then runs the room state machine, guardrails, member release, and exports.
 
 ## Open Source Tool-Layer Positioning
 
 This repository is intended to be a clean, forkable WebMCP starter project. It does not sell API access, resell model credits, require store integration, or require a fixed OCR provider.
 
-Deployment owners can keep the default no-key flow, remove the extension adapter code, or replace it with their own OCR, vision, browser, commerce, spreadsheet, or private-community integrations. The stable part is the shared room workflow and the WebMCP tools, not any paid API.
+Deployment owners can keep the default no-key flow, remove the extension adapter code, or replace it with their own local OCR, browser-side OCR, vision, commerce, spreadsheet, or private-community integrations. The stable part is the shared room workflow and the WebMCP tools, not any paid API.
 
 External developers should be able to fork the template and plug in their own integrations without asking for access to a central service. High-risk commitments stay behind explicit host/member confirmation.
 
@@ -393,6 +400,7 @@ npm run audit:tasks
 npm run stress:contracts -- --base-url http://127.0.0.1:3000 --rounds 20 --concurrency 4 --output-dir logs/runtime
 IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run build:image-fixture-manifest
 IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run stress:image-matrix -- --base-url http://127.0.0.1:3000 --mode image-plus-oracle-text --output-dir logs/runtime/image-matrix
+IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run stress:image-matrix -- --base-url https://shared-room-mcp-next.zeabur.app --mode image-plus-local-ocr --tesseract-bin /opt/homebrew/bin/tesseract --delay-ms 5000 --limit 3 --continue-on-failure --output-dir logs/runtime/image-matrix-local-ocr-canary
 ```
 
 For repeated local stress runs, start the local server with test-only rate limits so the test measures state-machine behavior instead of the public-demo throttle:
@@ -405,12 +413,20 @@ The hosted public demo should keep the lower public-demo limits shown above.
 
 The repeated room-flow check covers 20 non-duplicate Traditional Chinese and English scenarios, with 20 rounds per scenario. It checks room creation, copied evidence-text parsing, stable room-type selection, draft creation, and the final human approval rule.
 
-The image-matrix runner is a deterministic contract-driven integration benchmark using 115 paired image-oracle artifacts. The public repository keeps the manifest, schema, and runner; the full PNG set is supplied as an external artifact through `IMAGE_MATRIX_ROOT` or `--matrix-root`. Each test verifies the image SHA-256, scenario id, language, contract id, archetype, expected member-visible items, rule counts, forbidden member-visible numbers, evidence pointers, and Semantic Visual Anchor fields. `image-plus-oracle-text` validates the HITL state transition and oracle chain without provider keys. It must not be described as provider accuracy, zero-shot extraction accuracy, unconstrained vision accuracy, or a hosted image-recognition benchmark. Zeabur is the hosted room/runtime/export surface; WebMCP plus Codex plus human review is the intended evidence-review loop.
+The image-matrix runner is a deterministic contract-driven integration benchmark using 115 paired image-oracle artifacts. The public repository keeps the manifest, schema, and runner; the full PNG set is supplied as an external artifact through `IMAGE_MATRIX_ROOT` or `--matrix-root`. Each test verifies the image SHA-256, scenario id, language, contract id, archetype, expected member-visible items, rule counts, forbidden member-visible numbers, evidence pointers, and Semantic Visual Anchor fields.
+
+The runner has three modes with different claims:
+
+- `image-only`: uploads only the image. This is a negative canary unless the deployment owner has configured an explicit image-reading provider. It must not be used to claim the default Zeabur demo performs OCR.
+- `image-plus-local-ocr`: runs OCR on the operator machine first, then uploads the image plus the locally extracted text to the hosted room. Zeabur still acts as the room/runtime/HITL surface, not as the OCR engine. This mode is a canary for field isolation, evidence pointers, forbidden-number leakage, and advisory threshold handling; exact image-oracle price matching remains the job of `image-plus-oracle-text`.
+- `image-plus-oracle-text`: uploads the image plus the locked oracle text. This validates contract routing, guardrails, member-visible masks, and HITL state transitions. It is not proof of visual OCR accuracy.
+
+These checks must not be described as provider accuracy, zero-shot extraction accuracy, unconstrained vision accuracy, or a hosted image-recognition benchmark. The intended evidence-review loop is WebMCP plus Codex/LLM visual review plus human approval.
 
 Expected audit state:
 
 - room type selection ready
-- evidence/OCR review ready
+- evidence and copied-text review ready
 - local calculation rules ready
 - member confirmation checks ready
 - WebMCP tools ready
@@ -457,7 +473,7 @@ The detailed timed runbook is in [`docs/submission/WEBMCP_SUBMISSION.md`](docs/s
 - Room data is saved to a local JSON file by default. On a hosted service, attach a volume and set `ROOM_STORE_PATH=/data/rooms.json`; otherwise a platform restart can still clear room state.
 - The current save layer is meant for one demo service instance. It smooths short write bursts by merging nearby changes and adding a small millisecond delay before saving, but a hard crash can still lose the latest tiny write window. Production traffic should move to Redis or PostgreSQL.
 - Room ownership is demo-grade. Production deployments should add signed sessions or a real login system.
-- OCR quality depends on image clarity. If a live provider call times out or produces sparse evidence, the app should fall back to manual review instead of inventing missing fields.
+- Image-reading quality depends on image clarity and on the OCR or vision tool selected by the operator. If a local/browser/provider extraction step times out or produces sparse evidence, the app should fall back to manual review instead of inventing missing fields.
 - Advanced rules such as shipping split, hourly venue fee, room minimum, deposit include/exclude, tax/service formulas, and tier discounts route to host review. The current MVP does not claim fully automated complex formula calculation.
 - Google Sheets trust-layer check/enroll/revoke adapters are design-level roadmap extensions, not production-ready identity infrastructure in this public core.
 - Pixel-level visual crop overlays are reserved in the schema roadmap. The current UI uses semantic anchors and contextual snippets.
