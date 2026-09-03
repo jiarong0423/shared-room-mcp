@@ -65,7 +65,7 @@ Threshold conditions such as "minimum 12 people" are advisory context. The assis
 
 AI provider adapters are extension-only:
 
-- Pasted text and local rule-based parsing seed candidate evidence only; they are not a completed pre-push review draft by themselves.
+- Pasted text and local rule-based parsing seed draft evidence only; they are not a completed image review by themselves.
 - For the hosted Zeabur demo, local OCR and LLM visual review should run from an authorized local bridge, then write a draft-only WebMCP proposal back to the cloud room for host review.
 - The core WebMCP workflow must work without any paid API key.
 - Codex and the browser sidebar provide the intended LLM collaboration layer: visual review, evidence comparison, field-fix suggestions, and state guidance.
@@ -459,7 +459,7 @@ The image-matrix runner is a deterministic contract-driven integration benchmark
 The runner has three modes with different claims:
 
 - `image-only`: uploads only the image. This is a negative canary unless the deployment owner has configured an explicit image-reading provider. It must not be used to claim the default Zeabur demo performs OCR.
-- `image-plus-local-ocr`: runs OCR on the operator machine first, then writes OCR metadata and a draft proposal into the hosted room. Zeabur still acts as the room/runtime/HITL surface, not as the OCR engine. This mode is a canary for field isolation, evidence pointers, forbidden-number leakage, and advisory threshold handling; completed pre-push image review still requires LLM visual review or host repair before member release.
+- `image-plus-local-ocr`: runs OCR on the operator machine first, then writes OCR metadata and a draft proposal into the hosted room. Zeabur still acts as the room/runtime/HITL surface, not as the OCR engine. This mode is a canary for field isolation, evidence pointers, forbidden-number leakage, and advisory threshold handling; completed image review still requires LLM visual review or host repair before member release.
 - `image-plus-oracle-text`: uploads the image plus the locked oracle text. This validates contract routing, guardrails, member-visible masks, and HITL state transitions. It is not proof of visual OCR accuracy.
 
 These checks must not be described as provider accuracy, zero-shot extraction accuracy, unconstrained vision accuracy, or a hosted image-recognition benchmark. The intended evidence-review loop is WebMCP plus Codex/LLM visual review plus human approval.

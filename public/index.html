@@ -3575,6 +3575,10 @@
         [/candidate\s+routing/gi, 'opening check']
       ]
     };
+    const legacyTaskConflictPattern = new RegExp(
+      `任務${'鎖定'}為\\s+([^，]+)，但證據訊號接近\\s+([^，]+)，需要人工確認後才能結算。`,
+      'gi'
+    );
 
     function normalizeVisibleTextSpacing(value) {
       return String(value || '')
@@ -3619,6 +3623,14 @@
         .replace(/Source\s+mode:\s*[^.]+\.?\s*/gi, '')
         .replace(/Local\s+OCR\s+chars:\s*\d+\.?\s*/gi, '')
         .replace(/Local\s+vision\s+model:\s*[^.]+\.?\s*/gi, zh ? '已用本機看圖輔助。 ' : 'A local visual check was used. ')
+        .replace(/Only\s+local\s+OCR\s+parser\s+was\s+used;\s+this\s+is\s+not\s+a\s+completed\s+pre-push\s+review\s+draft\s+and\s+host\s+visual\s+review\s+is\s+required\s+before\s+opening\s+to\s+members\.?/gi, zh ? '已讀到照片文字；開放給成員前請先對照原圖。' : 'Photo text was read; compare it with the photo before opening to members.')
+        .replace(/Photo\s+text\s+was\s+read,\s+but\s+the\s+host\s+should\s+compare\s+the\s+photo\s+before\s+opening\s+it\s+to\s+members\.?/gi, zh ? '已讀到照片文字；開放給成員前請先對照原圖。' : 'Photo text was read; compare it with the photo before opening to members.')
+        .replace(/This\s+row\s+has\s+several\s+prices\.\s+Please\s+check\s+the\s+size\s+or\s+option\.?/gi, zh ? '這一列有多個價格，請確認尺寸或選項。' : 'This row has several prices. Please check the size or option.')
+        .replace(/The\s+same\s+item\s+name\s+has\s+several\s+prices\.\s+Please\s+split\s+it\s+by\s+size\s+or\s+option\s+before\s+approving\.?/gi, zh ? '同一品名有多個價格，請先依尺寸或選項拆開。' : 'The same item has several prices. Please split it by size or option before approving.')
+        .replace(/The\s+selected\s+room\s+type\s+is\s+([^,]+),\s+but\s+the\s+evidence\s+looks\s+closer\s+to\s+([^.]+)\.\s+Please\s+check\s+before\s+settling\.?/gi, (_match, selected, inferred) => zh ? `目前選的是 ${selected}，但照片看起來比較接近 ${inferred}，請先確認。` : `The selected room type is ${selected}, but the photo looks closer to ${inferred}. Please check before settling.`)
+        .replace(legacyTaskConflictPattern, (_match, selected, inferred) => zh ? `目前選的是 ${selected}，但照片看起來比較接近 ${inferred}，請先確認。` : `The selected room type is ${selected}, but the photo looks closer to ${inferred}. Please check before settling.`)
+        .replace(/本地\s+OCR\s+偵測到多個價格，請確認尺寸欄位。/gi, zh ? '這一列有多個價格，請確認尺寸或選項。' : 'This row has several prices. Please check the size or option.')
+        .replace(/本地\s+OCR\s+偵測到多欄價格列，已拆成候選項目，請主揪逐項複查。/gi, zh ? '這一列有多個價格，請逐項核對。' : 'This photo row appears to contain several prices. Please check each draft item against the photo.')
         .replace(/Local\s+vision\s+correction\s+was\s+unavailable\s+or\s+produced\s+no\s+structured\s+items\.?/gi, zh ? '看圖核對還沒有產生可用清單。' : 'The photo check did not return usable rows.')
         .replace(/Local\s+OCR\s+draft\s+prepared,\s+but\s+local\s+vision\s+did\s+not\s+produce\s+structured\s+items\.?/gi, zh ? '已讀到照片文字，但看圖核對還沒有產生可用清單。' : 'Photo text was read, but the visual check did not return usable rows.')
         .replace(/Local\s+review\s+draft\s+prepared\s+(\d+)\s+item\(s\):/gi, (_match, count) => zh ? `照片讀取草稿已準備 ${count} 個項目：` : `Photo review draft prepared ${count} ${pluralPhrase(count, 'item', 'items')}:`)

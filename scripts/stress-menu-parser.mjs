@@ -283,7 +283,7 @@ function analyzeItems(room) {
         severity: 'high',
         item: name,
         prices: Array.from(prices).sort((a, b) => a - b),
-        detail: '同品名有多個價格但名稱未拆大小杯或規格'
+        detail: 'The same item name has several prices but was not split by size or option'
       });
     }
   }

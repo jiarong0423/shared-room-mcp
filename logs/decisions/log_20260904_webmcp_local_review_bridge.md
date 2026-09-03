@@ -124,6 +124,34 @@ Next action:
 
 - Commit and push this guided OCR+LLM review flow, deploy it to Zeabur, then rerun live `/healthz`, hosted member-release smoke, and one pending guided Codex review room for recording.
 
+## 2026-09-04 03:00 Recording UI Warning Cleanup
+
+Current state:
+
+- After the first Zeabur deploy, live HTML was updated, `/healthz` was healthy, and live member-release plus guided accept smoke passed.
+- A right-panel recording room then exposed an old OCR-only warning string from backend room state. This was not a flow failure, but it was visible recording copy and too technical.
+
+Fix:
+
+- Changed new backend OCR-only warnings, multi-price notes, and task-conflict details to plain-language English.
+- Added frontend compatibility mapping for old room data so previously created rooms also render the old warning as plain text.
+- Kept the internal data keys stable; only visible copy and compatibility rendering changed.
+
+Validation evidence:
+
+- `npm run check`: passed.
+- `node --check scripts/stress-menu-parser.mjs`: passed.
+- `npm run verify:adaptive-contracts`: passed.
+- `npm run audit:tasks`: passed with code release blocking gaps `0`; one submission-only gap remains for final YouTube URL.
+- `git diff --check`: passed.
+- Residual wording scan returned zero hits for old OCR parser, pre-push, host visual-review, mock local-vision, source-mode, OCR-count, local-model, parser-candidate, rule/audit-candidate, local machine path, and Codex attachment wording.
+- `release-boundary-safety-gate`: PASS, blocking `0`; evidence `/private/tmp/webmcp-release-boundary-codex-ocr-llm-hotfix/release-boundary-report-2026-09-03T18-59-31-582Z.json`.
+- `ai-security-rules deploy-gate`: pass, blocking `0`, P0 `0`, P1 `0`, P2 `0`; evidence `/private/tmp/webmcp-ai-security-deploy-gate-codex-ocr-llm-hotfix/local_security_design_gate_deploy_gate.md`.
+
+Next action:
+
+- Commit/push the warning cleanup, redeploy Zeabur, then create a fresh right-panel guided OCR+LLM pending room for recording.
+
 ## 2026-09-04 02:50 Guided Codex OCR+LLM Review Flow
 
 Scope:

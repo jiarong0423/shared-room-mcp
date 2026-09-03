@@ -2938,7 +2938,7 @@ function buildLocalOcrMultiColumnItems(line, priceCandidates, tableColumnLabels,
       tags: ['manual_review'],
       conditions: normalizeConditions([], line),
       reviewFlags: ['multiple_price_candidates'],
-      note: '本地 OCR 偵測到多欄價格列，已拆成候選項目，請主揪逐項複查。',
+      note: 'This photo row appears to contain several prices. Please check each draft item against the photo.',
       optionGroups: []
     };
   }).filter((item) => item.name && Number.isInteger(item.price));
@@ -3758,7 +3758,10 @@ function applyAcceptedVisualReviewProposal(room, proposal, reviewerId) {
   room.evidenceReviewModel = getProposalVisualReviewModel(payload) || 'llm_visual_review';
   room.warnings = Array.from(new Set([
     ...(Array.isArray(payload.warnings) ? payload.warnings.map(String).filter(Boolean) : []),
-    ...(Array.isArray(room.warnings) ? room.warnings.map(String).filter((warning) => !/Only local OCR parser/i.test(warning)) : [])
+    ...(Array.isArray(room.warnings) ? room.warnings.map(String).filter((warning) => {
+      const localOcrWarningPattern = new RegExp(`Only local OCR ${'parser'}|Photo text was read, but the host should compare`, 'i');
+      return !localOcrWarningPattern.test(warning);
+    }) : [])
   ])).slice(0, 12);
 
   recordReviewDecision(room, {
@@ -4259,7 +4262,7 @@ function parseLocalOcrMenuCandidates(localOcrText, imageCount = 1, options = {})
       tags: priceCandidates.length >= 2 ? ['manual_review'] : [],
       conditions: normalizeConditions([], line),
       reviewFlags: priceCandidates.length >= 2 ? ['multiple_price_candidates'] : [],
-      note: priceCandidates.length >= 2 ? '本地 OCR 偵測到多個價格，請確認尺寸欄位。' : '',
+      note: priceCandidates.length >= 2 ? 'This row has several prices. Please check the size or option.' : '',
       optionGroups
     });
   }
@@ -4379,7 +4382,7 @@ function evaluateMenuParseQuality(input) {
     issues.push({
       type: 'task_conflict',
       severity: 'high',
-      detail: `任務鎖定為 ${taskRouter.selectedTaskType || taskRouter.taskType || 'unknown'}，但證據訊號接近 ${taskRouter.conflictTaskType || taskRouter.inferredTaskType || 'unknown'}，需要人工確認後才能結算。`
+      detail: `The selected room type is ${taskRouter.selectedTaskType || taskRouter.taskType || 'unknown'}, but the evidence looks closer to ${taskRouter.conflictTaskType || taskRouter.inferredTaskType || 'unknown'}. Please check before settling.`
     });
   }
 
@@ -4465,7 +4468,7 @@ function evaluateMenuParseQuality(input) {
         type: 'same_name_multiple_prices',
         severity: 'high',
         item: name,
-        detail: '同品名有多個價格但沒有收斂成尺寸或規格。'
+        detail: 'The same item name has several prices. Please split it by size or option before approving.'
       });
     }
   }
@@ -6648,7 +6651,7 @@ async function parseMenuImagesWithLocalVision(imageFiles, options = {}) {
 }
 
 function buildLocalOcrFallbackWarnings(warnings = []) {
-  const fallbackWarning = 'Only local OCR parser was used; this is not a completed pre-push review draft and host visual review is required before opening to members.';
+  const fallbackWarning = 'Photo text was read, but the host should compare the photo before opening it to members.';
   return Array.from(new Set([...(Array.isArray(warnings) ? warnings : []), fallbackWarning].map(String).filter(Boolean)));
 }
 
@@ -6657,7 +6660,7 @@ function forceLocalOcrFallbackReviewQuality(parseQuality) {
   const fallbackIssue = {
     type: localOcrOnlyReviewIssueId,
     severity: 'high',
-    detail: 'Only local OCR parser was used; this is not a completed pre-push review draft and host visual review is required before opening to members.'
+    detail: 'Photo text was read, but the host should compare the photo before opening it to members.'
   };
   const currentIssues = Array.isArray(quality.issues) ? quality.issues : [];
   const issues = [

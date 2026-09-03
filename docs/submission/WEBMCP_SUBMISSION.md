@@ -40,7 +40,7 @@ The broader idea is an open-source pattern for the agent-native web: tools that 
 
 The app exposes page-local tools through `document.modelContext.registerTool()` when WebMCP is available. In this project, WebMCP is a state reader and draft generator, not a browser-control agent that clicks or submits final actions. Most tools are read-only: the assistant can inspect the room, the selected plan, the local math rules, confirmation status, and trust settings. One draft tool can create a small JSON proposal for host review. Applied state changes pass through host/member UI transitions and the Member-Visibility Release.
 
-This is a WebMCP starter project, not a paid API wrapper. The default no-key path is the authorized local bridge, `Load Sample Room`, deterministic parsing, and host-reviewed local bridge proposals. OCR-only parsing is candidate evidence and must not be described as completed pre-push image review. External image-reading, vision, model, spreadsheet, commerce, booking, CRM, or community integrations are optional extensions owned by the deployment owner.
+This is a WebMCP starter project, not a paid API wrapper. The default no-key path is the authorized local bridge, `Load Sample Room`, deterministic parsing, and host-reviewed local bridge proposals. OCR-only parsing is draft evidence and must not be described as completed image review. External image-reading, vision, model, spreadsheet, commerce, booking, CRM, or community integrations are optional extensions owned by the deployment owner.
 
 Implemented WebMCP tools:
 
@@ -172,7 +172,7 @@ The image-matrix command is a deterministic contract-driven integration benchmar
 There are three separate image-test modes:
 
 - `image-only`: uploads only the image. It is a negative canary unless the deployment owner configured an image-reading provider.
-- `image-plus-local-ocr`: runs OCR on the operator machine first, then writes OCR metadata and a draft proposal into the hosted room. Zeabur remains the room/runtime/HITL surface, not the OCR engine. This mode is a canary for field isolation, evidence pointers, forbidden-number leakage, and advisory threshold handling; completed pre-push image review still requires LLM visual review or host repair before member release.
+- `image-plus-local-ocr`: runs OCR on the operator machine first, then writes OCR metadata and a draft proposal into the hosted room. Zeabur remains the room/runtime/HITL surface, not the OCR engine. This mode is a canary for field isolation, evidence pointers, forbidden-number leakage, and advisory threshold handling; completed image review still requires LLM visual review or host repair before member release.
 - `image-plus-oracle-text`: uploads the image plus locked oracle text and verifies checksum-backed image-oracle artifacts, contract routing, member-visible masks, and HITL state behavior.
 
 None of these modes should be described as provider accuracy, zero-shot extraction, unconstrained vision accuracy, or Zeabur-hosted OCR.
