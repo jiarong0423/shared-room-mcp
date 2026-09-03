@@ -398,10 +398,10 @@ const upload = multer({
   limits: {
     fileSize: maxImageBytes,
     files: 1,
-    fields: 4,
+    fields: 6,
     fieldNameSize: 64,
     fieldSize: localOcrMaxChars + 1024,
-    parts: 6
+    parts: 8
   },
   fileFilter: (req, file, cb) => {
     if (!file.mimetype || !file.mimetype.startsWith('image/')) {
@@ -1134,6 +1134,10 @@ function serializeRoomForStore(room) {
     menuImageMimeType: room.menuImageMimeType || null,
     menuImageWidth: room.menuImageWidth || null,
     menuImageHeight: room.menuImageHeight || null,
+    ownerBootstrapTokenHash: room.ownerBootstrapTokenHash || null,
+    ownerBootstrapParticipantId: room.ownerBootstrapParticipantId || null,
+    ownerBootstrapExpiresAt: room.ownerBootstrapExpiresAt || null,
+    ownerBootstrapUsedAt: room.ownerBootstrapUsedAt || null,
     createdAt: safeIso(room.createdAt),
     updatedAt: safeIso(room.updatedAt, safeIso(room.createdAt)),
     parsedAt: room.parsedAt ? safeIso(room.parsedAt) : null
@@ -1222,6 +1226,10 @@ function hydrateRoomFromStore(record) {
     menuImageWidth: record.menuImageWidth || menuImages[0]?.width || null,
     menuImageHeight: record.menuImageHeight || menuImages[0]?.height || null,
     itemImageCache: new Map(),
+    ownerBootstrapTokenHash: typeof record.ownerBootstrapTokenHash === 'string' ? record.ownerBootstrapTokenHash : null,
+    ownerBootstrapParticipantId: typeof record.ownerBootstrapParticipantId === 'string' ? record.ownerBootstrapParticipantId : null,
+    ownerBootstrapExpiresAt: record.ownerBootstrapExpiresAt || null,
+    ownerBootstrapUsedAt: record.ownerBootstrapUsedAt || null,
     createdAt: safeIso(record.createdAt),
     updatedAt: safeIso(record.updatedAt, safeIso(record.createdAt)),
     parsedAt: record.parsedAt ? safeIso(record.parsedAt) : null
@@ -1936,6 +1944,10 @@ function createRoom() {
     menuImageWidth: null,
     menuImageHeight: null,
     itemImageCache: new Map(),
+    ownerBootstrapTokenHash: null,
+    ownerBootstrapParticipantId: null,
+    ownerBootstrapExpiresAt: null,
+    ownerBootstrapUsedAt: null,
     createdAt: nowIso(),
     updatedAt: nowIso(),
     parsedAt: null
@@ -3010,6 +3022,46 @@ function hashBuffer(buffer) {
     : '';
 }
 
+function hashText(value) {
+  const text = String(value || '').trim();
+  return text ? createHash('sha256').update(text).digest('hex') : '';
+}
+
+function normalizeOwnerBootstrapToken(value) {
+  const token = String(value || '').trim();
+  return /^[A-Za-z0-9_-]{6,128}$/.test(token) ? token : '';
+}
+
+function registerOwnerBootstrap(room, token, participantId) {
+  const normalizedToken = normalizeOwnerBootstrapToken(token);
+  const normalizedParticipantId = typeof participantId === 'string' && participantId.length <= 80
+    ? participantId
+    : '';
+  if (!normalizedToken || !normalizedParticipantId || room.ownerParticipantId !== normalizedParticipantId) {
+    return false;
+  }
+
+  room.ownerBootstrapTokenHash = hashText(normalizedToken);
+  room.ownerBootstrapParticipantId = normalizedParticipantId;
+  room.ownerBootstrapExpiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+  room.ownerBootstrapUsedAt = null;
+  return true;
+}
+
+function resolveOwnerBootstrapParticipantId(room, token) {
+  const normalizedToken = normalizeOwnerBootstrapToken(token);
+  if (!room || !normalizedToken || !room.ownerBootstrapTokenHash || !room.ownerBootstrapParticipantId) {
+    return '';
+  }
+  const expiresAt = Date.parse(room.ownerBootstrapExpiresAt || '');
+  if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) {
+    return '';
+  }
+  return hashText(normalizedToken) === room.ownerBootstrapTokenHash
+    ? room.ownerBootstrapParticipantId
+    : '';
+}
+
 function normalizeDisplaySurface(value) {
   const surface = String(value || '').trim();
   return displaySurfaces.has(surface) ? surface : 'member_selectable';
@@ -3890,18 +3942,22 @@ function buildRoomTaskRouter(input = {}) {
   const items = Array.isArray(input.items) ? input.items : [];
   const selectedTaskType = normalizeRoomTaskType(input.taskType);
   const inferredTaskType = inferTaskTypeFromSignals(localOcrText, items);
+  const lockedByUser = selectedTaskType !== 'auto';
   const taskType = selectedTaskType === 'auto' ? inferredTaskType : selectedTaskType;
-  const hasTaskConflict = selectedTaskType !== 'auto'
+  const routeHintTaskType = lockedByUser
     && inferredTaskType !== 'generic_split'
-    && inferredTaskType !== selectedTaskType;
-  let confidenceScore = selectedTaskType === 'auto' ? 0.5 : 0.76;
+    && inferredTaskType !== selectedTaskType
+    ? inferredTaskType
+    : null;
+  const hasTaskConflict = false;
+  let confidenceScore = selectedTaskType === 'auto' ? 0.5 : 0.88;
   if (items.length >= 3) confidenceScore += 0.1;
   if (localOcrText.length >= 20) confidenceScore += 0.06;
-  if (hasTaskConflict) {
-    confidenceScore -= 0.24;
+  if (routeHintTaskType) {
+    confidenceScore -= 0.04;
   }
   confidenceScore = Math.max(0.28, Math.min(0.94, Number(confidenceScore.toFixed(2))));
-  const lowConfidence = confidenceScore < 0.58 || hasTaskConflict;
+  const lowConfidence = confidenceScore < 0.58;
 
   const config = {
     group_buy: {
@@ -3990,13 +4046,13 @@ function buildRoomTaskRouter(input = {}) {
     confidenceScore,
     confidenceReason: selectedTaskType === 'auto'
       ? `依 OCR 與品項訊號判別為 ${taskType}。`
-      : hasTaskConflict
-        ? `使用者選擇 ${selectedTaskType}，但 OCR 訊號接近 ${inferredTaskType}，需人工確認。`
-        : `依使用者選擇鎖定為 ${taskType}。`,
+      : `依房主選擇鎖定為 ${taskType}。`,
     inferredTaskType,
     selectedTaskType,
+    routeHintTaskType,
     hasTaskConflict,
-    conflictTaskType: hasTaskConflict ? inferredTaskType : null,
+    conflictTaskType: null,
+    lockedByUser,
     riskPolicy: lowConfidence || ['ktv_room', 'sports_venue', 'ticket_activity', 'rental_share'].includes(taskType) ? 'conservative' : 'normal',
     reviewStatus: lowConfidence ? 'needs_human_review' : 'dry_run_generated',
     fixedTaxonomyVersion: 'acmcp-task-router.v1',
@@ -4024,7 +4080,8 @@ function buildTaskRouterContract(room) {
     evidenceStrength: taskRouter.evidenceStrength || defaultTaskRouter.evidenceStrength,
     hasTaskConflict: Boolean(taskRouter.hasTaskConflict),
     conflictTaskType: taskRouter.conflictTaskType || null,
-    lockedByUser: Boolean(taskRouter.selectedTaskType && taskRouter.selectedTaskType !== 'auto'),
+    routeHintTaskType: taskRouter.routeHintTaskType || null,
+    lockedByUser: Boolean(taskRouter.lockedByUser || (taskRouter.selectedTaskType && taskRouter.selectedTaskType !== 'auto')),
     aiRepairAllowed: taskRouter.reviewStatus === 'needs_human_review' || Boolean(taskRouter.hasTaskConflict),
     aiRepairScope: 'ocr_schema_repair_only',
     forbiddenAiActions: [
@@ -6685,6 +6742,105 @@ function forceLocalOcrFallbackReviewQuality(parseQuality) {
   };
 }
 
+function isEnabledFormFlag(value) {
+  const text = String(value ?? '').trim().toLowerCase();
+  return ['1', 'true', 'yes', 'on', 'draft_only', 'draft-only', 'evidence_only', 'evidence-only'].includes(text);
+}
+
+function buildDraftOnlyEvidenceParseQuality(parseQuality) {
+  const quality = parseQuality && typeof parseQuality === 'object' ? parseQuality : {};
+  const hiddenIssueTypes = new Set(['too_few_items', 'task_conflict']);
+  const issues = Array.isArray(quality.issues)
+    ? quality.issues.filter((issue) => !hiddenIssueTypes.has(String(issue?.type || '')))
+    : [];
+  const blockingReasons = Array.isArray(quality.blockingReasons)
+    ? quality.blockingReasons.filter((reason) => {
+      const type = typeof reason === 'string' ? reason : reason?.type;
+      return !hiddenIssueTypes.has(String(type || ''));
+    })
+    : [];
+  return forceLocalOcrFallbackReviewQuality({
+    ...quality,
+    adaptiveConfidence: null,
+    issues,
+    issueCount: issues.length,
+    highIssueCount: issues.filter((issue) => issue?.severity === 'high').length,
+    mediumIssueCount: issues.filter((issue) => issue?.severity === 'medium').length,
+    blockingReasons
+  });
+}
+
+function setRoomMenuImages(room, preparedImages) {
+  room.menuImages = preparedImages.map((image, index) => ({
+    index,
+    buffer: image.buffer,
+    mimeType: image.mimetype,
+    width: image.processedWidth,
+    height: image.processedHeight,
+    originalBytes: image.originalBytes,
+    processedBytes: image.processedBytes
+  }));
+  room.menuImageBuffer = preparedImages[0].buffer;
+  room.menuImageMimeType = preparedImages[0].mimetype;
+  room.menuImageWidth = preparedImages[0].processedWidth;
+  room.menuImageHeight = preparedImages[0].processedHeight;
+  room.itemImageCache = new Map();
+}
+
+function stageDraftOnlyEvidenceRoom(room, preparedImages, localOcrText, requestedTaskType) {
+  setRoomMenuImages(room, preparedImages);
+  const localOcr = parseLocalOcrMenuCandidates(localOcrText, preparedImages.length, {
+    taskType: requestedTaskType
+  });
+  const taskRouter = buildRoomTaskRouter({
+    taskType: requestedTaskType,
+    localOcrText,
+    items: []
+  });
+  const evidenceAssets = buildEvidenceAssetsFromImages(room, room.menuImages, {
+    kind: 'uploaded_image',
+    sourceLabel: 'uploaded price evidence'
+  });
+  const ocrObservations = buildOcrObservationsFromText(
+    room,
+    localOcrText,
+    evidenceAssets,
+    localOcrText ? 'user_pasted_text' : 'local_ocr'
+  );
+  const quality = evaluateMenuParseQuality({
+    items: [],
+    menuType: 'general',
+    taskRouter,
+    localOcr: localOcr.metrics,
+    localOcrText
+  });
+
+  room.menuType = 'general';
+  room.menuMode = 'auto';
+  room.taskRouter = taskRouter;
+  room.warnings = buildLocalOcrFallbackWarnings([]);
+  room.evidenceReviewSource = 'local_ocr_pending_llm_visual_review';
+  room.evidenceReviewModel = 'waiting_for_host_reviewed_visual_draft';
+  room.parseQuality = buildDraftOnlyEvidenceParseQuality(quality);
+  room.localOcr = {
+    ...localOcr.metrics,
+    draftOnly: true
+  };
+  room.evidenceAssets = evidenceAssets;
+  room.ocrObservations = ocrObservations;
+  room.parserCandidates = [];
+  room.calculationRules = [];
+  room.reviewDecisions = Array.isArray(room.reviewDecisions) ? room.reviewDecisions : [];
+  room.settlementSnapshots = Array.isArray(room.settlementSnapshots) ? room.settlementSnapshots : [];
+  room.items = [];
+  room.menuLoaded = true;
+  room.itemsOpenForMembers = false;
+  room.settled = false;
+  room.settledAt = null;
+  room.settledBy = null;
+  room.parsedAt = nowIso();
+}
+
 async function parseMenuImages(files, options = {}) {
   const imageFiles = Array.isArray(files) && files.length > 0 ? files.slice(0, 1) : [];
   if (imageFiles.length === 0) {
@@ -7043,7 +7199,46 @@ app.post('/api/rooms/:roomId/menu', createRateLimitMiddleware('menu_parse', menu
 
     const localOcrText = normalizeLocalOcrText(req.body?.ocrText);
     const requestedTaskType = normalizeRoomTaskType(req.body?.taskType);
+    const draftOnlyEvidence = isEnabledFormFlag(req.body?.draftOnlyEvidence || req.body?.reviewDraftOnly);
+    const ownerBootstrapToken = normalizeOwnerBootstrapToken(req.body?.ownerBootstrapToken);
+    const ownerBootstrapParticipantId = typeof req.body?.ownerParticipantId === 'string'
+      ? req.body.ownerParticipantId.trim()
+      : '';
+    const ownerBootstrapRegistered = registerOwnerBootstrap(
+      room,
+      ownerBootstrapToken,
+      ownerBootstrapParticipantId
+    );
     const preparedImages = await Promise.all(uploadedFiles.map((file) => prepareMenuImage(file)));
+    if (draftOnlyEvidence) {
+      stageDraftOnlyEvidenceRoom(room, preparedImages, localOcrText, requestedTaskType);
+      touchRoom(room, 'menu_evidence_draft_staged');
+
+      const state = serializeRoom(room);
+      io.to(room.id).emit('roomState', state);
+      writeLog('info', 'menu_evidence_draft_staged', {
+        roomId: room.id,
+        providerUsed: room.evidenceReviewSource,
+        modelUsed: room.evidenceReviewModel,
+        menuType: room.menuType,
+        taskType: room.taskRouter?.taskType || null,
+        lockedByUser: Boolean(room.taskRouter?.lockedByUser),
+        itemCount: room.items.length,
+        warningCount: room.warnings.length,
+        parseQualityStatus: room.parseQuality?.status || null,
+        parseQualityIssueCount: room.parseQuality?.issueCount || 0,
+        localOcrEnabled: Boolean(room.localOcr?.enabled),
+        localOcrCandidateCount: room.localOcr?.candidateCount || 0,
+        imageCount: preparedImages.length,
+        originalBytes: preparedImages.reduce((sum, image) => sum + image.originalBytes, 0),
+        processedBytes: preparedImages.reduce((sum, image) => sum + image.processedBytes, 0),
+        processedInMs: preparedImages.reduce((sum, image) => sum + image.processedInMs, 0),
+        ownerBootstrapRegistered
+      });
+      res.json(state);
+      return;
+    }
+
     const parsed = await parseMenuImages(preparedImages, {
       localOcrText,
       taskType: requestedTaskType
@@ -7066,20 +7261,7 @@ app.post('/api/rooms/:roomId/menu', createRateLimitMiddleware('menu_parse', menu
     room.localOcr = parsed.localOcr || parseLocalOcrMenuCandidates(localOcrText, preparedImages.length, {
       taskType: requestedTaskType
     }).metrics;
-    room.menuImages = preparedImages.map((image, index) => ({
-      index,
-      buffer: image.buffer,
-      mimeType: image.mimetype,
-      width: image.processedWidth,
-      height: image.processedHeight,
-      originalBytes: image.originalBytes,
-      processedBytes: image.processedBytes
-    }));
-    room.menuImageBuffer = preparedImages[0].buffer;
-    room.menuImageMimeType = preparedImages[0].mimetype;
-    room.menuImageWidth = preparedImages[0].processedWidth;
-    room.menuImageHeight = preparedImages[0].processedHeight;
-    room.itemImageCache = new Map();
+    setRoomMenuImages(room, preparedImages);
     applyEvidenceReviewLayers(room, parsed.items, {
       images: room.menuImages,
       localOcrText,
@@ -7115,7 +7297,8 @@ app.post('/api/rooms/:roomId/menu', createRateLimitMiddleware('menu_parse', menu
       imageCount: preparedImages.length,
       originalBytes: preparedImages.reduce((sum, image) => sum + image.originalBytes, 0),
       processedBytes: preparedImages.reduce((sum, image) => sum + image.processedBytes, 0),
-      processedInMs: preparedImages.reduce((sum, image) => sum + image.processedInMs, 0)
+      processedInMs: preparedImages.reduce((sum, image) => sum + image.processedInMs, 0),
+      ownerBootstrapRegistered
     });
     res.json(state);
   } catch (error) {
@@ -7182,7 +7365,12 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const participant = ensureParticipant(room, payload?.participantId, payload?.displayName);
+    const bootstrapParticipantId = resolveOwnerBootstrapParticipantId(room, payload?.ownerBootstrapToken);
+    const participant = ensureParticipant(room, bootstrapParticipantId || payload?.participantId, payload?.displayName);
+    if (bootstrapParticipantId) {
+      room.ownerParticipantId = bootstrapParticipantId;
+      room.ownerBootstrapUsedAt = nowIso();
+    }
     if (!room.ownerParticipantId) {
       room.ownerParticipantId = participant.id;
     }

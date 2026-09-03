@@ -1210,6 +1210,22 @@
       box-shadow: 0 0 0 3px rgba(31, 122, 109, 0.14);
     }
 
+    .task-selector select:disabled {
+      background: var(--panel-soft);
+      color: var(--muted);
+    }
+
+    .task-lock-hint {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.45;
+    }
+
+    .task-lock-hint[data-tone="locked"] {
+      color: var(--accent-dark);
+    }
+
     .summary-list {
       display: grid;
       gap: 0;
@@ -1655,6 +1671,7 @@
                     <option value="rental_share" data-i18n="taskRentalShare">Rental / Deposit</option>
                     <option value="generic_split" data-i18n="taskGenericSplit">Generic Split</option>
                   </select>
+                  <span class="task-lock-hint" id="taskLockHint" data-i18n="taskAutoHint">Auto mode can choose the route from the photo. Pick a purpose to lock the room to one route.</span>
                 </span>
                 <textarea class="ocr-field" id="localOcrTextInput" maxlength="12000" placeholder="Optional: paste local OCR or copied text blocks from the image. The photo stays as evidence; this text only seeds a draft for host review." data-i18n-placeholder="localOcrPlaceholder"></textarea>
                 <button class="button secondary sample-button" id="loadSampleButton" type="button" data-i18n="loadSampleRoom">Load Sample Room</button>
@@ -1782,6 +1799,7 @@
       selectImageButton: document.getElementById('selectImageButton'),
       previewImage: document.getElementById('previewImage'),
       taskTypeSelect: document.getElementById('taskTypeSelect'),
+      taskLockHint: document.getElementById('taskLockHint'),
       localOcrTextInput: document.getElementById('localOcrTextInput'),
       loadSampleButton: document.getElementById('loadSampleButton'),
       uploadActions: document.getElementById('uploadActions'),
@@ -1867,6 +1885,10 @@
         taskTicketActivity: '票券 / 活動報名',
         taskRentalShare: '租借 / 押金',
         taskGenericSplit: '一般分帳',
+        taskAutoHint: '自動模式會依照片判斷路線；選定用途後，房間會鎖在那條路線。',
+        taskLockedHint: '用途已鎖定，照片只會照這條路線產生草稿。',
+        taskLockedPrefix: '用途已鎖定',
+        taskAutoPrefix: '自動判斷用途',
         localOcrPlaceholder: '可選：貼上本地 OCR 或從圖片複製出的文字區塊。照片保留為證據；文字只用來產生待主揪審核的草稿。',
         loadSampleRoom: '載入示範房間',
         confirmUpload: '使用這張照片',
@@ -1998,6 +2020,9 @@
         unsettled: '未結算',
         itemSummary: '品項彙總',
         noItems: '尚無品項',
+        draftWaiting: '草稿待確認',
+        draftListEmpty: '先在右側採納草稿，項目才會出現在這裡。',
+        draftReadyForHost: '右側草稿待主揪確認',
         personalDetails: '個人明細',
         totalAmount: '總金額',
         claimAudit: '確認狀態',
@@ -2084,16 +2109,16 @@
         itemPrice: '金額',
         itemCategory: '分類',
         itemPriceRole: '用途',
-        itemSourceClass: '讀成',
-        itemConfidence: '讀取把握度',
+        itemSourceClass: '數字類型',
+        itemConfidence: '讀取信心',
         itemEvidence: '文字線索',
         itemAuditAnchor: '照片線索',
-        itemReviewGate: '核對原因',
+        itemReviewGate: '請核對',
         itemBoundingZone: '照片位置',
         itemDetectedType: '看起來是',
         itemNoReviewGate: '不用額外核對',
         itemReviewFlags: '核對提醒',
-        priceRoleline_item: '可分攤品項',
+        priceRoleline_item: '可選項目',
         priceRoleshared_fixed_fee: '共享固定費',
         priceRoletax_rate: '稅率',
         priceRoletax_fixed_fee: '固定稅費',
@@ -2173,6 +2198,10 @@
         taskTicketActivity: 'Tickets / Activity Signup',
         taskRentalShare: 'Rental / Deposit',
         taskGenericSplit: 'Generic Split',
+        taskAutoHint: 'Auto mode can choose the route from the photo. Pick a purpose to lock the room to one route.',
+        taskLockedHint: 'Purpose locked. Photo drafts stay on this route.',
+        taskLockedPrefix: 'Purpose locked',
+        taskAutoPrefix: 'Auto purpose',
         localOcrPlaceholder: 'Optional: paste local OCR or copied text blocks from the image. The photo stays as evidence; this text only seeds a draft for host review.',
         loadSampleRoom: 'Load Sample Room',
         confirmUpload: 'Use This Photo',
@@ -2303,6 +2332,9 @@
         unsettled: 'not settled',
         itemSummary: 'Item summary',
         noItems: 'No items',
+        draftWaiting: 'Draft waiting',
+        draftListEmpty: 'Approve the draft on the right before items appear here.',
+        draftReadyForHost: 'Draft ready on the right',
         personalDetails: 'People',
         totalAmount: 'Total amount',
         claimAudit: 'Confirmation status',
@@ -2335,15 +2367,15 @@
         contractAgentGuardHint: 'the host makes the call',
         agentDrafts: 'Suggested Drafts',
         noAgentDrafts: 'No suggestions yet',
-        pendingHostConfirmation: 'waiting for host',
+        pendingHostConfirmation: 'waiting for host review',
         acceptedByHost: 'accepted',
         rejectedByHost: 'rejected',
-        proposalOnly: 'suggestion only',
+        proposalOnly: 'draft only',
         approveDraft: 'Approve Draft',
         confirmHumanApproval: 'Confirm Human Approval',
         rejectDraft: 'Reject Draft',
         confirmRejectDraft: 'Confirm Reject',
-        ownerOnlyDraftReview: 'host decides only',
+        ownerOnlyDraftReview: 'host approval required',
         draftReviewFailed: 'Failed to review draft',
         draftCreated: 'Suggestion saved for host confirmation.',
         aiReviewBlocksDraft: 'The list still needs host review before it opens to members.',
@@ -2373,32 +2405,32 @@
         createRoomFailed: 'Failed to create a new room',
         proposalTypeclaim_assignment: 'who should confirm',
         proposalTypemissing_confirmation: 'missing confirmation',
-        proposalTypeevidence_review: 'price review',
-        proposalTypesemantic_repair_draft: 'photo reading draft',
-        proposalTypetask_router_review: 'room purpose review',
+        proposalTypeevidence_review: 'price check',
+        proposalTypesemantic_repair_draft: 'photo review draft',
+        proposalTypetask_router_review: 'purpose check',
         proposalTypebooking_draft: 'booking draft',
         proposalTypeservice_request_draft: 'service request draft',
         proposalTypeactivity_signup_draft: 'activity signup draft',
         proposalTypegeneric_next_step: 'next step',
         proposalRisklow: 'low risk',
         proposalRiskmedium: 'review needed',
-        proposalRiskneeds_human_review: 'human review needed',
+        proposalRiskneeds_human_review: 'host review needed',
         reviewParsedItems: 'Review Item List',
         reviewParsedItemsHint: 'Before opening, remove bad rows or fix names, prices, and categories.',
         itemName: 'Name',
         itemPrice: 'Price',
         itemCategory: 'Category',
-        itemPriceRole: 'Amount use',
-        itemSourceClass: 'Read as',
-        itemConfidence: 'Reading confidence',
+        itemPriceRole: 'Cost type',
+        itemSourceClass: 'Number type',
+        itemConfidence: 'Reading check',
         itemEvidence: 'Evidence',
-        itemAuditAnchor: 'Photo clue',
-        itemReviewGate: 'Why check',
+        itemAuditAnchor: 'Photo text',
+        itemReviewGate: 'Check',
         itemBoundingZone: 'Photo area',
         itemDetectedType: 'Looks like',
         itemNoReviewGate: 'No extra check needed',
         itemReviewFlags: 'Check notes',
-        priceRoleline_item: 'billable item',
+        priceRoleline_item: 'selectable item',
         priceRoleshared_fixed_fee: 'shared fixed fee',
         priceRoletax_rate: 'tax rate',
         priceRoletax_fixed_fee: 'fixed tax',
@@ -2428,7 +2460,7 @@
         sourceNumberClassduration: 'duration',
         sourceNumberClassquantity: 'quantity',
         sourceNumberClassunknown: 'uncertain',
-        reviewFlagmultiple_price_candidates: 'multiple possible prices',
+        reviewFlagmultiple_price_candidates: 'check nearby prices',
         reviewFlagdeposit_detected: 'deposit detected',
         reviewFlagprepayment_detected: 'prepayment detected',
         reviewFlagdiscount_scope_unclear: 'unclear discount scope',
@@ -2453,6 +2485,7 @@
 
     const pageParams = new URLSearchParams(window.location.search);
     let roomId = pageParams.get('room');
+    const ownerBootstrapToken = String(pageParams.get('_owner_bootstrap') || '').trim().slice(0, 128);
     const memberParam = String(pageParams.get('member') || '').trim().slice(0, 40);
     const memberScopedStorageKey = memberParam && roomId
       ? `${storageKeys.participantId}:${roomId}:${memberParam.toLowerCase()}`
@@ -2516,6 +2549,24 @@
       rental_share: 'taskRentalShare',
       generic_split: 'taskGenericSplit'
     };
+
+    function getTaskTypeDisplayName(taskType) {
+      const normalized = String(taskType || 'auto').trim().toLowerCase();
+      const key = taskTypeLabelKeys[normalized] || 'taskGenericSplit';
+      return t(key);
+    }
+
+    function renderTaskSelectorLock() {
+      const selected = taskTypeLabelKeys[selectedTaskType] ? selectedTaskType : 'auto';
+      const locked = selected !== 'auto';
+      elements.taskTypeSelect.value = selected;
+      elements.taskTypeSelect.disabled = isUploading || isSwitchingRoom || Boolean(currentRoom?.menuLoaded);
+      elements.taskLockHint.textContent = locked
+        ? `${t('taskLockedPrefix')}: ${getTaskTypeDisplayName(selected)}. ${t('taskLockedHint')}`
+        : t('taskAutoHint');
+      elements.taskLockHint.dataset.tone = locked ? 'locked' : 'auto';
+    }
+
     const itemCategoryOptions = [
       'main',
       'side',
@@ -2649,7 +2700,10 @@
 
     elements.displayNameInput.value = displayName;
     elements.thresholdInput.value = thresholdTarget > 0 ? String(thresholdTarget) : '';
-    elements.taskTypeSelect.value = taskTypeLabelKeys[selectedTaskType] ? selectedTaskType : 'auto';
+    if (!taskTypeLabelKeys[selectedTaskType]) {
+      selectedTaskType = 'auto';
+    }
+    renderTaskSelectorLock();
 
     function t(key) {
       return translations[currentLanguage]?.[key] || translations.en[key] || key;
@@ -2690,6 +2744,7 @@
       elements.languageToggle.querySelectorAll('button[data-lang]').forEach((button) => {
         button.dataset.active = button.dataset.lang === currentLanguage ? 'true' : 'false';
       });
+      renderTaskSelectorLock();
     }
 
     function setLanguage(language) {
@@ -2761,6 +2816,7 @@
       elements.confirmUploadButton.disabled = uploading || isSwitchingRoom || pendingMenuFiles.length === 0;
       elements.cancelUploadButton.disabled = uploading || isSwitchingRoom || pendingMenuFiles.length === 0;
       elements.resetButton.disabled = uploading || isSwitchingRoom || !isOwner(currentRoom);
+      renderTaskSelectorLock();
     }
 
     function setPendingUpload(files) {
@@ -2902,7 +2958,8 @@
       socket.emit('joinRoom', {
         roomId: targetRoomId,
         participantId,
-        displayName: displayName || elements.displayNameInput.value
+        displayName: displayName || elements.displayNameInput.value,
+        ownerBootstrapToken: ownerBootstrapToken || undefined
       }, (result) => {
         if (!isCurrentRoomTarget(targetRoomId, result?.room)) {
           return;
@@ -3125,15 +3182,21 @@
       const aiType = t(menuTypeLabelKeys[room.menuType] || 'generalItems');
       const mode = t(menuModeLabelKeys[room.menuMode] || 'modeAuto');
       const ownerText = isOwner(room) ? t('ownerCanSwitch') : t('ownerOnlySwitch');
-      return `${t('modeHintPrefix')}: ${aiType} · ${t('currentMode')}: ${mode} · ${ownerText}`;
+      const router = room?.taskRouter || {};
+      const locked = Boolean(router.lockedByUser || (router.selectedTaskType && router.selectedTaskType !== 'auto'));
+      const purposePrefix = locked ? t('taskLockedPrefix') : t('taskAutoPrefix');
+      const purpose = getTaskTypeDisplayName(router.taskType || router.selectedTaskType || 'auto');
+      return `${purposePrefix}: ${purpose} · ${t('modeHintPrefix')}: ${aiType} · ${t('currentMode')}: ${mode} · ${ownerText}`;
     }
 
     function getTaskRouterText(room) {
       const router = room?.taskRouter || {};
-      const taskLabel = t(taskTypeLabelKeys[router.taskType] || 'taskGenericSplit');
+      const taskLabel = getTaskTypeDisplayName(router.taskType);
       const score = Number(router.confidenceScore || 0);
       const review = router.reviewStatus === 'needs_human_review' ? t('quickReview') : t('converged');
-      return `${taskLabel} · ${review} · ${t('confidence')} ${Math.round(score * 100)}%`;
+      const locked = Boolean(router.lockedByUser || (router.selectedTaskType && router.selectedTaskType !== 'auto'));
+      const prefix = locked ? t('taskLockedPrefix') : t('taskAutoPrefix');
+      return `${prefix}: ${taskLabel} · ${review} · ${t('confidence')} ${Math.round(score * 100)}%`;
     }
 
     function getWebMcpRoomSnapshot() {
@@ -3482,7 +3545,10 @@
         parts.push(t('selectableOptions'));
       }
       if (item?.note) {
-        parts.push(item.note);
+        const visibleNote = humanizeVisibleText(item.note);
+        if (visibleNote) {
+          parts.push(visibleNote);
+        }
       }
       return parts.filter(Boolean).join(' · ') || t('generalItems');
     }
@@ -3529,6 +3595,12 @@
         [/semantic_repair_draft/gi, '照片讀取草稿'],
         [/evidence_review/gi, '照片內容核對'],
         [/task_router_review/gi, '用途核對'],
+        [/restaurant_split/gi, '吃飯分帳'],
+        [/drink_order/gi, '飲料揪團'],
+        [/group_buy/gi, '團購'],
+        [/generic_split/gi, '一般分帳'],
+        [/taskType\s*=/gi, '用途：'],
+        [/metadata/gi, '說明文字'],
         [/AI\s+review\s+score/gi, '讀取把握度'],
         [/scenario\s+contract/gi, '適用情境'],
         [/schema\s+alignment/gi, '內容完整度'],
@@ -3556,6 +3628,12 @@
         [/semantic_repair_draft/gi, 'photo reading draft'],
         [/evidence_review/gi, 'photo review'],
         [/task_router_review/gi, 'room purpose check'],
+        [/restaurant_split/gi, 'Restaurant Split'],
+        [/drink_order/gi, 'Drink Order'],
+        [/group_buy/gi, 'Group Buy'],
+        [/generic_split/gi, 'Generic Split'],
+        [/taskType\s*=/gi, 'purpose: '],
+        [/metadata/gi, 'notes'],
         [/AI\s+review\s+score/gi, 'Reading confidence'],
         [/scenario\s+contract/gi, 'Room type'],
         [/schema\s+alignment/gi, 'Content complete'],
@@ -3627,8 +3705,10 @@
         .replace(/Photo\s+text\s+was\s+read,\s+but\s+the\s+host\s+should\s+compare\s+the\s+photo\s+before\s+opening\s+it\s+to\s+members\.?/gi, zh ? '已讀到照片文字；開放給成員前請先對照原圖。' : 'Photo text was read; compare it with the photo before opening to members.')
         .replace(/This\s+row\s+has\s+several\s+prices\.\s+Please\s+check\s+the\s+size\s+or\s+option\.?/gi, zh ? '這一列有多個價格，請確認尺寸或選項。' : 'This row has several prices. Please check the size or option.')
         .replace(/The\s+same\s+item\s+name\s+has\s+several\s+prices\.\s+Please\s+split\s+it\s+by\s+size\s+or\s+option\s+before\s+approving\.?/gi, zh ? '同一品名有多個價格，請先依尺寸或選項拆開。' : 'The same item has several prices. Please split it by size or option before approving.')
-        .replace(/The\s+selected\s+room\s+type\s+is\s+([^,]+),\s+but\s+the\s+evidence\s+looks\s+closer\s+to\s+([^.]+)\.\s+Please\s+check\s+before\s+settling\.?/gi, (_match, selected, inferred) => zh ? `目前選的是 ${selected}，但照片看起來比較接近 ${inferred}，請先確認。` : `The selected room type is ${selected}, but the photo looks closer to ${inferred}. Please check before settling.`)
-        .replace(legacyTaskConflictPattern, (_match, selected, inferred) => zh ? `目前選的是 ${selected}，但照片看起來比較接近 ${inferred}，請先確認。` : `The selected room type is ${selected}, but the photo looks closer to ${inferred}. Please check before settling.`)
+        .replace(/The\s+number\s+looks\s+like\s+age,\s+capacity,\s+duration,\s+distance,\s+percentage,\s+or\s+context\s+metadata\s+instead\s+of\s+a\s+selectable\s+price\.?/gi, zh ? '這個數字可能是說明文字，不一定是可選項目的價格。' : 'This number may be a note, not a selectable item price.')
+        .replace(/The\s+parser\s+marked\s+this\s+field\s+as\s+uncertain\s+or\s+low-confidence;\s+host\s+review\s+is\s+required\s+before\s+release\.?/gi, zh ? '這一列需要主揪確認後才能開放。' : 'This row needs host review before opening.')
+        .replace(/The\s+selected\s+room\s+type\s+is\s+([^,]+),\s+but\s+the\s+evidence\s+looks\s+closer\s+to\s+([^.]+)\.\s+Please\s+check\s+before\s+settling\.?/gi, (_match, selected, inferred) => zh ? `目前選的是 ${getTaskTypeDisplayName(selected)}，但照片看起來比較接近 ${getTaskTypeDisplayName(inferred)}，請先確認。` : `The selected room type is ${getTaskTypeDisplayName(selected)}, but the photo looks closer to ${getTaskTypeDisplayName(inferred)}. Please check before settling.`)
+        .replace(legacyTaskConflictPattern, (_match, selected, inferred) => zh ? `目前選的是 ${getTaskTypeDisplayName(selected)}，但照片看起來比較接近 ${getTaskTypeDisplayName(inferred)}，請先確認。` : `The selected room type is ${getTaskTypeDisplayName(selected)}, but the photo looks closer to ${getTaskTypeDisplayName(inferred)}. Please check before settling.`)
         .replace(/本地\s+OCR\s+偵測到多個價格，請確認尺寸欄位。/gi, zh ? '這一列有多個價格，請確認尺寸或選項。' : 'This row has several prices. Please check the size or option.')
         .replace(/本地\s+OCR\s+偵測到多欄價格列，已拆成候選項目，請主揪逐項複查。/gi, zh ? '這一列有多個價格，請逐項核對。' : 'This photo row appears to contain several prices. Please check each draft item against the photo.')
         .replace(/Local\s+vision\s+correction\s+was\s+unavailable\s+or\s+produced\s+no\s+structured\s+items\.?/gi, zh ? '看圖核對還沒有產生可用清單。' : 'The photo check did not return usable rows.')
@@ -3694,13 +3774,14 @@
         return;
       }
 
-      const issueRows = Array.isArray(quality?.issues)
+      const pendingStructuredDraft = roomHasPendingStructuredDraft(room);
+      const issueRows = !pendingStructuredDraft && Array.isArray(quality?.issues)
         ? quality.issues.slice(0, 4).map((issue) => {
           const target = issue.item ? `：${issue.item}` : '';
           return `<div>${escapeHtml(humanizeVisibleText(`${issue.detail || issue.type || t('needsReview')}${target}`))}</div>`;
         }).join('')
         : '';
-      const blockingRows = Array.isArray(quality?.blockingReasons)
+      const blockingRows = !pendingStructuredDraft && Array.isArray(quality?.blockingReasons)
         ? quality.blockingReasons.slice(0, 4).map((reason) => {
           const target = reason.item ? `：${reason.item}` : '';
           const reasonText = typeof reason === 'string' ? reason : reason.detail || reason.type || t('needsReview');
@@ -3757,7 +3838,9 @@
       if (pendingRuleCount > 0) {
         reviewBits.push(visibleRuleCheckCount(pendingRuleCount));
       }
-      if (roomNeedsVisibleHostCheck(room, quality)) {
+      if (pendingStructuredDraft) {
+        reviewBits.push(t('draftReadyForHost'));
+      } else if (roomNeedsVisibleHostCheck(room, quality)) {
         reviewBits.push(t('hostCheckNeeded'));
       }
       const reviewText = reviewBits.length > 0 ? ` · ${reviewBits.join(' · ')}` : '';
@@ -3981,6 +4064,14 @@
       return humanizeVisibleText(proposal.rationale || '');
     }
 
+    function roomHasPendingStructuredDraft(room) {
+      return Array.isArray(room?.agentProposals) && room.agentProposals.some((proposal) => {
+        return proposal.status === 'pending_host_confirmation'
+          && proposalHasVisualReview(proposal)
+          && getProposalStructuredItems(proposal).length > 0;
+      });
+    }
+
     function renderAgentProposals(room) {
       const proposals = Array.isArray(room?.agentProposals) ? room.agentProposals : [];
       const seenPendingTypes = new Set();
@@ -4073,7 +4164,8 @@
       elements.memberCountChip.textContent = visiblePeopleCount(room.participants?.length || 0);
 
       if (room.menuLoaded) {
-        setChip(elements.menuChip, `${room.items.length} ${t('itemCount')}`, 'good');
+        const waitingDraft = Array.isArray(room.items) && room.items.length === 0 && roomHasPendingStructuredDraft(room);
+        setChip(elements.menuChip, waitingDraft ? t('draftWaiting') : `${room.items.length} ${t('itemCount')}`, waitingDraft ? 'warn' : 'good');
         elements.uploadSection.style.display = 'none';
         elements.menuSection.classList.remove('menu-hidden');
         elements.copyOrderButton.disabled = Number(room.totals?.grandTotal || 0) <= 0;
@@ -4118,13 +4210,14 @@
       });
       const owner = isOwner(room);
       const isOpen = Boolean(room.itemsOpenForMembers);
+      const pendingStructuredDraft = roomHasPendingStructuredDraft(room);
       const blockedByAiReview = hasBlockingParseQuality(room) || hasAntiPollutionBlocks(room);
       elements.openItemsButton.textContent = isOpen ? t('openedToMembers') : t('openToMembers');
       elements.openItemsButton.disabled = !owner || isOpen || room.settled || !Array.isArray(room.items) || room.items.length === 0 || blockedByAiReview;
-      elements.openItemsButton.title = blockedByAiReview ? getBlockingReviewMessage(room) : '';
+      elements.openItemsButton.title = pendingStructuredDraft ? t('draftListEmpty') : blockedByAiReview ? getBlockingReviewMessage(room) : '';
       elements.openItemsButton.dataset.tone = isOpen ? 'good' : 'warn';
-      elements.gateReviewHint.textContent = blockedByAiReview ? getBlockingReviewMessage(room) : '';
-      elements.gateReviewHint.dataset.visible = blockedByAiReview ? 'true' : 'false';
+      elements.gateReviewHint.textContent = pendingStructuredDraft ? '' : blockedByAiReview ? getBlockingReviewMessage(room) : '';
+      elements.gateReviewHint.dataset.visible = !pendingStructuredDraft && blockedByAiReview ? 'true' : 'false';
     }
 
     function renderSourceMenu(room) {
@@ -4256,7 +4349,8 @@
         `;
       }).join('');
 
-      elements.menuBody.innerHTML = rows || `<div class="empty-state">${t('noUsableItems')}</div>`;
+      const emptyText = roomHasPendingStructuredDraft(room) ? t('draftListEmpty') : t('noUsableItems');
+      elements.menuBody.innerHTML = rows || `<div class="empty-state">${escapeHtml(emptyText)}</div>`;
     }
 
     function renderItemReviewControls(item, itemTotal = null) {
@@ -4266,7 +4360,7 @@
       const sourceNumberClass = String(item?.sourceNumberClass || 'unknown');
       const confidence = Number.isFinite(Number(item?.confidence)) ? Number(item.confidence) : null;
       const reviewFlags = Array.isArray(item?.reviewFlags) ? item.reviewFlags.filter(Boolean).slice(0, 6) : [];
-      const rawTextEvidence = String(item?.rawTextEvidence || '').trim();
+      const hasReviewRisk = itemHasReviewRisk(item);
       const claimed = Number(itemTotal?.qty || 0) > 0;
       const disabled = claimed ? 'disabled' : '';
       const options = itemCategoryOptions.map((value) => {
@@ -4280,9 +4374,33 @@
       const flagRows = reviewFlags.length > 0
         ? reviewFlags.map((flag) => `<span class="item-review-pill" data-tone="${escapeHtml(getReviewFlagTone(flag))}">${escapeHtml(getReviewFlagText(flag))}</span>`).join('')
         : '';
-      const confidenceText = confidence === null ? '' : `${t('itemConfidence')} ${Math.round(confidence * 100)}%`;
-      const anchorPanel = renderItemAuditAnchors(item);
-      const gatePanel = renderItemReviewGates(item);
+      const confidenceText = confidence === null || (!hasReviewRisk && confidence >= 0.95)
+        ? ''
+        : `${t('itemConfidence')} ${Math.round(confidence * 100)}%`;
+      const reviewReason = hasReviewRisk
+        ? humanizeVisibleText(
+          reviewFlags.length > 0
+            ? getReviewFlagText(reviewFlags[0])
+            : priceRole !== 'line_item'
+              ? getPriceRoleText(priceRole)
+              : sourceNumberClass !== 'currency_amount'
+                ? getSourceNumberClassText(sourceNumberClass)
+                : t('needsReview')
+        )
+        : '';
+      const auditPanel = hasReviewRisk
+        ? `
+          <div class="item-review-audit" data-risk="true">
+            <div class="item-review-audit-row">
+              ${priceRole === 'line_item' ? '' : `<span class="item-review-pill" data-tone="warn">${escapeHtml(getPriceRoleText(priceRole))}</span>`}
+              ${sourceNumberClass === 'currency_amount' ? '' : `<span class="item-review-pill" data-tone="warn">${escapeHtml(getSourceNumberClassText(sourceNumberClass))}</span>`}
+              ${confidenceText ? `<span class="item-review-pill" data-tone="warn">${escapeHtml(confidenceText)}</span>` : ''}
+              ${flagRows}
+            </div>
+            ${reviewReason ? `<div class="item-review-evidence">${escapeHtml(`${t('itemReviewGate')}: ${reviewReason}`)}</div>` : ''}
+          </div>
+        `
+        : '';
       return `
         <div class="item-review-controls" aria-label="${escapeHtml(t('reviewParsedItems'))}">
           <label class="item-review-field">
@@ -4302,21 +4420,7 @@
             <select class="item-review-select" data-action="edit-parsed-item" data-item-field="priceRole" data-item-id="${escapeHtml(item.id)}" ${disabled}>${priceRoleOptions}</select>
           </label>
           <button class="button secondary item-review-remove" type="button" data-action="remove-parsed-item" data-item-id="${escapeHtml(item.id)}" ${disabled}>${escapeHtml(t('removeItem'))}</button>
-          <div class="item-review-audit" data-risk="${itemHasReviewRisk(item) ? 'true' : 'false'}">
-            <div class="item-review-audit-row">
-              <span class="item-review-pill" data-tone="${priceRole === 'line_item' ? '' : 'warn'}">${escapeHtml(getPriceRoleText(priceRole))}</span>
-              <span class="item-review-pill" data-tone="${sourceNumberClass === 'currency_amount' ? '' : 'warn'}">${escapeHtml(`${t('itemSourceClass')} · ${getSourceNumberClassText(sourceNumberClass)}`)}</span>
-              ${confidenceText ? `<span class="item-review-pill" data-tone="${confidence < 0.82 ? 'warn' : ''}">${escapeHtml(confidenceText)}</span>` : ''}
-              ${flagRows}
-            </div>
-            <div class="item-review-evidence-grid">
-              <div>
-                ${rawTextEvidence ? `<div class="item-review-evidence">${escapeHtml(`${t('itemEvidence')}: ${rawTextEvidence}`)}</div>` : ''}
-                ${anchorPanel}
-              </div>
-              ${gatePanel}
-            </div>
-          </div>
+          ${auditPanel}
         </div>
       `;
     }
@@ -4838,6 +4942,11 @@
         formData.append('ocrText', localOcrText);
       }
       formData.append('taskType', selectedTaskType);
+      formData.append('draftOnlyEvidence', 'true');
+      formData.append('ownerParticipantId', participantId);
+      if (ownerBootstrapToken) {
+        formData.append('ownerBootstrapToken', ownerBootstrapToken);
+      }
 
       setUploading(true);
       setMessage('', 'warn');
@@ -5545,6 +5654,7 @@
     elements.taskTypeSelect.addEventListener('change', () => {
       selectedTaskType = taskTypeLabelKeys[elements.taskTypeSelect.value] ? elements.taskTypeSelect.value : 'auto';
       localStorage.setItem(storageKeys.taskType, selectedTaskType);
+      renderTaskSelectorLock();
     });
 
     elements.selectImageButton.addEventListener('click', (event) => {

@@ -182,6 +182,7 @@ function parseArgs(argv) {
     imagePath: process.env.WEBMCP_DEMO_IMAGE || '',
     roomId: '',
     participantId: `codex-visual-review-${crypto.randomUUID().slice(0, 8)}`,
+    ownerBootstrapToken: crypto.randomUUID().replace(/-/g, '').slice(0, 12),
     displayName: 'Codex Demo Host',
     tesseractBin: process.env.TESSERACT_BIN || 'tesseract',
     ocrLang: process.env.WEBMCP_OCR_LANG || 'eng',
@@ -204,6 +205,9 @@ function parseArgs(argv) {
       index += 1;
     } else if (arg === '--participant-id' && next) {
       args.participantId = next;
+      index += 1;
+    } else if (arg === '--owner-bootstrap-token' && next) {
+      args.ownerBootstrapToken = next;
       index += 1;
     } else if (arg === '--display-name' && next) {
       args.displayName = next;
@@ -231,6 +235,8 @@ function parseArgs(argv) {
   args.baseUrl = String(args.baseUrl || '').trim().replace(/\/+$/, '');
   args.imagePath = args.imagePath ? path.resolve(args.imagePath) : '';
   args.outputDir = path.resolve(args.outputDir);
+  args.ownerBootstrapToken = String(args.ownerBootstrapToken || '').trim().replace(/[^A-Za-z0-9_-]/g, '').slice(0, 64);
+  assertCondition(args.ownerBootstrapToken.length >= 6, 'owner bootstrap token must be at least 6 URL-safe characters');
   return args;
 }
 
@@ -244,6 +250,8 @@ function printUsage() {
     '  --image <path>            Local evidence image. If omitted, a fictional demo menu is generated under tmp.',
     '  --room-id <id>            Reuse a target room instead of creating one.',
     '  --participant-id <id>     Host participant id used for the demo.',
+    '  --owner-bootstrap-token <token>',
+    '                            URL-safe short-lived host token embedded in the demo room link.',
     '  --display-name <name>     Host display name shown in the room.',
     '  --tesseract-bin <path>    Tesseract executable.',
     '  --ocr-lang <lang>         Tesseract language, default eng.',
@@ -580,18 +588,23 @@ async function runTesseract(args) {
   return normalizeText(stdout);
 }
 
-async function uploadImageAndOcr(baseUrl, roomId, imagePath, ocrText, timeoutMs) {
+async function uploadImageAndOcr(baseUrl, roomId, participantId, ownerBootstrapToken, imagePath, ocrText, timeoutMs) {
   const imageBuffer = await fs.readFile(imagePath);
   const form = new FormData();
   form.append('menuImage', new Blob([imageBuffer], { type: detectMimeType(imagePath) }), path.basename(imagePath));
   form.append('ocrText', ocrText);
   form.append('taskType', 'restaurant_split');
+  form.append('draftOnlyEvidence', 'true');
+  form.append('ownerParticipantId', participantId);
+  form.append('ownerBootstrapToken', ownerBootstrapToken);
   const response = await fetchJson(`${baseUrl}/api/rooms/${encodeURIComponent(roomId)}/menu`, {
     method: 'POST',
     body: form
   }, timeoutMs);
   assertCondition(response.ok, `upload image failed: HTTP ${response.status} ${response.data?.error || ''}`);
   assertCondition(response.data?.menuLoaded === true, 'upload response did not mark menuLoaded');
+  assertCondition(Array.isArray(response.data?.items) && response.data.items.length === 0, 'draft-only evidence route should not create member items before host approval');
+  assertCondition(response.data?.taskRouter?.taskType === 'restaurant_split', `task selector did not stay locked to restaurant_split: ${response.data?.taskRouter?.taskType || 'missing'}`);
   return response.data;
 }
 
@@ -693,7 +706,15 @@ async function main() {
     args.displayName,
     args.timeoutMs
   );
-  const uploadedRoom = await uploadImageAndOcr(args.baseUrl, roomId, args.imagePath, ocrText, args.timeoutMs);
+  const uploadedRoom = await uploadImageAndOcr(
+    args.baseUrl,
+    roomId,
+    args.participantId,
+    args.ownerBootstrapToken,
+    args.imagePath,
+    ocrText,
+    args.timeoutMs
+  );
   const proposalPayload = buildCodexProposal(roomId, args.participantId, ocrText, imageSha256);
   const proposalResult = await createProposal(args.baseUrl, roomId, proposalPayload, args.timeoutMs);
   const acceptedRoom = args.acceptForTest
@@ -707,7 +728,7 @@ async function main() {
     )
     : null;
   const finalRoom = acceptedRoom || await readRoom(args.baseUrl, roomId, args.timeoutMs);
-  const roomUrl = `${args.baseUrl}/?room=${encodeURIComponent(roomId)}`;
+  const roomUrl = `${args.baseUrl}/?_owner_bootstrap=${encodeURIComponent(args.ownerBootstrapToken)}&room=${encodeURIComponent(roomId)}`;
   const report = {
     ok: true,
     acceptForTest: args.acceptForTest,

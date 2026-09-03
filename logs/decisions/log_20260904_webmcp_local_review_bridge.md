@@ -305,6 +305,55 @@ Next resume point:
 - Open `https://shared-room-mcp-next.zeabur.app/` for the final demo room, then insert the YouTube demo URL after upload.
 - Deploy the committed changes to Zeabur and recheck the live `/healthz` plus hosted room flow. The repository is push-prepared, but the current Zeabur production URL must not be described as updated until that deployment check passes.
 
+## 2026-09-04 03:31 Route Lock, Draft-Only Evidence, And Owner Bootstrap
+
+Scope:
+
+- Owner project: `<project-root>`
+- Changed artifacts: `server.js`, `public/index.html`, `scripts/prepare-codex-ocr-llm-demo.mjs`
+
+Direct cause:
+
+- The recording room could still show OCR parser candidates as full member rows before a Codex/Gemini/local-model visual review draft was approved.
+- The prepared recording URL did not rejoin the browser as the original host, so the right-side Approve/Reject buttons could appear locked even though a host draft existed.
+- Visible OCR review panels exposed too much engineering language and repeated warning copy.
+
+Root cause:
+
+- Evidence upload, local OCR parsing, LLM visual draft creation, host approval, and member-visible list release were not fully separated as distinct route states.
+- The UI had mapping for legacy terms, but some review warnings and item audit panels still rendered internal parser detail instead of human-facing review status.
+
+DONE_CONFIRMED:
+
+- Added a draft-only evidence route for photo uploads used by the guided OCR+LLM flow. It stores the evidence image and OCR metrics, locks the selected task route, and leaves `room.items` empty until a host approves a valid structured visual-review proposal.
+- Added short-lived owner bootstrap support for demo URLs. The server stores only a hash, expires the token after 30 minutes, and only registers it for the current owner participant.
+- Updated the demo runner so generated room URLs include `_owner_bootstrap`, and the upload registers the matching owner participant id.
+- Updated the browser upload path to stage evidence as a host-reviewed draft instead of directly opening OCR-only rows to members.
+- Reduced item review noise: normal accepted items no longer show a large yellow audit panel; risk copy is shown only when the row needs attention.
+- Updated visible labels from engineering terms to plain language, including cost type, selectable item, photo review draft, and draft-ready status.
+
+Validation evidence:
+
+- `npm run check`: passed.
+- Inline browser script parse: passed, one script.
+- `node --check scripts/prepare-codex-ocr-llm-demo.mjs`: passed.
+- `npm run verify:adaptive-contracts`: passed with contracts `13`, prompt nodes `17`, guardrails `19`, scenarios `12`.
+- Guided pending demo passed locally against `http://127.0.0.1:4187`: uploaded item count `0`, structured draft count `18`, proposal status `pending_host_confirmation`.
+- Guided accept demo passed locally against `http://127.0.0.1:4187`: uploaded item count `0`, accepted item count `18`.
+- Owner bootstrap socket check passed: token URL rejoined as the original host and kept `items=0`, `proposals=1`.
+- Browser UI smoke passed: the pending demo room showed `Draft waiting`, `Draft ready on the right`, no left-side member items, and enabled `Approve Draft` / `Reject Draft`.
+- Local contract smoke passed `20/20`; evidence `/private/tmp/webmcp-owner-bootstrap-regression/local-contract-stress-2026-09-03T19-28-00-475Z.md`.
+- Local Member-Visibility Release smoke passed `4/4`; evidence `/private/tmp/webmcp-owner-bootstrap-regression/member-release-stress-2026-09-03T19-28-02-066Z.md`.
+- `release-boundary-safety-gate`: PASS, blocking `0`; evidence `/private/tmp/webmcp-release-boundary-owner-bootstrap/release-boundary-report-2026-09-03T19-30-37-933Z.json`.
+- `ai-security-rules deploy-gate`: pass, blocking `0`, P0 `0`, P1 `0`, P2 `0`; evidence `/private/tmp/webmcp-ai-security-deploy-gate-owner-bootstrap/local_security_design_gate_deploy_gate.md`.
+- `npm audit --audit-level=high`: passed, `0 vulnerabilities`.
+- `npm audit --audit-level=moderate --omit=dev`: passed, `0 vulnerabilities`.
+- `git diff --check`: passed.
+
+Next resume point:
+
+- Commit and push these three runtime changes, deploy the pushed commit to Zeabur, then rerun live `/healthz`, live guided pending room, live guided accept smoke, and a hosted browser UI check before telling the user to record.
+
 ## Zeabur Post-Deploy Recheck
 
 Completion timestamp: 2026-09-04 01:38 Asia/Taipei
