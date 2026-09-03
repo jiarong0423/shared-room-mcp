@@ -505,11 +505,13 @@ async function createRoom(baseUrl, timeoutMs) {
   return response.data;
 }
 
-async function uploadPriceText(baseUrl, roomId, scenario, timeoutMs) {
+async function uploadPriceText(baseUrl, roomId, scenario, ownerParticipantId, ownerDisplayName, timeoutMs) {
   const form = new FormData();
   form.append('menuImage', new Blob([onePixelPng], { type: 'image/png' }), `${scenario.taskType}.png`);
   form.append('ocrText', scenario.text);
   form.append('taskType', scenario.taskType);
+  form.append('ownerParticipantId', ownerParticipantId);
+  form.append('displayName', ownerDisplayName);
 
   const response = await fetchJson(`${baseUrl}/api/rooms/${encodeURIComponent(roomId)}/menu`, {
     method: 'POST',
@@ -606,8 +608,8 @@ async function createProposal(baseUrl, room, scenario, timeoutMs) {
 async function runCase(baseUrl, scenario, round, timeoutMs) {
   const startedAt = Date.now();
   const room = await createRoom(baseUrl, timeoutMs);
-  await joinRoomAsOwner(baseUrl, room.id, scenario, round, timeoutMs);
-  const uploaded = await uploadPriceText(baseUrl, room.id, scenario, timeoutMs);
+  const ownerJoin = await joinRoomAsOwner(baseUrl, room.id, scenario, round, timeoutMs);
+  const uploaded = await uploadPriceText(baseUrl, room.id, scenario, ownerJoin.participantId, scenario.lang === 'zh' ? `發起者${round}` : `Host ${round}`, timeoutMs);
   const readBack = await readRoom(baseUrl, room.id, timeoutMs);
   const proposal = await createProposal(baseUrl, readBack, scenario, timeoutMs);
   return {

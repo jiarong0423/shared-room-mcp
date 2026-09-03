@@ -6169,6 +6169,19 @@ function getExportLanguage(value) {
   return String(value || '').toLowerCase().startsWith('zh') ? 'zh' : 'en';
 }
 
+function getMenuUploadMessage(language, key) {
+  const zh = getExportLanguage(language) === 'zh';
+  const messages = {
+    missingMerchantIdentity: zh
+      ? '請先以商家身分進入房間，再讀取菜單照片。'
+      : 'Sign in as the merchant before reading a menu photo.',
+    wrongMerchantIdentity: zh
+      ? '只有這個房間的商家可以讀取菜單照片。'
+      : 'Only this room merchant can read a menu photo.'
+  };
+  return messages[key] || messages.missingMerchantIdentity;
+}
+
 function serverMoney(value) {
   return `NT$ ${Number(value || 0).toLocaleString('en-US')}`;
 }
@@ -7374,8 +7387,32 @@ app.post('/api/rooms/:roomId/menu', createRateLimitMiddleware('menu_parse', menu
     const requestedTaskType = normalizeRoomTaskType(req.body?.taskType);
     const draftOnlyEvidence = isEnabledFormFlag(req.body?.draftOnlyEvidence || req.body?.reviewDraftOnly);
     const ownerBootstrapToken = normalizeOwnerBootstrapToken(req.body?.ownerBootstrapToken);
-    const ownerBootstrapParticipantId = typeof req.body?.ownerParticipantId === 'string'
+    const requestLanguage = getExportLanguage(req.body?.language || req.query?.lang);
+    const ownerUploadParticipantId = typeof req.body?.ownerParticipantId === 'string'
       ? req.body.ownerParticipantId.trim()
+      : typeof req.body?.participantId === 'string'
+        ? req.body.participantId.trim()
+        : '';
+    if (!ownerUploadParticipantId || ownerUploadParticipantId.length > 80) {
+      res.status(400).json({ error: getMenuUploadMessage(requestLanguage, 'missingMerchantIdentity') });
+      return;
+    }
+    if (room.ownerParticipantId && room.ownerParticipantId !== ownerUploadParticipantId) {
+      res.status(403).json({ error: getMenuUploadMessage(requestLanguage, 'wrongMerchantIdentity') });
+      return;
+    }
+    const existingOwnerUploadParticipant = room.participants.get(ownerUploadParticipantId);
+    const ownerUploadDisplayName = hasUsableDisplayName(req.body?.displayName)
+      ? req.body.displayName
+      : hasUsableDisplayName(existingOwnerUploadParticipant?.displayName)
+        ? existingOwnerUploadParticipant.displayName
+        : 'Demo Merchant';
+    const ownerUploadParticipant = ensureParticipant(room, ownerUploadParticipantId, ownerUploadDisplayName);
+    if (!room.ownerParticipantId) {
+      room.ownerParticipantId = ownerUploadParticipant.id;
+    }
+    const ownerBootstrapParticipantId = room.ownerParticipantId === ownerUploadParticipant.id
+      ? ownerUploadParticipant.id
       : '';
     const ownerBootstrapRegistered = registerOwnerBootstrap(
       room,

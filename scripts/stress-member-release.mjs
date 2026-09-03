@@ -338,11 +338,13 @@ async function createRoom(baseUrl, args) {
   return response.data;
 }
 
-async function uploadPriceText(baseUrl, roomId, scenario, args) {
+async function uploadPriceText(baseUrl, roomId, scenario, ownerParticipantId, ownerDisplayName, args) {
   const form = new FormData();
   form.append('menuImage', new Blob([onePixelPng], { type: 'image/png' }), `${scenario.id}.png`);
   form.append('ocrText', scenario.text);
   form.append('taskType', scenario.taskType);
+  form.append('ownerParticipantId', ownerParticipantId);
+  form.append('displayName', ownerDisplayName);
 
   const response = await fetchJsonWithRetry(`${baseUrl}/api/rooms/${encodeURIComponent(roomId)}/menu`, {
     method: 'POST',
@@ -464,7 +466,7 @@ async function runScenarioRound(baseUrl, scenario, round, args) {
   const ownerParticipantId = getOwnerParticipantId(hostJoin.room);
   assertCondition(ownerParticipantId, 'missing owner participant id');
 
-  const uploaded = await uploadPriceText(baseUrl, room.id, scenario, args);
+  const uploaded = await uploadPriceText(baseUrl, room.id, scenario, ownerParticipantId, `${scenario.merchantName} ${round}`, args);
   const drafted = await createProposal(baseUrl, uploaded, ownerParticipantId, scenario, timeoutMs);
 
   const memberConnection = await connectSocket(baseUrl, timeoutMs);

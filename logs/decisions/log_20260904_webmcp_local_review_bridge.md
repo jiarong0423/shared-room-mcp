@@ -538,3 +538,50 @@ Validation evidence:
 Next resume point:
 
 - Commit and push `main`, wait for Zeabur to redeploy, then verify live `/healthz`, hosted markers, live Codex OCR+LLM room creation, customer route read-only WebMCP tools, and English customer ordering.
+
+## 2026-09-04 06:56 Owner Bootstrap Upload Lock Closeout
+
+Scope:
+
+- Owner project: `<project-root>`
+- Changed artifacts: `server.js`, `public/index.html`, `scripts/prepare-codex-ocr-llm-demo.mjs`, and local stress/regression runners that upload menu evidence.
+
+Direct cause:
+
+- A freshly generated owner URL could expose merchant WebMCP tools from the route token while the visible room UI still waited for the user to apply a display name before showing merchant controls.
+
+Root cause:
+
+- The menu upload endpoint did not treat menu evidence upload, owner participant creation, and owner bootstrap registration as one atomic boundary. Internal test runners also posted menu evidence without passing the already joined merchant id, so tightening the endpoint initially broke the old anonymous upload shape.
+
+DONE_CONFIRMED:
+
+- The menu upload endpoint now requires a concrete merchant identity, rejects a mismatched owner, creates or preserves the merchant participant before parsing, and registers the owner bootstrap token only for the active room owner.
+- Browser uploads now include the current display name when available.
+- The Codex OCR+LLM demo runner now sends the merchant display name with menu evidence.
+- Stress/regression runners now pass explicit owner ids/names when posting menu evidence instead of relying on anonymous upload behavior.
+
+Validation evidence:
+
+- `npm run check`: passed.
+- `node --check` passed for `scripts/prepare-codex-ocr-llm-demo.mjs`, `scripts/stress-member-release.mjs`, `scripts/stress-local-contracts.mjs`, `scripts/stress-image-matrix.mjs`, `scripts/stress-menu-parser.mjs`, and `scripts/regression-adaptive-parser.mjs`.
+- inline `public/index.html` script syntax check: passed.
+- `git diff --check`: passed.
+- Local Codex OCR+LLM bootstrap smoke passed on room `65b15284`: owner URL opened with merchant display name and `Publish To Customers` enabled without pressing `Apply Name`; writable WebMCP tool stayed owner-route only.
+- After server restart, missing-merchant upload rejection passed in both route languages: Chinese returned `請先以商家身分進入房間，再讀取菜單照片。`; English returned `Sign in as the merchant before reading a menu photo.`
+- Local Codex OCR+LLM bootstrap smoke passed again after the localized upload-error patch on room `307ad68f`; evidence `/private/tmp/webmcp-owner-bootstrap-i18n-fix-demo-2/codex-ocr-llm-demo-2026-09-03T23-01-29-956Z.json`.
+- Local customer-publishing stress passed `4/4`: `/private/tmp/webmcp-owner-bootstrap-fix-customer-stress-3/customer-publishing-stress-2026-09-03T22-55-05-813Z.md`.
+- Local customer-publishing stress passed `4/4` again after the localized upload-error patch: `/private/tmp/webmcp-owner-bootstrap-i18n-fix-customer-stress-2/customer-publishing-stress-2026-09-03T23-01-29-262Z.md`.
+- Local contract stress passed `20/20`: `/private/tmp/webmcp-owner-bootstrap-fix-contracts-2/local-contract-stress-2026-09-03T22-55-05-763Z.md`.
+- `npm run verify:adaptive-contracts`: passed with contracts `13`, prompt nodes `17`, guardrails `19`, scenarios `12`.
+- `npm run audit:tasks`: passed with code release blocking gaps `0`; one submission-only gap remains for the final YouTube demo URL.
+- `release-boundary-safety-gate`: PASS, blocking `0`; evidence `/private/tmp/webmcp-release-boundary-owner-bootstrap-fix/release-boundary-report-2026-09-03T22-55-56-083Z.json`.
+- `release-boundary-safety-gate`: PASS, blocking `0` after the localized upload-error patch; evidence `/private/tmp/webmcp-release-boundary-owner-bootstrap-i18n-fix/release-boundary-report-2026-09-03T23-01-53-948Z.json`.
+- `ai-security-rules deploy-gate`: pass, blocking `0`, P0 `0`, P1 `0`, P2 `0`; evidence `/private/tmp/webmcp-ai-security-deploy-gate-owner-bootstrap-fix/local_security_design_gate_deploy_gate.md`.
+- `ai-security-rules deploy-gate`: pass, blocking `0`, P0 `0`, P1 `0`, P2 `0` after the localized upload-error patch; evidence `/private/tmp/webmcp-ai-security-deploy-gate-owner-bootstrap-i18n-fix/local_security_design_gate_deploy_gate.md`.
+- `npm audit --audit-level=high --omit=dev`: passed with `0` vulnerabilities.
+- A final `npm audit --audit-level=high --omit=dev` retry was stopped after registry timeout; dependency manifests were unchanged from the passing audit.
+
+Next resume point:
+
+- Commit and push this owner-bootstrap lock, deploy Zeabur again, then verify live owner URL opens with merchant controls immediately and customer route remains read-only/English-only.

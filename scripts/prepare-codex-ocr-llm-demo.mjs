@@ -644,7 +644,7 @@ async function runTesseract(args) {
   return normalizeText(stdout);
 }
 
-async function uploadImageAndOcr(baseUrl, roomId, participantId, ownerBootstrapToken, imagePath, ocrText, timeoutMs) {
+async function uploadImageAndOcr(baseUrl, roomId, participantId, displayName, ownerBootstrapToken, imagePath, ocrText, timeoutMs) {
   const imageBuffer = await fs.readFile(imagePath);
   const form = new FormData();
   form.append('menuImage', new Blob([imageBuffer], { type: detectMimeType(imagePath) }), path.basename(imagePath));
@@ -652,6 +652,7 @@ async function uploadImageAndOcr(baseUrl, roomId, participantId, ownerBootstrapT
   form.append('taskType', 'restaurant_split');
   form.append('draftOnlyEvidence', 'true');
   form.append('ownerParticipantId', participantId);
+  form.append('displayName', displayName);
   form.append('ownerBootstrapToken', ownerBootstrapToken);
   const response = await fetchJson(`${baseUrl}/api/rooms/${encodeURIComponent(roomId)}/menu`, {
     method: 'POST',
@@ -771,6 +772,7 @@ async function main() {
     args.baseUrl,
     roomId,
     args.participantId,
+    args.displayName,
     args.ownerBootstrapToken,
     args.imagePath,
     ocrText,

@@ -5423,6 +5423,10 @@
       formData.append('taskType', selectedTaskType);
       formData.append('draftOnlyEvidence', 'true');
       formData.append('ownerParticipantId', participantId);
+      formData.append('language', currentLanguage);
+      if (hasValidDisplayName(displayName || elements.displayNameInput.value)) {
+        formData.append('displayName', displayName || elements.displayNameInput.value);
+      }
       if (ownerBootstrapToken) {
         formData.append('ownerBootstrapToken', ownerBootstrapToken);
       }

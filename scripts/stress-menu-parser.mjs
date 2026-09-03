@@ -308,11 +308,14 @@ function analyzeItems(room) {
 
 async function uploadMenuOnce(baseUrl, image, timeoutMs) {
   const room = await createRoom(baseUrl, timeoutMs);
+  const ownerParticipantId = `menu-parser-owner-${String(image.name || 'image').replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 50)}`;
   const buffer = await fs.readFile(image.path);
   const form = new FormData();
   form.append('menuImage', new Blob([buffer], {
     type: mimeFromPath(image.path)
   }), image.name);
+  form.append('ownerParticipantId', ownerParticipantId);
+  form.append('displayName', 'Menu Parser Merchant');
 
   const startedAt = Date.now();
   const response = await fetchJson(`${baseUrl}/api/rooms/${encodeURIComponent(room.id)}/menu`, {

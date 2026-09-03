@@ -441,10 +441,12 @@ async function createRoom(args) {
   return response.data;
 }
 
-async function uploadEvidence(args, roomId, test, imageBuffer, localOcrResult = null) {
+async function uploadEvidence(args, roomId, test, ownerParticipantId, imageBuffer, localOcrResult = null) {
   const form = new FormData();
   form.append('menuImage', new Blob([imageBuffer], { type: 'image/png' }), `${test.id}.png`);
   form.append('taskType', test.taskType);
+  form.append('ownerParticipantId', ownerParticipantId);
+  form.append('displayName', 'Image Matrix Merchant');
   if (args.mode === 'image-plus-oracle-text') {
     form.append('ocrText', (test.oracle?.textLines || []).join('\n'));
   } else if (args.mode === 'image-plus-local-ocr') {
@@ -467,7 +469,8 @@ async function runOne(args, test) {
     ? await runLocalOcr(args, test, imagePath)
     : null;
   const room = await createRoom(args);
-  const parsed = await uploadEvidence(args, room.id, test, image.buffer, localOcrResult);
+  const ownerParticipantId = `matrix-owner-${String(test.id || 'case').replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 50)}`;
+  const parsed = await uploadEvidence(args, room.id, test, ownerParticipantId, image.buffer, localOcrResult);
   evaluateOracle(args, test, parsed);
   return {
     id: test.id,

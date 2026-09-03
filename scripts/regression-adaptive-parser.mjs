@@ -85,10 +85,13 @@ async function loadScenarioMatrix() {
 
 async function parseEvidence(baseUrl, timeoutMs, scenario, imageBuffer) {
   const room = await createRoom(baseUrl, timeoutMs);
+  const ownerParticipantId = `regression-owner-${String(scenario.id || 'scenario').replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 50)}`;
   const form = new FormData();
   form.append('menuImage', new Blob([imageBuffer], { type: 'image/png' }), `${scenario.id}.png`);
   form.append('taskType', scenario.taskType);
   form.append('ocrText', scenario.text);
+  form.append('ownerParticipantId', ownerParticipantId);
+  form.append('displayName', 'Regression Merchant');
   const response = await fetchJson(`${baseUrl}/api/rooms/${encodeURIComponent(room.id)}/menu`, {
     method: 'POST',
     body: form
