@@ -461,3 +461,37 @@ Validation evidence:
 Next resume point:
 
 - Commit, push `main`, deploy Zeabur, then rerun live `/healthz`, live Codex OCR+LLM room creation, hosted customer-publishing smoke, and a live browser room check.
+
+## 2026-09-04 05:47 Merchant Draft Preview Closeout
+
+Scope:
+
+- Owner project: `<project-root>`
+- Changed artifact: `public/index.html`
+
+Direct cause:
+
+- A Codex-reviewed structured draft stayed only inside the right-side AI draft card before merchant approval. The left menu area still showed an empty state, so the recording made it look like the menu had not been parsed.
+
+Root cause:
+
+- The UI used `room.items` as the only left-side list source, but `room.items` intentionally remains empty until the merchant accepts the draft. There was no separate pre-approval preview layer for structured AI drafts.
+
+DONE_CONFIRMED:
+
+- Added a left-side AI draft preview layer that reads pending structured draft items from the current room proposal.
+- The preview shows names, prices, categories, and section labels before merchant approval.
+- Customer ordering remains locked. The preview does not publish items, does not enable customer quantity controls, and still requires merchant approval followed by customer publishing.
+
+Validation evidence:
+
+- `npm run check`: passed.
+- inline `public/index.html` script syntax check: passed.
+- `git diff --check`: passed.
+- `npm run verify:adaptive-contracts`: passed with contracts `13`, prompt nodes `17`, guardrails `19`, scenarios `12`.
+- `npm run audit:tasks`: passed with code release blocking gaps `0`; one submission-only gap remains for the final YouTube demo URL.
+- Local browser UI smoke passed on `http://127.0.0.1:3224/?_owner_bootstrap=4fa9f940a830&room=578b5f76`: the left side shows `AI 已整理菜單草稿` plus 18 draft menu rows, while `發布給顧客` remains disabled until merchant approval.
+
+Next resume point:
+
+- Commit, push `main`, deploy Zeabur, create a fresh live Codex OCR+LLM room, and continue the merchant/customer recording flow.

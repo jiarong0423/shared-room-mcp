@@ -723,6 +723,29 @@
       border-top: 1px dashed var(--line);
     }
 
+    .draft-preview-panel {
+      display: grid;
+      gap: 10px;
+      padding: 12px 0 0;
+    }
+
+    .draft-preview-callout {
+      display: grid;
+      gap: 4px;
+      border: 1px solid rgba(110, 127, 112, 0.22);
+      border-radius: 8px;
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .draft-preview-callout strong {
+      color: var(--ink);
+      font-size: 14px;
+    }
+
     .menu-row {
       display: grid;
       border: 0;
@@ -732,6 +755,19 @@
       padding: 13px 0;
       gap: 10px;
       box-shadow: none;
+    }
+
+    .menu-row[data-draft-preview="true"] {
+      background: #fffdf9;
+    }
+
+    .draft-preview-status {
+      display: inline-flex;
+      justify-content: flex-end;
+      color: var(--accent-dark);
+      font-size: 12px;
+      font-weight: 800;
+      text-align: right;
     }
 
     .menu-row-main {
@@ -2049,6 +2085,9 @@
         draftWaiting: '草稿待確認',
         draftListEmpty: '先在右側採納草稿，顧客項目才會出現在這裡。',
         draftReadyForHost: 'AI 草稿待商家確認',
+        draftPreviewTitle: 'AI 已整理菜單草稿',
+        draftPreviewHint: '請對照上方照片核對品名與金額；採納前顧客不能點餐。',
+        draftPreviewLocked: '待商家採納',
         personalDetails: '顧客明細',
         totalAmount: '總金額',
         claimAudit: '顧客確認',
@@ -2366,6 +2405,9 @@
         draftWaiting: 'Draft waiting',
         draftListEmpty: 'Approve the draft on the right before customer items appear here.',
         draftReadyForHost: 'AI draft ready for merchant review',
+        draftPreviewTitle: 'AI menu draft is ready',
+        draftPreviewHint: 'Compare names and prices with the photo. Customers cannot order until the merchant approves.',
+        draftPreviewLocked: 'Waiting for approval',
         personalDetails: 'Customers',
         totalAmount: 'Total amount',
         claimAudit: 'Customer confirmations',
@@ -4166,6 +4208,16 @@
       return ['local_ocr_plus_local_vision', 'local_ocr_plus_llm_visual_review'].includes(String(proposal?.payload?.sourceMode || ''));
     }
 
+    function getPendingStructuredDraftProposal(room) {
+      return Array.isArray(room?.agentProposals)
+        ? room.agentProposals.find((proposal) => {
+          return proposal.status === 'pending_host_confirmation'
+            && proposalHasVisualReview(proposal)
+            && getProposalStructuredItems(proposal).length > 0;
+        }) || null
+        : null;
+    }
+
     function getVisibleProposalSummary(proposal) {
       const items = getProposalStructuredItems(proposal);
       const itemPreview = items
@@ -4203,11 +4255,47 @@
     }
 
     function roomHasPendingStructuredDraft(room) {
-      return Array.isArray(room?.agentProposals) && room.agentProposals.some((proposal) => {
-        return proposal.status === 'pending_host_confirmation'
-          && proposalHasVisualReview(proposal)
-          && getProposalStructuredItems(proposal).length > 0;
-      });
+      return Boolean(getPendingStructuredDraftProposal(room));
+    }
+
+    function renderDraftPreviewMenu(room, proposal) {
+      const items = getProposalStructuredItems(proposal);
+      const rows = items.map((item, index) => {
+        const itemName = String(item?.name || `${t('itemName')} ${index + 1}`).trim();
+        const itemPrice = Number(item?.price || 0);
+        const itemTags = getItemMetaText({
+          ...item,
+          tags: Array.isArray(item?.tags) ? item.tags : [],
+          category: item?.category || 'other',
+          priceRole: item?.priceRole || 'line_item',
+          sourceNumberClass: item?.sourceNumberClass || 'currency_amount'
+        }, Boolean(item?.supportsDrinkOptions), hasItemOptionGroups(item));
+        return `
+          <div class="menu-row" data-draft-preview="true">
+            <div class="menu-row-main">
+              <div class="menu-item-block no-thumb">
+                <div class="menu-item-meta">
+                  <div class="menu-item-name">${escapeHtml(itemName)}</div>
+                  <div class="menu-item-price">${formatMoney(itemPrice)}</div>
+                  <div class="menu-item-stats">${escapeHtml(itemTags)}</div>
+                </div>
+              </div>
+              <div class="menu-row-side">
+                <span class="draft-preview-status">${escapeHtml(t('draftPreviewLocked'))}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      return `
+        <div class="draft-preview-panel">
+          <div class="draft-preview-callout">
+            <strong>${escapeHtml(t('draftPreviewTitle'))}</strong>
+            <span>${escapeHtml(t('draftPreviewHint'))}</span>
+          </div>
+          ${rows}
+        </div>
+      `;
     }
 
     function renderAgentProposals(room) {
@@ -4450,6 +4538,11 @@
       const isLocked = Boolean(ownParticipant?.confirmed) || !canMembersClaimItems(room);
       const canReviewItems = canReviewParsedItems(room);
       const visibleItems = Array.from(room.items || []);
+      const draftProposal = getPendingStructuredDraftProposal(room);
+      if (visibleItems.length === 0 && draftProposal) {
+        elements.menuBody.innerHTML = renderDraftPreviewMenu(room, draftProposal);
+        return;
+      }
       const rows = visibleItems.map((item) => {
         const ownEntry = getOwnOrderEntry(item.id);
         const itemTotal = room.totals?.itemTotals?.[item.id] || { qty: 0, subtotal: 0 };
