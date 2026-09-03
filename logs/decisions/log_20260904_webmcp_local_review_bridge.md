@@ -624,3 +624,32 @@ Validation evidence:
 Next resume point:
 
 - Commit and push this verified route bootstrap patch, deploy Zeabur again, then verify live owner route initial state and customer read-only route before telling the operator recording is ready.
+
+## 2026-09-04 07:27 Live Route Bootstrap Validation Closeout
+
+Scope:
+
+- Owner project: `<project-root>`
+- Git commit deployed for code validation: `c92b5a8`
+- Zeabur deployment: `6a9a004c4e43204d5880dde1`, status `RUNNING`
+
+DONE_CONFIRMED:
+
+- Zeabur `/healthz` passed after deployment and reported persistent room store `/data/rooms.json`.
+- Hosted frontend bundle contained the route-lock markers: `merchant_owner_route_required`, `read_only_customer_route`, `routeBootstrapParticipantId`, `getRoomApiUrl`, and `syncRouteBootstrapIdentityFromRoom`.
+- Live valid/invalid owner token API check passed on room `05064975`: the valid token returned the owner route bootstrap id; an invalid token returned no route bootstrap identity.
+- Live owner route browser smoke passed on `https://shared-room-mcp-next.zeabur.app/?_owner_bootstrap=c4798c21d321&room=05064975&lang=en`: merchant display name was present on first settled render, `Publish To Customers` was enabled, the owner hint was visible, and no Chinese drink-option labels appeared in the English route.
+- Live owner UI published room `05064975`; no backend direct state write was used for publishing.
+- Live customer route browser smoke passed on `https://shared-room-mcp-next.zeabur.app/?room=05064975&lang=en&member=Jamie`: customer route had no merchant draft text, no publish button, no writable WebMCP draft tool, and no Chinese drink-option labels.
+- Jamie selected `Latte`, `French Fries`, and `Tiramisu`; customer total was `NT$ 310`; customer confirmation changed the button to `Cancel`.
+- Owner summary after customer confirmation showed `Jamie`, `NT$ 310`, copy summary enabled, HTML/PDF downloads enabled, and final summary enabled.
+- Clean recording room prepared: `https://shared-room-mcp-next.zeabur.app/?_owner_bootstrap=ef4181493160&room=beafd1b5&lang=en`; it is not published and still waits for merchant approval.
+- Recording room browser smoke passed: merchant display name `Moon Table Cafe` is present, one enabled `Approve Draft` button is visible, `Publish To Customers` is disabled until draft approval, the left draft preview shows 18 items, and the English route has no Chinese drink-option labels.
+
+Remaining known gap:
+
+- Submission-only gap remains the final YouTube demo URL. No code release blocking gap remains.
+
+Next resume point:
+
+- Operator can record from the clean owner URL, click `Approve Draft`, confirm approval, then click `Publish To Customers`. Codex can then open the customer URL and select items for the customer-side segment.
