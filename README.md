@@ -41,10 +41,10 @@ The full check summary is in [`docs/testing/VALIDATION_EVIDENCE.md`](docs/testin
 |---|---|---|
 | Zeabur post-deploy health | PASS on 2026-09-04 | live `/healthz` returned `providerOrder=["local_vision","gemini","openai"]`, `localVisionConfigured=false`, `allowRemoteVisionFallback=false`, and `/data/rooms.json` persistence |
 | Zeabur room/member/export smoke | 4/4 passed | `npm run stress:member-release -- --base-url https://shared-room-mcp-next.zeabur.app --rounds 1 --fail-fast` against generated test rooms |
-| Zeabur local bridge proposal smoke | PASS | local bridge wrote one local OCR plus mock local-vision `semantic_repair_draft` to a generated live test room; proposal stayed pending host confirmation |
-| Local contract regression | 60/60 current bridge-gate run; older 400/400 historical run retained as regression evidence | `npm run stress:contracts` with test-only local rate limits; raw runtime logs stay ignored and are summarized in validation evidence |
-| Local HITL Member-Visibility Release regression | 12/12 current bridge-gate run; older 80/80 historical run retained as regression evidence | `npm run stress:member-release`; verifies draft gate, host release, member confirmation, owner finalization, HTML export, and PDF export |
-| Deterministic image oracle integration | 115/115 passed | `npm run stress:image-matrix -- --mode image-plus-oracle-text` with `IMAGE_MATRIX_ROOT`; checksum-backed contract test, not OCR/provider accuracy |
+| Local guided OCR+LLM proposal apply smoke | PASS on 2026-09-04 | `npm run demo:codex-ocr-llm -- --base-url http://127.0.0.1:3215 --accept-for-test`; OCR found 7 draft rows, Codex-guided visual review prepared 18 rows, accepted draft applied 18 rows, and member release stayed closed |
+| Local contract regression | 20/20 current fast run; older 60/60 and 400/400 runs retained as regression evidence | `npm run stress:contracts` with test-only local rate limits; raw runtime logs stay ignored and are summarized in validation evidence |
+| Local HITL Member-Visibility Release regression | 4/4 current fast run; older 12/12 and 80/80 runs retained as regression evidence | `npm run stress:member-release`; verifies draft gate, host release, member confirmation, owner finalization, HTML export, and PDF export |
+| Deterministic image oracle integration | Previous 115/115 artifact-backed run | `npm run stress:image-matrix -- --mode image-plus-oracle-text` requires the external `IMAGE_MATRIX_ROOT` PNG artifact; checksum-backed contract test, not OCR/provider accuracy |
 | Security and release boundary | PASS | local `release-boundary-safety-gate`, `ai-security-rules rules-check`, and `npm audit` checks reported no blocking findings |
 
 These checks show that the assistant workflow is repeatable and no-key by default. They are not a claim of production-scale database capacity. The default JSON save layer is for a single demo service; production traffic should use Redis or PostgreSQL.
@@ -57,16 +57,16 @@ This is a single-direction task room. The host provides evidence and performs th
 
 `Adaptive Contract MCP` is not a blockchain smart contract and not an autonomous execution engine. It means adaptive room terms drafted from evidence, validated by strict schemas, reviewed through WebMCP/Codex, and executed only after human approval.
 
-Core loop: OCR plus LLM-assisted parsing and text-block recognition produce a draft; WebMCP/Codex reviews the draft against room state and evidence; the human edits, confirms, and releases the final commitment.
+Core loop: OCR plus LLM visual review produces a structured draft; WebMCP/Codex reviews the draft against room state and evidence; the human edits, confirms, and releases the final commitment. The LLM visual review node can be Codex, Gemini, or a deployment-owner local vision model.
 
-中文口徑：OCR + LLM 解析 + 文字區塊辨識 = 草稿；WebMCP/Codex 複查；人工修正、確認、放行。
+中文口徑：圖片 -> OCR -> Codex/Gemini/本地模型看圖校正 -> 結構化草稿 -> 人工審核 -> 通過。
 
 Threshold conditions such as "minimum 12 people" are advisory context. The assistant can flag the gap between the evidence and the current room, but it cannot promise that a group has formed, that a booking is valid, that payment is complete, or that settlement is final. The host can review, override, edit, and proceed; that human action is the commitment.
 
 AI provider adapters are extension-only:
 
 - Pasted text and local rule-based parsing seed candidate evidence only; they are not a completed pre-push review draft by themselves.
-- For the hosted Zeabur demo, local OCR and local vision review should run from an authorized local bridge, then write a draft-only WebMCP proposal back to the cloud room for host review.
+- For the hosted Zeabur demo, local OCR and LLM visual review should run from an authorized local bridge, then write a draft-only WebMCP proposal back to the cloud room for host review.
 - The core WebMCP workflow must work without any paid API key.
 - Codex and the browser sidebar provide the intended LLM collaboration layer: visual review, evidence comparison, field-fix suggestions, and state guidance.
 - WebMCP is the primary agent integration; external model APIs are not required for the agent workflow.
@@ -75,7 +75,7 @@ AI provider adapters are extension-only:
 
 ## System Boundary Standard
 
-This project is an AI-assisted collaboration room, not an autonomous agent. Evidence ingestion and text extraction can happen through copied text, browser-side helpers, local OCR, or optional deployment-owner adapters. Those sources only seed parser candidates. WebMCP and Codex review the current room state and evidence, then prepare draft suggestions. Human clicks are required for parsed-item approval, Member-Visibility Release, member cost confirmation, overrides, and final summary export.
+This project is an AI-assisted collaboration room, not an autonomous agent. Evidence ingestion and text extraction can happen through copied text, browser-side helpers, local OCR, or optional deployment-owner adapters. Those sources only seed draft rows. WebMCP and Codex review the current room state and evidence, then prepare draft suggestions. Human clicks are required for parsed-item approval, Member-Visibility Release, member cost confirmation, overrides, and final summary export.
 
 Zeabur hosts the room state and approval workflow. Zero required ML/OCR workload is processed on the Zeabur server in the default WebMCP Challenge path.
 
@@ -160,7 +160,7 @@ The project has six fixed safety checks. Each check passes a limited result forw
 | safety check | job | output boundary |
 |---|---|---|
 | Choose the room type | Selects or infers the scenario | Room type changes require review state |
-| Read the price evidence | Extracts item and price candidates from image-backed local OCR plus local/vision LLM review | Parser output starts as candidate evidence |
+| Read the price evidence | Extracts item and price candidates from image-backed local OCR plus LLM visual review | Parser output starts as candidate evidence |
 | Calculate locally | Calculates totals inside the app | Calculation remains in the room contract |
 | Repair unclear fields | Creates a review draft only when the input is unclear | Repairs move through host proposal state |
 | Check confirmations | Tracks shared items and extra personal claims | Confirmations are member-scoped |
@@ -188,12 +188,15 @@ The table below describes the room types and what the app can safely calculate t
 | role | can inspect | can draft suggestions | can edit parsed items | can edit own claims | can approve drafts | can settle |
 |---|---:|---:|---:|---:|---:|---:|
 | Anonymous viewer | yes | no | no | no | no | no |
+| Local OCR | local image only | no | no | no | no | no |
+| LLM visual review: Codex, Gemini, or local model | authorized evidence and OCR text | structured draft only | no | no | no | no |
+| Authorized local bridge | target room and reviewed draft | proposal only | no | no | no | no |
 | WebMCP agent | yes | proposal only | no | no | no | no |
 | Room member | yes | no | no | own claims only | no | no |
 | Room host | yes | yes | before member confirmation | own claims only | same-card human review | yes |
 | Server | validates | stores limited drafts | checks room owner | checks each member only confirms themself | records review result | saves local room summary |
 
-The fixed order is evidence draft first, host review second, Member-Visibility Release third, member confirmation fourth, and final settlement last. The host can remove bad parser rows or fix names, prices, and categories before releasing the list to members. After the host releases the list, parsed item editing is locked.
+The fixed order is evidence draft first, OCR plus LLM visual review second, host review third, Member-Visibility Release fourth, member confirmation fifth, and final settlement last. The host can remove bad parser rows or fix names, prices, and categories before releasing the list to members. After the host releases the list, parsed item editing is locked.
 
 ```mermaid
 sequenceDiagram
@@ -201,7 +204,8 @@ sequenceDiagram
   actor Host as Host / Service Owner
   actor Member as Member / Guest
   participant Local as Authorized Local Bridge
-  participant Vision as Local OCR + Vision LLM
+  participant OCR as Local OCR
+  participant LLM as LLM Visual Review
   participant Page as Shared Room MCP Page
   participant WebMCP as WebMCP State Reader
   participant Contract as Adaptive Contract MCP
@@ -211,17 +215,19 @@ sequenceDiagram
 
   Host->>Page: Create room and provide evidence
   Page->>Store: Save uploaded evidence image
-  Local->>Vision: Read local image, run OCR, correct with visual model
-  Vision-->>Local: Structured draft plus review notes
+  Local->>OCR: Read local image and extract noisy text
+  OCR-->>Local: OCR candidate text
+  Local->>LLM: Compare image plus OCR text
+  LLM-->>Local: Corrected structured draft plus review notes
   Local->>Page: Write semantic_repair_draft proposal
   WebMCP->>Page: Inspect room through page-local tools
   WebMCP->>Page: Summarize draft-only next action
   Host->>Review: Review the draft card
-  Review->>Contract: Convert approved draft into parser candidates
+  Review->>Contract: Apply approved structured draft
   Contract->>Contract: Route scenario and apply prompt contract
   Contract->>Guardrail: Check forbidden numbers, formulas, sparse evidence
   Guardrail-->>Review: Emit warning or structural gate
-  Review-->>Page: Show parser candidates for host review
+  Review-->>Page: Show extracted rows for host review
   Host->>Review: Accept warning, edit value, or remove candidate
   Review->>Contract: Mark resolved_warning or require edit/remove
   Contract->>Store: Save reviewed state and audit trail
@@ -233,7 +239,7 @@ sequenceDiagram
   Page->>Host: Export HTML or PDF evidence record
 
   WebMCP-->>Host: State summary and draft recommendation
-  Vision-->>Review: OCR-only output remains blocked
+  LLM-->>Review: OCR-only output remains blocked until reviewed
   Review-->>Host: Human approval remains required
   Guardrail-->>Host: Structural risk requires edit or removal
 ```
@@ -242,7 +248,7 @@ sequenceDiagram
 flowchart TD
   L0[Image-backed EvidenceAsset] --> B0[Authorized Local Bridge]
   B0 --> B1[Local OCR Candidate Text]
-  B1 --> B2[Local or Visual LLM Correction]
+  B1 --> B2[LLM Visual Review: Codex, Gemini, or Local Model]
   B2 --> B3[Structured Draft Proposal]
   B3 --> L1[Host Draft Review]
   L1 --> L2[Scenario Router]
@@ -262,7 +268,7 @@ flowchart TD
   RW --> L9
 
   B1 --> OB[OCR-only Blocker]
-  OB --> HR[Local vision or human repair required]
+  OB --> HR[LLM visual review or human repair required]
   HR --> B3
 
   L7 --> S[Structural Gate]
@@ -355,7 +361,7 @@ Recommended open-source deployment order:
 1. Copy `env.sample` variable names into the hosting service variables.
 2. Mount a persistent volume at `/data` and set `ROOM_STORE_PATH=/data/rooms.json`.
 3. For the adaptive review loop, set `GUARDRAIL_MEMORY_PATH=/data/guardrail-memory.json` so human corrections and blocked approval attempts are retained as guardrail candidates.
-4. Run the no-key flow first with the authorized local bridge: image -> local OCR -> local/vision LLM correction -> structured draft -> host review.
+4. Run the no-key flow first with the authorized local bridge: image -> local OCR -> LLM visual review -> structured draft -> host review.
 5. Leave provider keys empty for the WebMCP Challenge demo unless the deployment owner intentionally enables an external repair adapter.
 6. Restart the service and verify `/healthz` reports persistence flags and does not expose secret values.
 
@@ -453,7 +459,7 @@ The image-matrix runner is a deterministic contract-driven integration benchmark
 The runner has three modes with different claims:
 
 - `image-only`: uploads only the image. This is a negative canary unless the deployment owner has configured an explicit image-reading provider. It must not be used to claim the default Zeabur demo performs OCR.
-- `image-plus-local-ocr`: runs OCR on the operator machine first, then writes OCR metadata and a draft proposal into the hosted room. Zeabur still acts as the room/runtime/HITL surface, not as the OCR engine. This mode is a canary for field isolation, evidence pointers, forbidden-number leakage, and advisory threshold handling; completed pre-push image review still requires local/vision LLM correction or host repair before member release.
+- `image-plus-local-ocr`: runs OCR on the operator machine first, then writes OCR metadata and a draft proposal into the hosted room. Zeabur still acts as the room/runtime/HITL surface, not as the OCR engine. This mode is a canary for field isolation, evidence pointers, forbidden-number leakage, and advisory threshold handling; completed pre-push image review still requires LLM visual review or host repair before member release.
 - `image-plus-oracle-text`: uploads the image plus the locked oracle text. This validates contract routing, guardrails, member-visible masks, and HITL state transitions. It is not proof of visual OCR accuracy.
 
 These checks must not be described as provider accuracy, zero-shot extraction accuracy, unconstrained vision accuracy, or a hosted image-recognition benchmark. The intended evidence-review loop is WebMCP plus Codex/LLM visual review plus human approval.
@@ -473,8 +479,8 @@ Expected audit state:
 The locked recording flow is:
 
 1. Start on the live Shared Room page with the agent side panel visible.
-2. Upload the prepared English `Community Workshop Signup` image through the visible file picker. Do not use `Load Sample Room` in the recording.
-3. The authorized local review bridge reads the local image, runs local OCR, asks the local vision model to correct the OCR against the image, writes one `semantic_repair_draft`, and then the agent calls `inspect_room` and `suggest_next_actions`.
+2. Run `npm run demo:codex-ocr-llm -- --base-url https://shared-room-mcp-next.zeabur.app` from the local repo. If no image is supplied, the script generates a fictional English menu image under the local temp folder, runs Tesseract OCR, and sends a Codex-reviewed structured draft into a new Zeabur room.
+3. The authorized local review bridge treats OCR as noisy text, applies the guided Codex visual review result, writes one `semantic_repair_draft`, and leaves the draft pending for the host.
 4. The presenter moves the pointer to the single draft card and the agent tells the host when to click. The host clicks the same card twice: first to mark it reviewed, then to confirm the green approval state.
 5. The agent opens the same room in a second tab as `Jamie`, selects one item, and pauses. Jamie clicks the personal confirmation button once.
 6. The agent immediately returns to the owner tab, verifies the member state, and pauses. The owner clicks `Owner Finalizes Summary` once.

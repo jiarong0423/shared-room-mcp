@@ -393,8 +393,8 @@ async function createProposal(baseUrl, room, ownerParticipantId, scenario, timeo
         sourceMode: 'local_ocr_plus_local_vision',
         localVisionConfigured: true,
         localVision: {
-          provider: 'stress_harness',
-          model: 'mock-local-vision-review'
+          provider: 'test_harness',
+          model: 'test-visual-review'
         },
         scenario: scenario.id,
         taskType: scenario.taskType,
@@ -402,7 +402,7 @@ async function createProposal(baseUrl, room, ownerParticipantId, scenario, timeo
         rawOcrPreview: scenario.text,
         structuredItems,
         visualReviewNotes: [
-          'Stress harness simulates a local vision correction layer for HITL release-gate validation.'
+          'Test harness provides a visual-review proof layer for HITL release-gate validation.'
         ]
       }
     })
@@ -654,7 +654,7 @@ function renderMarkdown(args, summary, results, plannedTotal) {
   lines.push('', '## Checked Boundaries', '');
   lines.push('- Evidence parser creates a draft list and keeps member claiming closed.');
   lines.push('- Agent proposal stays `pending_host_confirmation` and does not open or mutate final state.');
-  lines.push('- The host cannot release the list while parser candidates or rule candidates still require review.');
+  lines.push('- The host cannot release the list while extracted rows or rule notes still require review.');
   lines.push('- The script accepts the pending review proposal before Member-Visibility Release so the positive flow follows the HITL recording path.');
   lines.push('- A room member cannot edit parsed items.');
   lines.push('- A room member cannot claim items before the host releases the reviewed list.');

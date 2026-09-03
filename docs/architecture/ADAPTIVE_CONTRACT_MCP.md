@@ -6,7 +6,7 @@ Adaptive Contract MCP is not a blockchain smart contract and not an autonomous e
 
 The product boundary is a form-based async private task room. It is not a chatroom, messaging app, payment gateway, booking bot, or browser-control agent. A host defines the evidence and service boundary; members fill only their own selectable or assigned parts; final release and settlement stay behind explicit human review.
 
-OCR plus LLM-assisted parsing and text-block recognition produce a draft. WebMCP/Codex reviews the draft against room state and evidence. The human edits, confirms, overrides advisory warnings, and releases the commitment. Threshold conditions such as group size or minimum spend are warnings until a host decides; AI never commits a booking, group formation, payment, or settlement.
+OCR plus LLM visual review produces a structured draft. The LLM visual review node can be Codex, Gemini, or a deployment-owner local vision model. WebMCP/Codex reviews the room state and draft against the evidence. The human edits, confirms, overrides advisory warnings, and releases the commitment. Threshold conditions such as group size or minimum spend are warnings until a host decides; AI never commits a booking, group formation, payment, or settlement.
 
 Zeabur is the hosted state storage, MCP protocol host, HITL approval gate, guardrail runtime, member release surface, and export surface. Zero required ML/OCR workload is processed on the Zeabur server in the default WebMCP Challenge path.
 
@@ -18,7 +18,8 @@ sequenceDiagram
   actor Host as Host / Service Owner
   actor Member as Member / Guest
   participant Local as Authorized Local Bridge
-  participant Vision as Local OCR + Vision LLM
+  participant OCR as Local OCR
+  participant LLM as LLM Visual Review
   participant Page as Shared Room MCP Page
   participant WebMCP as WebMCP State Reader
   participant Contract as Adaptive Contract MCP
@@ -28,17 +29,19 @@ sequenceDiagram
 
   Host->>Page: Create room and provide evidence
   Page->>Store: Save uploaded evidence image
-  Local->>Vision: Read local image, run OCR, correct with visual model
-  Vision-->>Local: Structured draft plus review notes
+  Local->>OCR: Read local image and extract noisy text
+  OCR-->>Local: OCR candidate text
+  Local->>LLM: Compare image plus OCR text
+  LLM-->>Local: Corrected structured draft plus review notes
   Local->>Page: Write semantic_repair_draft proposal
   WebMCP->>Page: Inspect room state through page-local tools
   WebMCP->>Page: Summarize draft-only next action
   Host->>Review: Review the draft card
-  Review->>Contract: Convert approved draft into parser candidates
+  Review->>Contract: Apply approved structured draft
   Contract->>Contract: Route scenario and apply prompt contract
   Contract->>Guardrail: Check forbidden numbers, formulas, sparse evidence
   Guardrail-->>Review: Emit warning or structural gate
-  Review-->>Page: Show parser candidates for host review
+  Review-->>Page: Show extracted rows for host review
   Host->>Review: Accept warning, edit value, or remove candidate
   Review->>Contract: Mark resolved_warning or require edit/remove
   Contract->>Store: Save reviewed state and audit trail
@@ -50,10 +53,22 @@ sequenceDiagram
   Page->>Host: Export HTML or PDF evidence record
 
   WebMCP-->>Host: State summary and draft recommendation
-  Vision-->>Review: OCR-only output remains blocked
+  LLM-->>Review: OCR-only output remains blocked until reviewed
   Review-->>Host: Human approval remains required
   Guardrail-->>Host: Structural risk requires edit or removal
 ```
+
+## Node Permissions
+
+| node | may read | may write | may not do |
+|---|---|---|---|
+| Local OCR | Local evidence image | No room state writes | Approve drafts, open member list, settle, or call external services |
+| LLM visual review: Codex, Gemini, or local model | Evidence image, OCR text, current room state when authorized | Structured draft and review notes only | Final approval, payment, booking, member confirmation, or hidden item mutation |
+| Authorized local bridge | Local OCR output, LLM review JSON, target room id, host participant id | One `semantic_repair_draft` proposal | Create final commitments, bypass host review, or expose private OCR reports in the repo |
+| WebMCP page tools | Current browser room state | Proposal-only draft creation | Edit parsed items, approve drafts, open items to members, settle, or export on behalf of the user |
+| Zeabur room runtime | Uploaded evidence metadata, proposals, room state | Stores room state and applies an approved structured draft after host review | Host local OCR/LLM by default, charge payments, submit bookings, or auto-approve |
+| Host | Evidence, draft, members, totals | Review decisions, item edits, member release, final summary | Confirm another member's personal cost |
+| Member | Released selectable items and own cost | Own quantity/options and own confirmation | Edit evidence, approve AI drafts, release the list, or settle |
 
 ## Contract Pipeline
 
@@ -61,7 +76,7 @@ sequenceDiagram
 flowchart TD
   L0[Image-backed EvidenceAsset] --> B0[Authorized Local Bridge]
   B0 --> B1[Local OCR Candidate Text]
-  B1 --> B2[Local or Visual LLM Correction]
+  B1 --> B2[LLM Visual Review: Codex, Gemini, or Local Model]
   B2 --> B3[Structured Draft Proposal]
   B3 --> L1[Host Draft Review]
   L1 --> L2[Scenario Router]
@@ -81,7 +96,7 @@ flowchart TD
   RW --> L9
 
   B1 --> OB[OCR-only Blocker]
-  OB --> HR[Local vision or human repair required]
+  OB --> HR[LLM visual review or human repair required]
   HR --> B3
 
   L7 --> S[Structural Gate]

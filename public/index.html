@@ -3521,6 +3521,7 @@
 
     const visibleTermMap = {
       zh: [
+        [/local_ocr_plus_llm_visual_review/gi, '照片文字讀取加看圖核對'],
         [/local_ocr_plus_local_vision/gi, '照片文字讀取加看圖核對'],
         [/local_ocr_only_bridge_draft/gi, '只讀到照片文字，還要看圖核對'],
         [/local_ocr_only_requires_visual_review/gi, '只讀到照片文字，還要看圖核對'],
@@ -3528,7 +3529,6 @@
         [/semantic_repair_draft/gi, '照片讀取草稿'],
         [/evidence_review/gi, '照片內容核對'],
         [/task_router_review/gi, '用途核對'],
-        [/mock-local-vision/gi, '本機看圖測試'],
         [/AI\s+review\s+score/gi, '讀取把握度'],
         [/scenario\s+contract/gi, '適用情境'],
         [/schema\s+alignment/gi, '內容完整度'],
@@ -3548,6 +3548,7 @@
         [/candidate\s+routing/gi, '開放前檢查']
       ],
       en: [
+        [/local_ocr_plus_llm_visual_review/gi, 'photo text plus visual check'],
         [/local_ocr_plus_local_vision/gi, 'photo text plus visual check'],
         [/local_ocr_only_bridge_draft/gi, 'photo text only; visual check needed'],
         [/local_ocr_only_requires_visual_review/gi, 'photo text only; visual check needed'],
@@ -3555,7 +3556,6 @@
         [/semantic_repair_draft/gi, 'photo reading draft'],
         [/evidence_review/gi, 'photo review'],
         [/task_router_review/gi, 'room purpose check'],
-        [/mock-local-vision/gi, 'local visual check'],
         [/AI\s+review\s+score/gi, 'Reading confidence'],
         [/scenario\s+contract/gi, 'Room type'],
         [/schema\s+alignment/gi, 'Content complete'],
@@ -3929,6 +3929,10 @@
       return Array.isArray(proposal?.payload?.structuredItems) ? proposal.payload.structuredItems : [];
     }
 
+    function proposalHasVisualReview(proposal) {
+      return ['local_ocr_plus_local_vision', 'local_ocr_plus_llm_visual_review'].includes(String(proposal?.payload?.sourceMode || ''));
+    }
+
     function getVisibleProposalSummary(proposal) {
       const items = getProposalStructuredItems(proposal);
       const itemPreview = items
@@ -3937,7 +3941,7 @@
         .filter(Boolean)
         .join(', ');
       const sourceMode = String(proposal?.payload?.sourceMode || '');
-      if (sourceMode === 'local_ocr_plus_local_vision') {
+      if (proposalHasVisualReview(proposal)) {
         return currentLanguage === 'en'
           ? `Photo review draft prepared ${items.length} ${pluralPhrase(items.length, 'item', 'items')}${itemPreview ? `: ${itemPreview}` : ''}`
           : `照片讀取草稿已準備 ${items.length} 個項目${itemPreview ? `：${itemPreview}` : ''}`;
@@ -3952,7 +3956,7 @@
 
     function getVisibleProposalRationale(proposal) {
       const sourceMode = String(proposal?.payload?.sourceMode || '');
-      if (sourceMode === 'local_ocr_plus_local_vision') {
+      if (proposalHasVisualReview(proposal)) {
         return currentLanguage === 'en'
           ? 'This draft was prepared from the photo with text reading and a visual check. The host should compare it with the original image before approving.'
           : '這份草稿已先讀取照片文字並完成看圖核對。主揪採納前仍要對照原圖。';
@@ -4004,7 +4008,11 @@
         const rejectArmed = owner && reviewAction === 'reject';
         const reviewStage = acceptArmed ? 'accept' : rejectArmed ? 'reject' : '';
         const structuralBlocks = getStructuralReviewBlocks(room);
-        const blockedByAiReview = isPending && proposalNeedsAiReviewGate(proposal) && (hasBlockingParseQuality(room) || structuralBlocks.length > 0);
+        const visualReviewCanReplaceOcrDraft = proposalHasVisualReview(proposal) && getProposalStructuredItems(proposal).length > 0;
+        const blockedByAiReview = isPending
+          && proposalNeedsAiReviewGate(proposal)
+          && !visualReviewCanReplaceOcrDraft
+          && (hasBlockingParseQuality(room) || structuralBlocks.length > 0);
         const acceptButtonClass = rejectArmed ? 'button secondary' : `button ${acceptArmed ? 'confirm-approval' : ''}`;
         const proposalSummary = getVisibleProposalSummary(proposal);
         const proposalRationale = getVisibleProposalRationale(proposal);

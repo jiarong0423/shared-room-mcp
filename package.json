@@ -17,7 +17,8 @@
     "stress:image-matrix": "node scripts/stress-image-matrix.mjs",
     "stress:menu": "node scripts/stress-menu-parser.mjs",
     "stress:contracts": "node scripts/stress-local-contracts.mjs",
-    "stress:member-release": "node scripts/stress-member-release.mjs"
+    "stress:member-release": "node scripts/stress-member-release.mjs",
+    "demo:codex-ocr-llm": "node scripts/prepare-codex-ocr-llm-demo.mjs"
   },
   "engines": {
     "node": ">=20.9.0"

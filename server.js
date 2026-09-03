@@ -84,6 +84,10 @@ const localOcrMaxChars = Math.max(0, Math.min(24000, Number(process.env.LOCAL_OC
 const localOcrFirst = String(process.env.LOCAL_OCR_FIRST || 'true').toLowerCase() !== 'false';
 const localOcrMinItems = Math.max(1, Math.min(20, Number(process.env.LOCAL_OCR_MIN_ITEMS || 3)));
 const localOcrOnlyReviewIssueId = 'local_ocr_only_requires_visual_review';
+const llmVisualReviewSourceModes = new Set([
+  'local_ocr_plus_local_vision',
+  'local_ocr_plus_llm_visual_review'
+]);
 const trustLayerSpreadsheetId = String(process.env.TRUST_LAYER_SPREADSHEET_ID || '').trim();
 const trustLayerSpreadsheetUrl = trustLayerSpreadsheetId
   ? `https://docs.google.com/spreadsheets/d/${encodeURIComponent(trustLayerSpreadsheetId)}/edit`
@@ -946,7 +950,7 @@ function buildAgentProposalContract() {
       'google_sheets_write'
     ],
     hostReviewRequired: true,
-    approveEffect: 'marks_proposal_as_accepted_only',
+    approveEffect: 'host_accepts_and_applies_reviewed_structured_draft_when_present',
     rejectEffect: 'marks_proposal_as_rejected_only'
   };
 }
@@ -969,13 +973,41 @@ function normalizeAgentProposalInput(input = {}) {
   };
 }
 
-function isLocalVisionBackedSemanticProposal(proposal = {}) {
+function isLlmVisualReviewBackedSemanticProposal(proposal = {}) {
   const payload = proposal.payload && typeof proposal.payload === 'object' ? proposal.payload : {};
+  const sourceMode = String(payload.sourceMode || '');
+  const llmVisualReview = payload.llmVisualReview && typeof payload.llmVisualReview === 'object'
+    ? payload.llmVisualReview
+    : {};
+  const provider = normalizeBoundedText(
+    llmVisualReview.provider || payload.visualReviewProvider || payload.localVision?.provider || '',
+    80
+  );
+  const model = normalizeBoundedText(
+    llmVisualReview.model || payload.visualReviewModel || payload.localVision?.model || payload.localVisionModel || '',
+    120
+  );
+  const hasCompletedReview = sourceMode === 'local_ocr_plus_local_vision'
+    ? payload.localVisionConfigured === true
+    : llmVisualReview.completed === true && provider && model;
   return proposal.proposalType === 'semantic_repair_draft'
-    && payload.sourceMode === 'local_ocr_plus_local_vision'
-    && payload.localVisionConfigured === true
+    && llmVisualReviewSourceModes.has(sourceMode)
+    && hasCompletedReview
     && Array.isArray(payload.structuredItems)
     && payload.structuredItems.length > 0;
+}
+
+function isLocalVisionBackedSemanticProposal(proposal = {}) {
+  return isLlmVisualReviewBackedSemanticProposal(proposal);
+}
+
+function shouldApplyStructuredDraftProposal(proposal = {}) {
+  const payload = proposal.payload && typeof proposal.payload === 'object' ? proposal.payload : {};
+  return isLlmVisualReviewBackedSemanticProposal(proposal)
+    && (
+      payload.sourceMode === 'local_ocr_plus_llm_visual_review'
+      || payload.applyStructuredDraft === true
+    );
 }
 
 function validateExternalAgentProposalInput(normalized) {
@@ -987,14 +1019,14 @@ function validateExternalAgentProposalInput(normalized) {
     return {
       ok: false,
       statusCode: 422,
-      error: 'OCR-only bridge output is local evidence only. Run local vision correction before creating a cloud review draft.'
+      error: 'OCR-only bridge output is local evidence only. Run OCR plus LLM visual review before creating a cloud review draft.'
     };
   }
-  if (normalized.proposalType === 'semantic_repair_draft' && !isLocalVisionBackedSemanticProposal(normalized)) {
+  if (normalized.proposalType === 'semantic_repair_draft' && !isLlmVisualReviewBackedSemanticProposal(normalized)) {
     return {
       ok: false,
       statusCode: 422,
-      error: 'Semantic repair drafts require local OCR plus local vision structured items before cloud proposal creation.'
+      error: 'Semantic repair drafts require OCR plus an LLM visual review with structured items before cloud proposal creation.'
     };
   }
   return { ok: true };
@@ -3664,6 +3696,86 @@ function acceptPendingParserCandidates(room, reviewerId, reason = 'host accepted
   room.calculationRules = buildCalculationRulesFromCandidates(room.parserCandidates);
   room.items = buildSelectableItemsFromCandidates(room.items, room.parserCandidates);
   return acceptedCount;
+}
+
+function getProposalVisualReviewModel(payload = {}) {
+  const llmVisualReview = payload.llmVisualReview && typeof payload.llmVisualReview === 'object'
+    ? payload.llmVisualReview
+    : {};
+  return normalizeBoundedText(
+    llmVisualReview.model || payload.visualReviewModel || payload.localVision?.model || payload.localVisionModel || '',
+    120
+  );
+}
+
+function applyAcceptedVisualReviewProposal(room, proposal, reviewerId) {
+  if (!shouldApplyStructuredDraftProposal(proposal)) {
+    return 0;
+  }
+
+  const payload = proposal.payload && typeof proposal.payload === 'object' ? proposal.payload : {};
+  const imageCount = Math.max(1, Array.isArray(room.menuImages) ? room.menuImages.length : 0);
+  const structuredItems = normalizeParsedItems(payload.structuredItems, imageCount, payload.addonSection || null);
+  if (structuredItems.length === 0) {
+    return 0;
+  }
+
+  const localOcrText = normalizeLocalOcrText(payload.rawOcrPreview || '');
+  const taskType = normalizeRoomTaskType(payload.taskType || room.taskRouter?.taskType || room.menuType || 'auto');
+  const menuType = normalizeMenuType(payload.menuType || room.menuType, structuredItems);
+  const previousPayload = {
+    itemCount: Array.isArray(room.items) ? room.items.length : 0,
+    parserCandidateCount: Array.isArray(room.parserCandidates) ? room.parserCandidates.length : 0,
+    evidenceReviewSource: room.evidenceReviewSource || null,
+    evidenceReviewModel: room.evidenceReviewModel || null,
+    parseQualityStatus: room.parseQuality?.status || null
+  };
+
+  room.menuType = menuType;
+  room.menuMode = 'auto';
+  room.taskRouter = buildRoomTaskRouter({
+    taskType,
+    localOcrText,
+    items: structuredItems
+  });
+  applyEvidenceReviewLayers(room, structuredItems, {
+    images: room.menuImages,
+    localOcrText,
+    taskType,
+    scenarioContractId: room.parseQuality?.adaptiveConfidence?.featureProfile?.scenarioContract || null,
+    evidenceKind: 'uploaded_image',
+    sourceLabel: 'reviewed photo evidence',
+    ocrSource: 'local_ocr'
+  });
+  room.parseQuality = evaluateMenuParseQuality({
+    items: room.items,
+    menuType: room.menuType,
+    taskRouter: room.taskRouter,
+    localOcr: room.localOcr,
+    localOcrText
+  });
+  room.evidenceReviewSource = normalizeBoundedText(payload.sourceMode || 'local_ocr_plus_llm_visual_review', 80);
+  room.evidenceReviewModel = getProposalVisualReviewModel(payload) || 'llm_visual_review';
+  room.warnings = Array.from(new Set([
+    ...(Array.isArray(payload.warnings) ? payload.warnings.map(String).filter(Boolean) : []),
+    ...(Array.isArray(room.warnings) ? room.warnings.map(String).filter((warning) => !/Only local OCR parser/i.test(warning)) : [])
+  ])).slice(0, 12);
+
+  recordReviewDecision(room, {
+    candidateId: proposal.id,
+    action: 'accept',
+    previousPayload,
+    nextPayload: {
+      appliedStructuredItemCount: structuredItems.length,
+      evidenceReviewSource: room.evidenceReviewSource,
+      evidenceReviewModel: room.evidenceReviewModel,
+      parseQualityStatus: room.parseQuality?.status || null
+    },
+    reviewerId,
+    reason: 'host accepted OCR plus LLM visual review draft'
+  });
+
+  return structuredItems.length;
 }
 
 function getStructuralReviewBlocks(room) {
@@ -7793,10 +7905,11 @@ io.on('connection', (socket) => {
     }
     const reviewProposalTypes = ['semantic_repair_draft', 'evidence_review', 'task_router_review'];
     const isReviewProposal = reviewProposalTypes.includes(String(proposal.proposalType || ''));
+    const willApplyVisualReviewProposal = action === 'accept' && shouldApplyStructuredDraftProposal(proposal);
     const clearsLocalOcrOnlyBlock = action === 'accept'
-      && isLocalVisionBackedSemanticProposal(proposal)
+      && isLlmVisualReviewBackedSemanticProposal(proposal)
       && hasOnlyLocalOcrOnlyReviewBlock(room);
-    if (action === 'accept' && isReviewProposal && hasBlockingParseQuality(room) && !clearsLocalOcrOnlyBlock) {
+    if (action === 'accept' && isReviewProposal && hasBlockingParseQuality(room) && !clearsLocalOcrOnlyBlock && !willApplyVisualReviewProposal) {
       appendGuardrailMemoryEvent({
         eventType: 'proposal_accept_blocked',
         roomId: room.id,
@@ -7814,7 +7927,7 @@ io.on('connection', (socket) => {
     }
     if (action === 'accept' && isReviewProposal) {
       const structuralBlocks = getStructuralReviewBlocks(room);
-      if (structuralBlocks.length > 0) {
+      if (structuralBlocks.length > 0 && !willApplyVisualReviewProposal) {
         appendGuardrailMemoryEvent({
           eventType: 'proposal_accept_blocked',
           roomId: room.id,
@@ -7830,10 +7943,14 @@ io.on('connection', (socket) => {
       }
     }
     let acceptedCandidateCount = 0;
+    let appliedStructuredDraftCount = 0;
     if (action === 'accept' && isReviewProposal) {
-      acceptedCandidateCount = acceptPendingParserCandidates(room, reviewerId, `proposal ${proposalId} accepted by host`);
+      appliedStructuredDraftCount = applyAcceptedVisualReviewProposal(room, proposal, reviewerId);
+      acceptedCandidateCount = appliedStructuredDraftCount > 0
+        ? appliedStructuredDraftCount
+        : acceptPendingParserCandidates(room, reviewerId, `proposal ${proposalId} accepted by host`);
     }
-    if (clearsLocalOcrOnlyBlock) {
+    if (clearsLocalOcrOnlyBlock && appliedStructuredDraftCount === 0) {
       room.evidenceReviewSource = 'local_vision_bridge';
       room.evidenceReviewModel = normalizeBoundedText(proposal.payload?.localVision?.model, 120) || 'local_vision_bridge';
       room.parseQuality = stripLocalOcrOnlyReviewBlock(room.parseQuality);
@@ -7852,7 +7969,8 @@ io.on('connection', (socket) => {
       proposalId,
       status: nextStatus,
       reviewedBy: reviewerId,
-      acceptedCandidateCount
+      acceptedCandidateCount,
+      appliedStructuredDraftCount
     });
     ack?.({ ok: true, room: state });
   });

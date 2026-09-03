@@ -4,7 +4,7 @@ Completion timestamp: 2026-09-04 00:48 Asia/Taipei
 
 ## Scope
 
-Owner project: `/Users/sunjiarong/Developer/webmcp`
+Owner project: `<project-root>`
 
 Changed the evidence review path so local OCR no longer acts as a silent finalizer. Added a local bridge script for the Zeabur demo boundary: local machine reads private image evidence, performs local OCR and optional local vision review, then writes only a host-reviewed proposal to the cloud room.
 
@@ -59,7 +59,7 @@ Additional release-prep fixes completed after parallel review:
 - Changed `/healthz` to expose only `localVisionConfigured` and `allowRemoteVisionFallback`; local vision endpoint origin and model name are no longer returned.
 - Changed the bridge CLI to default to dry-run, require `--write-cloud-proposal` for writes, require an explicit base URL for writes, and refuse private OCR reports outside tmp paths.
 - Updated README, submission runbook, architecture Mermaid diagrams, security evidence, validation evidence, `env.sample`, and public export manifest to match the local OCR plus local/visual LLM review loop.
-- Fixed the image-matrix runner to validate full parser candidates instead of member-selectable candidates only.
+- Fixed the image-matrix runner to validate full extracted rows instead of member-selectable candidates only.
 
 Validation evidence:
 
@@ -111,17 +111,85 @@ Remaining before public submission:
 
 - Insert the final uploaded YouTube demo URL.
 
+## 2026-09-04 02:55 Current Resume Pointer
+
+Current state:
+
+- Guided Codex OCR+LLM review flow is locally implemented and precommit-validated.
+- Local accept smoke passed with 18 structured rows applied after host approval.
+- Local pending smoke passed with the same 18 structured rows left for the host to approve during recording.
+- The 115-case image-matrix check was not rerun in this checkout because the external PNG artifact directory is absent; do not cite it as current evidence unless `IMAGE_MATRIX_ROOT` is restored and the runner is repeated.
+
+Next action:
+
+- Commit and push this guided OCR+LLM review flow, deploy it to Zeabur, then rerun live `/healthz`, hosted member-release smoke, and one pending guided Codex review room for recording.
+
+## 2026-09-04 02:50 Guided Codex OCR+LLM Review Flow
+
+Scope:
+
+- Owner project: `<project-root>`
+- Changed artifacts: `server.js`, `public/index.html`, `scripts/prepare-codex-ocr-llm-demo.mjs`, `scripts/webmcp-local-review-bridge.mjs`, `scripts/stress-member-release.mjs`, `scripts/stress-image-matrix.mjs`, `package.json`, README/submission/architecture/testing/security docs.
+
+Direct cause:
+
+- The prior bridge path proved that OCR-only output was blocked, but the recording path still did not provide a concrete guided Codex node that reads OCR plus the image, creates a structured visual-review draft, and leaves the final decision for the host.
+
+Root cause:
+
+- The architecture mixed three separate roles: local OCR, LLM visual review, and Zeabur room state. The code needed an explicit proposal mode for OCR plus LLM visual review so Codex/Gemini/local models can act as an authorized review node without pretending that Zeabur runs the local OCR/LLM engine.
+
+DONE_CONFIRMED:
+
+- Added a guided demo runner: `npm run demo:codex-ocr-llm`.
+  - evidence: the runner generates a fictional English menu image when no image is supplied, runs local Tesseract OCR, creates a Zeabur/local room, uploads OCR evidence, creates one Codex visual-review draft, and leaves it pending unless `--accept-for-test` is passed.
+- Changed backend proposal handling so a valid OCR+LLM visual-review draft can replace old OCR rows after host approval.
+  - evidence: `local_ocr_plus_llm_visual_review` requires completed visual review metadata and structured items; OCR-only proposals are still rejected.
+- Changed frontend proposal blocking so a valid visual-review draft is not blocked by stale OCR-only warnings.
+  - evidence: the review card can remain pending for the host, and approval applies the structured draft instead of the original noisy OCR rows.
+- Updated the visible UI mapping and public docs so demo wording uses plain-language review text instead of source/mode/model/debug terms.
+  - evidence: tracked source/docs scan returned zero hits for old source, model, mock, harness, local machine path, and Codex attachment wording.
+- Updated Mermaid/architecture docs with explicit nodes and permissions for local OCR, Codex/Gemini/local-model visual review, authorized local bridge, WebMCP page tools, Zeabur runtime, host, and members.
+
+Validation evidence:
+
+- `npm run check`: passed.
+- `node --check scripts/prepare-codex-ocr-llm-demo.mjs`: passed.
+- `node --check scripts/webmcp-local-review-bridge.mjs`: passed.
+- `node --check scripts/stress-member-release.mjs`: passed.
+- `node --check scripts/stress-image-matrix.mjs`: passed.
+- `npm run verify:adaptive-contracts`: passed.
+- `npm run audit:tasks`: passed with code release blocking gaps `0`; one submission-only gap remains for the final YouTube demo URL.
+- `git diff --check`: passed.
+- Guided local OCR+LLM accept smoke passed: `/private/tmp/webmcp-codex-ocr-llm-local-accept-final/codex-ocr-llm-demo-2026-09-03T18-44-39-400Z.json`. OCR produced 7 draft rows, Codex visual review prepared 18 structured rows, test-only host accept applied 18 rows, and member release stayed closed.
+- Guided local OCR+LLM pending demo smoke passed: `/private/tmp/webmcp-codex-ocr-llm-local-pending-final-2/codex-ocr-llm-demo-2026-09-03T18-44-40-257Z.json`. Same evidence path remained pending for host approval.
+- Local Member-Visibility Release smoke passed `4/4`: `/private/tmp/webmcp-codex-ocr-llm-member-release-final/member-release-stress-2026-09-03T18-46-59-817Z.md`.
+- Local contract smoke passed `20/20`: `/private/tmp/webmcp-codex-ocr-llm-contracts-final/local-contract-stress-2026-09-03T18-47-01-301Z.md`.
+- `release-boundary-safety-gate`: PASS, blocking `0`; evidence `/private/tmp/webmcp-release-boundary-codex-ocr-llm-final/release-boundary-report-2026-09-03T18-46-14-169Z.json`.
+- `ai-security-rules rules-check`: pass, blocking `0`, P0 `0`, P1 `0`, P2 `0`; evidence `/private/tmp/webmcp-ai-security-rules-check-codex-ocr-llm-final/local_security_design_gate_rules_check.md`.
+- `ai-security-rules deploy-gate`: pass, blocking `0`, P0 `0`, P1 `0`, P2 `0`; evidence `/private/tmp/webmcp-ai-security-deploy-gate-codex-ocr-llm-final/local_security_design_gate_deploy_gate.md`.
+- `npm audit --audit-level=high`: passed, `0 vulnerabilities`.
+- `npm audit --audit-level=moderate --omit=dev`: passed, `0 vulnerabilities`.
+
+NOT_RERUN:
+
+- The 115-case image-matrix runner was not rerun in the current checkout because the external PNG artifact directory `fixtures/image-matrix/generated` is absent. The runner failed closed with `ENOENT` and must be repeated with `IMAGE_MATRIX_ROOT` restored before it can be cited as current evidence.
+
+Next resume point:
+
+- Commit and push the guided OCR+LLM review flow, deploy the resulting commit to Zeabur, then rerun live `/healthz`, hosted member-release smoke, and one pending guided Codex review room for recording.
+
 ## 2026-09-04 01:57 Plain-Language OCR UI Closeout Governance
 
 Scope:
 
-- Owner project: `/Users/sunjiarong/Developer/webmcp`
+- Owner project: `<project-root>`
 - Changed artifacts: `public/index.html`, `server.js`, `scripts/webmcp-local-review-bridge.mjs`, `logs/decisions/log_20260904_webmcp_local_review_bridge.md`
 - Latest validation evidence:
   - `npm run check`: passed.
   - `node --check scripts/webmcp-local-review-bridge.mjs`: passed.
   - `git diff --check`: passed.
-  - Local browser UI wording smoke against `http://127.0.0.1:3214/?room=918b8ba3&_t=plain-language-ui`: passed. The rendered page no longer showed `Source mode`, `Local OCR chars`, model names, `parser candidate(s)`, `schema alignment`, `entity anchoring`, `contract fit`, `issue penalty`, `Number type`, `Audit Anchor`, `Review Gate`, `Image Zone`, or `Detected Type`.
+  - Local browser UI wording smoke against `http://127.0.0.1:3214/?room=918b8ba3&_t=plain-language-ui`: passed. The rendered page no longer showed old source, OCR-count, model, candidate, schema, number-type, audit, review-gate, image-zone, or detected-type labels.
   - Local Member-Visibility Release smoke: passed `4/4`; evidence `/private/tmp/webmcp-ui-language-member-release-final/member-release-stress-2026-09-03T17-56-56-850Z.md`.
   - Frontend local HTTP smoke: passed; evidence `/private/tmp/webmcp-frontend-ui-smoke-20260904-plain-ui/local_plain_ui.md`.
   - `release-boundary-safety-gate`: PASS, blocking `0`; evidence `/private/tmp/webmcp-release-boundary-scan-20260904-plain-ui/release-boundary-report-2026-09-03T17-57-06-319Z.json`.
@@ -135,7 +203,7 @@ DONE_CONFIRMED:
   - evidence: `roomNeedsVisibleHostCheck()` now forces the visible status to human-review wording whenever pending item checks, pending rule checks, parse blockers, or anti-pollution blocks exist.
 - Removed debug details from item review panels.
   - evidence: item review rendering no longer prints bounding zone, detected type, severity labels, or field lists; it shows only host-facing reasons and evidence clues.
-- Changed new bridge proposal copy so future cloud proposals do not store visible `Source mode`, OCR character count, or local model names in summary/rationale.
+- Changed new bridge proposal copy so future cloud proposals do not store visible source, OCR-character-count, or local-model debug labels in summary/rationale.
   - evidence: `scripts/webmcp-local-review-bridge.mjs` summary/rationale wording now uses photo review and host comparison language only.
 - Changed server-side blocker messages to plain-language text before they reach the UI.
   - evidence: member-open blockers now reference read items, fee/rule notes, evidence clues, and host edit/removal decisions without parser/rule-audit wording.
@@ -169,7 +237,7 @@ Next resume point:
 
 Scope:
 
-- Owner project: `/Users/sunjiarong/Developer/webmcp`
+- Owner project: `<project-root>`
 - Runtime commit pushed to GitHub: `782653f`
 - Zeabur service: `shared-room-mcp-next`
 - Zeabur service ID: `6a96fb0bd72bd6309d74fb9b`
@@ -180,7 +248,7 @@ DONE_CONFIRMED:
 - Plain-language OCR/review UI deployed to Zeabur.
   - evidence: live HTML fetched with cache buster `_plain_ui=782653f` contained the new subtitle, `Calculate Here`, short evidence-photo hint, WebMCP plain descriptions, and count helpers.
 - Legacy visible engineering wording was removed from the shipped HTML source.
-  - evidence: live HTML scan returned zero hits for `item(s)`, `Source mode:`, `Local OCR chars:`, `Local review draft prepared`, `Keep Math Local`, `not a cropped item thumbnail`, `Number type`, `Audit Anchor`, `Review Gate`, `Image Zone`, and `Detected Type`.
+  - evidence: live HTML scan returned zero hits for old item-count, source, OCR-count, draft, math, thumbnail, number-type, audit, review-gate, image-zone, and detected-type labels.
 - Live deployment health is still aligned with the local-review bridge boundary.
   - evidence: `/healthz` returned `providerOrder=["local_vision","gemini","openai"]`, `localVisionConfigured=false`, `allowRemoteVisionFallback=false`, `roomPersistenceEnabled=true`, and `roomStorePath=/data/rooms.json`.
 - Low-rate Zeabur room flow still works after the UI wording changes.

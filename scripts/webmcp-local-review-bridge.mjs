@@ -590,7 +590,7 @@ function buildProposalPayload(args, room, image, ocrResult, visionResult) {
     .map((item) => `${item.name} ${item.price}`)
     .join(', ');
   const sourceMode = visionResult.ok
-    ? 'local_ocr_plus_local_vision'
+    ? 'local_ocr_plus_llm_visual_review'
     : 'local_ocr_only_bridge_draft';
   return {
     participantId: args.participantId,
@@ -611,8 +611,18 @@ function buildProposalPayload(args, room, image, ocrResult, visionResult) {
       hostReviewRequired: true,
       roomId: room.id,
       taskType: args.taskType,
+      applyStructuredDraft: visionResult.ok,
       localVisionConfigured: visionResult.configured,
       localVisionModel: visionResult.model,
+      llmVisualReview: {
+        provider: 'local_vision',
+        model: visionResult.model || 'local vision model',
+        completed: visionResult.ok
+      },
+      localVision: {
+        provider: 'local_vision',
+        model: visionResult.model || 'local vision model'
+      },
       evidenceImageSha256: image.sha256,
       evidenceImageBytes: image.byteSize,
       evidenceImageWidth: image.width,

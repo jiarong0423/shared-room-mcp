@@ -416,14 +416,14 @@ function evaluateOracle(args, test, room) {
     ? calculationRules.filter((rule) => !isAdvisoryThresholdRule(rule))
     : calculationRules;
   assertBoundary(test, room);
-  assertExpectedCount(test, 'parser candidate', candidates, oracle.expectedParserCandidates?.itemCount, oracle.expectedParserCandidates?.itemCountAtLeast);
+  assertExpectedCount(test, 'extracted row', candidates, oracle.expectedParserCandidates?.itemCount, oracle.expectedParserCandidates?.itemCountAtLeast);
   assertExpectedCount(test, 'member item', memberItems, oracle.expectedSelectableItems?.itemCount, oracle.expectedSelectableItems?.itemCountAtLeast);
   assertExpectedCount(test, 'calculation rule', calculationRulesForExactOracle, oracle.expectedCalculationRules?.count, oracle.expectedCalculationRules?.countAtLeast);
   if (args.mode !== 'image-plus-local-ocr') {
-    assertExpectedPrices(test, 'parser candidate', candidates, oracle.expectedParserCandidates?.prices);
+    assertExpectedPrices(test, 'extracted row', candidates, oracle.expectedParserCandidates?.prices);
     assertExpectedPrices(test, 'member item', memberItems, oracle.expectedSelectableItems?.prices);
   }
-  assertForbiddenNumbers(test, 'parser candidate', candidates, oracle.forbiddenParserCandidateNumbers || oracle.forbiddenNumbers);
+  assertForbiddenNumbers(test, 'extracted row', candidates, oracle.forbiddenParserCandidateNumbers || oracle.forbiddenNumbers);
   assertForbiddenNumbers(test, 'member item', memberItems, oracle.forbiddenMemberNumbers || oracle.forbiddenNumbers);
   assertForbiddenNames(test, 'member item', memberItems, oracle.forbiddenMemberVisibleItems);
   for (const item of memberItems) {

@@ -30,7 +30,7 @@ Shared Room MCP is built for messy real-world coordination: group buys, drink or
 
 The project gives the assistant page-local WebMCP tools. The assistant can inspect the room, read the selected scenario, find missing confirmations, review price-reading quality, and create a draft for the host. Codex can also create a field-fix draft when the price list is read incorrectly, such as quantity, subtotal, size, or add-on columns being confused with item prices. Repairs become visible host-reviewed proposals before they affect member-facing rows.
 
-The core demo works without any paid API key for room state, WebMCP inspection, host-reviewed proposals, local math, member confirmation, and export. For image evidence, OCR-only output is candidate evidence; an authorized local bridge can run local OCR plus a local vision model before it writes a draft-only proposal into the hosted room. Optional hosted model providers are replaceable helpers for deployments that explicitly choose them.
+The core demo works without any paid API key for room state, WebMCP inspection, host-reviewed proposals, local math, member confirmation, and export. For image evidence, OCR-only output is candidate evidence; an authorized local bridge can run local OCR plus LLM visual review before it writes a draft-only proposal into the hosted room. The LLM visual review node can be Codex, Gemini, or a deployment-owner local vision model. Optional hosted model providers are replaceable helpers for deployments that explicitly choose them.
 
 After human review, the room can export a local HTML or PDF review record of the private task state.
 
@@ -56,11 +56,11 @@ Implemented WebMCP tools:
 
 The human controls the room, task type, uploaded evidence, copied text, parsed item review, Member-Visibility Release, participant names, claim confirmation, and final summary. The assistant helps by reading the current state, identifying conflicts, explaining missing claims, guiding the next action from the WebMCP tool output, and preparing drafts for the host. The `suggest_next_actions` tool is the main read path. The `create_action_proposal` tool stores a waiting-for-host JSON proposal under `room.agentProposals[]`, including field-fix drafts when Codex detects a reading mistake. The host can edit or remove parsed item rows before releasing the list to members. Owner review stays on one visible draft card; repeated same-type drafts replace the previous pending card instead of stacking duplicate decisions. Accepted reviews are explicit room-state transitions.
 
-The core loop is: local OCR produces candidate text; local vision or an authorized assistant review layer checks the image and turns it into a structured draft; WebMCP/Codex writes or reviews the draft against room state and evidence; the human edits, confirms, and releases the final commitment.
+The core loop is: local OCR produces candidate text; Codex, Gemini, or a local vision model checks the image and turns it into a structured draft; WebMCP/Codex writes or reviews the draft against room state and evidence; the human edits, confirms, and releases the final commitment.
 
-Chinese wording for review: OCR + LLM 解析 + 文字區塊辨識 = 草稿；WebMCP/Codex 複查；人工修正、確認、放行。
+Chinese wording for review: 圖片 -> OCR -> Codex/Gemini/本地模型看圖校正 -> 結構化草稿 -> 人工審核 -> 通過。
 
-Zeabur is the hosted state storage, MCP protocol host, HITL approval gate, guardrail runtime, member release surface, and export surface. Zero required ML/OCR workload is processed on the Zeabur server in the default WebMCP Challenge path; local OCR and local vision review run on the operator machine before a draft proposal is pushed.
+Zeabur is the hosted state storage, MCP protocol host, HITL approval gate, guardrail runtime, member release surface, and export surface. Zero required ML/OCR workload is processed on the Zeabur server in the default WebMCP Challenge path; local OCR and LLM visual review run on the operator machine or authorized assistant layer before a draft proposal is pushed.
 
 Threshold conditions such as minimum headcount, minimum spend, and free-shipping thresholds are advisory room context. The assistant may flag a mismatch between the evidence and the current room state, but it cannot decide that the group is formed, the booking is valid, payment is complete, or settlement is final. The host can edit, override, and release the member-facing task after review.
 
@@ -142,7 +142,7 @@ For a hosted demo, attach a persistent volume before using `/data/rooms.json`. W
 
 The current save layer is a hackathon MVP choice for one running service instance. It smooths short write bursts by merging nearby room changes and adding a small millisecond delay before saving, but a hard crash can still lose the latest tiny write window. Production traffic should still use Redis or PostgreSQL.
 
-Deployment owners should replace secrets only in the hosting provider secret manager. The repository includes variable names in `env.sample`, but no real key values. AI provider keys are extension-only adapters. The required demo path is authorized local OCR plus local/vision LLM draft extraction, WebMCP room inspection, Codex review, and human approval.
+Deployment owners should replace secrets only in the hosting provider secret manager. The repository includes variable names in `env.sample`, but no real key values. AI provider keys are extension-only adapters. The required demo path is authorized local OCR plus LLM visual review, WebMCP room inspection, Codex review, and human approval.
 
 ## Local Verification
 
@@ -172,7 +172,7 @@ The image-matrix command is a deterministic contract-driven integration benchmar
 There are three separate image-test modes:
 
 - `image-only`: uploads only the image. It is a negative canary unless the deployment owner configured an image-reading provider.
-- `image-plus-local-ocr`: runs OCR on the operator machine first, then writes OCR metadata and a draft proposal into the hosted room. Zeabur remains the room/runtime/HITL surface, not the OCR engine. This mode is a canary for field isolation, evidence pointers, forbidden-number leakage, and advisory threshold handling; completed pre-push image review still requires local/vision LLM correction or host repair before member release.
+- `image-plus-local-ocr`: runs OCR on the operator machine first, then writes OCR metadata and a draft proposal into the hosted room. Zeabur remains the room/runtime/HITL surface, not the OCR engine. This mode is a canary for field isolation, evidence pointers, forbidden-number leakage, and advisory threshold handling; completed pre-push image review still requires LLM visual review or host repair before member release.
 - `image-plus-oracle-text`: uploads the image plus locked oracle text and verifies checksum-backed image-oracle artifacts, contract routing, member-visible masks, and HITL state behavior.
 
 None of these modes should be described as provider accuracy, zero-shot extraction, unconstrained vision accuracy, or Zeabur-hosted OCR.
@@ -189,15 +189,15 @@ Target length: 2 minutes 20 seconds to 2 minutes 45 seconds. The recording shows
 
 Prepared synthetic evidence:
 
-- English: `Community Workshop Signup`, containing ticket, material-kit, locker, and meal-voucher prices.
-- Chinese: `社區水果免運團購`, containing purchasable fruit items plus a free-shipping threshold and shipping-review lines.
-- Both images are synthetic recording assets. They contain no customer, vendor, social-account, or payment data.
+- English: `Moon Table Cafe Menu`, generated by `npm run demo:codex-ocr-llm` when no image path is supplied. It intentionally contains one OCR-prone row, `7 Up 70`, and an add-on row that OCR may miss.
+- Optional Chinese contrast: `社區水果免運團購`, containing purchasable fruit items plus a free-shipping threshold and shipping-review lines.
+- All recording images are synthetic. They contain no customer, vendor, social-account, or payment data.
 
 Opening line:
 
 "AI prepares a local review draft and writes it into the room. Humans approve the commitment."
 
-### Scene A: English Activity Signup
+### Scene A: English Menu Review
 
 0:00-0:05: Start on a dark screen, then reveal the live Shared Room page with the Codex side panel on the right. Keep the UI in English.
 
@@ -205,9 +205,9 @@ Spoken line:
 
 "AI prepares a local review draft and writes it into the room. Humans approve the commitment."
 
-0:05-0:18: **Presenter/operator setup.** Click the visible evidence-photo area, open the system file picker, choose the prepared `Community Workshop Signup` image, and return to the page. Keep the selected image preview visible briefly so the evidence source is clear.
+0:05-0:18: **Presenter/operator setup.** Create or reuse the live room. Keep the evidence image and draft area visible so the source and the pending review card are both clear.
 
-0:18-0:35: **WebMCP/Codex action.** Run the authorized local review bridge against the selected evidence image. The bridge performs local OCR, asks the local vision model to correct the OCR against the image, and writes a `semantic_repair_draft` proposal into the Zeabur room. Call `inspect_room` and `suggest_next_actions`, then pause with one draft card visible under `Suggested Drafts`.
+0:18-0:35: **WebMCP/Codex action.** Run `npm run demo:codex-ocr-llm -- --base-url https://shared-room-mcp-next.zeabur.app`. The guided bridge performs local OCR, applies Codex visual review against the image, and writes a `semantic_repair_draft` proposal into the Zeabur room. Call `inspect_room` and `suggest_next_actions`, then pause with one draft card visible under `Suggested Drafts`.
 
 Agent cue:
 
