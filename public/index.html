@@ -3588,6 +3588,26 @@
       return Number(count) === 1 ? singular : plural;
     }
 
+    function visibleCountText(count, zhUnit, enSingular, enPlural) {
+      const numericCount = Number(count) || 0;
+      if (currentLanguage === 'en') {
+        return `${numericCount} ${pluralPhrase(numericCount, enSingular, enPlural)}`;
+      }
+      return `${numericCount} ${zhUnit}`;
+    }
+
+    function visiblePeopleCount(count) {
+      return visibleCountText(count, t('peopleCount'), 'person', 'people');
+    }
+
+    function visibleItemCheckCount(count) {
+      return visibleCountText(count, t('itemsNeedCheck'), 'item to check', 'items to check');
+    }
+
+    function visibleRuleCheckCount(count) {
+      return visibleCountText(count, t('rulesNeedCheck'), 'rule to check', 'rules to check');
+    }
+
     function humanizeVisibleText(value) {
       const zh = currentLanguage !== 'en';
       let text = String(value || '').trim();
@@ -3720,10 +3740,10 @@
       const pendingRuleCount = getPendingCalculationRuleCount(room);
       const reviewBits = [];
       if (pendingItemCount > 0) {
-        reviewBits.push(`${pendingItemCount} ${t('itemsNeedCheck')}`);
+        reviewBits.push(visibleItemCheckCount(pendingItemCount));
       }
       if (pendingRuleCount > 0) {
-        reviewBits.push(`${pendingRuleCount} ${t('rulesNeedCheck')}`);
+        reviewBits.push(visibleRuleCheckCount(pendingRuleCount));
       }
       if (roomNeedsVisibleHostCheck(room, quality)) {
         reviewBits.push(t('hostCheckNeeded'));
@@ -4028,9 +4048,9 @@
       const sharedCandidateTotal = Number(room.totals?.sharedCandidateTotal || 0);
       const personalClaimTotal = Number(room.totals?.personalClaimTotal || 0);
       const averageAmount = Math.ceil(sharedCandidateTotal / averagePeople);
-      elements.shareAverageText.textContent = `${t('sharedAverage')}: ${formatMoney(averageAmount)} / ${t('perPerson')} (${averagePeople} ${t('peopleCount')}); ${t('personalClaims')} ${formatMoney(personalClaimTotal)}`;
+      elements.shareAverageText.textContent = `${t('sharedAverage')}: ${formatMoney(averageAmount)} / ${t('perPerson')} (${visiblePeopleCount(averagePeople)}); ${t('personalClaims')} ${formatMoney(personalClaimTotal)}`;
       renderThresholdProgress(room);
-      elements.memberCountChip.textContent = `${room.participants?.length || 0} ${t('peopleCount')}`;
+      elements.memberCountChip.textContent = visiblePeopleCount(room.participants?.length || 0);
 
       if (room.menuLoaded) {
         setChip(elements.menuChip, `${room.items.length} ${t('itemCount')}`, 'good');
@@ -4994,7 +5014,7 @@
       lines.push(`${t('totalAmount')} ${formatMoney(room.totals?.grandTotal || 0)}`);
       lines.push(`${t('sharedCandidate')} ${formatMoney(room.totals?.sharedCandidateTotal || 0)}`);
       lines.push(`${t('personalClaims')} ${formatMoney(room.totals?.personalClaimTotal || 0)}`);
-      lines.push(`${t('claimAudit')} ${room.audit?.settlementReady ? t('readyToSettle') : `${t('notReadyCount')} ${Number(room.audit?.unconfirmedParticipantCount || 0)} ${t('peopleCount')}`}`);
+      lines.push(`${t('claimAudit')} ${room.audit?.settlementReady ? t('readyToSettle') : `${t('notReadyCount')} ${visiblePeopleCount(Number(room.audit?.unconfirmedParticipantCount || 0))}`}`);
       return lines.join('\n');
     }
 
