@@ -35,7 +35,7 @@ The full check summary is in [`docs/testing/VALIDATION_EVIDENCE.md`](docs/testin
 | check | result | what was checked |
 |---|---:|---|
 | Main room flow | 400/400 passed | 20 Chinese and English scenarios repeated 20 times each |
-| Opening the list to members | 80/80 passed | members cannot claim items until the host opens the reviewed list |
+| Member-Visibility Release | 80/80 passed | members cannot claim items until the host releases the reviewed list |
 | Save queue follow-up | 20/20 passed | host-review flow still works after the save queue change |
 | Short burst of room creation | 25/25 saved | simultaneous room creates were present in the saved JSON file |
 | Split-language scenarios | 240/240 passed | Chinese and English cases stay separated and still end in host review |
@@ -126,13 +126,13 @@ The `create_action_proposal` tool creates a host-reviewed draft. Supported draft
 
 ## Safety Flow
 
-The UI uses plain language, and the code keeps the same order every time: AI prepares a draft, the host reviews the list, the host opens it to invited members, members confirm their own costs, and only then can the host finalize the room summary. Later steps may stop and ask for review, while accepted human decisions remain explicit state transitions.
+The UI uses plain language, and the code keeps the same order every time: AI prepares a draft, the host reviews the list, the host performs Member-Visibility Release, members confirm their own costs, and only then can the host finalize the room summary. Later steps may stop and ask for review, while accepted human decisions remain explicit state transitions.
 
 | step | what happens | what is blocked |
 |---|---|---|
 | Assistant prepares | AI stores a draft for host review | Draft remains pending until host review |
-| Host reviews | Host fixes or removes parsed rows before member access | Member list opens only after review |
-| Host opens | Host explicitly opens the reviewed list | Parsed item editing is locked after opening |
+| Host reviews | Host fixes or removes parsed rows before member access | Member list is released only after review |
+| Host releases | Host explicitly releases the reviewed list to members | Parsed item editing is locked after release |
 | Members confirm | Each member confirms only their own costs | Confirmation is scoped to the current member |
 | Host finalizes | Host finalizes after human confirmations | Export reads the reviewed room summary |
 | Optional integrations | Deployment owner may add OCR, Sheets, booking, or trust helpers | Core demo works with local-first parsing |
@@ -163,7 +163,7 @@ The table below describes the room types and what the app can safely calculate t
 | `rental_share` | Shared rental, deposit, equipment | Rental table, deposit notice | Rental fee sharing, personal rental subtotal, deposit marked but excluded by default | Deposit and fee ambiguity, unclear time unit |
 | `generic_split` | Any temporary shared expense | Receipt, price screenshot, manual OCR | Grand total, average split, personal items | Low classification confidence or missing fields |
 
-## Mermaid Overview
+## Adaptive Contract MCP Overview
 
 ## Permission And Review Order
 
@@ -175,69 +175,71 @@ The table below describes the room types and what the app can safely calculate t
 | Room host | yes | yes | before member confirmation | own claims only | same-card human review | yes |
 | Server | validates | stores limited drafts | checks room owner | checks each member only confirms themself | records review result | saves local room summary |
 
-The fixed order is AI/OCR draft first, host review second, group access third, member confirmation fourth, and final settlement last. The host can remove bad OCR rows or fix names, prices, and categories before opening the list to members. After the host opens the list, parsed item editing is locked.
+The fixed order is AI/OCR draft first, host review second, Member-Visibility Release third, member confirmation fourth, and final settlement last. The host can remove bad OCR rows or fix names, prices, and categories before releasing the list to members. After the host releases the list, parsed item editing is locked.
 
 ```mermaid
 sequenceDiagram
   autonumber
-  actor Host as Room Host
-  actor Member as Room Member
-  participant Page as Shared Room Page
-  participant Agent as WebMCP Agent
-  participant Server as Server State
-  participant Store as JSON Store
+  actor Host as Host / Service Owner
+  actor Member as Member / Guest
+  participant Page as Shared Room MCP Page
+  participant WebMCP as WebMCP State Reader
+  participant Contract as Adaptive Contract MCP
+  participant Review as ReviewGate
+  participant Guardrail as Guardrail Registry
+  participant Store as Room Store
 
-  Host->>Page: Create room and upload price evidence
-  Page->>Server: Parse image or pasted OCR text
-  Server-->>Page: Return item draft plus separated rules
-  Server->>Store: Save room state with short write smoothing
-  Agent->>Page: Inspect room through read-only WebMCP tools
-  Agent->>Page: Create proposal-only draft
-  Host->>Page: Edit parsed items or remove bad rows
-  Page->>Server: Owner-only parsed item update
-  Server->>Store: Save reviewed draft state
-  Host->>Server: Open reviewed list to members
-  Server-->>Page: Broadcast reviewed item state
-  Member->>Page: Join room and choose own items
-  Member->>Server: Confirm own cost
-  Server->>Store: Save member confirmation
-  Host->>Page: Same-card approve or reject agent draft
-  Host->>Server: Finalize room after human confirmations
-  Server-->>Page: Broadcast local settlement summary
-  Server->>Store: Save final room summary
-  Host->>Page: Export HTML or PDF review record
-  Page-->>Host: Download a local file from the reviewed summary
+  Host->>Page: Create room and provide evidence
+  Page->>Contract: Build EvidenceAsset and OcrObservation
+  Contract->>Contract: Route scenario and apply prompt contract
+  Contract->>Guardrail: Check forbidden numbers, formulas, sparse evidence
+  Guardrail-->>Review: Emit warning or structural gate
+  Review-->>Page: Show parser candidates for host review
+  WebMCP->>Page: Inspect room through page-local tools
+  WebMCP->>Page: Prepare draft-only proposal
+  Host->>Review: Accept warning, edit value, or remove candidate
+  Review->>Contract: Mark resolved_warning or require edit/remove
+  Contract->>Store: Save reviewed state and audit trail
+  Host->>Page: Member-Visibility Release
+  Page->>Store: Publish reviewed selectable rows
+  Member->>Page: Select assigned or visible options
+  Member->>Page: Confirm own cost
+  Host->>Page: Finalize reviewed summary
+  Page->>Host: Export HTML or PDF evidence record
 
-  Note over Agent,Server: Agent cannot edit items, confirm claims, settle, pay, book, or submit external forms.
-  Note over Store: On a hosted demo, use ROOM_STORE_PATH=/data/rooms.json with a mounted volume.
+  Note over WebMCP,Review: WebMCP reads state and creates drafts; it does not click final commitments.
+  Note over Guardrail,Review: Structural gates such as phone, date, address, tax id, time, and unresolved formula require edit or removal.
 ```
 
 ```mermaid
 flowchart TD
-  A[AI drafts only] --> B[Host reviews parsed rows]
-  B --> C[Host opens reviewed list]
-  C --> D[Members claim and confirm their own costs]
-  D --> E[Host finalizes local room summary]
-  E --> F[Human exports review record]
-  F --> DONE[Done without payment or external submission]
+  L0[EvidenceAsset image or text] --> L1[OcrObservation]
+  L1 --> L2[Scenario Router]
+  L2 --> L3[Prompt Contract]
+  L3 --> L4[ParserCandidate Layer]
+  L4 --> L5[Canonical Number Normalizer]
+  L5 --> L6[Negative Pattern Registry]
+  L6 --> L7[ReviewGate]
+  L7 --> L8[Host Review Decision]
+  L8 --> L9[Member-Visibility Release]
+  L9 --> L10[Member Confirmation]
+  L10 --> L11[Owner Finalized Summary]
+  L11 --> L12[HTML or PDF Review Export]
 
-  A -. blocked .-> X1[AI cannot edit rows]
-  A -. blocked .-> X2[AI cannot open group access]
-  C -. locked .-> X3[Parsed rows cannot be edited after opening]
-  D -. blocked .-> X4[No one confirms for another member]
-  E -. blocked .-> X5[No payment, booking, or card handling]
-  F -. blocked .-> X6[Exports do not submit forms or change external systems]
+  L7 --> W[Declarative Warning]
+  W --> RW[Host Accepts as resolved_warning]
+  RW --> L9
 
-  E --> SAVE[Save room state to JSON store]
-  F --> HTML[Download HTML]
-  F --> PDF[Download PDF]
-  F --> PRINT[Print summary]
-  SAVE --> VOL[Mounted volume keeps demo rooms after restart]
+  L7 --> S[Structural Gate]
+  S --> ER[Edit or Remove Required]
+  ER --> L8
 
-  OPTIONAL[Optional deployer integrations] -. draft only .-> A
+  S -. blocks .-> B1[Phone, date, address, tax id, business hours]
+  S -. blocks .-> B2[Non-currency numbers near forbidden context]
+  S -. blocks .-> B3[Unresolved tax, deposit, service fee, tier formula]
 ```
 
-The detailed module, permission, state, and room-transition diagrams are in [`docs/ai-generated/2026Q3/shared_room_mermaid_module_design_20260831.md`](docs/ai-generated/2026Q3/shared_room_mermaid_module_design_20260831.md).
+The detailed architecture diagram and contract boundaries are in [`docs/architecture/ADAPTIVE_CONTRACT_MCP.md`](docs/architecture/ADAPTIVE_CONTRACT_MCP.md).
 
 ## Environment Variables
 
@@ -330,8 +332,8 @@ Local validation entrypoints:
 
 ```bash
 npm run verify:adaptive-contracts
-npm run build:image-fixture-manifest
 npm run regression:adaptive-parser -- --base-url http://127.0.0.1:4180 --repeat 5
+IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run build:image-fixture-manifest
 ```
 
 The matching design contract is in `config/enterprise-submit-gate.json`. The image fixture manifest is a checksum-backed oracle for external image artifacts; the large PNG set can stay outside the main repository while the repo keeps the repeatable runner and expected contract.
@@ -388,8 +390,8 @@ The expensive endpoint is image/OCR parsing, not WebMCP inspection. The public d
 npm run check
 npm run audit:tasks
 npm run stress:contracts -- --base-url http://127.0.0.1:3000 --rounds 20 --concurrency 4 --output-dir logs/runtime
-npm run build:image-fixture-manifest
-npm run stress:image-matrix -- --base-url http://127.0.0.1:3000 --mode image-plus-oracle-text --output-dir logs/runtime/image-matrix
+IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run build:image-fixture-manifest
+IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run stress:image-matrix -- --base-url http://127.0.0.1:3000 --mode image-plus-oracle-text --output-dir logs/runtime/image-matrix
 ```
 
 For repeated local stress runs, start the local server with test-only rate limits so the test measures state-machine behavior instead of the public-demo throttle:
@@ -402,7 +404,7 @@ The hosted public demo should keep the lower public-demo limits shown above.
 
 The repeated room-flow check covers 20 non-duplicate Traditional Chinese and English scenarios, with 20 rounds per scenario. It checks room creation, local copied-text OCR parsing, stable room-type selection, draft creation, and the final human approval rule.
 
-The image-matrix runner is a deterministic contract-driven integration benchmark using 115 paired image-oracle artifacts. Each test verifies the image SHA-256, scenario id, language, contract id, archetype, expected member-visible items, rule counts, forbidden member-visible numbers, evidence pointers, and Semantic Visual Anchor fields. `image-plus-oracle-text` validates the HITL state transition and oracle chain without provider keys. It must not be described as raw OCR accuracy, zero-shot OCR accuracy, or unconstrained vision extraction accuracy; a production `image-only` run against Zeabur is a separate OCR/provider check and should use the runner's default slow pacing and quarantine output.
+The image-matrix runner is a deterministic contract-driven integration benchmark using 115 paired image-oracle artifacts. The public repository keeps the manifest, schema, and runner; the full PNG set is supplied as an external artifact through `IMAGE_MATRIX_ROOT` or `--matrix-root`. Each test verifies the image SHA-256, scenario id, language, contract id, archetype, expected member-visible items, rule counts, forbidden member-visible numbers, evidence pointers, and Semantic Visual Anchor fields. `image-plus-oracle-text` validates the HITL state transition and oracle chain without provider keys. It must not be described as raw OCR accuracy, zero-shot OCR accuracy, or unconstrained vision extraction accuracy; a production `image-only` run against Zeabur is a separate OCR/provider check and should use the runner's default slow pacing and quarantine output.
 
 Expected audit state:
 

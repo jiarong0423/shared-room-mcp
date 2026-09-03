@@ -10,9 +10,9 @@ const sourceFiles = {
   license: path.join(projectRoot, 'LICENSE'),
   readme: path.join(projectRoot, 'README.md'),
   submission: path.join(projectRoot, 'docs', 'submission', 'WEBMCP_SUBMISSION.md'),
-  mermaid: path.join(projectRoot, 'docs', 'ai-generated', '2026Q3', 'shared_room_mermaid_module_design_20260831.md'),
+  mermaid: path.join(projectRoot, 'docs', 'architecture', 'ADAPTIVE_CONTRACT_MCP.md'),
   stressContracts: path.join(projectRoot, 'scripts', 'stress-local-contracts.mjs'),
-  stressOpenGate: path.join(projectRoot, 'scripts', 'stress-open-gate.mjs')
+  stressMemberRelease: path.join(projectRoot, 'scripts', 'stress-member-release.mjs')
 };
 
 const reportDir = path.join(projectRoot, 'docs', 'ai-generated', '2026Q3');
@@ -194,8 +194,8 @@ const expectedSubmissionPackageFields = [
 const expectedTestingFields = [
   'stress:contracts',
   'stress-local-contracts.mjs',
-  'stress:open-gate',
-  'stress-open-gate.mjs',
+  'stress:member-release',
+  'stress-member-release.mjs',
   'VALIDATION_EVIDENCE.md',
   'scenarioCases',
   'joinRoomAsOwner',
@@ -499,7 +499,7 @@ function main() {
         ? '本地已補 LICENSE、package license、英文 submission packet、env 需求、demo script、合規邊界、public repo URL、live URL 與驗證證據；YouTube URL 仍需在 Devpost 提交前填入正式連結。'
         : 'Devpost 需要 live URL、public repo、OSS license、英文說明、三分鐘內 YouTube demo；本地提交包仍有欄位缺口。',
       submissionEvidence.every((entry) => entry.present)
-        ? 'YouTube demo 完成後替換 submission packet 的 TODO URL。'
+        ? 'YouTube demo 完成後補入 submission packet 的正式 URL。'
         : '補 LICENSE 與 English submission checklist，並標記既有專案改造範圍。',
       'low'
     ),
@@ -545,13 +545,13 @@ function main() {
       hasContractStressMatrix && hasOpenGateContract ? 'ready' : 'open',
       hasContractStressMatrix
         ? hasOpenGateContract
-          ? '已補 scripts/stress-local-contracts.mjs 與 scripts/stress-open-gate.mjs；覆蓋 20 個中英文情境合約壓測，以及 AI 草稿、人審核、群組開放、成員確認、發起者結算的順序壓測。'
-          : '已補 scripts/stress-local-contracts.mjs 與 npm run stress:contracts；覆蓋 20 個中英文情境，但尚缺開放順序壓測。'
+          ? '已補 scripts/stress-local-contracts.mjs 與 scripts/stress-member-release.mjs；覆蓋 20 個中英文情境合約壓測，以及 AI 草稿、人審核、Member-Visibility Release、成員確認、發起者結算的順序壓測。'
+          : '已補 scripts/stress-local-contracts.mjs 與 npm run stress:contracts；覆蓋 20 個中英文情境，但尚缺 Member-Visibility Release 順序壓測。'
         : '已有 npm run check 與 API smoke；尚未有可重跑的中英文多情境草稿壓測矩陣。',
       hasContractStressMatrix
         ? hasOpenGateContract
           ? '後續若新增公式、任務模組、或成員權限流程，先擴充兩個壓測矩陣再提交。'
-          : '補 open-gate 壓測，驗證成員開放前不能認領、發起者開放後不能改解析清單。'
+          : '補 Member-Visibility Release 壓測，驗證成員開放前不能認領、發起者開放後不能改解析清單。'
         : '補 deterministic parser、task router、formula、claim audit、proposal-only stress matrix。',
       'low'
     )

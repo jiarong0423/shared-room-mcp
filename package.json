@@ -1,7 +1,7 @@
 {
   "name": "shared-room-mcp",
   "version": "1.0.0",
-  "description": "Open-source WebMCP shared workspace where AI prepares drafts and humans approve final actions.",
+  "description": "Shared Room MCP reference app powered by Adaptive Contract MCP: WebMCP reads state, AI prepares drafts, humans approve commitments.",
   "license": "MIT",
   "type": "module",
   "main": "server.js",
@@ -16,7 +16,7 @@
     "stress:image-matrix": "node scripts/stress-image-matrix.mjs",
     "stress:menu": "node scripts/stress-menu-parser.mjs",
     "stress:contracts": "node scripts/stress-local-contracts.mjs",
-    "stress:open-gate": "node scripts/stress-open-gate.mjs"
+    "stress:member-release": "node scripts/stress-member-release.mjs"
   },
   "engines": {
     "node": ">=20.9.0"

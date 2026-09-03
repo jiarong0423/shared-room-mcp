@@ -1,5 +1,5 @@
 {
-  "version": "shared-room-service-blueprint.v1",
+  "version": "adaptive-contract-service-blueprint.v1",
   "externalName": "ServiceBlueprint",
   "internalAlias": "hostTask",
   "boundary": {

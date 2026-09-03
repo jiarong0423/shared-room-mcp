@@ -193,7 +193,7 @@ const formulaModuleContracts = Object.freeze([
 const trustLayerContractVersion = 'adaptive-contract-trust-layer-contract.v1';
 const webMcpToolSurfaceVersion = 'adaptive-contract-webmcp-tools.v2';
 const evidenceContractVersion = 'adaptive-contract-evidence-ocr-contract.v1';
-const serviceBlueprintContractVersion = 'shared-room-service-blueprint.v1';
+const serviceBlueprintContractVersion = 'adaptive-contract-service-blueprint.v1';
 const agentProposalContractVersion = 'adaptive-contract-agent-proposal-contract.v1';
 const rateLimitBuckets = new Map();
 const agentProposalTypes = new Set([
@@ -5478,7 +5478,7 @@ function serializeRoom(room) {
     reviewDecisions: Array.isArray(room.reviewDecisions) ? room.reviewDecisions : [],
     settlementSnapshots: Array.isArray(room.settlementSnapshots) ? room.settlementSnapshots : [],
     antiPollution: {
-      contractVersion: 'shared-room-anti-pollution-gate.v1',
+      contractVersion: 'adaptive-contract-anti-pollution-gate.v1',
       blocks: getAntiPollutionBlocks(room),
       parserWritesCandidatesFirst: true,
       memberItemsRequireEvidencePointer: true

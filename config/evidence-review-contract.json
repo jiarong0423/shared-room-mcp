@@ -1,5 +1,5 @@
 {
-  "version": "shared-room-evidence-review-contract.v1",
+  "version": "adaptive-contract-evidence-review-contract.v1",
   "layers": [
     "EvidenceAsset",
     "OcrObservation",

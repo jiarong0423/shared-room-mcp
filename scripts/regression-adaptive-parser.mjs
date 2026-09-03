@@ -236,7 +236,7 @@ function validateAntiPollutionState(scenario, state, candidates, memberItems) {
   assertCondition(Array.isArray(state.ocrObservations), `${scenario.id} missing ocrObservations`);
   assertCondition(Array.isArray(state.parserCandidates), `${scenario.id} missing parserCandidates`);
   assertCondition(Array.isArray(state.calculationRules), `${scenario.id} missing calculationRules`);
-  assertCondition(serviceBlueprint?.contractVersion === 'shared-room-service-blueprint.v1', `${scenario.id} missing service blueprint contract`);
+  assertCondition(serviceBlueprint?.contractVersion === 'adaptive-contract-service-blueprint.v1', `${scenario.id} missing service blueprint contract`);
   assertCondition(serviceBlueprint?.roomMode === 'single_direction_private_task_room', `${scenario.id} service blueprint room mode drifted`);
   assertCondition(serviceBlueprint?.hostProvidedOptionRequired === true, `${scenario.id} service blueprint must require host-provided options`);
   assertCondition(Array.isArray(serviceBlueprint?.archetypes) && serviceBlueprint.archetypes.includes(scenario.archetypeId), `${scenario.id} service blueprint does not expose archetype ${scenario.archetypeId}`);

@@ -488,7 +488,7 @@ async function runScenarioRound(baseUrl, scenario, round, args) {
     name: `${scenario.editName} late edit`,
     price: scenario.editPrice + 1
   }, timeoutMs);
-  assertCondition(hostEditAfterOpen?.ok === false, 'host was able to edit parsed item after opening list');
+  assertCondition(hostEditAfterOpen?.ok === false, 'host was able to edit parsed item after member release');
 
   const memberClaimAfterOpen = await emitWithAck(baseUrl, memberConnection, 'setItemQty', {
     roomId: room.id,
@@ -595,7 +595,7 @@ function summarize(results) {
 
 function renderMarkdown(args, summary, results, plannedTotal) {
   const lines = [
-    '# Open Gate Stress Evidence',
+    '# Member-Visibility Release Stress Evidence',
     '',
     `- Target: ${args.baseUrl}`,
     `- Rounds per scenario: ${args.rounds}`,
@@ -620,14 +620,14 @@ function renderMarkdown(args, summary, results, plannedTotal) {
   lines.push('', '## Checked Boundaries', '');
   lines.push('- AI/OCR upload creates a draft list and keeps member claiming closed.');
   lines.push('- Agent proposal stays `pending_host_confirmation` and does not open or mutate final state.');
-  lines.push('- The host cannot open the list while parser candidates or rule candidates still require review.');
-  lines.push('- The script accepts the pending review proposal before opening the list so the positive flow follows the HITL recording path.');
+  lines.push('- The host cannot release the list while parser candidates or rule candidates still require review.');
+  lines.push('- The script accepts the pending review proposal before Member-Visibility Release so the positive flow follows the HITL recording path.');
   lines.push('- A room member cannot edit parsed items.');
-  lines.push('- A room member cannot claim items before the host opens the reviewed list.');
-  lines.push('- Only the host can edit parsed items before opening the reviewed list.');
-  lines.push('- A room member cannot open the list.');
-  lines.push('- After the host opens the list, parsed item editing is locked again.');
-  lines.push('- Members can claim and confirm only after the host opens the list.');
+  lines.push('- A room member cannot claim items before the host releases the reviewed list.');
+  lines.push('- Only the host can edit parsed items before releasing the reviewed list.');
+  lines.push('- A room member cannot release the list.');
+  lines.push('- After Member-Visibility Release, parsed item editing is locked again.');
+  lines.push('- Members can claim and confirm only after Member-Visibility Release.');
   lines.push('- The host can settle only after the group-facing flow is open and confirmed.');
   lines.push('- Completed rooms export readable HTML and valid PDF files after final human settlement.');
   lines.push('', '## Failed Cases', '');
@@ -660,8 +660,8 @@ async function main() {
 
   const startedAt = new Date();
   const stamp = startedAt.toISOString().replace(/[:.]/g, '-');
-  const jsonPath = path.join(args.outputDir, `open-gate-stress-${stamp}.json`);
-  const mdPath = path.join(args.outputDir, `open-gate-stress-${stamp}.md`);
+  const jsonPath = path.join(args.outputDir, `member-release-stress-${stamp}.json`);
+  const mdPath = path.join(args.outputDir, `member-release-stress-${stamp}.md`);
 
   console.log(`Target: ${args.baseUrl}`);
   console.log(`Scenarios: ${scenarios.length}`);

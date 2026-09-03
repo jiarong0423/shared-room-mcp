@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
-const defaultMatrixRoot = '/Users/sunjiarong/Documents/Codex/2026-09-02/webmcp-final-recording/fixtures/image-matrix';
+const defaultMatrixRoot = process.env.IMAGE_MATRIX_ROOT || path.join('fixtures', 'image-matrix');
 const defaultOutputPath = 'fixtures/image-fixture-manifest.json';
 
 function parseArgs(argv) {
@@ -29,7 +29,14 @@ function parseArgs(argv) {
 }
 
 async function readJson(filePath) {
-  return JSON.parse(await fs.readFile(filePath, 'utf8'));
+  try {
+    return JSON.parse(await fs.readFile(filePath, 'utf8'));
+  } catch (error) {
+    if (error && error.code === 'ENOENT') {
+      throw new Error(`Missing image matrix artifact file: ${filePath}. Provide --matrix-root or IMAGE_MATRIX_ROOT pointing to the downloaded image-matrix artifact.`);
+    }
+    throw error;
+  }
 }
 
 async function sha256File(filePath) {

@@ -2,10 +2,11 @@
 
 ## Supported Scope
 
-This repository is a hackathon MVP and open-source WebMCP template. The supported security boundary is:
+This repository is a hackathon MVP and open-source WebMCP reference app powered by Adaptive Contract MCP. The supported security boundary is:
 
 - browser-side WebMCP tools are read-only or proposal-only;
-- parsed item review is host-only and only allowed before member confirmation;
+- parsed item review is host-only and only allowed before Member-Visibility Release and member confirmation;
+- structural ReviewGate findings must be edited or removed before member visibility;
 - humans keep final control over claims, settlement, payment, bookings, and external submissions;
 - provider keys are optional deployment-owner secrets and are never required for the no-key WebMCP demo;
 - room persistence is local JSON for a single demo instance, or a host-mounted volume when deployed.

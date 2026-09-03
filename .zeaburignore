@@ -8,6 +8,7 @@ output/
 coverage/
 quarantine/
 docs/ai-generated/
+docs/decisions/
 archive/
 npm-debug.log*
 yarn-debug.log*

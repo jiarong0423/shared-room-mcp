@@ -1,5 +1,5 @@
 {
-  "version": "shared-room-guardrail-registry.v2",
+  "version": "adaptive-contract-guardrail-registry.v2",
   "rules": [
     {
       "id": "currency_marker_preferred",

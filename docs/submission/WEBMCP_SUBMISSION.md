@@ -6,7 +6,7 @@ Live URL: https://shared-room-mcp-next.zeabur.app/
 
 Public repository URL: https://github.com/jiarong0423/shared-room-mcp
 
-YouTube demo URL: TODO_YOUTUBE_DEMO_URL
+YouTube demo URL: Pending final demo upload
 
 License: MIT
 
@@ -52,7 +52,7 @@ Implemented WebMCP tools:
 
 ## Human And Agent Collaboration
 
-The human controls the room, task type, uploaded evidence, copied text, parsed item review, member opening, participant names, claim confirmation, and final summary. The assistant helps by reading the current state, identifying conflicts, explaining missing claims, guiding the next action from the WebMCP tool output, and preparing drafts for the host. The `suggest_next_actions` tool is the main read path. The `create_action_proposal` tool stores a waiting-for-host JSON proposal under `room.agentProposals[]`, including field-fix drafts when Codex detects a reading mistake. The host can edit or remove parsed item rows before opening the list to members. Owner review stays on one visible draft card; repeated same-type drafts replace the previous pending card instead of stacking duplicate decisions. Accepted reviews are explicit room-state transitions.
+The human controls the room, task type, uploaded evidence, copied text, parsed item review, Member-Visibility Release, participant names, claim confirmation, and final summary. The assistant helps by reading the current state, identifying conflicts, explaining missing claims, guiding the next action from the WebMCP tool output, and preparing drafts for the host. The `suggest_next_actions` tool is the main read path. The `create_action_proposal` tool stores a waiting-for-host JSON proposal under `room.agentProposals[]`, including field-fix drafts when Codex detects a reading mistake. The host can edit or remove parsed item rows before releasing the list to members. Owner review stays on one visible draft card; repeated same-type drafts replace the previous pending card instead of stacking duplicate decisions. Accepted reviews are explicit room-state transitions.
 
 Provider AI is optional and limited to image/text repair helpers. Future forks can reuse the same draft-first pattern for booking drafts, repair appointment drafts, salon reservation drafts, activity signup drafts, and other pre-commitment workflows while keeping commitments behind host/member review gates.
 
@@ -64,7 +64,7 @@ Checked against the WebMCP Challenge page on 2026-09-01.
 |---|---|
 | Working live URL accessible in ChatGPT in-app browser or Chrome with WebMCP enabled | Ready: https://shared-room-mcp-next.zeabur.app/ |
 | Text description explaining WebMCP fit and user experience | Ready in `README.md` and this packet |
-| Public YouTube demo under 3 minutes with audio | Pending `TODO_YOUTUBE_DEMO_URL` |
+| Public YouTube demo under 3 minutes with audio | Pending final demo upload |
 | Public code repository | Ready: https://github.com/jiarong0423/shared-room-mcp |
 | All necessary source code, assets, and instructions | Ready |
 | Open-source license visible at repository root | Ready: MIT `LICENSE` |
@@ -76,7 +76,7 @@ Checked against the WebMCP Challenge page on 2026-09-01.
 
 ## What Changed After August 25, 2026
 
-This project existed earlier as a group menu ordering room. The WebMCP hackathon refactor changes the project into a generalized social group room with six fixed safety lines:
+This project existed earlier as a menu-ordering room. The WebMCP hackathon refactor changes the project into a form-based async private task room powered by Adaptive Contract MCP, with six fixed safety lines:
 
 - One selected room type for `group_buy`, `drink_order`, `restaurant_split`, `ktv_room`, `sports_venue`, `ticket_activity`, `rental_share`, and `generic_split`.
 - Price evidence review with local-first parsing and optional AI repair.
@@ -140,8 +140,8 @@ Deployment owners should replace secrets only in the hosting provider secret man
 npm install
 npm run check
 npm run audit:tasks
-npm run build:image-fixture-manifest
-npm run stress:image-matrix -- --base-url http://127.0.0.1:3000 --mode image-plus-oracle-text --output-dir logs/runtime/image-matrix
+IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run build:image-fixture-manifest
+IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run stress:image-matrix -- --base-url http://127.0.0.1:3000 --mode image-plus-oracle-text --output-dir logs/runtime/image-matrix
 npm run stress:contracts -- --base-url http://127.0.0.1:3000 --rounds 20 --concurrency 4 --output-dir logs/runtime
 npm start
 ```
@@ -156,7 +156,7 @@ The Zeabur public demo keeps the lower public-demo throttle. A local 429 during 
 
 The repeated room-flow check covers 20 non-duplicate Traditional Chinese and English scenarios, with 20 rounds per scenario. It checks room creation, local copied-text OCR parsing, stable room-type selection, draft creation, and the final human approval rule.
 
-The image-matrix command is a deterministic contract-driven integration benchmark. It verifies checksum-backed image-oracle artifacts and HITL state behavior in `image-plus-oracle-text` mode; it is not a raw OCR accuracy, zero-shot OCR accuracy, or unconstrained vision extraction benchmark.
+The image-matrix command is a deterministic contract-driven integration benchmark. The public repository keeps the manifest, schema, and runner; the full PNG set is supplied as an external artifact through `IMAGE_MATRIX_ROOT` or `--matrix-root`. It verifies checksum-backed image-oracle artifacts and HITL state behavior in `image-plus-oracle-text` mode; it is not a raw OCR accuracy, zero-shot OCR accuracy, or unconstrained vision extraction benchmark.
 
 Semantic Visual Anchor Notice: the current protocol records logical `boundingZone` values and contextual `auditAnchor` snippets for host review. Pixel-level `bbox` crop overlays are reserved roadmap fields and are not part of the current release claim.
 
@@ -260,8 +260,8 @@ Operator rule for recording:
 ## Remaining Submission Checklist
 
 - Public repository URL is set to `https://github.com/jiarong0423/shared-room-mcp`.
-- Replace `TODO_YOUTUBE_DEMO_URL` after uploading the public demo video.
-- Live URL `https://shared-room-mcp-next.zeabur.app/` was rechecked after the final functional push; production health, WebMCP tools, and HTML/PDF downloads passed.
+- Add the final public YouTube demo URL after uploading the video.
+- Live URL `https://shared-room-mcp-next.zeabur.app/` must be rechecked after the next successful Zeabur production deployment; the latest local fixes should not be represented as deployed until `/healthz` reports the new Adaptive Contract MCP versions.
 - Confirm the Zeabur `/data` volume remains mounted when `ROOM_STORE_PATH=/data/rooms.json` is configured.
 - Disclose that the current room ownership model is demo-grade; production deployments should add signed sessions or a real login system.
 - Confirm Devpost description uses the same WebMCP safety rule stated here.

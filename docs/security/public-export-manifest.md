@@ -33,8 +33,9 @@ This repository is intended to be public for the WebMCP Challenge. The public ex
 - `scripts/stress-image-matrix.mjs`
 - `scripts/stress-menu-parser.mjs`
 - `scripts/stress-local-contracts.mjs`
-- `scripts/stress-open-gate.mjs`
+- `scripts/stress-member-release.mjs`
 - `scripts/verify-adaptive-contracts.mjs`
+- `docs/architecture/ADAPTIVE_CONTRACT_MCP.md`
 - `docs/submission/WEBMCP_SUBMISSION.md`
 - `docs/security/`
 - `docs/testing/VALIDATION_EVIDENCE.md`
@@ -53,7 +54,7 @@ This repository is intended to be public for the WebMCP Challenge. The public ex
 - `docs/ai-generated/`
 - `docs/decisions/`
 - `docs/ai-generated/**/*.json`
-- raw development logs, historical AI-generated design drafts, and superseded execution transcripts
+- raw runtime logs, raw development logs, historical AI-generated design drafts, and superseded execution transcripts
 - the full 115-image PNG matrix, local screenshots, raw receipt images, raw OCR samples, private room data, provider keys, Google credentials, cookies, and payment data
 - image-matrix failure quarantine outputs and production `image-only` OCR run outputs until reviewed and summarized
 

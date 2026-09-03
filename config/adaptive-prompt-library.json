@@ -1,5 +1,5 @@
 {
-  "version": "shared-room-adaptive-prompt-library.v1",
+  "version": "adaptive-contract-prompt-library.v1",
   "contextBlock": {
     "start": "ADAPTIVE_EXTRACTION_CONTEXT_START",
     "end": "ADAPTIVE_EXTRACTION_CONTEXT_END",

@@ -13,4 +13,5 @@ coverage/
 quarantine/
 docs/ai-generated/
 docs/ai-generated/**/*.json
+docs/decisions/
 archive/

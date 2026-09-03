@@ -4,7 +4,7 @@ Evidence date: 2026-09-01
 
 ## Product Boundary
 
-Shared Room MCP is an open-source WebMCP template for shared room coordination. The app helps people and agents turn messy group intent into a visible draft, then keeps the final decision with the human host.
+Shared Room MCP is an open-source WebMCP reference app powered by Adaptive Contract MCP. The app turns host-provided evidence into a form-based async private task room, where WebMCP reads state, AI prepares review drafts, and humans approve commitments.
 
 The project does not process payments, collect credit cards, place orders, submit bookings, or write to external commerce systems.
 
@@ -34,8 +34,8 @@ This section records the data flow used by the no-key demo and optional deployme
 2. The host uploads a price image or pastes copied text.
 3. The server parses local text first and may use optional fallback OCR only when configured.
 4. A WebMCP-capable agent may inspect the page state and create a proposal draft.
-5. The host may remove bad parsed rows or correct item names, prices, and categories before opening the list.
-6. The host explicitly opens the reviewed list to members.
+5. The host may remove bad parsed rows or correct item names, prices, and categories before Member-Visibility Release.
+6. The host explicitly releases the reviewed list to members.
 7. Participants choose their own items and confirm their own cost.
 8. The host must use the page UI to approve or reject any agent draft through one visible same-card human decision.
 9. Settlement stays inside the room summary. No payment, booking, order, or external submission is triggered.
@@ -47,7 +47,7 @@ This section records the data flow used by the no-key demo and optional deployme
 | Agent overreach into final decisions | WebMCP tools are read-only or draft-only. Final review is a host-only UI action. |
 | Agent creates a misleading draft | Drafts are labeled as suggestions, remain pending, and require one visible same-card human decision. |
 | Agent overwrites calculation rules or room type | Calculation rules and room type are owned by the server. Proposal payloads are sanitized and do not mutate totals. |
-| Bad OCR row enters the item list | Host can edit or remove parsed rows before opening the list. Server blocks parsed-item edits after the list is opened, after settlement, after any member confirmation, or when the item is already claimed. |
+| Bad OCR row enters the item list | ReviewGate marks suspicious parser candidates before member visibility. Structural gates such as contact numbers, dates, addresses, tax identifiers, business hours, and unresolved formulas require host edit or removal before release. Server blocks parsed-item edits after the list is opened, after settlement, after any member confirmation, or when the item is already claimed. |
 | Unauthorized user reviews a draft | Server checks `ownerParticipantId` before accepting or rejecting a proposal. |
 | Uploaded image abuse | Upload size, file type, rate limits, and image processing limits are enforced server-side. |
 | Provider key exposure | Keys are read only from environment variables. `.env` files are ignored and sample files contain empty placeholders. |
@@ -69,7 +69,8 @@ Before public deployment or repo submission:
 
 - Run `npm run check`.
 - Run `npm run audit:tasks`.
+- Run `npm run verify:adaptive-contracts`.
 - Run `npm audit --audit-level=high`.
-- Run the local repeated room-flow check with at least 20 rounds.
+- Run the local Member-Visibility Release stress check with at least 20 rounds.
 - Run the local AI security review.
 - Confirm that no `.env`, room data, runtime logs, or generated JSON reports are staged for commit.
