@@ -43,7 +43,7 @@ The full check summary is in [`docs/testing/VALIDATION_EVIDENCE.md`](docs/testin
 | Load Sample Room | 120/120 passed | sample data stays as a draft and does not settle, pay, or call outside services |
 | Current Zeabur production flow | PASS | hosted health, WebMCP, member-confirmation, finalized summary, and HTML/PDF export flow |
 | Same-tab room switch | 2/2 passed | a new room gets clean controls, and late updates from the old room are ignored |
-| Image oracle integration benchmark | 115/115 passed | deterministic image-plus-oracle-text contract test, not a raw OCR accuracy benchmark |
+| Image oracle integration benchmark | 115/115 passed | deterministic image-plus-oracle-text contract test, not provider accuracy |
 
 These checks show that the assistant workflow is repeatable and no-key by default. They are not a claim of production-scale database capacity. The default JSON save layer is for a single demo service; production traffic should use Redis or PostgreSQL.
 
@@ -53,19 +53,19 @@ This is a single-direction task room. The host provides evidence and performs th
 
 `Shared Room MCP` is the demo application and repository slug. `Adaptive Contract MCP` is the underlying contract, routing, prompt, guardrail, and HITL state-machine layer. The architecture name is used where the project discusses reusable scenario contracts, image-fixture oracles, enterprise submission gates, and anti-pollution review controls.
 
-AI provider keys are optional:
+AI provider adapters are extension-only:
 
 - Pasted text and local rule-based parsing run first.
-- Gemini or OpenAI support is only an optional image/text repair example.
 - The core WebMCP workflow must work without any paid API key.
-- AI output remains evidence review, field repair, proposal drafting, and state guidance.
+- Codex and the browser sidebar provide the intended LLM collaboration layer: visual review, evidence comparison, field-fix suggestions, and state guidance.
 - WebMCP is the primary agent integration; external model APIs are not required for the agent workflow.
+- Server-side Gemini/OpenAI adapters exist only as replaceable examples for deployment owners who explicitly choose external OCR/schema repair outside the core demo path.
 
 ## Open Source Tool-Layer Positioning
 
 This repository is intended to be a clean, forkable WebMCP starter project. It does not sell API access, resell model credits, require store integration, or require a fixed OCR provider.
 
-Deployment owners can keep the default no-key flow, remove the optional provider code, or replace it with their own OCR, vision, browser, commerce, spreadsheet, or private-community integrations. The stable part is the shared room workflow and the WebMCP tools, not any paid API.
+Deployment owners can keep the default no-key flow, remove the extension adapter code, or replace it with their own OCR, vision, browser, commerce, spreadsheet, or private-community integrations. The stable part is the shared room workflow and the WebMCP tools, not any paid API.
 
 External developers should be able to fork the template and plug in their own integrations without asking for access to a central service. High-risk commitments stay behind explicit host/member confirmation.
 
@@ -102,7 +102,7 @@ Potential integration categories:
 - Commerce integrations for product catalogs, group-buy thresholds, inventory checks, discount rules, and checkout handoff.
 - Community integrations for LINE, Discord, Telegram, forums, and private membership spaces.
 - Trust integrations for whitelist checks, short-lived invite validation, review logs, and organization policy checks.
-- Provider integrations for OCR, vision, translation, summarization, and field repair.
+- Provider integrations for OCR, vision, translation, summarization, and field repair, when the deployment owner explicitly adds them as extensions.
 
 This keeps the template useful for developers and safer for users: the project can support future business workflows while keeping irreversible commitments in purpose-built partner systems and explicit human review gates.
 
@@ -154,14 +154,14 @@ The table below describes the room types and what the app can safely calculate t
 
 | room type | scenario | evidence | calculated today | needs review when |
 |---|---|---|---|---|
-| `group_buy` | Community group buy, free-shipping threshold, bulk discount | Public post, price table, screenshot, local OCR | Same-item merge, participant subtotal, grand total, threshold remaining, extra personal claim | Missing item-price pairs, ambiguous tier rules, duplicated variants |
-| `drink_order` | Office or community drink order | Menu photo, drink screenshot, local OCR | Item subtotal, sweetness/ice/addon delta, extra personal claim, minimum order threshold | Size-column drift, addon section ambiguity, same-name multi-price issue |
+| `group_buy` | Community group buy, free-shipping threshold, bulk discount | Public post, price table, screenshot, copied evidence text | Same-item merge, participant subtotal, grand total, threshold remaining, extra personal claim | Missing item-price pairs, ambiguous tier rules, duplicated variants |
+| `drink_order` | Office or community drink order | Menu photo, drink screenshot, copied evidence text | Item subtotal, sweetness/ice/addon delta, extra personal claim, minimum order threshold | Size-column drift, addon section ambiguity, same-name multi-price issue |
 | `restaurant_split` | Meal bill or receipt split | Menu, receipt, checkout screenshot | Personal items, shared candidate average, extra personal claim, service-fee input marked for manual review | Tax/service lines mixed with items, item-price mismatch |
 | `ktv_room` | KTV room, minimum spend, headcount fee | Room price table, minimum-spend notice, drink list | Room fee sharing, per-person minimum marked for manual review, personal drinks | Time-slot or package boundary ambiguity |
 | `sports_venue` | Court fee, venue booking, equipment rental | Venue rate table, time-slot table, rental list | Venue fee sharing, time-rate input marked for manual review, equipment subtotal | Cross-column time rates, venue and equipment mixed in one image |
 | `ticket_activity` | Tickets, workshops, activity signup | Activity post, ticket table, signup screenshot | Headcount times ticket price, group threshold and group discount marked for manual review | Early-bird tiers or ticket classes are unclear |
 | `rental_share` | Shared rental, deposit, equipment | Rental table, deposit notice | Rental fee sharing, personal rental subtotal, deposit marked but excluded by default | Deposit and fee ambiguity, unclear time unit |
-| `generic_split` | Any temporary shared expense | Receipt, price screenshot, manual OCR | Grand total, average split, personal items | Low classification confidence or missing fields |
+| `generic_split` | Any temporary shared expense | Receipt, price screenshot, manual evidence text | Grand total, average split, personal items | Low classification confidence or missing fields |
 
 ## Adaptive Contract MCP Overview
 
@@ -175,7 +175,7 @@ The table below describes the room types and what the app can safely calculate t
 | Room host | yes | yes | before member confirmation | own claims only | same-card human review | yes |
 | Server | validates | stores limited drafts | checks room owner | checks each member only confirms themself | records review result | saves local room summary |
 
-The fixed order is AI/OCR draft first, host review second, Member-Visibility Release third, member confirmation fourth, and final settlement last. The host can remove bad OCR rows or fix names, prices, and categories before releasing the list to members. After the host releases the list, parsed item editing is locked.
+The fixed order is evidence draft first, host review second, Member-Visibility Release third, member confirmation fourth, and final settlement last. The host can remove bad parser rows or fix names, prices, and categories before releasing the list to members. After the host releases the list, parsed item editing is locked.
 
 ```mermaid
 sequenceDiagram
@@ -207,9 +207,9 @@ sequenceDiagram
   Host->>Page: Finalize reviewed summary
   Page->>Host: Export HTML or PDF evidence record
 
-  Note over WebMCP: WebMCP reads state and creates drafts.
-  Note over Review: Final commitments require human clicks.
-  Note over Guardrail: Structural gates require edit or removal.
+  WebMCP-->>Host: State summary and draft recommendation
+  Review-->>Host: Human approval remains required
+  Guardrail-->>Host: Structural risk requires edit or removal
 ```
 
 ```mermaid
@@ -267,7 +267,7 @@ LOCAL_OCR_MAX_CHARS=12000
 TRUST_LAYER_SPREADSHEET_ID=replace_with_google_sheet_id_for_whitelist_audit_only
 ```
 
-Optional AI repair variables:
+Extension-only adapter variables:
 
 ```bash
 AI_PROVIDER_ORDER=gemini,openai
@@ -288,13 +288,13 @@ OPENAI_MAX_OUTPUT_TOKENS=16000
 OPENAI_IMAGE_DETAIL=high
 ```
 
-Do not commit API keys. Set secrets only in the hosting provider's secret manager.
+Do not commit API keys. These variables are not required for the WebMCP Challenge demo. Set them only when a deployment owner intentionally enables an external adapter outside the core WebMCP plus Codex plus human-review path.
 
 Runtime requires Node.js `>=20.9.0` because the image normalization pipeline uses `sharp@0.35.x`.
 
 ## Deployment Configuration Guide
 
-The repository provides configuration names only. Each project organizer changes values in the deployment platform, not in source code. Paid provider keys are optional adapters, not part of the required WebMCP demo path.
+The repository provides configuration names only. Each project organizer changes values in the deployment platform, not in source code. Paid provider keys are extension adapters, not part of the required WebMCP demo path.
 
 | purpose | variable | where to replace | required |
 |---|---|---|---|
@@ -304,8 +304,8 @@ The repository provides configuration names only. Each project organizer changes
 | Guardrail memory candidate store | `GUARDRAIL_MEMORY_PATH` | hosting service variables, use `/data/guardrail-memory.json` with a mounted volume | optional |
 | Room save smoothing | `ROOM_PERSIST_DEBOUNCE_MS`, `ROOM_PERSIST_JITTER_MS` | hosting service variables; small millisecond values smooth short write bursts | optional |
 | Trust whitelist/audit sheet | `TRUST_LAYER_SPREADSHEET_ID` | hosting service variables | optional |
-| Example Gemini OCR repair adapter | `GEMINI_API_KEY` or supported Google key alias | provider secret manager | optional |
-| Example OpenAI OCR repair adapter | `OPENAI_API_KEY` | provider secret manager | optional |
+| External Gemini repair adapter | `GEMINI_API_KEY` or supported Google key alias | provider secret manager | extension-only |
+| External OpenAI repair adapter | `OPENAI_API_KEY` | provider secret manager | extension-only |
 | Public rate limit | `API_RATE_LIMIT_MAX`, `ROOM_CREATE_RATE_LIMIT_MAX`, `MENU_PARSE_RATE_LIMIT_MAX` | hosting service variables | yes |
 
 Recommended open-source deployment order:
@@ -313,9 +313,9 @@ Recommended open-source deployment order:
 1. Copy `env.sample` variable names into the hosting service variables.
 2. Mount a persistent volume at `/data` and set `ROOM_STORE_PATH=/data/rooms.json`.
 3. For the adaptive review loop, set `GUARDRAIL_MEMORY_PATH=/data/guardrail-memory.json` so human corrections and blocked approval attempts are retained as guardrail candidates.
-4. Run the no-key flow first with manual input or local OCR text.
-5. Add a provider key only if the deployment owner wants optional OCR/schema repair.
-6. Restart the service and verify `/healthz` reports the expected provider and persistence flags without exposing secret values.
+4. Run the no-key flow first with manual input or copied evidence text.
+5. Leave provider keys empty for the WebMCP Challenge demo unless the deployment owner intentionally enables an external repair adapter.
+6. Restart the service and verify `/healthz` reports persistence flags and does not expose secret values.
 
 ## Enterprise MCP Submit Gate
 
@@ -362,14 +362,14 @@ npm start
 
 Open `http://localhost:3000`.
 
-The app does not automatically load `.env`. If local AI image parsing is needed, export the key in the shell before starting the server. Use `env.sample` as the variable-name reference. Without an API key, the room still works with local OCR text when enough candidates are extracted.
+The app does not automatically load `.env`. The default demo uses manual evidence entry, copied evidence text, `Load Sample Room`, WebMCP inspection tools, Codex/LLM side-panel review, and human approval. API keys are only for optional external repair adapters.
 
 ## Hosted Deployment
 
 1. Connect the public GitHub repository to a Node.js hosting service. The live demo currently runs on Zeabur.
 2. Create a Node.js service.
 3. Set the required environment variables listed above.
-4. Keep AI provider keys empty for a clean WebMCP tool-layer demo, or add optional adapter keys only if OCR/schema repair should call external models.
+4. Keep AI provider keys empty for the clean WebMCP tool-layer demo.
 5. Add a persistent volume and set `ROOM_STORE_PATH=/data/rooms.json` if rooms must survive service restarts.
 6. Keep the public demo on one service instance when using JSON persistence.
 7. Use `npm install` as the install command and `npm start` as the start command.
@@ -383,7 +383,7 @@ ROOM_CREATE_RATE_LIMIT_MAX=20
 MENU_PARSE_RATE_LIMIT_MAX=30
 ```
 
-The expensive endpoint is image/OCR parsing, not WebMCP inspection. The public demo allows 30 parse requests per client per minute while retaining basic abuse protection.
+The expensive endpoint is evidence parsing, not WebMCP inspection. The public demo allows 30 parse requests per client per minute while retaining basic abuse protection.
 
 ## Verification
 
@@ -403,9 +403,9 @@ ROOM_CREATE_RATE_LIMIT_MAX=500 MENU_PARSE_RATE_LIMIT_MAX=500 API_RATE_LIMIT_MAX=
 
 The hosted public demo should keep the lower public-demo limits shown above.
 
-The repeated room-flow check covers 20 non-duplicate Traditional Chinese and English scenarios, with 20 rounds per scenario. It checks room creation, local copied-text OCR parsing, stable room-type selection, draft creation, and the final human approval rule.
+The repeated room-flow check covers 20 non-duplicate Traditional Chinese and English scenarios, with 20 rounds per scenario. It checks room creation, copied evidence-text parsing, stable room-type selection, draft creation, and the final human approval rule.
 
-The image-matrix runner is a deterministic contract-driven integration benchmark using 115 paired image-oracle artifacts. The public repository keeps the manifest, schema, and runner; the full PNG set is supplied as an external artifact through `IMAGE_MATRIX_ROOT` or `--matrix-root`. Each test verifies the image SHA-256, scenario id, language, contract id, archetype, expected member-visible items, rule counts, forbidden member-visible numbers, evidence pointers, and Semantic Visual Anchor fields. `image-plus-oracle-text` validates the HITL state transition and oracle chain without provider keys. It must not be described as raw OCR accuracy, zero-shot OCR accuracy, or unconstrained vision extraction accuracy; a production `image-only` run against Zeabur is a separate OCR/provider check and should use the runner's default slow pacing and quarantine output.
+The image-matrix runner is a deterministic contract-driven integration benchmark using 115 paired image-oracle artifacts. The public repository keeps the manifest, schema, and runner; the full PNG set is supplied as an external artifact through `IMAGE_MATRIX_ROOT` or `--matrix-root`. Each test verifies the image SHA-256, scenario id, language, contract id, archetype, expected member-visible items, rule counts, forbidden member-visible numbers, evidence pointers, and Semantic Visual Anchor fields. `image-plus-oracle-text` validates the HITL state transition and oracle chain without provider keys. It must not be described as provider accuracy, zero-shot extraction accuracy, unconstrained vision accuracy, or a hosted image-recognition benchmark. Zeabur is the hosted room/runtime/export surface; WebMCP plus Codex plus human review is the intended evidence-review loop.
 
 Expected audit state:
 
@@ -449,7 +449,7 @@ The detailed timed runbook is in [`docs/submission/WEBMCP_SUBMISSION.md`](docs/s
 - No authenticated vendor cookies.
 - No payment processing.
 - No raw device fingerprinting.
-- No raw OCR, images, raw device IDs, payment identifiers, or social account identifiers are written to Google Sheets.
+- No raw extracted text, images, raw device IDs, payment identifiers, or social account identifiers are written to Google Sheets.
 - Google Sheets is only a design-level short-lived hash whitelist and audit-log trust layer in this public core; production check/enroll/revoke adapters are roadmapped extensions.
 
 ## Known MVP Limits

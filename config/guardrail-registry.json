@@ -1,5 +1,5 @@
 {
-  "version": "adaptive-contract-guardrail-registry.v2",
+  "version": "acmcp-guardrail-registry.v2",
   "rules": [
     {
       "id": "currency_marker_preferred",

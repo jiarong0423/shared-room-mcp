@@ -22,4 +22,4 @@ Dependency and lockfile evidence:
 - Lockfile reviewed after `npm audit fix` and `sharp@0.35.4` update.
 - Runtime package scripts are explicit: `start`, `dev`, `check`, `audit:tasks`, `stress:menu`, `stress:contracts`, and `stress:member-release`.
 
-Runtime dependencies are intentionally small: Express, Socket.IO, Multer, Sharp, and Google GenAI as an optional OCR/schema repair adapter.
+Runtime dependencies are intentionally small: Express, Socket.IO, Multer, Sharp, and Google GenAI as an extension-only repair adapter. The WebMCP Challenge demo does not require provider keys.

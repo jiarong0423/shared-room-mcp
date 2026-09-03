@@ -38,7 +38,7 @@ The broader idea is an open-source pattern for the agent-native web: tools that 
 
 The app exposes page-local tools through `document.modelContext.registerTool()` when WebMCP is available. In this project, WebMCP is a state reader and draft generator, not a browser-control agent that clicks or submits final actions. Most tools are read-only: the assistant can inspect the room, the selected plan, the local math rules, confirmation status, and trust settings. One draft tool can create a small JSON proposal for host review. Applied state changes pass through host/member UI transitions and the Member-Visibility Release.
 
-This is a WebMCP starter project, not a paid API wrapper. Manual input, `Load Sample Room`, copied OCR text, and local parsing are the default path. Cloud OCR, vision, model, spreadsheet, commerce, booking, CRM, or community integrations are optional and owned by the deployment owner.
+This is a WebMCP starter project, not a paid API wrapper. Manual input, `Load Sample Room`, copied evidence text, and deterministic parsing are the default path. External image-reading, vision, model, spreadsheet, commerce, booking, CRM, or community integrations are optional extensions owned by the deployment owner.
 
 Implemented WebMCP tools:
 
@@ -79,12 +79,12 @@ Checked against the WebMCP Challenge page on 2026-09-01.
 This project existed earlier as a menu-ordering room. The WebMCP hackathon refactor changes the project into a form-based async private task room powered by Adaptive Contract MCP, with six fixed safety lines:
 
 - One selected room type for `group_buy`, `drink_order`, `restaurant_split`, `ktv_room`, `sports_venue`, `ticket_activity`, `rental_share`, and `generic_split`.
-- Price evidence review with local-first parsing and optional AI repair.
+- Price evidence review with local-first parsing and optional extension repair.
 - Local money math that stays inside the app.
 - AI repair and conflict checks that stop for human review when the input is unclear.
 - Member confirmation records for shared items and extra personal claims.
 - WebMCP read-only inspection tools, one host-reviewed draft tool, and a hash-only trust option.
-- Open-source extension path for future social, commerce, booking, OCR, spreadsheet, and private-community integrations.
+- Open-source extension path for future social, commerce, booking, image-reading, spreadsheet, and private-community integrations.
 - No-key `Load Sample Room` entrypoint for fast judging and smoke testing.
 
 ## Environment Variables
@@ -132,7 +132,7 @@ For a hosted demo, attach a persistent volume before using `/data/rooms.json`. W
 
 The current save layer is a hackathon MVP choice for one running service instance. It smooths short write bursts by merging nearby room changes and adding a small millisecond delay before saving, but a hard crash can still lose the latest tiny write window. Production traffic should still use Redis or PostgreSQL.
 
-Deployment owners should replace secrets only in the hosting provider secret manager. The repository includes variable names in `env.sample`, but no real key values. AI provider keys are optional adapters because manual input and local OCR text can still demonstrate the WebMCP tool workflow.
+Deployment owners should replace secrets only in the hosting provider secret manager. The repository includes variable names in `env.sample`, but no real key values. AI provider keys are extension-only adapters. The required demo path is manual evidence entry or copied evidence text, WebMCP room inspection, Codex/LLM side-panel review, and human approval.
 
 ## Local Verification
 
@@ -154,15 +154,15 @@ ROOM_CREATE_RATE_LIMIT_MAX=500 MENU_PARSE_RATE_LIMIT_MAX=500 API_RATE_LIMIT_MAX=
 
 The Zeabur public demo keeps the lower public-demo throttle. A local 429 during rapid repeated tests means the runner is measuring the throttle, not the HITL state machine.
 
-The repeated room-flow check covers 20 non-duplicate Traditional Chinese and English scenarios, with 20 rounds per scenario. It checks room creation, local copied-text OCR parsing, stable room-type selection, draft creation, and the final human approval rule.
+The repeated room-flow check covers 20 non-duplicate Traditional Chinese and English scenarios, with 20 rounds per scenario. It checks room creation, copied evidence-text parsing, stable room-type selection, draft creation, and the final human approval rule.
 
-The image-matrix command is a deterministic contract-driven integration benchmark. The public repository keeps the manifest, schema, and runner; the full PNG set is supplied as an external artifact through `IMAGE_MATRIX_ROOT` or `--matrix-root`. It verifies checksum-backed image-oracle artifacts and HITL state behavior in `image-plus-oracle-text` mode; it is not a raw OCR accuracy, zero-shot OCR accuracy, or unconstrained vision extraction benchmark.
+The image-matrix command is a deterministic contract-driven integration benchmark. The public repository keeps the manifest, schema, and runner; the full PNG set is supplied as an external artifact through `IMAGE_MATRIX_ROOT` or `--matrix-root`. It verifies checksum-backed image-oracle artifacts and HITL state behavior in `image-plus-oracle-text` mode; it is not a provider accuracy, zero-shot extraction, or unconstrained vision benchmark.
 
 Semantic Visual Anchor Notice: the current protocol records logical `boundingZone` values and contextual `auditAnchor` snippets for host review. Pixel-level `bbox` crop overlays are reserved roadmap fields and are not part of the current release claim.
 
 The public evidence summary is tracked in `docs/testing/VALIDATION_EVIDENCE.md`. It records only checks that were actually run: local repeated flows, host-only draft review, Load Sample Room, hosted smoke checks, deterministic image-oracle integration, and short JSON save-burst checks.
 
-Open `http://localhost:3000`, create a room, choose a task type, paste OCR text or upload an image, add participants, claim items, and inspect the audit panel.
+Open `http://localhost:3000`, create a room, choose a task type, paste evidence text or upload an image, add participants, claim items, and inspect the audit panel.
 
 ## Locked Demo Runbook
 
@@ -254,7 +254,7 @@ Operator rule for recording:
 - No vendor API reverse engineering.
 - No authenticated vendor cookies or private ordering sessions.
 - No payment processing.
-- No raw OCR, images, raw device IDs, payment identifiers, or social account identifiers are written to Google Sheets.
+- No raw extracted text, images, raw device IDs, payment identifiers, or social account identifiers are written to Google Sheets.
 - Google Sheets is only a design-level short-lived hash whitelist and audit-log trust layer in this public core; production check/enroll/revoke adapters are roadmapped extensions.
 
 ## Remaining Submission Checklist

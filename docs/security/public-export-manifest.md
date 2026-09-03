@@ -55,9 +55,9 @@ This repository is intended to be public for the WebMCP Challenge. The public ex
 - `docs/decisions/`
 - `docs/ai-generated/**/*.json`
 - raw runtime logs, raw development logs, historical AI-generated design drafts, and superseded execution transcripts
-- the full 115-image PNG matrix, local screenshots, raw receipt images, raw OCR samples, private room data, provider keys, Google credentials, cookies, and payment data
-- image-matrix failure quarantine outputs and production `image-only` OCR run outputs until reviewed and summarized
+- the full 115-image PNG matrix, local screenshots, raw receipt images, raw extracted text samples, private room data, provider keys, Google credentials, cookies, and payment data
+- image-matrix failure quarantine outputs and any extension-provider OCR run outputs until reviewed and summarized
 
 ## Export Decision
 
-Public export is allowed only after the current-file secret scan, Git-history secret scan, dependency audit, WebMCP submission smoke checks, and deterministic image-oracle manifest checks pass. The 115-image benchmark is a checksum-backed integration oracle, not a raw OCR accuracy claim.
+Public export is allowed only after the current-file secret scan, Git-history secret scan, dependency audit, WebMCP submission smoke checks, and deterministic image-oracle manifest checks pass. The 115-image benchmark is a checksum-backed integration oracle, not a provider accuracy claim.

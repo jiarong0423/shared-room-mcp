@@ -289,7 +289,7 @@ async function main() {
   assertCanonicalNumberNormalizer();
   const args = parseArgs(process.argv);
   const manifest = await readJson(args.manifestPath);
-  assertCondition(manifest.version === 'adaptive-contract-mcp-image-fixture-oracle.v1', 'unsupported manifest version');
+  assertCondition(manifest.version === 'acmcp-image-fixture-oracle.v1', 'unsupported manifest version');
   assertCondition(manifest.artifactPolicy?.checksumRequired === true, 'manifest must require checksum validation');
   const selectedTests = args.limit > 0 ? manifest.tests.slice(0, args.limit) : manifest.tests;
   const results = [];

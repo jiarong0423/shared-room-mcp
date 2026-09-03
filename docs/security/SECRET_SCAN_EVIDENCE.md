@@ -24,4 +24,4 @@ Secret scan evidence:
 - `ai-security-rules export-gate`: passed on 2026-09-01 with secret-like filenames `0` and critical findings `0`.
 - `ai-security-rules history-scan`: flagged two historical `.env.example` filenames as critical by policy. A separate historical blob pattern check read only the historical sample files and found `0` matches for OpenAI keys, Google API keys, AWS access keys, GitHub tokens, or private key blocks. Rewriting or force-pushing history is a separate destructive operation and was not performed.
 
-No API key is required for the no-key WebMCP demo. Optional OCR/schema repair keys must be set only in deployment environment variables or a provider secret manager.
+No API key is required for the no-key WebMCP demo. Extension-only image-reading or schema-repair keys must be set only in deployment environment variables or a provider secret manager when a deployment owner intentionally enables that adapter.

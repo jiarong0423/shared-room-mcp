@@ -1,5 +1,5 @@
 {
-  "version": "adaptive-contract-scenario-contracts.v2",
+  "version": "acmcp-scenario-contracts.v2",
   "defaultContractId": "generic_price_evidence",
   "routingPolicy": {
     "explicitBindingFirst": true,

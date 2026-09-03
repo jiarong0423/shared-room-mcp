@@ -2,10 +2,13 @@ import fs from 'node:fs/promises';
 import process from 'node:process';
 
 const defaultBaseUrl = 'http://127.0.0.1:4180';
-const onePixelPng = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lH9X3wAAAABJRU5ErkJggg==',
-  'base64'
-);
+const onePixelPng = Buffer.from([
+  137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82,
+  0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 0, 0, 0, 31, 21, 196, 137,
+  0, 0, 0, 13, 73, 68, 65, 84, 120, 218, 99, 252, 207, 192, 80,
+  15, 0, 5, 131, 2, 127, 148, 127, 87, 220, 0, 0, 0, 0, 73, 69,
+  78, 68, 174, 66, 96, 130
+]);
 
 function parseArgs(argv) {
   const args = {
@@ -236,7 +239,7 @@ function validateAntiPollutionState(scenario, state, candidates, memberItems) {
   assertCondition(Array.isArray(state.ocrObservations), `${scenario.id} missing ocrObservations`);
   assertCondition(Array.isArray(state.parserCandidates), `${scenario.id} missing parserCandidates`);
   assertCondition(Array.isArray(state.calculationRules), `${scenario.id} missing calculationRules`);
-  assertCondition(serviceBlueprint?.contractVersion === 'adaptive-contract-service-blueprint.v1', `${scenario.id} missing service blueprint contract`);
+  assertCondition(serviceBlueprint?.contractVersion === 'acmcp-service-blueprint.v1', `${scenario.id} missing service blueprint contract`);
   assertCondition(serviceBlueprint?.roomMode === 'single_direction_private_task_room', `${scenario.id} service blueprint room mode drifted`);
   assertCondition(serviceBlueprint?.hostProvidedOptionRequired === true, `${scenario.id} service blueprint must require host-provided options`);
   assertCondition(Array.isArray(serviceBlueprint?.archetypes) && serviceBlueprint.archetypes.includes(scenario.archetypeId), `${scenario.id} service blueprint does not expose archetype ${scenario.archetypeId}`);

@@ -1,5 +1,5 @@
 {
-  "version": "adaptive-contract-evidence-review-contract.v1",
+  "version": "acmcp-evidence-review.v1",
   "layers": [
     "EvidenceAsset",
     "OcrObservation",

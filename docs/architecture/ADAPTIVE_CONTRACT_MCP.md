@@ -36,9 +36,9 @@ sequenceDiagram
   Host->>Page: Finalize reviewed summary
   Page->>Host: Export HTML or PDF evidence record
 
-  Note over WebMCP: WebMCP reads state and creates drafts.
-  Note over Review: Final commitments require human clicks.
-  Note over Guardrail: Structural gates require edit or removal.
+  WebMCP-->>Host: State summary and draft recommendation
+  Review-->>Host: Human approval remains required
+  Guardrail-->>Host: Structural risk requires edit or removal
 ```
 
 ## Contract Pipeline
@@ -115,4 +115,4 @@ The first form prevents repeated known error patterns without poisoning future r
 
 The image matrix is a deterministic contract-driven integration benchmark. It verifies artifact integrity, scenario routing, schema adherence, member-visible masks, anti-pollution gates, and HITL state transitions under paired image and oracle evidence.
 
-It is not a raw OCR accuracy benchmark and not a claim that arbitrary real-world images always parse correctly. New image-only production tests must still route low-confidence, sparse, complex-formula, or provider-timeout cases into ReviewGate.
+It is not a provider accuracy benchmark and not a claim that arbitrary real-world images always parse correctly. The release claim is limited to deterministic image-plus-oracle integration and the WebMCP plus Codex plus human-review loop. External provider image-reading tests, if a deployment owner chooses to run them, are extension checks and not the Zeabur demo contract.

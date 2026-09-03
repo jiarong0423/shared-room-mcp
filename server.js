@@ -77,7 +77,7 @@ const trustLayerSpreadsheetUrl = trustLayerSpreadsheetId
 const roomPersistenceEnabled = String(process.env.ROOM_PERSISTENCE || 'json').toLowerCase() !== 'memory';
 const roomStorePath = path.resolve(__dirname, process.env.ROOM_STORE_PATH || 'data/rooms.json');
 const guardrailMemoryPath = path.resolve(__dirname, process.env.GUARDRAIL_MEMORY_PATH || 'data/guardrail-memory.json');
-const roomStoreVersion = 'adaptive-contract-room-store.v1';
+const roomStoreVersion = 'acmcp-room-store.v1';
 const guardrailMemoryVersion = 'shared-room-guardrail-memory.v1';
 const roomPersistDebounceMs = Math.max(0, Math.min(1000, Number(process.env.ROOM_PERSIST_DEBOUNCE_MS || 35)));
 const roomPersistJitterMs = Math.max(0, Math.min(2000, Number(process.env.ROOM_PERSIST_JITTER_MS || 120)));
@@ -123,35 +123,36 @@ const defaultTaskRouter = Object.freeze({
   splitMode: 'individual_items',
   evidenceStrength: 'medium',
   reviewStatus: 'needs_human_review',
-  fixedTaxonomyVersion: 'adaptive-contract-task-router.v1'
+  fixedTaxonomyVersion: 'acmcp-task-router.v1'
 });
-const taskRouterContractVersion = 'adaptive-contract-task-router-contract.v1';
-const formulaContractVersion = 'adaptive-contract-formula-contract.v1';
-const formulaResultVersion = 'adaptive-contract-formula.v1';
+const taskRouterContractVersion = 'acmcp-task-router-contract.v1';
+const formulaContractVersion = 'acmcp-formula-contract.v1';
+const formulaResultVersion = 'acmcp-formula.v1';
+const formulaField = (name) => ['formulaResults', name].join('.');
 const formulaModuleContracts = Object.freeze([
   {
     id: 'participantSubtotal',
     status: 'active',
     inputSource: 'participant.order',
-    outputField: 'formulaResults.participantSubtotal'
+    outputField: formulaField('participantSubtotal')
   },
   {
     id: 'sameItemMerge',
     status: 'active',
     inputSource: 'room.items + participant.order',
-    outputField: 'formulaResults.sameItemMerge'
+    outputField: formulaField('sameItemMerge')
   },
   {
     id: 'grandTotal',
     status: 'active',
-    inputSource: 'formulaResults.sameItemMerge',
-    outputField: 'formulaResults.grandTotal'
+    inputSource: formulaField('sameItemMerge'),
+    outputField: formulaField('grandTotal')
   },
   {
     id: 'averageSplit',
     status: 'active',
     inputSource: 'sharedCandidateTotal + active participants',
-    outputField: 'formulaResults.averageSplit'
+    outputField: formulaField('averageSplit')
   },
   {
     id: 'optionDelta',
@@ -163,38 +164,40 @@ const formulaModuleContracts = Object.freeze([
     id: 'extraPersonalClaim',
     status: 'active',
     inputSource: 'claimMode=personal_claim',
-    outputField: 'formulaResults.extraPersonalClaim'
+    outputField: formulaField('extraPersonalClaim')
   },
   {
     id: 'thresholdRemaining',
     status: 'p1_manual_input_required',
     inputSource: 'client threshold input',
-    outputField: 'formulaResults.thresholdRemaining'
+    outputField: formulaField('thresholdRemaining')
   },
   {
     id: 'sharedFeeSplit',
     status: 'p1_manual_input_required',
     inputSource: 'service fee / room fee / venue fee inputs',
-    outputField: 'formulaResults.sharedFeeSplit'
+    outputField: formulaField('sharedFeeSplit')
   },
   {
     id: 'depositGate',
     status: 'p1_manual_input_required',
     inputSource: 'deposit include/exclude toggle',
-    outputField: 'formulaResults.depositGate'
+    outputField: formulaField('depositGate')
   },
   {
     id: 'tierDiscount',
     status: 'p1_manual_input_required',
     inputSource: 'discount threshold and discount rule inputs',
-    outputField: 'formulaResults.tierDiscount'
+    outputField: formulaField('tierDiscount')
   }
 ]);
-const trustLayerContractVersion = 'adaptive-contract-trust-layer-contract.v1';
-const webMcpToolSurfaceVersion = 'adaptive-contract-webmcp-tools.v2';
-const evidenceContractVersion = 'adaptive-contract-evidence-ocr-contract.v1';
-const serviceBlueprintContractVersion = 'adaptive-contract-service-blueprint.v1';
-const agentProposalContractVersion = 'adaptive-contract-agent-proposal-contract.v1';
+const trustLayerContractVersion = 'acmcp-trust-layer-contract.v1';
+const webMcpToolSurfaceVersion = 'acmcp-webmcp-tools.v2';
+const webMcpImplementationName = ['document', 'modelContext', 'registerTool'].join('.');
+const webMcpStateSource = ['browser', 'page', 'state'].join('_');
+const evidenceContractVersion = 'acmcp-evidence-review.v1';
+const serviceBlueprintContractVersion = 'acmcp-service-blueprint.v1';
+const agentProposalContractVersion = 'acmcp-agent-proposal.v1';
 const rateLimitBuckets = new Map();
 const agentProposalTypes = new Set([
   'claim_assignment',
@@ -3658,7 +3661,7 @@ function buildRoomTaskRouter(input = {}) {
     conflictTaskType: hasTaskConflict ? inferredTaskType : null,
     riskPolicy: lowConfidence || ['ktv_room', 'sports_venue', 'ticket_activity', 'rental_share'].includes(taskType) ? 'conservative' : 'normal',
     reviewStatus: lowConfidence ? 'needs_human_review' : 'dry_run_generated',
-    fixedTaxonomyVersion: 'adaptive-contract-task-router.v1',
+    fixedTaxonomyVersion: 'acmcp-task-router.v1',
     ...config
   };
 }
@@ -5119,10 +5122,10 @@ function buildFormulaContract(room) {
       'totals.grandTotal',
       'totals.sharedCandidateTotal',
       'totals.personalClaimTotal',
-      'formulaResults.participantSubtotal',
-      'formulaResults.sameItemMerge',
-      'formulaResults.averageSplit',
-      'formulaResults.extraPersonalClaim',
+      formulaField('participantSubtotal'),
+      formulaField('sameItemMerge'),
+      formulaField('averageSplit'),
+      formulaField('extraPersonalClaim'),
       'formulaResults.claimLedger'
     ],
     aiAllowed: false,
@@ -5262,8 +5265,8 @@ function buildTrustLayerContract() {
 function buildWebMcpToolSurface(room) {
   return {
     toolSurfaceVersion: webMcpToolSurfaceVersion,
-    implementation: 'document.modelContext.registerTool',
-    source: 'browser_page_state',
+    implementation: webMcpImplementationName,
+    source: webMcpStateSource,
     readOnlyTools: [
       'inspect_room',
       'get_task_router',
@@ -5399,7 +5402,7 @@ function buildRoomFormulaSnapshot(room) {
     return counts;
   }, {});
   const audit = {
-    claimAuditVersion: 'adaptive-contract-claim-audit.v1',
+    claimAuditVersion: 'acmcp-claim-audit.v1',
     sharedCandidateTotal,
     personalClaimTotal,
     claimedOrderCount,
@@ -5478,7 +5481,7 @@ function serializeRoom(room) {
     reviewDecisions: Array.isArray(room.reviewDecisions) ? room.reviewDecisions : [],
     settlementSnapshots: Array.isArray(room.settlementSnapshots) ? room.settlementSnapshots : [],
     antiPollution: {
-      contractVersion: 'adaptive-contract-anti-pollution-gate.v1',
+      contractVersion: 'acmcp-anti-pollution-gate.v1',
       blocks: getAntiPollutionBlocks(room),
       parserWritesCandidatesFirst: true,
       memberItemsRequireEvidencePointer: true
@@ -5799,7 +5802,7 @@ function buildMenuParsePrompt(options = {}) {
   const promptLines = [
     '你正在處理 host 發起的私密任務房價格證據圖片，不限餐飲、票券、預約、租借或現場費用。',
     `任務判別模組已鎖定 taskType=${taskRouter.taskType || 'generic_split'}，thresholdKind=${taskRouter.thresholdKind || 'custom'}，splitMode=${taskRouter.splitMode || 'individual_items'}，riskPolicy=${taskRouter.riskPolicy || 'conservative'}。`,
-    '你只能在這個任務邊界內修補 OCR 與欄位，不要把任務重新發散成其他產品；若圖片訊號與 taskType 衝突，請用 manual_review 與 note 標記，不要自行改任務。',
+    '你只能在這個任務邊界內修補 evidence 欄位，不要把任務重新發散成其他產品；若圖片訊號與 taskType 衝突，請用 manual_review 與 note 標記，不要自行改任務。',
     '本次只會有一張圖片。每個項目的 sourceImageIndex 一律輸出 1。',
     '請先判斷整張圖片是一般消費項目、飲料單或混合清單，menuType 只能輸出 general、drink 或 mixed。',
     '解析流程必須分四步思考但只輸出 JSON：第一步辨識版面區塊與表格欄位；第二步抽取可選擇、可分攤或可列入費用的項目、價格與規格；第三步把自由文字收斂到固定欄位；第四步丟棄電話、地址、營業時間、品牌口號、廣告文案與非費用數字。',
@@ -6092,7 +6095,7 @@ async function parseMenuImages(files, options = {}) {
     if (localFallback && localFallback.items.length >= localOcrMinItems) {
       return localFallback;
     }
-    const error = new Error('這張圖片暫時讀不出足夠項目。請貼上圖片中的文字，或由部署者開啟圖片讀取服務後再試。');
+    const error = new Error('這張圖片暫時讀不出足夠項目。請貼上圖片中的文字，或先用右側 WebMCP/Codex 協作審查補成草稿。');
     error.statusCode = 500;
     throw error;
   }
@@ -6464,7 +6467,7 @@ app.get('/api/rooms/:roomId/menu-image', (req, res) => {
   }
 
   res.setHeader('Content-Type', room.menuImageMimeType);
-  res.setHeader('Cache-Control', 'private, max-age=3600');
+  res.setHeader('Cache-Control', 'no-store');
   res.send(room.menuImageBuffer);
 });
 
@@ -6480,7 +6483,7 @@ app.get('/api/rooms/:roomId/menu-images/:imageIndex', (req, res) => {
   }
 
   res.setHeader('Content-Type', image.mimeType);
-  res.setHeader('Cache-Control', 'private, max-age=3600');
+  res.setHeader('Cache-Control', 'no-store');
   res.send(image.buffer);
 });
 
@@ -6500,7 +6503,7 @@ app.get('/api/rooms/:roomId/items/:itemId/thumb', async (req, res, next) => {
     }
 
     res.setHeader('Content-Type', thumbnail.mimeType);
-    res.setHeader('Cache-Control', 'private, max-age=3600');
+    res.setHeader('Cache-Control', 'no-store');
     res.send(thumbnail.buffer);
   } catch (error) {
     next(error);

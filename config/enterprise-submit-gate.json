@@ -1,5 +1,5 @@
 {
-  "version": "shared-room-enterprise-submit-gate.v1",
+  "version": "acmcp-submit-gate.v1",
   "purpose": "Validate third-party or enterprise MCP templates before they are allowed into industry routing and runtime contracts.",
   "defaultDecision": "deny",
   "stages": [

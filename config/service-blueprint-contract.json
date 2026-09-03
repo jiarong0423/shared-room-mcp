@@ -1,5 +1,5 @@
 {
-  "version": "adaptive-contract-service-blueprint.v1",
+  "version": "acmcp-service-blueprint.v1",
   "externalName": "ServiceBlueprint",
   "internalAlias": "hostTask",
   "boundary": {

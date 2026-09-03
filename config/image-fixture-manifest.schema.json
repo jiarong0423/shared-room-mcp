@@ -14,7 +14,7 @@
   "properties": {
     "version": {
       "type": "string",
-      "const": "adaptive-contract-mcp-image-fixture-oracle.v1"
+      "const": "acmcp-image-fixture-oracle.v1"
     },
     "project": {
       "type": "string",

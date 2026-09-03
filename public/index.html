@@ -29,10 +29,6 @@
       box-sizing: border-box;
     }
 
-    [hidden] {
-      display: none !important;
-    }
-
     body {
       min-height: 100vh;
       margin: 0;
@@ -341,7 +337,11 @@
     }
 
     .upload-zone input {
-      display: none;
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
     }
 
     .upload-stack {
@@ -373,7 +373,6 @@
     }
 
     .preview-image {
-      display: none;
       width: min(100%, 320px);
       max-height: 260px;
       border: 1px solid var(--line);
@@ -383,14 +382,23 @@
     }
 
     .upload-actions {
-      display: none;
+      display: grid;
       grid-template-columns: minmax(130px, 1fr) minmax(130px, 1fr);
       gap: 8px;
       width: min(100%, 320px);
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      pointer-events: none;
+      transform: translateY(-4px);
+      transition: max-height 140ms ease, opacity 140ms ease, transform 140ms ease;
     }
 
     .upload-actions.is-visible {
-      display: grid;
+      max-height: 80px;
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
     }
 
     .sample-button {
@@ -633,7 +641,6 @@
       margin-bottom: 14px;
     }
 
-    .source-menu-card[hidden],
     .preview-image:not([src]),
     #sourceMenuImage:not([src]) {
       display: none !important;
@@ -1634,7 +1641,7 @@
                 <strong data-i18n="priceEvidenceImage">Evidence Photo</strong>
                 <span class="upload-copy" data-i18n="uploadCopy">Choose, drop, or paste one evidence photo for meals, KTV, sports, tickets, rentals, events, group buys, or service drafts.</span>
                 <button class="button" id="selectImageButton" type="button" data-i18n="selectImage">Select Image</button>
-                <img class="preview-image" id="previewImage" alt="Evidence photo preview" data-i18n-alt="evidencePreview">
+                  <img class="preview-image" id="previewImage" alt="Evidence photo preview" data-i18n-alt="evidencePreview" hidden>
                 <span class="task-selector">
                   <label for="taskTypeSelect" data-i18n="taskType">Room Purpose</label>
                   <select id="taskTypeSelect">
@@ -2351,7 +2358,7 @@
         sampleRoomLoadFailed: 'Failed to load sample room',
         sampleRoomNeedsEmpty: 'This room already has data. Create a new room before loading the sample.',
         parseImageFailed: 'Failed to read the evidence photo',
-        parseImageTimeout: 'Image parsing timed out. Paste OCR text or create a manual draft for host review.',
+        parseImageTimeout: 'Evidence parsing timed out. Paste evidence text or create a manual draft for host review.',
         rateLimited: 'Too many requests. Please try again later.',
         retryAfterPrefix: 'Wait',
         retryAfterSeconds: 'seconds and retry.',
@@ -2776,7 +2783,7 @@
       pendingMenuFiles = selectedFiles;
       pendingPreviewUrl = URL.createObjectURL(selectedFiles[0]);
       elements.previewImage.src = pendingPreviewUrl;
-      elements.previewImage.style.display = 'block';
+      elements.previewImage.hidden = false;
       elements.uploadActions.classList.add('is-visible');
       elements.confirmUploadButton.disabled = false;
       elements.cancelUploadButton.disabled = false;
@@ -2791,7 +2798,7 @@
         pendingPreviewUrl = '';
       }
       elements.previewImage.removeAttribute('src');
-      elements.previewImage.style.display = 'none';
+      elements.previewImage.hidden = true;
       elements.uploadActions.classList.remove('is-visible');
       elements.confirmUploadButton.disabled = true;
       elements.cancelUploadButton.disabled = true;

@@ -16,7 +16,7 @@ const sourceFiles = {
 };
 
 const reportDir = path.join(projectRoot, 'docs', 'ai-generated', '2026Q3');
-const reportBaseName = 'shared_room_task_gap_decoupling_audit_20260831';
+const reportBaseName = 'task_gap_audit_2026q3';
 
 function publicPath(filePath) {
   return path.relative(projectRoot, filePath).replaceAll(path.sep, '/');
@@ -36,7 +36,7 @@ const expectedTaskTypes = [
 
 const expectedTaskRouterContractFields = [
   'taskRouterContract',
-  'adaptive-contract-task-router-contract.v1',
+  'acmcp-task-router-contract.v1',
   'contractVersion',
   'supportedTaskTypes',
   'selectedTaskType',
@@ -72,8 +72,8 @@ const expectedFormulaModules = [
 
 const expectedFormulaContractFields = [
   'formulaContract',
-  'adaptive-contract-formula-contract.v1',
-  'adaptive-contract-formula.v1',
+  'acmcp-formula-contract.v1',
+  'acmcp-formula.v1',
   'formulaModuleContracts',
   'deterministicOnly',
   'activeModules',
@@ -93,7 +93,7 @@ const expectedFormulaContractFields = [
 
 const expectedEvidenceContractFields = [
   'evidenceContract',
-  'adaptive-contract-evidence-ocr-contract.v1',
+  'acmcp-evidence-review.v1',
   'evidenceLine',
   'localFirst',
   'localOcr',
@@ -163,9 +163,9 @@ const requiredWebMcpToolNames = [
   'document.modelContext',
   'registerTool',
   'webMcpToolSurface',
-  'adaptive-contract-webmcp-tools.v2',
+  'acmcp-webmcp-tools.v2',
   'trustLayerContract',
-  'adaptive-contract-trust-layer-contract.v1',
+  'acmcp-trust-layer-contract.v1',
   'check_whitelist',
   'enroll_device',
   'revoke_device'
@@ -204,7 +204,7 @@ const expectedTestingFields = [
   'Proposal creation must not change item count',
   'Traditional Chinese and English scenarios',
   '20 rounds per scenario',
-  'AI/OCR upload creates a draft list and keeps member claiming closed',
+  'Evidence parser creates a draft list and keeps member claiming closed',
   'memberClaimBeforeOpenBlocked',
   'hostParsedItemEditAfterOpenBlocked',
   'hostOpenAllowed'
@@ -260,6 +260,16 @@ function makeGap(id, title, layer, priority, status, evidence, nextAction, write
   };
 }
 
+function isReleaseBlockingGap(gap) {
+  return gap.priority === 'P0'
+    && gap.layer !== 'submission'
+    && ['open', 'missing', 'partial'].includes(gap.status);
+}
+
+function isSubmissionBlockingGap(gap) {
+  return gap.layer === 'submission' && ['open', 'missing', 'partial'].includes(gap.status);
+}
+
 function renderTable(rows) {
   const lines = [
     '| importance | area | status | finding | next action |',
@@ -298,10 +308,10 @@ function main() {
   const testingEvidence = hasAll(allSource, expectedTestingFields);
   const hasFormulaSnapshot = contents.server.includes('function buildRoomFormulaSnapshot')
     && contents.server.includes('formulaResults')
-    && contents.server.includes('adaptive-contract-formula.v1');
+    && contents.server.includes('acmcp-formula.v1');
   const hasFormulaContract = [
     'formulaContract',
-    'adaptive-contract-formula-contract.v1',
+    'acmcp-formula-contract.v1',
     'formulaModuleContracts',
     'deterministicOnly',
     'activeModules',
@@ -373,13 +383,13 @@ function main() {
       '維持 formulaContract 為本地 deterministic formula engine 的獨立契約；P1 公式必須以 manual input 接入，不交給 AI。'
     ),
     buildCheck(
-      'evidence-ocr-contract',
-      '價格證據與 OCR 契約',
-      'evidence-ocr',
+      'evidence-review-contract',
+      '價格證據與審查契約',
+      'evidence-review',
       'P0',
       expectedEvidenceContractFields,
       evidenceContractEvidence,
-      '維持 evidenceContract 為價格證據/OCR 的獨立契約；AI 只能 schema repair，OCR 文字與圖片不可送 Google Sheets。'
+      '維持 evidenceContract 為價格證據與審查的獨立契約；AI 只能提出 schema repair 草稿，原始文字與圖片不可送 Google Sheets。'
     ),
     buildCheck(
       'claim-audit-aggregate',
@@ -515,16 +525,16 @@ function main() {
     ),
     makeGap(
       'GAP-P1-002',
-      '價格證據與 OCR contract 狀態',
-      'evidence-ocr',
+      '價格證據與審查 contract 狀態',
+      'evidence-review',
       'P0',
       hasEvidenceContract ? 'ready' : 'open',
       hasEvidenceContract
         ? 'server 已輸出 evidenceContract；local-first、image input、accepted/forbidden evidence sources、qualityGate、aiRepairGate、privacyBoundary 已獨立。'
         : '目前支援貼上本地 OCR 文字與後端 deterministic parser，但尚未有獨立 evidence/OCR contract。',
       hasEvidenceContract
-        ? '後續加強可評估 Web OCR/WASM OCR 或裝置端 companion；不影響六線解耦完成。'
-        : '補 evidenceContract；保持 local-first，AI 只補 schema，OCR 文字與圖片不可送 Sheets。',
+        ? '後續若要強化圖片讀取，可作為 extension adapter 評估；不影響六線解耦完成。'
+        : '補 evidenceContract；保持 local-first，AI 只補 schema，原始文字與圖片不可送 Sheets。',
       'medium'
     ),
     makeGap(
@@ -532,9 +542,9 @@ function main() {
       '任務特定公式輸入不足',
       'formula-controls',
       'P1',
-      'open',
-      '目前前端只有一個門檻欄位，尚未有服務費百分比、時數、押金是否納入、運費分攤、團體折扣、人數門檻。',
-      '依任務模組顯示最少必要公式欄位，不讓 AI 計算金額。',
+      'roadmap',
+      '目前前端只有一個門檻欄位；服務費百分比、時數、押金是否納入、運費分攤、團體折扣、人數門檻屬於後續企業/服務包擴充。',
+      '維持現版規則：AI 不計算複雜公式；含服務費、押金、運費或階梯折扣時進入 ReviewGate 或人工定額輸入。',
       'medium'
     ),
     makeGap(
@@ -606,6 +616,8 @@ function main() {
   fs.writeFileSync(jsonPath, `${JSON.stringify(report, null, 2)}\n`);
 
   const readyChecks = checks.filter((check) => check.status === 'ready').length;
+  const codeReleaseBlockingGaps = gaps.filter(isReleaseBlockingGap);
+  const submissionBlockingGaps = gaps.filter(isSubmissionBlockingGap);
   const markdown = [
     '# Shared Room MCP Task Gap Decoupling Audit',
     '',
@@ -620,8 +632,11 @@ function main() {
     '## Current Readiness',
     '',
     `- Checks ready: ${readyChecks} / ${checks.length}`,
+    `- Code release blocking gaps: ${codeReleaseBlockingGaps.length}`,
+    `- Submission-only blocking gaps: ${submissionBlockingGaps.length}`,
     `- Open gaps: ${gaps.filter((gap) => gap.status === 'open').length}`,
     `- Partial gaps: ${gaps.filter((gap) => gap.status === 'partial').length}`,
+    `- Roadmap gaps: ${gaps.filter((gap) => gap.status === 'roadmap').length}`,
     '',
     '## Gap Matrix',
     '',
@@ -633,7 +648,7 @@ function main() {
     '',
     renderMarkerList('Room type rules', taskRouterContractEvidence),
     '',
-    renderMarkerList('Evidence/OCR rules', evidenceContractEvidence),
+    renderMarkerList('Evidence review rules', evidenceContractEvidence),
     '',
     renderMarkerList('Formula modules', formulaEvidence),
     '',
@@ -655,7 +670,7 @@ function main() {
     '',
     '## Stop Conditions',
     '',
-    '- AI 只可協助整理 OCR/文字欄位，不可計算金額、指定認領者、改房間類型或仲裁爭議。',
+    '- AI 只可協助整理 evidence 欄位與提出草稿，不可計算金額、指定認領者、改房間類型或仲裁爭議。',
     '- 公式、門檻、均分、額外單點自認必須留在本地頁面與伺服器規則內。',
     '- WebMCP 工具維持讀取與草稿；Sheets 白名單是選配信任層，不碰金流。',
     '- 每一批解耦完成後都要重跑 `npm run check` 與 `npm run audit:tasks`。',
@@ -668,8 +683,11 @@ function main() {
     generatedAt,
     checksReady: readyChecks,
     checksTotal: checks.length,
+    codeReleaseBlockingGaps: codeReleaseBlockingGaps.length,
+    submissionBlockingGaps: submissionBlockingGaps.length,
     openGaps: gaps.filter((gap) => gap.status === 'open').length,
     partialGaps: gaps.filter((gap) => gap.status === 'partial').length,
+    roadmapGaps: gaps.filter((gap) => gap.status === 'roadmap').length,
     jsonPath,
     mdPath
   }, null, 2));

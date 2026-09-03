@@ -10,13 +10,15 @@ function parseArgs(argv) {
   const args = {
     matrixRoot: defaultMatrixRoot,
     outputPath: defaultOutputPath,
-    includeEnglishExtension: true
+    includeEnglishExtension: true,
+    matrixRootExplicit: Boolean(process.env.IMAGE_MATRIX_ROOT)
   };
   for (let index = 2; index < argv.length; index += 1) {
     const arg = argv[index];
     const next = argv[index + 1];
     if (arg === '--matrix-root' && next) {
       args.matrixRoot = path.resolve(next);
+      args.matrixRootExplicit = true;
       index += 1;
     } else if (arg === '--out' && next) {
       args.outputPath = path.resolve(next);
@@ -28,6 +30,15 @@ function parseArgs(argv) {
   return args;
 }
 
+async function fileExists(filePath) {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function readJson(filePath) {
   try {
     return JSON.parse(await fs.readFile(filePath, 'utf8'));
@@ -37,6 +48,22 @@ async function readJson(filePath) {
     }
     throw error;
   }
+}
+
+async function validateExistingManifest(outputPath) {
+  const existing = await readJson(outputPath);
+  if (existing.version !== 'acmcp-image-fixture-oracle.v1') {
+    throw new Error(`Existing image fixture manifest has unsupported version: ${existing.version || 'missing'}`);
+  }
+  if (!Array.isArray(existing.tests) || existing.tests.length === 0) {
+    throw new Error('Existing image fixture manifest has no tests.');
+  }
+  for (const test of existing.tests) {
+    if (!test.id || !test.scenarioId || !test.language || !test.contractId || !test.image?.sha256 || !test.oracle) {
+      throw new Error(`Existing image fixture manifest has an incomplete test entry: ${test.id || 'unknown'}`);
+    }
+  }
+  return existing;
 }
 
 async function sha256File(filePath) {
@@ -186,14 +213,29 @@ async function main() {
     const id = `S${String(index + 1).padStart(2, '0')}`;
     return [id, scenario];
   }));
-  const baseManifest = await readJson(path.join(args.matrixRoot, 'manifests', 'image_fixture_queue.json'));
+  const baseManifestPath = path.join(args.matrixRoot, 'manifests', 'image_fixture_queue.json');
+  if (!await fileExists(baseManifestPath)) {
+    if (args.matrixRootExplicit || !await fileExists(args.outputPath)) {
+      throw new Error(`Missing image matrix artifact file: ${baseManifestPath}. Provide --matrix-root or IMAGE_MATRIX_ROOT pointing to the downloaded image-matrix artifact.`);
+    }
+    const existing = await validateExistingManifest(args.outputPath);
+    console.log(JSON.stringify({
+      ok: true,
+      skippedRebuild: true,
+      reason: 'image matrix artifact is external; existing manifest was validated',
+      outputPath: args.outputPath,
+      testCount: existing.tests.length
+    }, null, 2));
+    return;
+  }
+  const baseManifest = await readJson(baseManifestPath);
   const tests = await buildBaseTests(args.matrixRoot, baseManifest, sourceByScenario);
   if (args.includeEnglishExtension) {
     const englishManifest = await readJson(path.join(args.matrixRoot, 'english-extension', 'manifests', 'english_fixture_queue.json'));
     tests.push(...await buildEnglishTests(args.matrixRoot, englishManifest, sourceByScenario));
   }
   const manifest = {
-    version: 'adaptive-contract-mcp-image-fixture-oracle.v1',
+    version: 'acmcp-image-fixture-oracle.v1',
     project: 'Adaptive Contract MCP',
     generatedAt: new Date().toISOString(),
     artifactPolicy: {

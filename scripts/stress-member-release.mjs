@@ -4,10 +4,13 @@ import process from 'node:process';
 
 const defaultBaseUrl = 'http://127.0.0.1:3000';
 const defaultOutputDir = 'logs/runtime';
-const onePixelPng = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lH9X3wAAAABJRU5ErkJggg==',
-  'base64'
-);
+const onePixelPng = Buffer.from([
+  137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82,
+  0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 0, 0, 0, 31, 21, 196, 137,
+  0, 0, 0, 13, 73, 68, 65, 84, 120, 218, 99, 252, 207, 192, 80,
+  15, 0, 5, 131, 2, 127, 148, 127, 87, 220, 0, 0, 0, 0, 73, 69,
+  78, 68, 174, 66, 96, 130
+]);
 
 const scenarios = [
   {
@@ -291,11 +294,25 @@ async function connectSocket(baseUrl, timeoutMs) {
 }
 
 async function emitWithAck(baseUrl, connection, eventName, payload, timeoutMs) {
-  const ackId = connection.ackId;
-  connection.ackId += 1;
-  const packet = `42${ackId}${JSON.stringify([eventName, payload])}`;
-  await socketIoPostPacket(baseUrl, connection.sid, packet, timeoutMs);
-  return pollSocketIoForAck(baseUrl, connection.sid, ackId, timeoutMs);
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const ackId = connection.ackId;
+    connection.ackId += 1;
+    const packet = `42${ackId}${JSON.stringify([eventName, payload])}`;
+    try {
+      await socketIoPostPacket(baseUrl, connection.sid, packet, timeoutMs);
+      return await pollSocketIoForAck(baseUrl, connection.sid, ackId, timeoutMs);
+    } catch (error) {
+      const message = String(error?.message || error);
+      if (attempt === 0 && message.includes('Session ID unknown')) {
+        const fresh = await connectSocket(baseUrl, timeoutMs);
+        connection.sid = fresh.sid;
+        connection.ackId = fresh.ackId;
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw new Error(`socket.io emit failed for ${eventName}`);
 }
 
 async function createRoom(baseUrl, args) {
@@ -319,7 +336,7 @@ async function uploadPriceText(baseUrl, roomId, scenario, args) {
   }, args, 'upload price text');
   assertCondition(response.ok, `upload failed: HTTP ${response.status} ${response.data?.error || ''}`);
   assertCondition(response.data?.menuLoaded === true, 'upload response did not mark menuLoaded=true');
-  assertCondition(response.data?.itemsOpenForMembers === false, 'items should stay closed after AI/OCR draft creation');
+  assertCondition(response.data?.itemsOpenForMembers === false, 'items should stay closed after evidence draft creation');
   assertCondition(Array.isArray(response.data?.items), 'upload response missing items array');
   assertCondition(response.data.items.length >= 3, `expected at least 3 items, got ${response.data.items.length}`);
   assertCondition(response.data?.taskRouter?.taskType === scenario.taskType, `task type drifted: expected ${scenario.taskType}, got ${response.data?.taskRouter?.taskType}`);
@@ -618,7 +635,7 @@ function renderMarkdown(args, summary, results, plannedTotal) {
   }
 
   lines.push('', '## Checked Boundaries', '');
-  lines.push('- AI/OCR upload creates a draft list and keeps member claiming closed.');
+  lines.push('- Evidence parser creates a draft list and keeps member claiming closed.');
   lines.push('- Agent proposal stays `pending_host_confirmation` and does not open or mutate final state.');
   lines.push('- The host cannot release the list while parser candidates or rule candidates still require review.');
   lines.push('- The script accepts the pending review proposal before Member-Visibility Release so the positive flow follows the HITL recording path.');

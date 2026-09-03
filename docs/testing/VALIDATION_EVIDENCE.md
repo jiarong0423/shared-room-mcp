@@ -1,6 +1,6 @@
 # How We Checked It
 
-Evidence date: 2026-09-02
+Evidence date: 2026-09-03
 
 This file summarizes checks that were actually run before submission. The goal is simple: show that the demo flow was repeated, not only recorded once.
 
@@ -27,12 +27,13 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 | Same-card review flow | 20/20 passed | summarized local run | host review stays before member claiming; member and settlement boundaries still pass after the draft-card cleanup |
 | Final Member-Visibility Release and export recheck | 20/20 passed | summarized local run | the official flow also checks completed-room HTML and PDF exports after host settlement |
 | Pre-push HITL Member-Visibility Release repair recheck | 20/20 passed | isolated local run | the stress flow accepts the pending review proposal before release; anti-pollution pending candidates/rules still block direct release |
+| Final pre-push HITL Member-Visibility Release harness recheck | 80/80 passed | local run against `http://127.0.0.1:4181` on 2026-09-03 | Socket.IO polling reconnects after session expiry; host review, member release, member confirmation, owner finalization, HTML export, and PDF export all passed |
 | Final superseded-host release and export recheck | 4/4 passed | historical run against a retired Zeabur URL | live service passed the same host-review, member-confirmation, settlement, HTML export, and PDF export flow |
 | Historical retired-host production low-rate flow | 5/5 passed | summarized historical evidence in `docs/security/SECURITY_SCAN_EVIDENCE.md` | superseded historical evidence only; the retired host was removed before recording and the live demo now runs on Zeabur |
-| Current Zeabur production pre-recording flow | Superseded by local fixes | live browser/API check on 2026-09-02 against `https://shared-room-mcp-next.zeabur.app/` | historical hosted evidence only; after the next successful Zeabur deployment, recheck `/healthz`, WebMCP inspect, finalized room HTML/PDF downloads, and browser console output |
+| Superseded Zeabur production pre-recording flow | Superseded historical evidence | live browser/API check on 2026-09-02 against `https://shared-room-mcp-next.zeabur.app/` | historical hosted evidence only; use a fresh `/healthz`, WebMCP inspect, finalized room HTML/PDF download, and browser console check after deployment |
 | Same-tab room transition | 2/2 local and 2/2 production passed | summarized historical evidence in `docs/security/SECURITY_SCAN_EVIDENCE.md` | a loaded room can switch to a clean empty room, and a late update from the old room cannot overwrite the new room |
 | Final bilingual export repair | 4/4 local flows passed | isolated local run on 2026-09-02, summarized in the development log | Chinese and English flows finalized, HTML/PDF exports passed, and PDFs include separate readable Latin and CJK fonts |
-| Deterministic image-oracle integration benchmark | 115/115 passed | isolated local image-matrix run, summarized in security evidence | external PNG artifacts were verified by SHA-256 and matched scenario/language/contract/member-visible oracle expectations in `image-plus-oracle-text` mode; this is not a raw OCR accuracy benchmark |
+| Deterministic image-oracle integration benchmark | 115/115 passed | isolated local image-matrix run, summarized in security evidence | external PNG artifacts were verified by SHA-256 and matched scenario/language/contract/member-visible oracle expectations in `image-plus-oracle-text` mode; this is not a provider accuracy benchmark |
 
 ## What This Means
 
@@ -48,6 +49,7 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 - The default JSON save layer is suitable for a single demo service and short write bursts, not production-scale traffic.
 - The recording runbook now fixes the human/agent handoff: WebMCP and the assistant handle room-state reading, draft preparation, and routine setup, while the human performs the same-card two-click review, personal confirmation, owner finalization, and final downloads.
 - The image fixture runner now keeps large generated PNGs outside the main repository while preserving a checksum-backed oracle and quarantine output path.
+- The image fixture manifest build no longer blocks Zeabur deployment when the external PNG artifact is absent; it validates the checked-in 115-test manifest and only rebuilds when `IMAGE_MATRIX_ROOT` or `--matrix-root` is supplied.
 
 ## What This Does Not Claim
 
@@ -56,4 +58,4 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 - This is not a payment, booking, banking, or vendor-ordering system.
 - Exported records are local review summaries. They do not submit forms or change external systems.
 - Production deployments should add real authentication and replace the JSON save layer with Redis or PostgreSQL.
-- The 115/115 image fixture oracle result is not a Zeabur image-only OCR benchmark. It proves artifact integrity and oracle wiring; production OCR/provider quality still needs a separate low-rate `image-only` run.
+- The 115/115 image fixture oracle result is not a hosted image-recognition benchmark. It proves artifact integrity, contract routing, oracle wiring, and HITL state behavior. The core demo path is WebMCP plus Codex/LLM side-panel review plus human approval, without requiring provider keys.
