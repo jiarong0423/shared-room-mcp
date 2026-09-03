@@ -3528,23 +3528,23 @@
         [/evidence_review/gi, '照片內容核對'],
         [/task_router_review/gi, '用途核對'],
         [/mock-local-vision/gi, '本機看圖測試'],
-        [/AI review score/gi, '讀取把握度'],
-        [/scenario contract/gi, '適用情境'],
-        [/schema alignment/gi, '內容完整度'],
-        [/entity anchoring/gi, '項目可對照'],
-        [/contract fit/gi, '用途吻合'],
-        [/issue penalty/gi, '需修正比例'],
-        [/blocking reasons/gi, '需要先處理'],
-        [/parser candidate\(s\)/gi, '待核對項目'],
-        [/parser candidate/gi, '待核對項目'],
-        [/rule\/audit candidate\(s\)/gi, '待核對規則'],
-        [/rule\/audit candidate/gi, '待核對規則'],
-        [/structural review gates/gi, '開放前檢查'],
-        [/review gates/gi, '核對原因'],
+        [/AI\s+review\s+score/gi, '讀取把握度'],
+        [/scenario\s+contract/gi, '適用情境'],
+        [/schema\s+alignment/gi, '內容完整度'],
+        [/entity\s+anchoring/gi, '項目可對照'],
+        [/contract\s+fit/gi, '用途吻合'],
+        [/issue\s+penalty/gi, '需修正比例'],
+        [/blocking\s+reasons/gi, '需要先處理'],
+        [/parser\s+candidate\(s\)/gi, '待核對項目'],
+        [/parser\s+candidate/gi, '待核對項目'],
+        [/rule\/audit\s+candidate\(s\)/gi, '待核對規則'],
+        [/rule\/audit\s+candidate/gi, '待核對規則'],
+        [/structural\s+review\s+gates/gi, '開放前檢查'],
+        [/review\s+gates/gi, '核對原因'],
         [/rule-like item\(s\)/gi, '費用或規則'],
         [/selectable item\(s\)/gi, '可選項目'],
         [/member item\(s\)/gi, '成員可選項目'],
-        [/candidate routing/gi, '開放前檢查']
+        [/candidate\s+routing/gi, '開放前檢查']
       ],
       en: [
         [/local_ocr_plus_local_vision/gi, 'photo text plus visual check'],
@@ -3555,23 +3555,23 @@
         [/evidence_review/gi, 'photo review'],
         [/task_router_review/gi, 'room purpose check'],
         [/mock-local-vision/gi, 'local visual check'],
-        [/AI review score/gi, 'Reading confidence'],
-        [/scenario contract/gi, 'Room type'],
-        [/schema alignment/gi, 'Content complete'],
-        [/entity anchoring/gi, 'Item match'],
-        [/contract fit/gi, 'Purpose match'],
-        [/issue penalty/gi, 'Needs correction'],
-        [/blocking reasons/gi, 'Needs attention'],
-        [/parser candidate\(s\)/gi, 'items to check'],
-        [/parser candidate/gi, 'item to check'],
-        [/rule\/audit candidate\(s\)/gi, 'rules to check'],
-        [/rule\/audit candidate/gi, 'rule to check'],
-        [/structural review gates/gi, 'opening checks'],
-        [/review gates/gi, 'review reasons'],
+        [/AI\s+review\s+score/gi, 'Reading confidence'],
+        [/scenario\s+contract/gi, 'Room type'],
+        [/schema\s+alignment/gi, 'Content complete'],
+        [/entity\s+anchoring/gi, 'Item match'],
+        [/contract\s+fit/gi, 'Purpose match'],
+        [/issue\s+penalty/gi, 'Needs correction'],
+        [/blocking\s+reasons/gi, 'Needs attention'],
+        [/parser\s+candidate\(s\)/gi, 'items to check'],
+        [/parser\s+candidate/gi, 'item to check'],
+        [/rule\/audit\s+candidate\(s\)/gi, 'rules to check'],
+        [/rule\/audit\s+candidate/gi, 'rule to check'],
+        [/structural\s+review\s+gates/gi, 'opening checks'],
+        [/review\s+gates/gi, 'review reasons'],
         [/rule-like item\(s\)/gi, 'fee or rule item(s)'],
         [/selectable item\(s\)/gi, 'member choice(s)'],
         [/member item\(s\)/gi, 'member item(s)'],
-        [/candidate routing/gi, 'opening check']
+        [/candidate\s+routing/gi, 'opening check']
       ]
     };
 
@@ -3591,24 +3591,24 @@
       }
 
       text = text
-        .replace(/Source mode:\s*[^.]+\.?\s*/gi, '')
-        .replace(/Local OCR chars:\s*\d+\.?\s*/gi, '')
-        .replace(/Local vision model:\s*[^.]+\.?\s*/gi, zh ? '已用本機看圖輔助。 ' : 'A local visual check was used. ')
-        .replace(/Local vision correction was unavailable or produced no structured items\.?/gi, zh ? '看圖核對還沒有產生可用清單。' : 'The photo check did not return usable rows.')
-        .replace(/Local OCR draft prepared, but local vision did not produce structured items\.?/gi, zh ? '已讀到照片文字，但看圖核對還沒有產生可用清單。' : 'Photo text was read, but the visual check did not return usable rows.')
-        .replace(/Local review draft prepared\s+(\d+)\s+item\(s\):/gi, (_match, count) => zh ? `照片讀取草稿已準備 ${count} 個項目：` : `Photo review draft prepared ${count} item(s):`)
+        .replace(/Source\s+mode:\s*[^.]+\.?\s*/gi, '')
+        .replace(/Local\s+OCR\s+chars:\s*\d+\.?\s*/gi, '')
+        .replace(/Local\s+vision\s+model:\s*[^.]+\.?\s*/gi, zh ? '已用本機看圖輔助。 ' : 'A local visual check was used. ')
+        .replace(/Local\s+vision\s+correction\s+was\s+unavailable\s+or\s+produced\s+no\s+structured\s+items\.?/gi, zh ? '看圖核對還沒有產生可用清單。' : 'The photo check did not return usable rows.')
+        .replace(/Local\s+OCR\s+draft\s+prepared,\s+but\s+local\s+vision\s+did\s+not\s+produce\s+structured\s+items\.?/gi, zh ? '已讀到照片文字，但看圖核對還沒有產生可用清單。' : 'Photo text was read, but the visual check did not return usable rows.')
+        .replace(/Local\s+review\s+draft\s+prepared\s+(\d+)\s+item\(s\):/gi, (_match, count) => zh ? `照片讀取草稿已準備 ${count} 個項目：` : `Photo review draft prepared ${count} item(s):`)
         .replace(/Host must compare the original image before approving\.?/gi, zh ? '主揪採納前要對照原圖。' : 'The host should compare the draft with the original image before approving.')
-        .replace(/(\d+)\s+parser candidate\(s\) still need host review\.?/gi, (_match, count) => zh ? `${count} 個讀到的項目需要主揪核對。` : `${count} read item(s) need host review.`)
+        .replace(/(\d+)\s+parser\s+candidate\(s\)\s+still\s+need\s+host\s+review\.?/gi, (_match, count) => zh ? `${count} 個讀到的項目需要主揪核對。` : `${count} read item(s) need host review.`)
         .replace(/(\d+)\s+read item\(s\) need host review before members can use the list\.?/gi, (_match, count) => zh ? `${count} 個讀到的項目需要主揪核對後才能開放。` : `${count} read item(s) need host review before members can use the list.`)
-        .replace(/(\d+)\s+rule\/audit candidate\(s\) need host decision\.?/gi, (_match, count) => zh ? `${count} 個費用或總額規則需要主揪判斷。` : `${count} fee or total note(s) need host review.`)
+        .replace(/(\d+)\s+rule\/audit\s+candidate\(s\)\s+need\s+host\s+decision\.?/gi, (_match, count) => zh ? `${count} 個費用或總額規則需要主揪判斷。` : `${count} fee or total note(s) need host review.`)
         .replace(/(\d+)\s+fee, total, discount, or threshold note\(s\) need host decision\.?/gi, (_match, count) => zh ? `${count} 個費用、總額、折扣或門檻需要主揪判斷。` : `${count} fee, total, discount, or threshold note(s) need host review.`)
         .replace(/(\d+)\s+rule-like item\(s\) are still member selectable\.?/gi, (_match, count) => zh ? `${count} 個費用或規則還在成員可選清單中。` : `${count} fee or rule item(s) are still showing as member choices.`)
         .replace(/(\d+)\s+fee or rule item\(s\) are still showing as member choices\.?/gi, (_match, count) => zh ? `${count} 個費用或規則還在成員可選清單中。` : `${count} fee or rule item(s) are still showing as member choices.`)
         .replace(/(\d+)\s+selectable item\(s\) lack evidence pointers\.?/gi, (_match, count) => zh ? `${count} 個可選項目還缺少照片線索。` : `${count} member choice(s) still need a visible evidence clue.`)
         .replace(/(\d+)\s+member choice\(s\) still need a visible evidence clue\.?/gi, (_match, count) => zh ? `${count} 個可選項目還缺少照片線索。` : `${count} member choice(s) still need a visible evidence clue.`)
-        .replace(/(\d+)\s+member item\(s\) still carry blocking review gates\.?/gi, (_match, count) => zh ? `${count} 個成員項目需要先修正或移除。` : `${count} member item(s) need edit or removal before opening.`)
+        .replace(/(\d+)\s+member\s+item\(s\)\s+still\s+carry\s+blocking\s+review\s+gates\.?/gi, (_match, count) => zh ? `${count} 個成員項目需要先修正或移除。` : `${count} member item(s) need edit or removal before opening.`)
         .replace(/(\d+)\s+member item\(s\) need edit or removal before opening\.?/gi, (_match, count) => zh ? `${count} 個成員項目需要先修正或移除。` : `${count} member item(s) need edit or removal before opening.`)
-        .replace(/(.+?) has structural review gates that require edit\/remove before accept\.?/gi, (_match, label) => zh ? `${label} 需要先修正或移除。` : `${label} needs edit or removal before approval.`);
+        .replace(/(.+?)\s+has\s+structural\s+review\s+gates\s+that\s+require\s+edit\/remove\s+before\s+accept\.?/gi, (_match, label) => zh ? `${label} 需要先修正或移除。` : `${label} needs edit or removal before approval.`);
 
       for (const [pattern, replacement] of visibleTermMap[currentLanguage] || visibleTermMap.en) {
         text = text.replace(pattern, replacement);
