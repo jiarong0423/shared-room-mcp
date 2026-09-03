@@ -36,8 +36,9 @@ sequenceDiagram
   Host->>Page: Finalize reviewed summary
   Page->>Host: Export HTML or PDF evidence record
 
-  Note over WebMCP,Review: WebMCP reads state and creates drafts; it does not click final commitments.
-  Note over Guardrail,Review: Structural gates such as phone, date, address, tax id, time, and unresolved formula require edit or removal.
+  Note over WebMCP: WebMCP reads state and creates drafts.
+  Note over Review: Final commitments require human clicks.
+  Note over Guardrail: Structural gates require edit or removal.
 ```
 
 ## Contract Pipeline
