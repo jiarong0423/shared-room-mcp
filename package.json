@@ -1,7 +1,7 @@
 {
   "name": "shared-room-mcp",
   "version": "1.0.0",
-  "description": "Shared Room MCP reference app powered by Adaptive Contract MCP: WebMCP reads state, AI prepares drafts, humans approve commitments.",
+  "description": "Shared Room MCP turns menu or service evidence into private customer rooms where AI prepares drafts and merchants approve commitments.",
   "license": "MIT",
   "type": "module",
   "main": "server.js",
@@ -17,6 +17,7 @@
     "stress:image-matrix": "node scripts/stress-image-matrix.mjs",
     "stress:menu": "node scripts/stress-menu-parser.mjs",
     "stress:contracts": "node scripts/stress-local-contracts.mjs",
+    "stress:customer-publishing": "node scripts/stress-member-release.mjs",
     "stress:member-release": "node scripts/stress-member-release.mjs",
     "demo:codex-ocr-llm": "node scripts/prepare-codex-ocr-llm-demo.mjs"
   },

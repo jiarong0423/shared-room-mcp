@@ -2,29 +2,35 @@
 
 Powered by Adaptive Contract MCP.
 
-Shared Room MCP is the reference application for Adaptive Contract MCP, an open-source trust boundary layer for form-based async state rooms on the agent-native web. It is not a chatroom, messaging app, payment gateway, or auto-booking agent. A host creates a single-direction private task from evidence, the assistant prepares structured review drafts, and invited members only act on their own assigned or selected part.
+Practical commercial MCP workflow: a merchant uploads an electronic menu, customers enter a private booth link and order on their own devices, AI prepares the room state, and the merchant downloads the reviewed order details.
+
+Shared Room MCP is the reference application for Adaptive Contract MCP, an open-source trust boundary layer for menu and service intake on the agent-native web. It is not a chatroom, messaging app, payment gateway, or auto-booking agent. In the demo script, a merchant uploads an electronic menu, opens a private booth link, customers enter the booth on their own devices, choose items, and the merchant reviews the merged order details before downloading the summary. Payments and formal external orders stay outside this project.
 
 Live demo: https://shared-room-mcp-next.zeabur.app/
 
 The app is English-first for judging and demo review. A Chinese UI dictionary remains available for local use, but the default page language, initial HTML, README, and submission packet are English.
 
-Core claim: AI prepares the evidence review. Humans approve the commitment. The assistant can read the room, spot missing details, and prepare structured drafts. The host controls publication to members, and each member confirms only their own task/cost state.
+Core claim: AI prepares the evidence review. Humans approve the commitment. The assistant can read the current private room, spot missing details, and prepare structured drafts. The merchant controls publication to customers, and each customer confirms only their own selection state.
 
-Language boundary: WebMCP tool names, schemas, descriptions, and JSON keys stay in English so the browser/sidebar agent receives a stable tool contract. User-provided evidence keeps its original language, so a Chinese group-buy post can still produce Chinese item names in the room.
+Privacy boundary: every booth room is independent. The shared link, uploaded menu evidence, draft list, customer selections, merged totals, review decisions, and export summary belong to that one room. WebMCP tools read the current room state only; they do not browse unrelated rooms, payment accounts, vendor sessions, or external ordering systems.
 
-In the browser sidebar, the assistant uses WebMCP tools from the page itself. Here WebMCP means a page-local state reader and draft generator, not a browser agent that clicks or submits final actions for the user. It inspects the private room state and places draft suggestions on the page for human review.
+Language boundary: the visible UI, review messages, and export labels are locked to the selected page language. Menu item names, shop text, and customer-entered names keep their source language. WebMCP tool names, schemas, descriptions, and JSON keys stay in English so the browser/sidebar agent receives a stable tool contract.
 
-The intended loop is WebMCP plus Codex as a private task-review layer. Codex can inspect the room, compare the price evidence against the current list, and create a field-fix draft when a price list is read incorrectly, for example when quantity, subtotal, size, or add-on notes are confused with item prices. That draft waits for host review before the member-facing task list changes.
+In the browser sidebar, the assistant uses WebMCP tools from the page itself. Here WebMCP means a page-local state reader and draft generator, not a browser agent that clicks or submits final actions for the user. It inspects the private intake room state and places draft suggestions on the page for merchant review.
 
-The review layer uses Semantic Visual Anchors: each extracted field keeps its evidence snippet, logical image zone, detected type hint, and review-gate reason so the host can compare the candidate against the source context. Pixel-level crop and bounding-box overlays are reserved in the schema as a roadmap extension; they are not required for the current deterministic integration benchmark.
+WebMCP is not the multi-user sync layer. The ordinary web runtime keeps customer selections and totals in sync. WebMCP exposes the current room as scoped resources and tools so an assistant can review that one room without crossing into other rooms or external systems.
+
+The intended loop is WebMCP plus Codex as a private task-review layer. Codex can inspect the room, compare the price evidence against the current list, and create a field-fix draft when a price list is read incorrectly, for example when quantity, subtotal, size, or add-on notes are confused with item prices. That draft waits for merchant review before the customer-facing list changes.
+
+The review layer uses Semantic Visual Anchors: each extracted field keeps its evidence snippet, logical image zone, detected type hint, and review reason so the merchant can compare the candidate against the source context. Pixel-level crop and bounding-box overlays are reserved in the schema as a roadmap extension; they are not required for the current deterministic integration benchmark.
 
 Semantic Visual Anchor Notice: this system currently implements semantic visual anchoring with hierarchical logical zones (`boundingZone`) paired with contextual snippets (`auditAnchor`). Pixel-level spatial boxes (`bbox`) and crop overlays are reserved protocol fields for a future visual review overlay.
 
 ## Why This Fits WebMCP
 
-Many real-world commitments now start from messy evidence: creator posts, price images, service forms, booking pages, campaign notes, receipts, copied text, or screenshots. These flows rarely have stable APIs or clean data. The host often has only a screenshot, a public post, or a partial form.
+Many real-world commitments now start from messy evidence: menu photos, drink boards, takeout lists, service forms, maintenance checklists, booking pages, campaign notes, receipts, copied text, or screenshots. These flows rarely have stable APIs or clean data. The merchant often has only a screenshot, a public post, or a partial form.
 
-WebMCP is a good fit because the assistant can enter the same private task room as the host, read the current state through page tools, find missing confirmations, and prepare the next review action from structured room state.
+WebMCP is a good fit because the assistant can enter the same private intake room as the merchant, read only that room through page tools, find missing confirmations, and prepare the next review action from structured room state.
 
 ## How We Checked It
 
@@ -39,11 +45,11 @@ The full check summary is in [`docs/testing/VALIDATION_EVIDENCE.md`](docs/testin
 
 | check | current claim | verification method |
 |---|---|---|
-| Zeabur post-deploy health | PASS on 2026-09-04 | live `/healthz` returned `providerOrder=["local_vision","gemini","openai"]`, `localVisionConfigured=false`, `allowRemoteVisionFallback=false`, and `/data/rooms.json` persistence |
-| Zeabur room/member/export smoke | 4/4 passed | `npm run stress:member-release -- --base-url https://shared-room-mcp-next.zeabur.app --rounds 1 --fail-fast` against generated test rooms |
-| Local guided OCR+LLM proposal apply smoke | PASS on 2026-09-04 | `npm run demo:codex-ocr-llm -- --base-url http://127.0.0.1:3215 --accept-for-test`; OCR found 7 draft rows, Codex-guided visual review prepared 18 rows, accepted draft applied 18 rows, and member release stayed closed |
-| Local contract regression | 20/20 current fast run; older 60/60 and 400/400 runs retained as regression evidence | `npm run stress:contracts` with test-only local rate limits; raw runtime logs stay ignored and are summarized in validation evidence |
-| Local HITL Member-Visibility Release regression | 4/4 current fast run; older 12/12 and 80/80 runs retained as regression evidence | `npm run stress:member-release`; verifies draft gate, host release, member confirmation, owner finalization, HTML export, and PDF export |
+| Zeabur post-deploy health | Pending recheck after this commit deploys | live `/healthz` must return `providerOrder=["local_vision","gemini","openai"]`, `localVisionConfigured=false`, `allowRemoteVisionFallback=false`, and `/data/rooms.json` persistence |
+| Zeabur room/customer/export smoke | Pending recheck after this commit deploys | `npm run stress:customer-publishing -- --base-url https://shared-room-mcp-next.zeabur.app --rounds 1 --fail-fast` against generated test rooms |
+| Local guided OCR+LLM proposal apply smoke | PASS on 2026-09-04 | `npm run demo:codex-ocr-llm -- --base-url http://127.0.0.1:3224 --accept-for-test`; OCR found 7 draft rows, Codex-guided visual review prepared 18 rows, accepted draft applied 18 rows, and customer publishing stayed closed |
+| Local contract regression | 40/40 current fast run; older 60/60 and 400/400 runs retained as regression evidence | `npm run stress:contracts` with test-only local rate limits; raw runtime logs stay ignored and are summarized in validation evidence |
+| Local HITL Customer Publishing regression | 8/8 current fast run; older 12/12 and 80/80 runs retained as regression evidence | `npm run stress:customer-publishing`; verifies draft gate, merchant publishing, customer confirmation, merchant finalization, language-locked HTML export, and PDF export |
 | Deterministic image oracle integration | Previous 115/115 artifact-backed run | `npm run stress:image-matrix -- --mode image-plus-oracle-text` requires the external `IMAGE_MATRIX_ROOT` PNG artifact; checksum-backed contract test, not OCR/provider accuracy |
 | Security and release boundary | PASS | local `release-boundary-safety-gate`, `ai-security-rules rules-check`, and `npm audit` checks reported no blocking findings |
 
@@ -51,7 +57,7 @@ These checks show that the assistant workflow is repeatable and no-key by defaul
 
 ## Core Product Boundary
 
-This is a single-direction task room. The host provides evidence and performs the Member-Visibility Release after review; members select or confirm only their own part; final commitment stays behind the host/member review gates.
+This is a single-direction intake room. The merchant provides evidence and publishes the reviewed list after approval; customers select or confirm only their own part; final commitment stays behind merchant/customer review gates.
 
 `Shared Room MCP` is the demo application and repository slug. `Adaptive Contract MCP` is the underlying contract, routing, prompt, guardrail, and HITL state-machine layer. The architecture name is used where the project discusses reusable scenario contracts, image-fixture oracles, enterprise submission gates, and anti-pollution review controls.
 
@@ -61,21 +67,21 @@ Core loop: OCR plus LLM visual review produces a structured draft; WebMCP/Codex 
 
 中文口徑：圖片 -> OCR -> Codex/Gemini/本地模型看圖校正 -> 結構化草稿 -> 人工審核 -> 通過。
 
-Threshold conditions such as "minimum 12 people" are advisory context. The assistant can flag the gap between the evidence and the current room, but it cannot promise that a group has formed, that a booking is valid, that payment is complete, or that settlement is final. The host can review, override, edit, and proceed; that human action is the commitment.
+Threshold conditions such as "minimum 12 people" are review notes. The assistant can flag the gap between the evidence and the current room, but it cannot promise that a group has formed, that a booking is valid, that payment is complete, or that the final summary is complete. The merchant can review, override, edit, and proceed; that human action is the commitment.
 
 AI provider adapters are extension-only:
 
 - Pasted text and local rule-based parsing seed draft evidence only; they are not a completed image review by themselves.
-- For the hosted Zeabur demo, local OCR and LLM visual review should run from an authorized local bridge, then write a draft-only WebMCP proposal back to the cloud room for host review.
+- For the hosted Zeabur demo, local OCR and LLM visual review should run from an authorized local bridge, then write a draft-only WebMCP proposal back to the cloud room for merchant review.
 - The core WebMCP workflow must work without any paid API key.
 - Codex and the browser sidebar provide the intended LLM collaboration layer: visual review, evidence comparison, field-fix suggestions, and state guidance.
 - WebMCP is the primary agent integration; external model APIs are not required for the agent workflow.
 - Server-side Gemini/OpenAI adapters exist only as replaceable examples for deployment owners who explicitly choose external image-reading or schema repair outside the core demo path.
-- Zeabur is not the OCR engine. In the hosted demo, Zeabur is the state storage, MCP protocol host, HITL approval gate, guardrail runtime, member release surface, and export surface. It receives uploaded evidence metadata and host-reviewed draft proposals, then runs the room state machine, guardrails, member release, and exports.
+- Zeabur is not the OCR engine. In the hosted demo, Zeabur is the state storage, MCP protocol host, HITL approval gate, guardrail runtime, customer publishing surface, and export surface. It receives uploaded evidence metadata and merchant-reviewed draft proposals, then runs the room state machine, guardrails, customer publishing, and exports.
 
 ## System Boundary Standard
 
-This project is an AI-assisted collaboration room, not an autonomous agent. Evidence ingestion and text extraction can happen through copied text, browser-side helpers, local OCR, or optional deployment-owner adapters. Those sources only seed draft rows. WebMCP and Codex review the current room state and evidence, then prepare draft suggestions. Human clicks are required for parsed-item approval, Member-Visibility Release, member cost confirmation, overrides, and final summary export.
+This project is an AI-assisted commercial intake room, not an autonomous agent. Evidence ingestion and text extraction can happen through copied text, browser-side helpers, local OCR, or optional deployment-owner adapters. Those sources only seed draft rows. WebMCP and Codex review the current room state and evidence, then prepare draft suggestions. Human clicks are required for parsed-item approval, customer publishing, customer confirmation, overrides, and final summary export.
 
 Zeabur hosts the room state and approval workflow. Zero required ML/OCR workload is processed on the Zeabur server in the default WebMCP Challenge path.
 
@@ -85,28 +91,28 @@ This repository is intended to be a clean, forkable WebMCP starter project. It d
 
 Deployment owners can keep the default no-key flow, remove the extension adapter code, or replace it with their own local OCR, browser-side OCR, vision, commerce, spreadsheet, or private-community integrations. The stable part is the shared room workflow and the WebMCP tools, not any paid API.
 
-External developers should be able to fork the template and plug in their own integrations without asking for access to a central service. High-risk commitments stay behind explicit host/member confirmation.
+External developers should be able to fork the template and plug in their own integrations without asking for access to a central service. High-risk commitments stay behind explicit merchant/customer confirmation.
 
 Reviewed rooms can export a local HTML or PDF review record as evidence of the private room decision state.
 
 ## Future Extension Modules
 
-The group cost room is the first reference use case, not the product boundary. The project is best for workflows where the assistant can prepare a draft and people still need to review it before an irreversible action.
+The menu and service intake room is the first reference use case, not the product boundary. The project is best for workflows where the assistant can prepare a draft and people still need to review it before an irreversible action.
 
 Core extension examples:
 
 - Activity signup draft: collect attendee names, ticket classes, dietary notes, and prepare a registration task proposal.
-- Community purchase comparison: summarize options, threshold rules, and member interest before anyone pays.
+- Community purchase comparison: summarize options, threshold rules, and customer interest before anyone pays.
 - Maintenance or warranty request draft: organize receipt text, product model, photos, and contact fields for human review.
-- Private community task coordination: turn host-provided evidence into tasks, owners, and review steps.
-- Shared booking draft: collect time slots, member availability, room/court/package options, and prepare a booking task proposal.
+- Private community task coordination: turn merchant-provided evidence into tasks, reviewers, and review steps.
+- Shared booking draft: collect time slots, customer availability, room/court/package options, and prepare a booking task proposal.
 
 Possible future integrations:
 
-- Auto repair appointment draft: collect car model, symptoms, preferred time, shop notes, and create a booking task proposal for the owner to confirm.
+- Auto repair appointment draft: collect car model, symptoms, preferred time, shop notes, and create a booking task proposal for the merchant or service operator to confirm.
 - Nail, hair salon, clinic, or local service reservation draft: gather service type, preferred time, staff preference, notes, and prepare a reservation task proposal. Service details remain structured notes for the provider, not an in-room conversation channel.
 
-The hackathon demo should focus on the single-direction room workflow: host creates the task, assistant prepares evidence review, invited members act on their own rows, and final confirmation remains human-controlled.
+The hackathon demo should focus on the single-direction room workflow: a merchant or operator creates the intake room, the assistant prepares evidence review, customers act on their own rows only after publication, and final confirmation remains human-controlled.
 
 Repository slug: `shared-room-mcp`.
 
@@ -140,19 +146,19 @@ Implemented tools:
 
 The `suggest_next_actions` tool is the main way for the assistant to read the room and suggest what should happen next. It points out missing reviews, missing confirmations, and evidence/field mismatches from structured room state.
 
-The `create_action_proposal` tool creates a host-reviewed draft. Supported drafts include claim review, missing confirmation, evidence review, room type review, activity signup drafts, and field-fix drafts when Codex notices a reading mistake. The page keeps only one pending draft per draft type, so the host sees one clear card for one decision. The host presses the same card button to arm and confirm the review before the room state changes.
+The `create_action_proposal` tool creates a merchant-reviewed draft. Supported drafts include claim review, missing confirmation, evidence review, business-flow review, activity signup drafts, and field-fix drafts when Codex notices a reading mistake. The page keeps only one pending draft per draft type, so the merchant sees one clear card for one decision. The merchant presses the same card button to arm and confirm the review before the room state changes.
 
 ## Safety Flow
 
-The UI uses plain language, and the code keeps the same order every time: AI prepares a draft, the host reviews the list, the host performs Member-Visibility Release, members confirm their own costs, and only then can the host finalize the room summary. Later steps may stop and ask for review, while accepted human decisions remain explicit state transitions.
+The UI uses plain language, and the code keeps the same order every time: AI prepares a draft, the merchant reviews the list, the merchant publishes it to customers, customers confirm their own selections, and only then can the merchant finalize the room summary. Later steps may stop and ask for review, while accepted human decisions remain explicit state transitions.
 
 | step | what happens | what is blocked |
 |---|---|---|
-| Assistant prepares | AI stores a draft for host review | Draft remains pending until host review |
-| Host reviews | Host fixes or removes parsed rows before member access | Member list is released only after review |
-| Host releases | Host explicitly releases the reviewed list to members | Parsed item editing is locked after release |
-| Members confirm | Each member confirms only their own costs | Confirmation is scoped to the current member |
-| Host finalizes | Host finalizes after human confirmations | Export reads the reviewed room summary |
+| Assistant prepares | AI stores a draft for merchant review | Draft remains pending until merchant review |
+| Merchant reviews | Merchant fixes or removes parsed rows before customer access | Customer list is published only after review |
+| Merchant publishes | Merchant explicitly publishes the reviewed list to customers | Parsed item editing is locked after publishing |
+| Customers confirm | Each customer confirms only their own selections | Confirmation is scoped to the current customer |
+| Merchant finalizes | Merchant finalizes after human confirmations | Export reads the reviewed room summary |
 | Optional integrations | Deployment owner may add OCR, Sheets, booking, or trust helpers | Core demo works with local-first parsing |
 
 The project has six fixed safety checks. Each check passes a limited result forward. Later checks may mark something for review, but they cannot silently rewrite earlier choices.
@@ -162,8 +168,8 @@ The project has six fixed safety checks. Each check passes a limited result forw
 | Choose the room type | Selects or infers the scenario | Room type changes require review state |
 | Read the price evidence | Extracts item and price candidates from image-backed local OCR plus LLM visual review | Parser output starts as candidate evidence |
 | Calculate locally | Calculates totals inside the app | Calculation remains in the room contract |
-| Repair unclear fields | Creates a review draft only when the input is unclear | Repairs move through host proposal state |
-| Check confirmations | Tracks shared items and extra personal claims | Confirmations are member-scoped |
+| Repair unclear fields | Creates a review draft only when the input is unclear | Repairs move through merchant proposal state |
+| Check confirmations | Tracks shared items and customer add-ons | Confirmations are customer-scoped |
 | Keep AI in draft mode | Exposes read tools plus draft creation | Agent output is proposal or state guidance |
 
 ## Supported Room Types
@@ -172,37 +178,37 @@ The table below describes the room types and what the app can safely calculate t
 
 | room type | scenario | evidence | calculated today | needs review when |
 |---|---|---|---|---|
-| `group_buy` | Community group buy, free-shipping threshold, bulk discount | Public post image, price table image, screenshot | Same-item merge, participant subtotal, grand total, threshold remaining, extra personal claim | Missing item-price pairs, ambiguous tier rules, duplicated variants |
-| `drink_order` | Office or community drink order | Menu photo, drink screenshot | Item subtotal, sweetness/ice/addon delta, extra personal claim, minimum order threshold | Size-column drift, addon section ambiguity, same-name multi-price issue |
-| `restaurant_split` | Meal bill or receipt split | Menu, receipt, checkout screenshot | Personal items, shared candidate average, extra personal claim, service-fee input marked for manual review | Tax/service lines mixed with items, item-price mismatch |
+| `group_buy` | Community group buy, free-shipping threshold, bulk discount | Public post image, price table image, screenshot | Same-item merge, customer subtotal, grand total, threshold remaining, customer add-on | Missing item-price pairs, ambiguous tier rules, duplicated variants |
+| `drink_order` | Office or community drink order | Menu photo, drink screenshot | Item subtotal, sweetness/ice/addon delta, customer add-on, minimum order threshold | Size-column drift, addon section ambiguity, same-name multi-price issue |
+| `restaurant_split` | Meal bill or receipt split | Menu, receipt, checkout screenshot | Customer items, shared candidate average, customer add-on, service-fee input marked for manual review | Tax/service lines mixed with items, item-price mismatch |
 | `ktv_room` | KTV room, minimum spend, headcount fee | Room price table, minimum-spend notice, drink list | Room fee sharing, per-person minimum marked for manual review, personal drinks | Time-slot or package boundary ambiguity |
 | `sports_venue` | Court fee, venue booking, equipment rental | Venue rate table, time-slot table, rental list | Venue fee sharing, time-rate input marked for manual review, equipment subtotal | Cross-column time rates, venue and equipment mixed in one image |
 | `ticket_activity` | Tickets, workshops, activity signup | Activity post, ticket table, signup screenshot | Headcount times ticket price, group threshold and group discount marked for manual review | Early-bird tiers or ticket classes are unclear |
 | `rental_share` | Shared rental, deposit, equipment | Rental table, deposit notice | Rental fee sharing, personal rental subtotal, deposit marked but excluded by default | Deposit and fee ambiguity, unclear time unit |
-| `generic_split` | Any temporary shared expense | Receipt, price screenshot, host evidence notes | Grand total, average split, personal items | Low classification confidence or missing fields |
+| `generic_split` | Any temporary shared expense | Receipt, price screenshot, merchant evidence notes | Grand total, average split, customer items | Low classification confidence or missing fields |
 
 ## Adaptive Contract MCP Overview
 
 ## Permission And Review Order
 
-| role | can inspect | can draft suggestions | can edit parsed items | can edit own claims | can approve drafts | can settle |
+| role | can inspect | can draft suggestions | can edit parsed items | can edit own selections | can approve drafts | can finalize |
 |---|---:|---:|---:|---:|---:|---:|
 | Anonymous viewer | yes | no | no | no | no | no |
 | Local OCR | local image only | no | no | no | no | no |
 | LLM visual review: Codex, Gemini, or local model | authorized evidence and OCR text | structured draft only | no | no | no | no |
 | Authorized local bridge | target room and reviewed draft | proposal only | no | no | no | no |
 | WebMCP agent | yes | proposal only | no | no | no | no |
-| Room member | yes | no | no | own claims only | no | no |
-| Room host | yes | yes | before member confirmation | own claims only | same-card human review | yes |
-| Server | validates | stores limited drafts | checks room owner | checks each member only confirms themself | records review result | saves local room summary |
+| Customer | yes | no | no | own selections only | no | no |
+| Merchant or operator | yes | yes | before customer confirmation | own selections only | same-card human review | yes |
+| Server | validates | stores limited drafts | checks merchant/operator authority | checks each customer only confirms themself | records review result | saves local room summary |
 
-The fixed order is evidence draft first, OCR plus LLM visual review second, host review third, Member-Visibility Release fourth, member confirmation fifth, and final settlement last. The host can remove bad parser rows or fix names, prices, and categories before releasing the list to members. After the host releases the list, parsed item editing is locked.
+The fixed order is evidence draft first, OCR plus LLM visual review second, merchant review third, customer publishing fourth, customer confirmation fifth, and merchant finalization last. The merchant can remove bad photo-reading rows or fix names, prices, and categories before publishing the list to customers. After the merchant publishes the list, parsed item editing is locked.
 
 ```mermaid
 sequenceDiagram
   autonumber
-  actor Host as Host / Service Owner
-  actor Member as Member / Guest
+  actor Merchant as Merchant / Operator
+  actor Customer as Customer / Guest
   participant Local as Authorized Local Bridge
   participant OCR as Local OCR
   participant LLM as LLM Visual Review
@@ -213,7 +219,7 @@ sequenceDiagram
   participant Guardrail as Guardrail Registry
   participant Store as Room Store
 
-  Host->>Page: Create room and provide evidence
+  Merchant->>Page: Create independent room and provide evidence
   Page->>Store: Save uploaded evidence image
   Local->>OCR: Read local image and extract noisy text
   OCR-->>Local: OCR candidate text
@@ -222,49 +228,49 @@ sequenceDiagram
   Local->>Page: Write semantic_repair_draft proposal
   WebMCP->>Page: Inspect room through page-local tools
   WebMCP->>Page: Summarize draft-only next action
-  Host->>Review: Review the draft card
+  Merchant->>Review: Review the draft card
   Review->>Contract: Apply approved structured draft
   Contract->>Contract: Route scenario and apply prompt contract
   Contract->>Guardrail: Check forbidden numbers, formulas, sparse evidence
   Guardrail-->>Review: Emit warning or structural gate
-  Review-->>Page: Show extracted rows for host review
-  Host->>Review: Accept warning, edit value, or remove candidate
+  Review-->>Page: Show extracted rows for merchant review
+  Merchant->>Review: Accept warning, edit value, or remove candidate
   Review->>Contract: Mark resolved_warning or require edit/remove
   Contract->>Store: Save reviewed state and audit trail
-  Host->>Page: Member-Visibility Release
+  Merchant->>Page: Publish private room link to customers
   Page->>Store: Publish reviewed selectable rows
-  Member->>Page: Select assigned or visible options
-  Member->>Page: Confirm own cost
-  Host->>Page: Finalize reviewed summary
-  Page->>Host: Export HTML or PDF evidence record
+  Customer->>Page: Open link and select own items
+  Customer->>Page: Confirm own selection
+  Merchant->>Page: Review merged total and send order sheet
+  Page->>Merchant: Export HTML or PDF evidence record
 
-  WebMCP-->>Host: State summary and draft recommendation
+  WebMCP-->>Merchant: State summary and draft recommendation
   LLM-->>Review: OCR-only output remains blocked until reviewed
-  Review-->>Host: Human approval remains required
-  Guardrail-->>Host: Structural risk requires edit or removal
+  Review-->>Merchant: Human approval remains required
+  Guardrail-->>Merchant: Structural risk requires edit or removal
 ```
 
 ```mermaid
 flowchart TD
-  L0[Image-backed EvidenceAsset] --> B0[Authorized Local Bridge]
+  L0[Menu Or Service Evidence] --> B0[Authorized Local Bridge]
   B0 --> B1[Local OCR Candidate Text]
   B1 --> B2[LLM Visual Review: Codex, Gemini, or Local Model]
   B2 --> B3[Structured Draft Proposal]
-  B3 --> L1[Host Draft Review]
+  B3 --> L1[Merchant Draft Review]
   L1 --> L2[Scenario Router]
   L2 --> L3[Prompt Contract]
   L3 --> L4[ParserCandidate Layer]
   L4 --> L5[Canonical Number Normalizer]
   L5 --> L6[Negative Pattern Registry]
   L6 --> L7[ReviewGate]
-  L7 --> L8[Host Review Decision]
-  L8 --> L9[Member-Visibility Release]
-  L9 --> L10[Member Confirmation]
-  L10 --> L11[Owner Finalized Summary]
+  L7 --> L8[Merchant Review Decision]
+  L8 --> L9[Private Customer Link Published]
+  L9 --> L10[Customer Own Selection Confirmed]
+  L10 --> L11[Merchant Sends Order Or Service Sheet]
   L11 --> L12[HTML or PDF Review Export]
 
   L7 --> W[Declarative Warning]
-  W --> RW[Host Accepts as resolved_warning]
+  W --> RW[Merchant Accepts Review Note]
   RW --> L9
 
   B1 --> OB[OCR-only Blocker]
@@ -361,7 +367,7 @@ Recommended open-source deployment order:
 1. Copy `env.sample` variable names into the hosting service variables.
 2. Mount a persistent volume at `/data` and set `ROOM_STORE_PATH=/data/rooms.json`.
 3. For the adaptive review loop, set `GUARDRAIL_MEMORY_PATH=/data/guardrail-memory.json` so human corrections and blocked approval attempts are retained as guardrail candidates.
-4. Run the no-key flow first with the authorized local bridge: image -> local OCR -> LLM visual review -> structured draft -> host review.
+4. Run the no-key flow first with the authorized local bridge: image -> local OCR -> LLM visual review -> structured draft -> merchant review.
 5. Leave provider keys empty for the WebMCP Challenge demo unless the deployment owner intentionally enables an external repair adapter.
 6. Restart the service and verify `/healthz` reports persistence flags and does not expose secret values.
 
@@ -389,14 +395,14 @@ The matching design contract is in `config/enterprise-submit-gate.json`. The ima
 
 ## Fast Review Sample
 
-For judging or a quick local smoke test, open a new empty room and click `Load Sample Room`. This creates a small structured sample with shared and personal items, then adds a draft-only proposal for the host to review.
+For judging or a quick local smoke test, open a new empty room and click `Load Sample Room`. This creates a small structured sample with shared items and customer add-ons, then adds a draft-only proposal for the merchant to review.
 
 The sample path is intentionally no-key and no-upload:
 
 - It does not call Gemini, OpenAI, Google Sheets, payment, booking, commerce, or social APIs.
 - It does not overwrite a room that already has data.
-- It creates a draft that waits for host review.
-- The host must still confirm the same draft card before the draft status changes.
+- It creates a draft that waits for merchant review.
+- The merchant must still confirm the same draft card before the draft status changes.
 - Accepting the draft does not settle the bill, submit an external form, write payment data, or change formula rules.
 
 ## Local Development
@@ -454,13 +460,13 @@ The hosted public demo should keep the lower public-demo limits shown above.
 
 The repeated room-flow check covers 20 non-duplicate Traditional Chinese and English scenarios, with 20 rounds per scenario. It checks room creation, candidate evidence parsing, stable room-type selection, draft creation, and the final human approval rule.
 
-The image-matrix runner is a deterministic contract-driven integration benchmark using 115 paired image-oracle artifacts. The public repository keeps the manifest, schema, and runner; the full PNG set is supplied as an external artifact through `IMAGE_MATRIX_ROOT` or `--matrix-root`. Each test verifies the image SHA-256, scenario id, language, contract id, archetype, expected member-visible items, rule counts, forbidden member-visible numbers, evidence pointers, and Semantic Visual Anchor fields.
+The image-matrix runner is a deterministic contract-driven integration benchmark using 115 paired image-oracle artifacts. The public repository keeps the manifest, schema, and runner; the full PNG set is supplied as an external artifact through `IMAGE_MATRIX_ROOT` or `--matrix-root`. Each test verifies the image SHA-256, scenario id, language, contract id, archetype, expected customer-visible items, rule counts, forbidden customer-visible numbers, evidence pointers, and Semantic Visual Anchor fields.
 
 The runner has three modes with different claims:
 
 - `image-only`: uploads only the image. This is a negative canary unless the deployment owner has configured an explicit image-reading provider. It must not be used to claim the default Zeabur demo performs OCR.
-- `image-plus-local-ocr`: runs OCR on the operator machine first, then writes OCR metadata and a draft proposal into the hosted room. Zeabur still acts as the room/runtime/HITL surface, not as the OCR engine. This mode is a canary for field isolation, evidence pointers, forbidden-number leakage, and advisory threshold handling; completed image review still requires LLM visual review or host repair before member release.
-- `image-plus-oracle-text`: uploads the image plus the locked oracle text. This validates contract routing, guardrails, member-visible masks, and HITL state transitions. It is not proof of visual OCR accuracy.
+- `image-plus-local-ocr`: runs OCR on the operator machine first, then writes OCR metadata and a draft proposal into the hosted room. Zeabur still acts as the room/runtime/HITL surface, not as the OCR engine. This mode is a canary for field isolation, evidence pointers, forbidden-number leakage, and advisory threshold handling; completed image review still requires LLM visual review or merchant repair before customer publishing.
+- `image-plus-oracle-text`: uploads the image plus the locked oracle text. This validates contract routing, guardrails, customer-visible masks, and HITL state transitions. It is not proof of visual OCR accuracy.
 
 These checks must not be described as provider accuracy, zero-shot extraction accuracy, unconstrained vision accuracy, or a hosted image-recognition benchmark. The intended evidence-review loop is WebMCP plus Codex/LLM visual review plus human approval.
 
@@ -469,7 +475,7 @@ Expected audit state:
 - room type selection ready
 - evidence and copied-text review ready
 - local calculation rules ready
-- member confirmation checks ready
+- customer confirmation checks ready
 - WebMCP tools ready
 - Google Sheets trust option design documented
 - submission local package ready
@@ -478,15 +484,15 @@ Expected audit state:
 
 The locked recording flow is:
 
-1. Start on the live Shared Room page with the agent side panel visible.
+1. Start on the live Merchant Menu Intake page with the agent side panel visible.
 2. Run `npm run demo:codex-ocr-llm -- --base-url https://shared-room-mcp-next.zeabur.app` from the local repo. If no image is supplied, the script generates a fictional English menu image under the local temp folder, runs Tesseract OCR, and sends a Codex-reviewed structured draft into a new Zeabur room.
-3. The authorized local review bridge treats OCR as noisy text, applies the guided Codex visual review result, writes one `semantic_repair_draft`, and leaves the draft pending for the host.
-4. The presenter moves the pointer to the single draft card and the agent tells the host when to click. The host clicks the same card twice: first to mark it reviewed, then to confirm the green approval state.
-5. The agent opens the same room in a second tab as `Jamie`, selects one item, and pauses. Jamie clicks the personal confirmation button once.
-6. The agent immediately returns to the owner tab, verifies the member state, and pauses. The owner clicks `Owner Finalizes Summary` once.
-7. The owner clicks `Download PDF`, then `Download HTML`. Both files must open successfully before the recording continues.
+3. The authorized local review bridge treats OCR as noisy text, applies the guided Codex visual review result, writes one `semantic_repair_draft`, and leaves the draft pending for the merchant.
+4. The presenter moves the pointer to the single draft card and the agent tells the merchant when to click. The merchant clicks the same card twice: first to mark it reviewed, then to confirm the green approval state.
+5. The agent opens the same room in a second tab as `Jamie`, selects one item, and pauses. Jamie clicks the selection confirmation button once.
+6. The agent immediately returns to the merchant tab, verifies the customer state, and pauses. The merchant clicks `Merchant Finalizes Summary` once.
+7. The merchant clicks `Download PDF`, then `Download HTML`. Both files must open successfully before the recording continues.
 8. Open a new room, switch to Chinese, and upload the prepared `社區水果免運團購` image. The threshold and shipping lines must remain review context rather than purchasable items.
-9. Repeat the same controlled loop quickly: agent prepares, the human approves on one card, a second member confirms their own item, and the owner finalizes.
+9. Repeat the same controlled loop quickly: agent prepares, the human approves on one card, a second customer confirms their own item, and the merchant finalizes.
 10. Close by stating that payment, booking submission, and external account actions remain outside the exposed tool set.
 
 Use this spoken line near the start:
@@ -495,7 +501,7 @@ Use this spoken line near the start:
 
 Use this closing line:
 
-"WebMCP lets the agent prepare and check shared-room drafts while people keep every commitment. The same pattern can support shared orders, registrations, bookings, and other collaborative tasks without exposing final payment or external submission as an agent tool."
+"WebMCP lets the agent prepare and check merchant review drafts while people keep every commitment. The same pattern can support shared orders, registrations, bookings, and other customer-facing intake workflows without exposing final payment or external submission as an agent tool."
 
 The detailed timed runbook is in [`docs/submission/WEBMCP_SUBMISSION.md`](docs/submission/WEBMCP_SUBMISSION.md#locked-demo-runbook).
 
@@ -513,8 +519,8 @@ The detailed timed runbook is in [`docs/submission/WEBMCP_SUBMISSION.md`](docs/s
 
 - Room data is saved to a local JSON file by default. On a hosted service, attach a volume and set `ROOM_STORE_PATH=/data/rooms.json`; otherwise a platform restart can still clear room state.
 - The current save layer is meant for one demo service instance. It smooths short write bursts by merging nearby changes and adding a small millisecond delay before saving, but a hard crash can still lose the latest tiny write window. Production traffic should move to Redis or PostgreSQL.
-- Room ownership is demo-grade. Production deployments should add signed sessions or a real login system.
+- Room authority is demo-grade. Production deployments should add signed sessions or a real login system.
 - Image-reading quality depends on image clarity and on the OCR or vision tool selected by the operator. If a local/browser/provider extraction step times out or produces sparse evidence, the app should fall back to manual review instead of inventing missing fields.
-- Advanced rules such as shipping split, hourly venue fee, room minimum, deposit include/exclude, tax/service formulas, and tier discounts route to host review. The current MVP does not claim fully automated complex formula calculation.
+- Advanced rules such as shipping split, hourly venue fee, room minimum, deposit include/exclude, tax/service formulas, and tier discounts route to merchant review. The current MVP does not claim fully automated complex formula calculation.
 - Google Sheets trust-layer check/enroll/revoke adapters are design-level roadmap extensions, not production-ready identity infrastructure in this public core.
 - Pixel-level visual crop overlays are reserved in the schema roadmap. The current UI uses semantic anchors and contextual snippets.

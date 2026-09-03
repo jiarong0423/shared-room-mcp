@@ -17,8 +17,8 @@ const scenarios = [
     id: 'zh_group_buy_threshold_review',
     lang: 'zh',
     taskType: 'group_buy',
-    hostName: '發起者',
-    memberName: '小美',
+    merchantName: '團購店家',
+    customerName: '小美',
     text: [
       '社區團購優惠 滿 NT$1,500 免運',
       '綜合堅果 320',
@@ -34,8 +34,8 @@ const scenarios = [
     id: 'zh_drink_order_review',
     lang: 'zh',
     taskType: 'drink_order',
-    hostName: '下午茶發起者',
-    memberName: '阿倫',
+    merchantName: '飲料店家',
+    customerName: '阿倫',
     text: [
       '辦公室手搖飲',
       '珍珠奶茶 微糖微冰 65',
@@ -51,8 +51,8 @@ const scenarios = [
     id: 'en_sports_venue_review',
     lang: 'en',
     taskType: 'sports_venue',
-    hostName: 'Host',
-    memberName: 'Jamie',
+    merchantName: 'Merchant',
+    customerName: 'Jamie',
     text: [
       'Indoor soccer pitch reservation',
       'Pitch rental two hours 220',
@@ -69,8 +69,8 @@ const scenarios = [
     id: 'en_ticket_activity_review',
     lang: 'en',
     taskType: 'ticket_activity',
-    hostName: 'Organizer',
-    memberName: 'Alex',
+    merchantName: 'Merchant',
+    customerName: 'Alex',
     text: [
       'Museum workshop signup',
       'Adult workshop ticket 45',
@@ -134,6 +134,20 @@ function assertCondition(condition, message) {
   if (!condition) {
     throw new Error(message);
   }
+}
+
+function expectedExportTitle(language) {
+  return language === 'zh' ? '點餐摘要' : 'Order Summary';
+}
+
+function expectedExportTotalLabel(language) {
+  return language === 'zh' ? '總金額' : 'Total';
+}
+
+function buildScenarioExportUrl(baseUrl, roomId, extension, language) {
+  const url = new URL(`/api/rooms/${encodeURIComponent(roomId)}/export.${extension}`, baseUrl);
+  url.searchParams.set('lang', language === 'zh' ? 'zh' : 'en');
+  return url.toString();
 }
 
 async function fetchJson(url, options = {}, timeoutMs = 20000) {
@@ -387,7 +401,7 @@ async function createProposal(baseUrl, room, ownerParticipantId, scenario, timeo
       participantId: ownerParticipantId,
       proposalType: 'semantic_repair_draft',
       summary: `Review parsed labels for ${scenario.id}.`,
-      rationale: 'The agent can prepare a draft, but only the host can edit parsed rows and open the reviewed list.',
+      rationale: 'The assistant can prepare a draft, but only the merchant can edit parsed rows and publish the reviewed list.',
       riskLevel: 'needs_human_review',
       payload: {
         sourceMode: 'local_ocr_plus_local_vision',
@@ -422,17 +436,17 @@ async function acceptLatestReviewProposal(baseUrl, connection, room, ownerPartic
   const proposal = Array.isArray(room.agentProposals)
     ? room.agentProposals.find((candidate) => candidate.status === 'pending_host_confirmation')
     : null;
-  assertCondition(proposal?.id, 'missing pending host review proposal');
+  assertCondition(proposal?.id, 'missing pending merchant review proposal');
   const reviewed = await emitWithAck(baseUrl, connection, 'reviewAgentProposal', {
     roomId: room.id,
     participantId: ownerParticipantId,
     proposalId: proposal.id,
     action: 'accept'
   }, timeoutMs);
-  assertCondition(reviewed?.ok, `host proposal accept failed: ${reviewed?.error || 'unknown error'}`);
-  assertCondition(reviewed.room?.itemsOpenForMembers === false, 'host proposal accept opened items unexpectedly');
+  assertCondition(reviewed?.ok, `merchant proposal accept failed: ${reviewed?.error || 'unknown error'}`);
+  assertCondition(reviewed.room?.itemsOpenForMembers === false, 'merchant proposal accept published items unexpectedly');
   const remainingBlocks = Array.isArray(reviewed.room?.antiPollution?.blocks) ? reviewed.room.antiPollution.blocks : [];
-  assertCondition(remainingBlocks.length === 0, `host proposal accept left anti-pollution blocks: ${remainingBlocks.map((block) => block.id || block.detail || 'unknown').join(', ')}`);
+  assertCondition(remainingBlocks.length === 0, `merchant proposal accept left review blocks: ${remainingBlocks.map((block) => block.id || block.detail || 'unknown').join(', ')}`);
   return reviewed.room;
 }
 
@@ -443,10 +457,10 @@ async function runScenarioRound(baseUrl, scenario, round, args) {
   const hostConnection = await connectSocket(baseUrl, timeoutMs);
   const hostJoin = await emitWithAck(baseUrl, hostConnection, 'joinRoom', {
     roomId: room.id,
-    participantId: `host-${scenario.id}-${round}-${Math.random().toString(36).slice(2)}`,
-    displayName: `${scenario.hostName} ${round}`
+    participantId: `merchant-${scenario.id}-${round}-${Math.random().toString(36).slice(2)}`,
+    displayName: `${scenario.merchantName} ${round}`
   }, timeoutMs);
-  assertCondition(hostJoin?.ok, `host join failed: ${hostJoin?.error || 'unknown error'}`);
+  assertCondition(hostJoin?.ok, `merchant join failed: ${hostJoin?.error || 'unknown error'}`);
   const ownerParticipantId = getOwnerParticipantId(hostJoin.room);
   assertCondition(ownerParticipantId, 'missing owner participant id');
 
@@ -456,12 +470,12 @@ async function runScenarioRound(baseUrl, scenario, round, args) {
   const memberConnection = await connectSocket(baseUrl, timeoutMs);
   const memberJoin = await emitWithAck(baseUrl, memberConnection, 'joinRoom', {
     roomId: room.id,
-    participantId: `member-${scenario.id}-${round}-${Math.random().toString(36).slice(2)}`,
-    displayName: `${scenario.memberName} ${round}`
+    participantId: `customer-${scenario.id}-${round}-${Math.random().toString(36).slice(2)}`,
+    displayName: `${scenario.customerName} ${round}`
   }, timeoutMs);
-  assertCondition(memberJoin?.ok, `member join failed: ${memberJoin?.error || 'unknown error'}`);
+  assertCondition(memberJoin?.ok, `customer join failed: ${memberJoin?.error || 'unknown error'}`);
   const memberParticipantId = memberJoin.participantId;
-  assertCondition(memberParticipantId, 'missing member participant id');
+  assertCondition(memberParticipantId, 'missing customer participant id');
 
   const firstItemId = getFirstItemId(drafted);
   const memberClaimBeforeOpen = await emitWithAck(baseUrl, memberConnection, 'setItemQty', {
@@ -470,7 +484,7 @@ async function runScenarioRound(baseUrl, scenario, round, args) {
     itemId: firstItemId,
     qty: 1
   }, timeoutMs);
-  assertCondition(memberClaimBeforeOpen?.ok === false, 'member was able to claim before host opened list');
+  assertCondition(memberClaimBeforeOpen?.ok === false, 'customer was able to choose before merchant published list');
 
   const memberEditAttempt = await emitWithAck(baseUrl, memberConnection, 'updateParsedItem', {
     roomId: room.id,
@@ -479,7 +493,7 @@ async function runScenarioRound(baseUrl, scenario, round, args) {
     name: scenario.editName,
     price: scenario.editPrice
   }, timeoutMs);
-  assertCondition(memberEditAttempt?.ok === false, 'member was able to edit parsed item');
+  assertCondition(memberEditAttempt?.ok === false, 'customer was able to edit parsed item');
 
   const hostEdit = await emitWithAck(baseUrl, hostConnection, 'updateParsedItem', {
     roomId: room.id,
@@ -488,14 +502,14 @@ async function runScenarioRound(baseUrl, scenario, round, args) {
     name: scenario.editName,
     price: scenario.editPrice
   }, timeoutMs);
-  assertCondition(hostEdit?.ok, `host edit failed: ${hostEdit?.error || 'unknown error'}`);
-  assertCondition(hostEdit.room?.itemsOpenForMembers === false, 'host edit opened items unexpectedly');
+  assertCondition(hostEdit?.ok, `merchant edit failed: ${hostEdit?.error || 'unknown error'}`);
+  assertCondition(hostEdit.room?.itemsOpenForMembers === false, 'merchant edit published items unexpectedly');
 
   const memberOpenAttempt = await emitWithAck(baseUrl, memberConnection, 'openItemsForMembers', {
     roomId: room.id,
     participantId: memberParticipantId
   }, timeoutMs);
-  assertCondition(memberOpenAttempt?.ok === false, 'member was able to open list');
+  assertCondition(memberOpenAttempt?.ok === false, 'customer was able to publish list');
 
   const antiBlocksBeforeReview = Array.isArray(drafted.antiPollution?.blocks) ? drafted.antiPollution.blocks : [];
   if (antiBlocksBeforeReview.length > 0) {
@@ -503,7 +517,7 @@ async function runScenarioRound(baseUrl, scenario, round, args) {
       roomId: room.id,
       participantId: ownerParticipantId
     }, timeoutMs);
-    assertCondition(blockedHostOpenBeforeReview?.ok === false, 'host was able to open list while anti-pollution review was still pending');
+    assertCondition(blockedHostOpenBeforeReview?.ok === false, 'merchant was able to publish list while review was still pending');
   }
 
   const reviewed = await acceptLatestReviewProposal(baseUrl, hostConnection, drafted, ownerParticipantId, timeoutMs);
@@ -512,8 +526,8 @@ async function runScenarioRound(baseUrl, scenario, round, args) {
     roomId: room.id,
     participantId: ownerParticipantId
   }, timeoutMs);
-  assertCondition(hostOpen?.ok, `host open failed: ${hostOpen?.error || 'unknown error'}`);
-  assertCondition(hostOpen.room?.itemsOpenForMembers === true, 'host open did not mark itemsOpenForMembers=true');
+  assertCondition(hostOpen?.ok, `merchant publish failed: ${hostOpen?.error || 'unknown error'}`);
+  assertCondition(hostOpen.room?.itemsOpenForMembers === true, 'merchant publish did not mark itemsOpenForMembers=true');
 
   const hostEditAfterOpen = await emitWithAck(baseUrl, hostConnection, 'updateParsedItem', {
     roomId: room.id,
@@ -522,7 +536,7 @@ async function runScenarioRound(baseUrl, scenario, round, args) {
     name: `${scenario.editName} late edit`,
     price: scenario.editPrice + 1
   }, timeoutMs);
-  assertCondition(hostEditAfterOpen?.ok === false, 'host was able to edit parsed item after member release');
+  assertCondition(hostEditAfterOpen?.ok === false, 'merchant was able to edit parsed item after customer publishing');
 
   const memberClaimAfterOpen = await emitWithAck(baseUrl, memberConnection, 'setItemQty', {
     roomId: room.id,
@@ -530,29 +544,29 @@ async function runScenarioRound(baseUrl, scenario, round, args) {
     itemId: firstItemId,
     qty: 1
   }, timeoutMs);
-  assertCondition(memberClaimAfterOpen?.ok, `member claim after open failed: ${memberClaimAfterOpen?.error || 'unknown error'}`);
+  assertCondition(memberClaimAfterOpen?.ok, `customer choice after publishing failed: ${memberClaimAfterOpen?.error || 'unknown error'}`);
 
   const memberConfirm = await emitWithAck(baseUrl, memberConnection, 'confirmOrder', {
     roomId: room.id,
     participantId: memberParticipantId,
     confirmed: true
   }, timeoutMs);
-  assertCondition(memberConfirm?.ok, `member confirm failed: ${memberConfirm?.error || 'unknown error'}`);
+  assertCondition(memberConfirm?.ok, `customer confirm failed: ${memberConfirm?.error || 'unknown error'}`);
 
   const hostSettle = await emitWithAck(baseUrl, hostConnection, 'settleRoom', {
     roomId: room.id,
     participantId: ownerParticipantId
   }, timeoutMs);
-  assertCondition(hostSettle?.ok, `host settle failed: ${hostSettle?.error || 'unknown error'}`);
-  assertCondition(hostSettle.room?.settled === true, 'host settlement did not mark room settled');
+  assertCondition(hostSettle?.ok, `merchant finalize failed: ${hostSettle?.error || 'unknown error'}`);
+  assertCondition(hostSettle.room?.settled === true, 'merchant finalization did not mark room complete');
 
-  const htmlExport = await fetchText(`${baseUrl}/api/rooms/${encodeURIComponent(room.id)}/export.html`, {}, timeoutMs);
+  const htmlExport = await fetchText(buildScenarioExportUrl(baseUrl, room.id, 'html', scenario.lang), {}, timeoutMs);
   assertCondition(htmlExport.ok, `HTML export failed: HTTP ${htmlExport.status} ${htmlExport.text}`);
-  assertCondition(htmlExport.text.includes('Action Review Summary'), 'HTML export missing action review title');
+  assertCondition(htmlExport.text.includes(expectedExportTitle(scenario.lang)), 'HTML export missing order summary title');
   assertCondition(htmlExport.text.includes(room.id), 'HTML export missing room id');
-  assertCondition(htmlExport.text.includes('Total'), 'HTML export missing total line');
+  assertCondition(htmlExport.text.includes(expectedExportTotalLabel(scenario.lang)), 'HTML export missing total line');
 
-  const pdfExport = await fetchBuffer(`${baseUrl}/api/rooms/${encodeURIComponent(room.id)}/export.pdf`, {}, timeoutMs);
+  const pdfExport = await fetchBuffer(buildScenarioExportUrl(baseUrl, room.id, 'pdf', scenario.lang), {}, timeoutMs);
   const pdfType = pdfExport.headers.get('content-type') || '';
   const pdfHeader = pdfExport.buffer.subarray(0, 8).toString('utf8');
   const pdfTail = pdfExport.buffer.subarray(-32).toString('utf8');
@@ -577,15 +591,15 @@ async function runScenarioRound(baseUrl, scenario, round, args) {
     gates: {
       proposalStayedDraft: true,
       itemsClosedAfterUpload: true,
-      memberClaimBeforeOpenBlocked: true,
-      memberParsedItemEditBlocked: true,
-      hostParsedItemEditBeforeOpenAllowed: true,
-      memberOpenBlocked: true,
-      hostOpenAllowed: true,
-      hostParsedItemEditAfterOpenBlocked: true,
-      memberClaimAfterOpenAllowed: true,
-      memberConfirmAllowed: true,
-      hostSettleAllowed: true,
+      customerChoiceBeforePublishingBlocked: true,
+      customerParsedItemEditBlocked: true,
+      merchantParsedItemEditBeforePublishingAllowed: true,
+      customerPublishingBlocked: true,
+      merchantPublishingAllowed: true,
+      merchantParsedItemEditAfterPublishingBlocked: true,
+      customerChoiceAfterPublishingAllowed: true,
+      customerConfirmAllowed: true,
+      merchantFinalizeAllowed: true,
       htmlExportReadable: true,
       pdfExportReadable: true,
       pdfLatinFontPresent: true,
@@ -629,7 +643,7 @@ function summarize(results) {
 
 function renderMarkdown(args, summary, results, plannedTotal) {
   const lines = [
-    '# Member-Visibility Release Stress Evidence',
+    '# Customer Publishing Release Stress Evidence',
     '',
     `- Target: ${args.baseUrl}`,
     `- Rounds per scenario: ${args.rounds}`,
@@ -652,18 +666,18 @@ function renderMarkdown(args, summary, results, plannedTotal) {
   }
 
   lines.push('', '## Checked Boundaries', '');
-  lines.push('- Evidence parser creates a draft list and keeps member claiming closed.');
-  lines.push('- Agent proposal stays `pending_host_confirmation` and does not open or mutate final state.');
-  lines.push('- The host cannot release the list while extracted rows or rule notes still require review.');
-  lines.push('- The script accepts the pending review proposal before Member-Visibility Release so the positive flow follows the HITL recording path.');
-  lines.push('- A room member cannot edit parsed items.');
-  lines.push('- A room member cannot claim items before the host releases the reviewed list.');
-  lines.push('- Only the host can edit parsed items before releasing the reviewed list.');
-  lines.push('- A room member cannot release the list.');
-  lines.push('- After Member-Visibility Release, parsed item editing is locked again.');
-  lines.push('- Members can claim and confirm only after Member-Visibility Release.');
-  lines.push('- The host can settle only after the group-facing flow is open and confirmed.');
-  lines.push('- Completed rooms export readable HTML and valid PDF files after final human settlement.');
+  lines.push('- Menu reading creates a draft list and keeps customer ordering closed.');
+  lines.push('- Assistant proposal stays `pending_merchant_confirmation` in product terms and does not publish or mutate final state.');
+  lines.push('- The merchant cannot publish the list while extracted rows or fee notes still require review.');
+  lines.push('- The script accepts the pending review proposal before Customer Publishing so the positive flow follows the human review recording path.');
+  lines.push('- A customer cannot edit parsed menu items.');
+  lines.push('- A customer cannot choose items before the merchant publishes the reviewed list.');
+  lines.push('- Only the merchant can edit parsed items before publishing the reviewed list.');
+  lines.push('- A customer cannot publish the list.');
+  lines.push('- After Customer Publishing, parsed item editing is locked again.');
+  lines.push('- Customers can choose and confirm only after Customer Publishing.');
+  lines.push('- The merchant can finalize only after the customer-facing flow is open and confirmed.');
+  lines.push('- Completed rooms export readable HTML and valid PDF files after final human confirmation.');
   lines.push('', '## Failed Cases', '');
 
   const failed = results.filter((result) => !result.ok);
@@ -694,8 +708,8 @@ async function main() {
 
   const startedAt = new Date();
   const stamp = startedAt.toISOString().replace(/[:.]/g, '-');
-  const jsonPath = path.join(args.outputDir, `member-release-stress-${stamp}.json`);
-  const mdPath = path.join(args.outputDir, `member-release-stress-${stamp}.md`);
+  const jsonPath = path.join(args.outputDir, `customer-publishing-stress-${stamp}.json`);
+  const mdPath = path.join(args.outputDir, `customer-publishing-stress-${stamp}.md`);
 
   console.log(`Target: ${args.baseUrl}`);
   console.log(`Scenarios: ${scenarios.length}`);

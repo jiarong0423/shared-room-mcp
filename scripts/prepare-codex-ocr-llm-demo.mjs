@@ -181,9 +181,9 @@ function parseArgs(argv) {
     baseUrl: process.env.WEBMCP_BASE_URL || process.env.TARGET_API_BASE || defaultBaseUrl,
     imagePath: process.env.WEBMCP_DEMO_IMAGE || '',
     roomId: '',
-    participantId: `codex-visual-review-${crypto.randomUUID().slice(0, 8)}`,
+    participantId: `codex-merchant-review-${crypto.randomUUID().slice(0, 8)}`,
     ownerBootstrapToken: crypto.randomUUID().replace(/-/g, '').slice(0, 12),
-    displayName: 'Codex Demo Host',
+    displayName: 'Codex Demo Merchant',
     tesseractBin: process.env.TESSERACT_BIN || 'tesseract',
     ocrLang: process.env.WEBMCP_OCR_LANG || 'eng',
     outputDir: process.env.WEBMCP_DEMO_OUTPUT_DIR || defaultOutputDir,
@@ -249,10 +249,10 @@ function printUsage() {
     '  --base-url <url>          Target Shared Room base URL.',
     '  --image <path>            Local evidence image. If omitted, a fictional demo menu is generated under tmp.',
     '  --room-id <id>            Reuse a target room instead of creating one.',
-    '  --participant-id <id>     Host participant id used for the demo.',
+    '  --participant-id <id>     Merchant participant id used for the demo.',
     '  --owner-bootstrap-token <token>',
-    '                            URL-safe short-lived host token embedded in the demo room link.',
-    '  --display-name <name>     Host display name shown in the room.',
+    '                            URL-safe short-lived merchant token embedded in the demo room link.',
+    '  --display-name <name>     Merchant display name shown in the room.',
     '  --tesseract-bin <path>    Tesseract executable.',
     '  --ocr-lang <lang>         Tesseract language, default eng.',
     '  --output-dir <path>       Report output directory.',
@@ -557,7 +557,11 @@ async function readRoom(baseUrl, roomId, timeoutMs) {
   return response.data;
 }
 
-async function joinRoomAsHost(baseUrl, roomId, participantId, displayName, timeoutMs) {
+function toProductProposalStatus(status) {
+  return String(status || '').replace(/host/g, 'merchant').replace(/member/g, 'customer');
+}
+
+async function joinRoomAsMerchant(baseUrl, roomId, participantId, displayName, timeoutMs) {
   const connection = await connectSocket(baseUrl, timeoutMs);
   const ack = await emitWithAck(baseUrl, connection, 'joinRoom', {
     roomId,
@@ -565,7 +569,7 @@ async function joinRoomAsHost(baseUrl, roomId, participantId, displayName, timeo
     displayName
   }, timeoutMs);
   assertCondition(ack?.ok, `join room failed: ${ack?.error || 'unknown error'}`);
-  assertCondition(ack?.room?.ownerParticipantId === participantId, 'demo participant did not become the room owner');
+  assertCondition(ack?.room?.ownerParticipantId === participantId, 'demo participant did not become the room merchant');
   return {
     connection,
     participantId,
@@ -603,7 +607,7 @@ async function uploadImageAndOcr(baseUrl, roomId, participantId, ownerBootstrapT
   }, timeoutMs);
   assertCondition(response.ok, `upload image failed: HTTP ${response.status} ${response.data?.error || ''}`);
   assertCondition(response.data?.menuLoaded === true, 'upload response did not mark menuLoaded');
-  assertCondition(Array.isArray(response.data?.items) && response.data.items.length === 0, 'draft-only evidence route should not create member items before host approval');
+  assertCondition(Array.isArray(response.data?.items) && response.data.items.length === 0, 'draft-only evidence route should not create customer items before merchant approval');
   assertCondition(response.data?.taskRouter?.taskType === 'restaurant_split', `task selector did not stay locked to restaurant_split: ${response.data?.taskRouter?.taskType || 'missing'}`);
   return response.data;
 }
@@ -613,11 +617,12 @@ function buildCodexProposal(roomId, participantId, ocrText, imageSha256) {
     participantId,
     proposalType: 'semantic_repair_draft',
     summary: `Codex visual review prepared ${codexReviewedItems.length} items from OCR plus the photo.`,
-    rationale: 'OCR was treated as a noisy hint. Codex visually checked the photo, corrected the bad OCR rows, and left final approval to the host.',
+    rationale: 'OCR was treated as a noisy hint. Codex visually checked the photo, corrected the bad OCR rows, and left final approval to the merchant.',
     riskLevel: 'needs_human_review',
     payload: {
       sourceMode: 'local_ocr_plus_llm_visual_review',
       hostReviewRequired: true,
+      merchantReviewRequired: true,
       roomId,
       taskType: 'restaurant_split',
       menuType: 'mixed',
@@ -637,10 +642,10 @@ function buildCodexProposal(roomId, participantId, ocrText, imageSha256) {
       visualReviewNotes: [
         'Corrected the OCR mistake where 7 Up was read as 710; the visible price is 70.',
         'Added Mozzarella Cheese +30, which OCR missed.',
-        'Kept the take-out fee note out of member choices because it is a rule note, not a selectable menu item.'
+        'Kept the take-out fee note out of customer choices because it is a fee note, not a selectable menu item.'
       ],
       warnings: [
-        'Host should compare the draft with the original photo before opening the list to members.'
+        'Merchant should compare the draft with the original photo before publishing the list to customers.'
       ],
       createdAt: new Date().toISOString()
     }
@@ -656,7 +661,7 @@ async function createProposal(baseUrl, roomId, proposal, timeoutMs) {
     body: JSON.stringify(proposal)
   }, timeoutMs);
   assertCondition(response.ok, `create proposal failed: HTTP ${response.status} ${response.data?.error || ''}`);
-  assertCondition(response.data?.proposal?.status === 'pending_host_confirmation', 'proposal was not left pending for host review');
+  assertCondition(response.data?.proposal?.status === 'pending_host_confirmation', 'proposal was not left pending for merchant review');
   return response.data;
 }
 
@@ -673,7 +678,7 @@ async function acceptProposalForTest(baseUrl, connection, roomId, participantId,
   const acceptedProposal = Array.isArray(reviewed.room?.agentProposals)
     ? reviewed.room.agentProposals.find((candidate) => candidate.id === proposalId)
     : null;
-  assertCondition(acceptedProposal?.status === 'accepted_by_host', `proposal status after test accept mismatch: ${acceptedProposal?.status}`);
+  assertCondition(acceptedProposal?.status === 'accepted_by_host', `proposal status after merchant test accept mismatch: ${acceptedProposal?.status}`);
   return reviewed.room;
 }
 
@@ -699,7 +704,7 @@ async function main() {
     ? await readRoom(args.baseUrl, args.roomId, args.timeoutMs)
     : await createRoom(args.baseUrl, args.timeoutMs);
   const roomId = initialRoom.id;
-  const hostJoin = await joinRoomAsHost(
+  const merchantJoin = await joinRoomAsMerchant(
     args.baseUrl,
     roomId,
     args.participantId,
@@ -720,7 +725,7 @@ async function main() {
   const acceptedRoom = args.acceptForTest
     ? await acceptProposalForTest(
       args.baseUrl,
-      hostJoin.connection,
+      merchantJoin.connection,
       roomId,
       args.participantId,
       proposalResult.proposal.id,
@@ -743,9 +748,11 @@ async function main() {
     structuredItemCount: codexReviewedItems.length,
     proposalId: proposalResult.proposal.id,
     proposalStatus: args.acceptForTest ? 'accepted_by_host' : proposalResult.proposal.status,
+    productProposalStatus: toProductProposalStatus(args.acceptForTest ? 'accepted_by_host' : proposalResult.proposal.status),
     itemsOpenForMembers: finalRoom.itemsOpenForMembers,
+    customerPublishingOpen: finalRoom.itemsOpenForMembers,
     finalItemCount: Array.isArray(finalRoom.items) ? finalRoom.items.length : 0,
-    ownerParticipantId: hostJoin.room.ownerParticipantId,
+    ownerParticipantId: merchantJoin.room.ownerParticipantId,
     reportCreatedAt: new Date().toISOString()
   };
   const reportPath = await writeReport(args, report);

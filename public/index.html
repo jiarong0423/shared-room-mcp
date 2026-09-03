@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shared Room</title>
+  <title>Table Order Room</title>
   <script src="/socket.io/socket.io.js"></script>
   <style>
     :root {
@@ -133,9 +133,9 @@
     }
 
     .chip[data-tone="warn"] {
-      border-color: rgba(180, 83, 9, 0.28);
-      color: var(--warn);
-      background: #fff7ed;
+      border-color: #d8cec0;
+      color: #7b6250;
+      background: #fbfaf7;
     }
 
     .layout {
@@ -434,9 +434,9 @@
 
     .message[data-tone="warn"] {
       display: block;
-      border: 1px solid rgba(180, 83, 9, 0.24);
-      background: #fff7ed;
-      color: var(--warn);
+      border: 1px solid #d8cec0;
+      background: #fbfaf7;
+      color: #6f6458;
     }
 
     .message[data-tone="info"] {
@@ -501,10 +501,10 @@
     .gate-review-hint {
       display: none;
       margin: 8px 0 12px;
-      border: 1px solid rgba(180, 83, 9, 0.24);
+      border: 1px solid #d8cec0;
       border-radius: 8px;
-      background: #fff7ed;
-      color: var(--warn);
+      background: #fbfaf7;
+      color: #6f6458;
       padding: 9px 11px;
       font-size: 12px;
       line-height: 1.45;
@@ -555,8 +555,8 @@
     }
 
     .proposal-card[data-status="pending_host_confirmation"] {
-      border-color: rgba(180, 83, 9, 0.32);
-      background: #fffaf4;
+      border-color: #d8cec0;
+      background: #fffdf9;
     }
 
     .proposal-card[data-review-stage="accept"] {
@@ -851,21 +851,30 @@
 
     .item-review-audit {
       grid-column: 1 / -1;
-      display: grid;
-      gap: 6px;
-      border: 1px solid #eadfce;
+      border: 1px solid #e2ddd4;
       border-radius: 8px;
-      background: #fffaf1;
+      background: #fbfaf7;
       color: var(--muted);
-      padding: 8px 9px;
+      padding: 7px 9px;
       font-size: 11px;
       line-height: 1.45;
     }
 
     .item-review-audit[data-risk="true"] {
-      border-color: #e7b76d;
-      background: #fff4d8;
-      color: #7c4b12;
+      border-color: #e2ddd4;
+      background: #fffdf9;
+      color: var(--muted);
+    }
+
+    .item-review-audit summary {
+      cursor: pointer;
+      color: var(--accent-dark);
+      font-weight: 850;
+      list-style-position: inside;
+    }
+
+    .item-review-audit[open] summary {
+      margin-bottom: 6px;
     }
 
     .item-review-audit-row {
@@ -890,9 +899,9 @@
     }
 
     .item-review-pill[data-tone="warn"] {
-      border-color: #e0a94b;
-      background: #fff2cf;
-      color: #7a4a0e;
+      border-color: #ded6c9;
+      background: #fffdf9;
+      color: var(--muted);
     }
 
     .item-review-pill[data-tone="danger"] {
@@ -1591,8 +1600,8 @@
   <main class="app-shell">
     <header class="topbar">
       <div class="title-block">
-        <h1 data-i18n="appTitle">Shared Room</h1>
-        <p data-i18n="appSubtitle">AI turns photos or messy text into a draft. The host reviews it, people join, and final approval stays human.</p>
+        <h1 data-i18n="appTitle">Merchant Menu Intake</h1>
+        <p data-i18n="appSubtitle">AI turns menu or drink photos into review-ready drafts. Merchants approve the list before customers confirm selections.</p>
       </div>
       <div class="status-row">
         <div class="language-toggle" id="languageToggle" aria-label="Language">
@@ -1607,7 +1616,7 @@
     <section class="layout">
       <div class="panel">
         <div class="panel-header">
-          <h2 class="panel-title" data-i18n="evidenceAndItems">Evidence And Items</h2>
+          <h2 class="panel-title" data-i18n="evidenceAndItems">Menu And Order Items</h2>
           <button class="button secondary" id="copyOrderButton" type="button" disabled data-i18n="copySettlement">Copy Summary</button>
         </div>
         <div class="panel-body">
@@ -1618,34 +1627,34 @@
           </div>
 
           <div class="field-grid">
-            <input class="text-field" id="displayNameInput" maxlength="24" autocomplete="name" placeholder="Your name" data-i18n-placeholder="yourName">
+            <input class="text-field" id="displayNameInput" maxlength="24" autocomplete="name" placeholder="Business or customer name" data-i18n-placeholder="yourName">
             <button class="button" id="saveNameButton" type="button" data-i18n="applyName">Apply Name</button>
           </div>
 
           <div class="contract-strip" id="contractStrip" aria-label="Six safe workflow steps" data-i18n-aria-label="contractStripLabel">
             <div class="contract-pill">
-              <strong data-i18n="contractTaskRouter">Choose the Plan</strong>
-              <span data-i18n="contractTaskRouterHint">the room stays on one path</span>
+              <strong data-i18n="contractTaskRouter">Select Business Flow</strong>
+              <span data-i18n="contractTaskRouterHint">one locked workflow</span>
             </div>
             <div class="contract-pill">
-              <strong data-i18n="contractEvidence">Read the Price List</strong>
-              <span data-i18n="contractEvidenceHint">photo review first</span>
+              <strong data-i18n="contractEvidence">Upload Menu Photo</strong>
+              <span data-i18n="contractEvidenceHint">photo and text stay together</span>
             </div>
             <div class="contract-pill">
-              <strong data-i18n="contractFormula">Calculate Here</strong>
-              <span data-i18n="contractFormulaHint">totals are calculated here</span>
+              <strong data-i18n="contractFormula">Calculate In Room</strong>
+              <span data-i18n="contractFormulaHint">totals stay local to the room</span>
             </div>
             <div class="contract-pill">
-              <strong data-i18n="contractRepairGate">Ask Only If Needed</strong>
-              <span data-i18n="contractRepairGateHint">unclear text needs review</span>
+              <strong data-i18n="contractRepairGate">Flag Unclear Prices</strong>
+              <span data-i18n="contractRepairGateHint">unclear rows need review</span>
             </div>
             <div class="contract-pill">
-              <strong data-i18n="contractClaimAudit">Check Everyone</strong>
-              <span data-i18n="contractClaimAuditHint">no one is confirmed for them</span>
+              <strong data-i18n="contractClaimAudit">Customer Self-Check</strong>
+              <span data-i18n="contractClaimAuditHint">each customer confirms their own choice</span>
             </div>
             <div class="contract-pill">
-              <strong data-i18n="contractAgentGuard">Assistant Prepares Drafts</strong>
-              <span data-i18n="contractAgentGuardHint">the host makes the call</span>
+              <strong data-i18n="contractAgentGuard">AI Prepares Drafts</strong>
+              <span data-i18n="contractAgentGuardHint">the merchant approves before publish</span>
             </div>
           </div>
 
@@ -1654,26 +1663,26 @@
               <input id="fileInput" type="file" accept="image/*">
               <span class="upload-stack">
                 <span class="upload-mark">＋</span>
-                <strong data-i18n="priceEvidenceImage">Evidence Photo</strong>
-                <span class="upload-copy" data-i18n="uploadCopy">Choose, drop, or paste one evidence photo for meals, KTV, sports, tickets, rentals, events, group buys, or service drafts.</span>
+                <strong data-i18n="priceEvidenceImage">Menu Photo</strong>
+                <span class="upload-copy" data-i18n="uploadCopy">Choose, drop, or paste one menu, drink board, takeout list, group-order post, or service price photo.</span>
                 <button class="button" id="selectImageButton" type="button" data-i18n="selectImage">Select Image</button>
                   <img class="preview-image" id="previewImage" alt="Evidence photo preview" data-i18n-alt="evidencePreview" hidden>
                 <span class="task-selector">
-                  <label for="taskTypeSelect" data-i18n="taskType">Room Purpose</label>
+                  <label for="taskTypeSelect" data-i18n="taskType">Business Flow</label>
                   <select id="taskTypeSelect">
                     <option value="auto" data-i18n="taskAuto">Auto Detect</option>
-                    <option value="group_buy" data-i18n="taskGroupBuy">Group Buy / Free Shipping</option>
-                    <option value="drink_order" data-i18n="taskDrinkOrder">Drink Order</option>
-                    <option value="restaurant_split" data-i18n="taskRestaurantSplit">Restaurant Split</option>
+                    <option value="group_buy" data-i18n="taskGroupBuy">Group Order / Free Shipping</option>
+                    <option value="drink_order" data-i18n="taskDrinkOrder">Drink Menu</option>
+                    <option value="restaurant_split" data-i18n="taskRestaurantSplit">Cafe / Restaurant Menu</option>
                     <option value="ktv_room" data-i18n="taskKtvRoom">KTV / Room Minimum</option>
                     <option value="sports_venue" data-i18n="taskSportsVenue">Sports Venue / Court Fee</option>
                     <option value="ticket_activity" data-i18n="taskTicketActivity">Tickets / Activity Signup</option>
                     <option value="rental_share" data-i18n="taskRentalShare">Rental / Deposit</option>
-                    <option value="generic_split" data-i18n="taskGenericSplit">Generic Split</option>
+                    <option value="generic_split" data-i18n="taskGenericSplit">Other Price List</option>
                   </select>
-                  <span class="task-lock-hint" id="taskLockHint" data-i18n="taskAutoHint">Auto mode can choose the route from the photo. Pick a purpose to lock the room to one route.</span>
+                  <span class="task-lock-hint" id="taskLockHint" data-i18n="taskAutoHint">Auto mode can choose from the photo. Pick a flow to lock this room for the merchant review.</span>
                 </span>
-                <textarea class="ocr-field" id="localOcrTextInput" maxlength="12000" placeholder="Optional: paste local OCR or copied text blocks from the image. The photo stays as evidence; this text only seeds a draft for host review." data-i18n-placeholder="localOcrPlaceholder"></textarea>
+                <textarea class="ocr-field" id="localOcrTextInput" maxlength="12000" placeholder="Optional: paste text captured from the photo. The photo stays as evidence; the text only helps prepare a merchant review draft." data-i18n-placeholder="localOcrPlaceholder"></textarea>
                 <button class="button secondary sample-button" id="loadSampleButton" type="button" data-i18n="loadSampleRoom">Load Sample Room</button>
                 <span class="upload-actions" id="uploadActions">
                   <button class="button" id="confirmUploadButton" type="button" disabled data-i18n="confirmUpload">Use This Photo</button>
@@ -1681,7 +1690,7 @@
                 </span>
               </span>
             </label>
-            <div class="loading-bar" id="loadingBar" data-i18n="aiParsing">Reading the evidence photo. Keep this page open.</div>
+            <div class="loading-bar" id="loadingBar" data-i18n="aiParsing">Preparing a review draft from the photo. Keep this page open.</div>
           </div>
 
           <div class="message" id="messageBox"></div>
@@ -1690,7 +1699,7 @@
             <div class="quality-panel" id="qualityPanel"></div>
             <div class="source-menu-card" id="sourceMenuCard" hidden>
               <div class="source-menu-header">
-                <span data-i18n="compressedEvidence">Saved Evidence Photo</span>
+                <span data-i18n="compressedEvidence">Saved Menu Photo</span>
                 <div class="source-menu-tools" aria-label="Evidence photo tools" data-i18n-aria-label="imageTools">
                   <button class="image-tool-button" id="sourceMenuToggleButton" type="button" data-i18n="collapse">Collapse</button>
                   <button class="image-tool-button" id="downloadCompressedImageButton" type="button" data-i18n="downloadEvidence">Download Photo</button>
@@ -1699,8 +1708,8 @@
                   <button class="image-tool-button" id="imageZoomInButton" type="button">＋</button>
                 </div>
               </div>
-              <div class="source-menu-viewer" id="sourceMenuViewer" aria-label="Saved evidence photo" data-i18n-aria-label="draggableEvidence">
-                <img id="sourceMenuImage" alt="Saved Evidence Photo" draggable="false" data-i18n-alt="compressedEvidence">
+              <div class="source-menu-viewer" id="sourceMenuViewer" aria-label="Saved menu photo" data-i18n-aria-label="draggableEvidence">
+                <img id="sourceMenuImage" alt="Saved Menu Photo" draggable="false" data-i18n-alt="compressedEvidence">
               </div>
               <div class="source-menu-hint" data-i18n="sourceMenuHint">Drag to inspect. Zoom in if the text is small.</div>
             </div>
@@ -1714,16 +1723,16 @@
                 <button class="mode-button" type="button" data-menu-mode="general" data-i18n="modeGeneral">Standard List</button>
                 <button class="mode-button" type="button" data-menu-mode="drink" data-i18n="modeDrink">Drink List</button>
               </div>
-              <button class="button" id="openItemsButton" type="button" data-i18n="openToMembers">Open To Members</button>
+              <button class="button" id="openItemsButton" type="button" data-i18n="openToMembers">Publish To Customers</button>
             </div>
             <div class="gate-review-hint" id="gateReviewHint"></div>
             <div class="menu-list" id="menuBody"></div>
             <div class="order-confirm-row">
               <span class="order-status" id="ownOrderStatus" data-i18n="noItemsSelected">No items selected</span>
-              <button class="button" id="confirmOrderButton" type="button" disabled data-i18n="confirmPersonalCost">Confirm My Cost</button>
+              <button class="button" id="confirmOrderButton" type="button" disabled data-i18n="confirmPersonalCost">Confirm My Selection</button>
             </div>
             <div class="settlement-row">
-              <button class="button" id="settleRoomButton" type="button" disabled data-i18n="ownerSettle">Owner Finalizes Summary</button>
+              <button class="button" id="settleRoomButton" type="button" disabled data-i18n="ownerSettle">Merchant Finalizes Summary</button>
               <button class="button secondary" id="printOrderButton" type="button" disabled data-i18n="printBill">Print Summary</button>
               <a class="button secondary" id="downloadHtmlButton" role="button" aria-disabled="true" data-i18n="downloadHtml">Download HTML</a>
               <a class="button secondary" id="downloadPdfButton" role="button" aria-disabled="true" data-i18n="downloadPdf">Download PDF</a>
@@ -1739,9 +1748,9 @@
 
       <aside class="panel">
         <div class="summary-metric">
-          <span data-i18n="grandTotalLabel">Group Total</span>
+          <span data-i18n="grandTotalLabel">Order Total</span>
           <strong id="grandTotal">NT$ 0</strong>
-          <small id="shareAverageText">Shared average: NT$ 0 / person; personal add-ons NT$ 0</small>
+          <small id="shareAverageText">Shared items: NT$ 0 / customer; customer extras NT$ 0</small>
           <div class="threshold-box">
             <input id="thresholdInput" type="number" min="0" step="1" inputmode="numeric" placeholder="Goal amount" data-i18n-placeholder="thresholdPlaceholder">
             <small id="thresholdText" data-i18n="thresholdUnset">No threshold set</small>
@@ -1749,7 +1758,7 @@
         </div>
         <div class="proposal-panel" id="proposalPanel">
           <div class="proposal-heading">
-            <span data-i18n="agentDrafts">Suggested Drafts</span>
+            <span data-i18n="agentDrafts">AI Review Draft</span>
             <span class="chip" id="proposalCountChip">0</span>
           </div>
           <div class="proposal-list" id="proposalList">
@@ -1757,19 +1766,19 @@
           </div>
         </div>
         <div class="panel-header">
-          <h2 class="panel-title" data-i18n="memberStats">Room Summary</h2>
-          <span class="chip" id="memberCountChip">0 people</span>
+          <h2 class="panel-title" data-i18n="memberStats">Order Summary</h2>
+          <span class="chip" id="memberCountChip">0 customers</span>
         </div>
         <div class="panel-body">
           <div class="summary-tabs" id="summaryTabs" aria-label="Summary tabs" data-i18n-aria-label="summaryTabs">
-            <button class="summary-tab" type="button" data-summary-tab="items" data-i18n="itemStats">Item Summary</button>
-            <button class="summary-tab" type="button" data-summary-tab="people" data-i18n="personDetails">People</button>
+            <button class="summary-tab" type="button" data-summary-tab="items" data-i18n="itemStats">Items</button>
+            <button class="summary-tab" type="button" data-summary-tab="people" data-i18n="personDetails">Customers</button>
           </div>
           <div class="summary-list" id="itemSummaryList">
             <div class="empty-state" data-i18n="noItemStats">No item stats yet</div>
           </div>
           <div class="summary-list is-hidden" id="participantList">
-            <div class="empty-state" data-i18n="noMemberCosts">No member costs yet</div>
+            <div class="empty-state" data-i18n="noMemberCosts">No customer totals yet</div>
           </div>
         </div>
       </aside>
@@ -1857,96 +1866,96 @@
 
     const translations = {
       zh: {
-        appTitle: '智慧共享空間',
-        appSubtitle: 'AI 先整理草稿，成員確認自己的部分，最後動作由人決定。',
+        appTitle: '桌邊點餐包廂',
+        appSubtitle: '店家上傳電子菜單，產生私密包廂連結。顧客各自點餐，店家合併計價並下載明細。',
         connecting: '連線中',
         connected: '已連線',
         disconnected: '連線中斷',
         evidenceNotParsed: '尚未加入證據照片',
-        evidenceAndItems: '證據與項目',
-        copySettlement: '複製結算摘要',
+        evidenceAndItems: '菜單與點餐項目',
+        copySettlement: '複製摘要',
         creatingRoom: '建立房間中',
         roomLabel: '房間',
         newRoom: '建立新房間',
         copyRoomLink: '複製房間連結',
-        yourName: '你的名稱',
+        yourName: '商家或顧客名稱',
         applyName: '套用名稱',
-        priceEvidenceImage: '證據照片',
-        uploadCopy: '選擇、拖放或貼上一張證據照片。可用於吃飯、唱歌、運動、票券、租借、活動或服務草稿。',
+        priceEvidenceImage: '菜單照片',
+        uploadCopy: '選擇、拖放或貼上一張菜單、飲料單、外帶清單、團訂貼文或服務價目照片。',
         selectImage: '選擇圖片',
         evidencePreview: '證據照片預覽',
-        taskType: '房間用途',
+        taskType: '商業流程',
         taskAuto: '自動判別',
-        taskGroupBuy: '團購 / 免運門檻',
-        taskDrinkOrder: '飲料揪團',
-        taskRestaurantSplit: '吃飯分帳',
+        taskGroupBuy: '團訂 / 免運門檻',
+        taskDrinkOrder: '飲料菜單',
+        taskRestaurantSplit: '咖啡店 / 餐廳菜單',
         taskKtvRoom: '唱歌 / 包廂低消',
         taskSportsVenue: '運動場地 / 場租',
         taskTicketActivity: '票券 / 活動報名',
         taskRentalShare: '租借 / 押金',
-        taskGenericSplit: '一般分帳',
-        taskAutoHint: '自動模式會依照片判斷路線；選定用途後，房間會鎖在那條路線。',
-        taskLockedHint: '用途已鎖定，照片只會照這條路線產生草稿。',
-        taskLockedPrefix: '用途已鎖定',
-        taskAutoPrefix: '自動判斷用途',
-        localOcrPlaceholder: '可選：貼上本地 OCR 或從圖片複製出的文字區塊。照片保留為證據；文字只用來產生待主揪審核的草稿。',
+        taskGenericSplit: '其他服務價目',
+        taskAutoHint: '自動模式會依照片判斷流程；選定流程後，這個房間會鎖定給商家審核。',
+        taskLockedHint: '流程已鎖定，照片只會照這個流程產生草稿。',
+        taskLockedPrefix: '流程已鎖定',
+        taskAutoPrefix: '自動判斷流程',
+        localOcrPlaceholder: '可選：貼上從照片讀出的文字。照片保留為證據；文字只用來輔助產生商家審核草稿。',
         loadSampleRoom: '載入示範房間',
         confirmUpload: '使用這張照片',
         cancelUpload: '取消上傳',
-        aiParsing: '正在讀取證據照片，請保持頁面開啟。',
-        compressedEvidence: '已保存證據照片',
+        aiParsing: '正在依照片準備審核草稿，請保持頁面開啟。',
+        compressedEvidence: '已保存菜單照片',
         imageTools: '證據照片工具',
         collapse: '收合',
         expand: '展開',
         downloadEvidence: '下載照片',
         resetZoom: '重置',
-        draggableEvidence: '保存的證據照片',
+        draggableEvidence: '保存的菜單照片',
         sourceMenuHint: '可拖移查看，文字太小可放大。',
-        itemMode: '清單類型',
+        itemMode: '顧客清單類型',
         aiAutoDetect: '自動建議',
         itemModeToggle: '清單類型切換',
         modeAuto: '自動',
-        modeGeneral: '一般清單',
-        modeDrink: '飲料清單',
-        openToMembers: '開放給成員',
-        openedToMembers: '已開放給成員',
-        reviewBeforeOpen: '請先修正清單，再開放給成員選擇。',
-        waitingHostOpen: '等待發起者開放清單',
-        openItemsFailed: '開放清單失敗',
+        modeGeneral: '品項清單',
+        modeDrink: '飲料選項',
+        openToMembers: '發布給顧客',
+        openedToMembers: '已發布給顧客',
+        reviewBeforeOpen: '請先確認清單，再發布給顧客選擇。',
+        waitingHostOpen: '等待商家發布清單',
+        openItemsFailed: '發布清單失敗',
         noItemsSelected: '尚未選項',
-        confirmPersonalCost: '確認個人費用',
-        ownerSettle: '發起者產生最終摘要',
-        waitingOwnerSettle: '等待發起者結算',
-        settled: '已結算',
+        confirmPersonalCost: '確認我的選擇',
+        ownerSettle: '商家完成摘要',
+        waitingOwnerSettle: '等待商家完成摘要',
+        settled: '已完成',
         printBill: '列印摘要',
         downloadHtml: '下載 HTML',
         downloadPdf: '下載 PDF',
         resetRoom: '清空房間',
-        grandTotalLabel: '全體總金額',
+        grandTotalLabel: '訂單總金額',
         thresholdPlaceholder: '目標金額',
         thresholdUnset: '尚未設定門檻',
         parsedThreshold: '照片中的門檻',
-        memberStats: '房間摘要',
+        memberStats: '點餐摘要',
         summaryTabs: '統計切換',
-        itemStats: '品項摘要',
-        personDetails: '每人明細',
-        noItemStats: '尚無品項統計',
-        noMemberCosts: '尚無成員費用',
+        itemStats: '品項',
+        personDetails: '顧客',
+        noItemStats: '尚無顧客選擇',
+        noMemberCosts: '尚無顧客金額',
         chooseItemsFirst: '請先選擇項目',
         confirm: '確認',
         cancel: '取消',
         itemCount: '個項目',
-        peopleCount: '人',
-        perPerson: '人',
-        sharedAverage: '大家一起分',
-        personalClaims: '個人加點',
+        peopleCount: '位顧客',
+        perPerson: '位顧客',
+        sharedAverage: '共同項目',
+        personalClaims: '顧客加點',
         targetReached: '已達標，多',
         targetRemaining: '還差',
-        qualityPass: '清單可供核對',
-        qualityWarn: '請快速核對',
-        qualityReview: '需要主揪核對',
+        qualityPass: '可供商家核對',
+        qualityWarn: '請商家快速核對',
+        qualityReview: '需要商家核對',
         qualityNone: '尚無品質報告',
-        aiConfidence: '讀取把握度',
+        aiConfidence: '照片判讀把握度',
         scenarioContract: '適用情境',
         schemaAlignment: '內容完整度',
         entityAnchoring: '項目可對照',
@@ -1955,7 +1964,7 @@
         issuePenalty: '需修正比例',
         blockingReasons: '需要先處理',
         needsReview: '需要確認',
-        hostCheckNeeded: '需要主揪核對',
+        hostCheckNeeded: '需要商家核對',
         itemsNeedCheck: '待核對項目',
         rulesNeedCheck: '待核對規則',
         rulesKeptSeparate: '費用規則需確認',
@@ -1975,8 +1984,8 @@
         confidence: '吻合度',
         modeHintPrefix: '系統建議',
         currentMode: '目前',
-        ownerCanSwitch: '你是發起者，可切換模式',
-        ownerOnlySwitch: '只有發起者可切換模式',
+        ownerCanSwitch: '你是商家或操作員，可切換模式',
+        ownerOnlySwitch: '只有商家或操作員可切換模式',
         generalItems: '一般項目',
         drinkMenu: '飲料單',
         mixedItems: '混合項目',
@@ -1996,9 +2005,9 @@
         confirmed: '已確認',
         unconfirmed: '未確認',
         you: '你',
-        owner: '發起者',
+        owner: '商家',
         notConfirmed: '尚未確認',
-        roomSettled: '房間已結算',
+        roomSettled: '房間已完成',
         itemsNotReady: '項目尚未建立',
         enterNameApplied: '請先輸入名稱並套用',
         noUsableItems: '尚無可用品項',
@@ -2009,82 +2018,82 @@
         uploadCanceled: '已取消上傳。',
         compressedDownloaded: '已下載保存後的證據照片。',
         copiedLink: '房間連結已複製。',
-        copiedSettlement: '結算摘要已複製。',
+        copiedSettlement: '摘要已複製。',
         nameSaved: '名稱已套用。',
         missingName: '請先輸入名稱。',
         roomMissingNew: '原房間已不存在，已建立新房間。'
         ,
         reconnecting: '重新連線中',
-        billTitle: '行動審核摘要',
+        billTitle: '點餐摘要',
         status: '狀態',
-        unsettled: '未結算',
+        unsettled: '未完成',
         itemSummary: '品項彙總',
         noItems: '尚無品項',
         draftWaiting: '草稿待確認',
-        draftListEmpty: '先在右側採納草稿，項目才會出現在這裡。',
-        draftReadyForHost: '右側草稿待主揪確認',
-        personalDetails: '個人明細',
+        draftListEmpty: '先在右側採納草稿，顧客項目才會出現在這裡。',
+        draftReadyForHost: 'AI 草稿待商家確認',
+        personalDetails: '顧客明細',
         totalAmount: '總金額',
-        claimAudit: '確認狀態',
-        readyToSettle: '可結算',
+        claimAudit: '顧客確認',
+        readyToSettle: '可完成',
         notReadyCount: '未確認',
         printPdfOpened: '已開啟列印視窗，請選擇「另存為 PDF」。',
         htmlDownloaded: 'HTML 摘要已下載。',
         pdfDownloaded: 'PDF 摘要已下載。',
         exportUnavailable: '請先加入品項，再下載摘要。',
         billCopied: '摘要已複製並顯示在下方。',
-        settleFailed: '結算失敗',
+        settleFailed: '完成摘要失敗',
         settledCopied: '已完成，摘要已複製並顯示在下方。',
         settledDisplayed: '已完成，摘要已顯示在下方。',
         modeSwitchFailed: '切換清單類型失敗',
         invalidName: '名稱不能空白，也不能使用「未命名」。',
-        resetConfirm: '清空後可重新上傳證據照片，所有成員數量會歸零。',
+        resetConfirm: '清空後可重新上傳證據照片，所有顧客數量會歸零。',
         resetFailed: '清空房間失敗',
         contractStripLabel: '六個安全流程步驟',
-        contractTaskRouter: '先選用途',
-        contractTaskRouterHint: '房間只走一條路線',
-        contractEvidence: '讀取價格內容',
-        contractEvidenceHint: '先看照片再出草稿',
-        contractFormula: '本頁算金額',
-        contractFormulaHint: '不交給外部亂算',
-        contractRepairGate: '看不清才求助',
-        contractRepairGateHint: '不清楚就請人確認',
-        contractClaimAudit: '確認每個人',
-        contractClaimAuditHint: '不能替別人按確認',
-        contractAgentGuard: '助手先寫草稿',
-        contractAgentGuardHint: '最後由發起者決定',
-        agentDrafts: '建議草稿',
+        contractTaskRouter: '選擇商業流程',
+        contractTaskRouterHint: '固定同一流程',
+        contractEvidence: '上傳菜單照片',
+        contractEvidenceHint: '照片與文字一起核對',
+        contractFormula: '房間內計算',
+        contractFormulaHint: '金額留在房間內',
+        contractRepairGate: '標示不清價格',
+        contractRepairGateHint: '不清楚就要審核',
+        contractClaimAudit: '顧客自行確認',
+        contractClaimAuditHint: '不替顧客確認',
+        contractAgentGuard: 'AI 先出草稿',
+        contractAgentGuardHint: '商家核准後發布',
+        agentDrafts: 'AI 審核草稿',
         noAgentDrafts: '尚無建議',
-        pendingHostConfirmation: '等待發起者確認',
-        acceptedByHost: '發起者已採納',
-        rejectedByHost: '發起者已拒絕',
+        pendingHostConfirmation: '等待商家確認',
+        acceptedByHost: '商家已採納',
+        rejectedByHost: '商家已拒絕',
         proposalOnly: '只是一份建議',
         approveDraft: '採納草稿',
         confirmHumanApproval: '確認由人採納',
         rejectDraft: '拒絕草稿',
         confirmRejectDraft: '確認拒絕',
-        ownerOnlyDraftReview: '只有發起者可決定',
+        ownerOnlyDraftReview: '只有商家可決定',
         draftReviewFailed: '草稿審核失敗',
-        draftCreated: '建議已儲存，等待發起者確認。',
-        aiReviewBlocksDraft: '清單還有內容需要核對，請先修正後再開放。',
-        drinkOptionSettledError: '此房間已結算，不能再修改甜度冰塊。',
+        draftCreated: '建議已儲存，等待商家確認。',
+        aiReviewBlocksDraft: '清單還有內容需要核對，請先修正後再發布。',
+        drinkOptionSettledError: '此房間已完成，不能再修改甜度冰塊。',
         drinkOptionNameError: '請先輸入名稱並套用名稱再選甜度冰塊。',
-        drinkOptionConfirmedError: '個人費用已確認，請先取消確認再修改甜度冰塊。',
+        drinkOptionConfirmedError: '顧客選擇已確認，請先取消確認再修改甜度冰塊。',
         drinkOptionUpdateFailed: '更新甜度冰塊失敗',
-        itemOptionSettledError: '此房間已結算，不能再修改選項。',
+        itemOptionSettledError: '此房間已完成，不能再修改選項。',
         itemOptionNameError: '請先輸入名稱並套用名稱再選規格。',
-        itemOptionConfirmedError: '個人費用已確認，請先取消確認再修改選項。',
+        itemOptionConfirmedError: '顧客選擇已確認，請先取消確認再修改選項。',
         itemOptionUpdateFailed: '更新選項失敗',
-        confirmSettledError: '此房間已結算，不能再修改確認狀態。',
-        confirmNameError: '請先輸入名稱並套用名稱再確認個人費用。',
+        confirmSettledError: '此房間已完成，不能再修改確認狀態。',
+        confirmNameError: '請先輸入名稱並套用名稱再確認選擇。',
         confirmEmptyError: '目前沒有費用項目，不能確認空明細。',
-        confirmCostFailed: '個人費用確認失敗',
+        confirmCostFailed: '顧客選擇確認失敗',
         uploadRoomLoadedError: '此房間已經有證據照片，請先清空房間再上傳新圖片。',
-        sampleRoomLoaded: '示範房間已載入，草稿等待發起者確認。',
+        sampleRoomLoaded: '示範房間已載入，草稿等待商家確認。',
         sampleRoomLoadFailed: '載入示範房間失敗',
         sampleRoomNeedsEmpty: '此房間已有資料，請建立新房間再載入示範。',
         parseImageFailed: '圖片解析失敗',
-        parseImageTimeout: '圖片解析逾時，請改貼 OCR 文字或手動建立草稿後由發起者審核放行。',
+        parseImageTimeout: '圖片讀取逾時，請改貼照片文字或手動建立草稿後由商家審核。',
         rateLimited: '請求太頻繁，請稍後再試。',
         retryAfterPrefix: '請等',
         retryAfterSeconds: '秒後重試。',
@@ -2102,24 +2111,25 @@
         proposalTypegeneric_next_step: '下一步建議',
         proposalRisklow: '低風險',
         proposalRiskmedium: '需要看一下',
-        proposalRiskneeds_human_review: '需要人工確認',
+        proposalRiskneeds_human_review: '需要商家確認',
         reviewParsedItems: '檢查品項清單',
         reviewParsedItemsHint: '開放前可移除錯列或修正名稱、金額、分類。',
         itemName: '名稱',
         itemPrice: '金額',
         itemCategory: '分類',
-        itemPriceRole: '用途',
+        itemPriceRole: '計價方式',
         itemSourceClass: '數字類型',
-        itemConfidence: '讀取信心',
+        itemConfidence: '照片判讀把握度',
         itemEvidence: '文字線索',
-        itemAuditAnchor: '照片線索',
-        itemReviewGate: '請核對',
+        itemAuditAnchor: '照片文字',
+        itemReviewGate: '需要確認的原因',
+        itemReviewDetails: '照片核對',
         itemBoundingZone: '照片位置',
         itemDetectedType: '看起來是',
         itemNoReviewGate: '不用額外核對',
         itemReviewFlags: '核對提醒',
-        priceRoleline_item: '可選項目',
-        priceRoleshared_fixed_fee: '共享固定費',
+        priceRoleline_item: '可點項目',
+        priceRoleshared_fixed_fee: '共同費用',
         priceRoletax_rate: '稅率',
         priceRoletax_fixed_fee: '固定稅費',
         priceRoleservice_rate: '服務費率',
@@ -2137,7 +2147,7 @@
         priceRolethreshold_amount: '門檻金額',
         priceRolepoints_value: '點數價值',
         priceRolenon_price_context: '非價格脈絡',
-        sourceNumberClasscurrency_amount: '金額',
+        sourceNumberClasscurrency_amount: '菜單金額',
         sourceNumberClassage_range: '年齡',
         sourceNumberClassitinerary_index: '行程編號',
         sourceNumberClasspercentage_rate: '百分比',
@@ -2170,105 +2180,105 @@
         itemRemoveFailed: '項目移除失敗'
       },
       en: {
-        appTitle: 'Shared Room',
-        appSubtitle: 'AI turns photos or messy text into a draft. The host reviews it, people join, and final approval stays human.',
+        appTitle: 'Table Order Room',
+        appSubtitle: 'Merchant uploads an electronic menu and opens a private booth link. Customers order separately; the merchant reviews merged totals and downloads details.',
         connecting: 'Connecting',
         connected: 'Connected',
         disconnected: 'Disconnected',
-        evidenceNotParsed: 'No evidence photo yet',
-        evidenceAndItems: 'Evidence And Items',
+        evidenceNotParsed: 'No menu photo yet',
+        evidenceAndItems: 'Menu And Order Items',
         copySettlement: 'Copy Summary',
         creatingRoom: 'Creating room',
         roomLabel: 'Room',
         newRoom: 'New Room',
         copyRoomLink: 'Copy Room Link',
-        yourName: 'Your name',
+        yourName: 'Business or customer name',
         applyName: 'Apply Name',
-        priceEvidenceImage: 'Evidence Photo',
-        uploadCopy: 'Choose, drop, or paste one evidence photo for meals, KTV, sports, tickets, rentals, events, group buys, or service drafts.',
+        priceEvidenceImage: 'Menu Photo',
+        uploadCopy: 'Choose, drop, or paste one menu, drink board, takeout list, group-order post, or service price photo.',
         selectImage: 'Select Image',
-        evidencePreview: 'Evidence photo preview',
-        taskType: 'Room Purpose',
+        evidencePreview: 'Menu photo preview',
+        taskType: 'Business Flow',
         taskAuto: 'Auto Detect',
-        taskGroupBuy: 'Group Buy / Free Shipping',
-        taskDrinkOrder: 'Drink Order',
-        taskRestaurantSplit: 'Restaurant Split',
+        taskGroupBuy: 'Group Order / Free Shipping',
+        taskDrinkOrder: 'Drink Menu',
+        taskRestaurantSplit: 'Cafe / Restaurant Menu',
         taskKtvRoom: 'KTV / Room Minimum',
         taskSportsVenue: 'Sports Venue / Court Fee',
         taskTicketActivity: 'Tickets / Activity Signup',
         taskRentalShare: 'Rental / Deposit',
-        taskGenericSplit: 'Generic Split',
-        taskAutoHint: 'Auto mode can choose the route from the photo. Pick a purpose to lock the room to one route.',
-        taskLockedHint: 'Purpose locked. Photo drafts stay on this route.',
-        taskLockedPrefix: 'Purpose locked',
-        taskAutoPrefix: 'Auto purpose',
-        localOcrPlaceholder: 'Optional: paste local OCR or copied text blocks from the image. The photo stays as evidence; this text only seeds a draft for host review.',
+        taskGenericSplit: 'Other Price List',
+        taskAutoHint: 'Auto mode can choose from the photo. Pick a flow to lock this room for merchant review.',
+        taskLockedHint: 'Flow locked. Photo drafts stay on this business flow.',
+        taskLockedPrefix: 'Flow locked',
+        taskAutoPrefix: 'Auto flow',
+        localOcrPlaceholder: 'Optional: paste text captured from the photo. The photo stays as evidence; the text only helps prepare a merchant review draft.',
         loadSampleRoom: 'Load Sample Room',
         confirmUpload: 'Use This Photo',
         cancelUpload: 'Cancel Upload',
-        aiParsing: 'Reading the evidence photo. Keep this page open.',
-        compressedEvidence: 'Saved Evidence Photo',
-        imageTools: 'Evidence photo tools',
+        aiParsing: 'Preparing a review draft from the photo. Keep this page open.',
+        compressedEvidence: 'Saved Menu Photo',
+        imageTools: 'Menu photo tools',
         collapse: 'Collapse',
         expand: 'Expand',
         downloadEvidence: 'Download Photo',
         resetZoom: 'Reset',
-        draggableEvidence: 'Saved evidence photo',
+        draggableEvidence: 'Saved menu photo',
         sourceMenuHint: 'Drag to inspect. Zoom in if the text is small.',
-        itemMode: 'List Type',
+        itemMode: 'Customer List Type',
         aiAutoDetect: 'Suggested automatically',
         itemModeToggle: 'List type switch',
         modeAuto: 'Auto',
-        modeGeneral: 'Standard List',
-        modeDrink: 'Drink List',
-        openToMembers: 'Open To Members',
-        openedToMembers: 'Opened To Members',
-        reviewBeforeOpen: 'Review the list before opening it to members.',
-        waitingHostOpen: 'Waiting for host to open the list',
-        openItemsFailed: 'Failed to open item list',
+        modeGeneral: 'Item List',
+        modeDrink: 'Drink Options',
+        openToMembers: 'Publish To Customers',
+        openedToMembers: 'Published To Customers',
+        reviewBeforeOpen: 'Review the list before publishing it to customers.',
+        waitingHostOpen: 'Waiting for the merchant to publish the list',
+        openItemsFailed: 'Failed to publish the list',
         noItemsSelected: 'No items selected',
-        confirmPersonalCost: 'Confirm My Cost',
-        ownerSettle: 'Owner Finalizes Summary',
-        waitingOwnerSettle: 'Waiting for owner',
-        settled: 'Settled',
+        confirmPersonalCost: 'Confirm My Selection',
+        ownerSettle: 'Merchant Finalizes Summary',
+        waitingOwnerSettle: 'Waiting for merchant',
+        settled: 'Finalized',
         printBill: 'Print Summary',
         downloadHtml: 'Download HTML',
         downloadPdf: 'Download PDF',
         resetRoom: 'Reset Room',
-        grandTotalLabel: 'Group Total',
+        grandTotalLabel: 'Order Total',
         thresholdPlaceholder: 'Goal amount',
         thresholdUnset: 'No threshold set',
         parsedThreshold: 'photo threshold',
-        memberStats: 'Room Summary',
+        memberStats: 'Order Summary',
         summaryTabs: 'Summary tabs',
-        itemStats: 'Item Summary',
-        personDetails: 'People',
-        noItemStats: 'No item summary yet',
-        noMemberCosts: 'No member costs yet',
+        itemStats: 'Items',
+        personDetails: 'Customers',
+        noItemStats: 'No customer selections yet',
+        noMemberCosts: 'No customer totals yet',
         chooseItemsFirst: 'Choose items first',
         confirm: 'Confirm',
         cancel: 'Cancel',
         itemCount: 'items',
-        peopleCount: 'people',
-        perPerson: 'person',
-        sharedAverage: 'Shared split',
-        personalClaims: 'personal add-ons',
+        peopleCount: 'customers',
+        perPerson: 'customer',
+        sharedAverage: 'Shared items',
+        personalClaims: 'customer extras',
         targetReached: 'Reached, over by',
         targetRemaining: 'Remaining',
-        qualityPass: 'Ready for host check',
-        qualityWarn: 'Quick review needed',
-        qualityReview: 'Human review required',
+        qualityPass: 'Ready for merchant review',
+        qualityWarn: 'Merchant review suggested',
+        qualityReview: 'Merchant review required',
         qualityNone: 'No quality report yet',
-        aiConfidence: 'Reading confidence',
-        scenarioContract: 'Room type',
+        aiConfidence: 'Photo reading confidence',
+        scenarioContract: 'Business flow',
         schemaAlignment: 'Content complete',
         entityAnchoring: 'Item match',
         priceCoverage: 'Prices found',
-        contractFit: 'Purpose match',
+        contractFit: 'Flow match',
         issuePenalty: 'Needs correction',
         blockingReasons: 'Needs attention',
         needsReview: 'Needs review',
-        hostCheckNeeded: 'host check needed',
+        hostCheckNeeded: 'merchant check needed',
         itemsNeedCheck: 'items to check',
         rulesNeedCheck: 'rules to check',
         rulesKeptSeparate: 'rules shown separately',
@@ -2276,10 +2286,10 @@
         minimumRuleFound: 'minimum threshold',
         discountRuleFound: 'discount rule',
         unavailableRuleFound: 'sold out or unavailable',
-        localOcrProvided: 'Photo text read',
+        localOcrProvided: 'Photo text captured',
         localOcrMissing: 'No photo text yet',
-        auditPending: 'People still need to confirm',
-        auditReady: 'Everyone confirmed',
+        auditPending: 'Customers still need to confirm',
+        auditReady: 'All customers confirmed',
         auditNoActiveCosts: 'No pending costs',
         suspicious: 'review items',
         optionGroups: 'choices',
@@ -2288,10 +2298,10 @@
         confidence: 'match',
         modeHintPrefix: 'Suggested',
         currentMode: 'Current',
-        ownerCanSwitch: 'You are the owner and can switch modes',
-        ownerOnlySwitch: 'Only the owner can switch modes',
-        generalItems: 'Standard List',
-        drinkMenu: 'Drink List',
+        ownerCanSwitch: 'You are the merchant/operator and can switch modes',
+        ownerOnlySwitch: 'Only the merchant/operator can switch modes',
+        generalItems: 'Item List',
+        drinkMenu: 'Drink Options',
         mixedItems: 'Mixed Items',
         selectableSweetIce: 'sweetness and ice options',
         selectableOptions: 'item options',
@@ -2309,94 +2319,94 @@
         confirmed: 'confirmed',
         unconfirmed: 'unconfirmed',
         you: 'you',
-        owner: 'owner',
+        owner: 'merchant',
         notConfirmed: 'not confirmed',
-        roomSettled: 'room settled',
+        roomSettled: 'room finalized',
         itemsNotReady: 'Items not ready',
         enterNameApplied: 'Enter and apply your name first',
         noUsableItems: 'No usable items yet',
         selectedQty: 'Selected',
         selectedImage: 'Selected 1 image. It will upload only after confirmation.',
         imageOnly: 'Please choose an image file.',
-        alreadyLoaded: 'This room already has an evidence photo. Reset the room before choosing a new image.',
+        alreadyLoaded: 'This room already has a menu photo. Reset the room before choosing a new image.',
         uploadCanceled: 'Upload canceled.',
-        compressedDownloaded: 'Saved evidence photo downloaded.',
+        compressedDownloaded: 'Saved menu photo downloaded.',
         copiedLink: 'Room link copied.',
-        copiedSettlement: 'Settlement summary copied.',
+        copiedSettlement: 'Summary copied.',
         nameSaved: 'Name applied.',
         missingName: 'Enter your name first.',
         roomMissingNew: 'The original room no longer exists. A new room was created.',
         reconnecting: 'Reconnecting',
-        billTitle: 'Action Review Summary',
+        billTitle: 'Order Summary',
         status: 'Status',
-        unsettled: 'not settled',
-        itemSummary: 'Item summary',
+        unsettled: 'not finalized',
+        itemSummary: 'Selection summary',
         noItems: 'No items',
         draftWaiting: 'Draft waiting',
-        draftListEmpty: 'Approve the draft on the right before items appear here.',
-        draftReadyForHost: 'Draft ready on the right',
-        personalDetails: 'People',
+        draftListEmpty: 'Approve the draft on the right before customer items appear here.',
+        draftReadyForHost: 'AI draft ready for merchant review',
+        personalDetails: 'Customers',
         totalAmount: 'Total amount',
-        claimAudit: 'Confirmation status',
-        readyToSettle: 'ready',
+        claimAudit: 'Customer confirmations',
+        readyToSettle: 'ready to finalize',
         notReadyCount: 'unconfirmed',
         printPdfOpened: 'Print dialog opened. Choose Save as PDF.',
         htmlDownloaded: 'HTML summary downloaded.',
         pdfDownloaded: 'PDF summary downloaded.',
         exportUnavailable: 'Add items before downloading a summary.',
         billCopied: 'Summary copied and shown below.',
-        settleFailed: 'Settlement failed',
+        settleFailed: 'Failed to finalize summary',
         settledCopied: 'Finalized. Summary copied and shown below.',
         settledDisplayed: 'Finalized. Summary shown below.',
         modeSwitchFailed: 'Failed to switch item mode',
         invalidName: 'Name cannot be blank or unnamed.',
-        resetConfirm: 'Reset the room and clear all member quantities?',
+        resetConfirm: 'Reset the room and clear all customer quantities?',
         resetFailed: 'Failed to reset room',
         contractStripLabel: 'Six safe workflow steps',
-        contractTaskRouter: 'Choose the Plan',
-        contractTaskRouterHint: 'the room stays on one path',
-        contractEvidence: 'Read the Price List',
-        contractEvidenceHint: 'photo review first',
-        contractFormula: 'Calculate Here',
-        contractFormulaHint: 'totals are calculated here',
-        contractRepairGate: 'Ask Only If Needed',
-        contractRepairGateHint: 'unclear text needs review',
-        contractClaimAudit: 'Check Everyone',
-        contractClaimAuditHint: 'no one is confirmed for them',
-        contractAgentGuard: 'Assistant Prepares Drafts',
-        contractAgentGuardHint: 'the host makes the call',
-        agentDrafts: 'Suggested Drafts',
+        contractTaskRouter: 'Select Business Flow',
+        contractTaskRouterHint: 'one locked workflow',
+        contractEvidence: 'Upload Menu Photo',
+        contractEvidenceHint: 'photo and text stay together',
+        contractFormula: 'Calculate In Room',
+        contractFormulaHint: 'totals stay local to the room',
+        contractRepairGate: 'Flag Unclear Prices',
+        contractRepairGateHint: 'unclear rows need review',
+        contractClaimAudit: 'Customer Self-Check',
+        contractClaimAuditHint: 'each customer confirms their own choice',
+        contractAgentGuard: 'AI Prepares Drafts',
+        contractAgentGuardHint: 'the merchant approves before publish',
+        agentDrafts: 'AI Review Draft',
         noAgentDrafts: 'No suggestions yet',
-        pendingHostConfirmation: 'waiting for host review',
-        acceptedByHost: 'accepted',
-        rejectedByHost: 'rejected',
+        pendingHostConfirmation: 'waiting for merchant review',
+        acceptedByHost: 'merchant accepted',
+        rejectedByHost: 'merchant rejected',
         proposalOnly: 'draft only',
         approveDraft: 'Approve Draft',
-        confirmHumanApproval: 'Confirm Human Approval',
+        confirmHumanApproval: 'Confirm Merchant Approval',
         rejectDraft: 'Reject Draft',
         confirmRejectDraft: 'Confirm Reject',
-        ownerOnlyDraftReview: 'host approval required',
+        ownerOnlyDraftReview: 'merchant approval required',
         draftReviewFailed: 'Failed to review draft',
-        draftCreated: 'Suggestion saved for host confirmation.',
-        aiReviewBlocksDraft: 'The list still needs host review before it opens to members.',
-        drinkOptionSettledError: 'This room is settled. Drink options cannot be changed.',
+        draftCreated: 'Suggestion saved for merchant review.',
+        aiReviewBlocksDraft: 'The list still needs merchant review before it is published.',
+        drinkOptionSettledError: 'This room is finalized. Drink options cannot be changed.',
         drinkOptionNameError: 'Enter and apply your name before choosing drink options.',
-        drinkOptionConfirmedError: 'Your cost is already confirmed. Cancel confirmation before changing drink options.',
+        drinkOptionConfirmedError: 'Your selection is already confirmed. Cancel confirmation before changing drink options.',
         drinkOptionUpdateFailed: 'Failed to update drink options',
-        itemOptionSettledError: 'This room is settled. Item options cannot be changed.',
+        itemOptionSettledError: 'This room is finalized. Item options cannot be changed.',
         itemOptionNameError: 'Enter and apply your name before choosing item options.',
-        itemOptionConfirmedError: 'Your cost is already confirmed. Cancel confirmation before changing item options.',
+        itemOptionConfirmedError: 'Your selection is already confirmed. Cancel confirmation before changing item options.',
         itemOptionUpdateFailed: 'Failed to update item options',
-        confirmSettledError: 'This room is settled. Confirmation cannot be changed.',
-        confirmNameError: 'Enter and apply your name before confirming your cost.',
+        confirmSettledError: 'This room is finalized. Confirmation cannot be changed.',
+        confirmNameError: 'Enter and apply your name before confirming your selection.',
         confirmEmptyError: 'There are no cost items to confirm yet.',
-        confirmCostFailed: 'Failed to confirm your cost',
-        uploadRoomLoadedError: 'This room already has an evidence photo. Reset the room before uploading a new image.',
-        sampleRoomLoaded: 'Sample room loaded. The draft is waiting for host confirmation.',
+        confirmCostFailed: 'Failed to confirm your selection',
+        uploadRoomLoadedError: 'This room already has a menu photo. Reset the room before uploading a new image.',
+        sampleRoomLoaded: 'Sample room loaded. The draft is waiting for merchant review.',
         sampleRoomLoadFailed: 'Failed to load sample room',
         sampleRoomNeedsEmpty: 'This room already has data. Create a new room before loading the sample.',
-        parseImageFailed: 'Failed to read the evidence photo',
-        parseImageTimeout: 'Evidence parsing timed out. Paste evidence text or create a manual draft for host review.',
+        parseImageFailed: 'Failed to read the menu photo',
+        parseImageTimeout: 'Photo reading timed out. Paste captured text or create a manual draft for merchant review.',
         rateLimited: 'Too many requests. Please try again later.',
         retryAfterPrefix: 'Wait',
         retryAfterSeconds: 'seconds and retry.',
@@ -2414,24 +2424,25 @@
         proposalTypegeneric_next_step: 'next step',
         proposalRisklow: 'low risk',
         proposalRiskmedium: 'review needed',
-        proposalRiskneeds_human_review: 'host review needed',
+        proposalRiskneeds_human_review: 'merchant review needed',
         reviewParsedItems: 'Review Item List',
         reviewParsedItemsHint: 'Before opening, remove bad rows or fix names, prices, and categories.',
         itemName: 'Name',
         itemPrice: 'Price',
         itemCategory: 'Category',
-        itemPriceRole: 'Cost type',
+        itemPriceRole: 'Charge type',
         itemSourceClass: 'Number type',
-        itemConfidence: 'Reading check',
-        itemEvidence: 'Evidence',
+        itemConfidence: 'Photo reading confidence',
+        itemEvidence: 'Nearby text',
         itemAuditAnchor: 'Photo text',
-        itemReviewGate: 'Check',
+        itemReviewGate: 'Why this needs checking',
+        itemReviewDetails: 'Photo check',
         itemBoundingZone: 'Photo area',
         itemDetectedType: 'Looks like',
         itemNoReviewGate: 'No extra check needed',
         itemReviewFlags: 'Check notes',
-        priceRoleline_item: 'selectable item',
-        priceRoleshared_fixed_fee: 'shared fixed fee',
+        priceRoleline_item: 'order item',
+        priceRoleshared_fixed_fee: 'shared fee',
         priceRoletax_rate: 'tax rate',
         priceRoletax_fixed_fee: 'fixed tax',
         priceRoleservice_rate: 'service rate',
@@ -2449,7 +2460,7 @@
         priceRolethreshold_amount: 'threshold amount',
         priceRolepoints_value: 'points value',
         priceRolenon_price_context: 'not a price',
-        sourceNumberClasscurrency_amount: 'money',
+        sourceNumberClasscurrency_amount: 'menu price',
         sourceNumberClassage_range: 'age',
         sourceNumberClassitinerary_index: 'itinerary index',
         sourceNumberClasspercentage_rate: 'percentage',
@@ -2637,19 +2648,19 @@
       },
       en: {
         category: {
-          main: 'main',
-          side: 'side',
-          snack: 'snack',
-          soup: 'soup',
-          dessert: 'dessert',
-          drink: 'drink',
-          set: 'set',
-          service: 'service',
-          ticket: 'ticket',
-          rental: 'rental',
-          venue: 'venue',
+          main: 'Main Item',
+          side: 'Side',
+          snack: 'Snack',
+          soup: 'Soup',
+          dessert: 'Dessert',
+          drink: 'Drink',
+          set: 'Set',
+          service: 'Service',
+          ticket: 'Ticket',
+          rental: 'Rental',
+          venue: 'Venue',
           addon: 'add-on',
-          other: 'other'
+          other: 'Other'
         },
         spice: {
           none: 'not spicy',
@@ -2798,8 +2809,9 @@
     }
 
     function setMessage(text, tone) {
-      elements.messageBox.textContent = text || '';
-      if (!text) {
+      const visibleText = humanizeVisibleText(text);
+      elements.messageBox.textContent = visibleText || '';
+      if (!visibleText) {
         elements.messageBox.removeAttribute('data-tone');
         return;
       }
@@ -3199,14 +3211,40 @@
       return `${prefix}: ${taskLabel} · ${review} · ${t('confidence')} ${Math.round(score * 100)}%`;
     }
 
+    function getWebMcpProductRoomState() {
+      const finalSummaryReady = Boolean(currentRoom?.audit?.settlementReady);
+      const customerPublishingOpen = Boolean(currentRoom?.itemsOpenForMembers);
+      return {
+        roomKind: 'private_merchant_customer_room',
+        syncLayer: 'web_runtime',
+        assistantLayer: 'webmcp_scoped_room_tools',
+        businessFlow: currentRoom?.taskRouter?.taskType || null,
+        merchantRole: 'reviews_ai_drafts_publishes_to_customers_and_finalizes_order_summary',
+        customerRole: 'joins_private_room_selects_items_and_confirms_own_selection',
+        customerPublishingOpen,
+        finalSummaryReady,
+        privacyBoundary: 'this_tool_reads_the_current_room_only',
+        assistantCannot: [
+          'read_other_rooms',
+          'publish_without_merchant',
+          'confirm_for_a_customer',
+          'finalize_without_merchant',
+          'submit_payment',
+          'write_to_external_vendor_systems'
+        ]
+      };
+    }
+
     function getWebMcpRoomSnapshot() {
       return {
         roomId: currentRoom?.id || null,
+        productRoom: getWebMcpProductRoomState(),
         menuLoaded: Boolean(currentRoom?.menuLoaded),
         taskRouter: currentRoom?.taskRouter || null,
         taskRouterContract: currentRoom?.taskRouterContract || null,
         evidenceContract: currentRoom?.evidenceContract || null,
         serviceBlueprintContract: currentRoom?.serviceBlueprintContract || null,
+        webMcpToolSurface: currentRoom?.webMcpToolSurface || null,
         formulaContract: currentRoom?.formulaContract || null,
         formulaResults: currentRoom?.formulaResults || null,
         audit: currentRoom?.audit || null,
@@ -3214,6 +3252,7 @@
         localOcr: currentRoom?.localOcr || null,
         totals: currentRoom?.totals || null,
         itemsOpenForMembers: Boolean(currentRoom?.itemsOpenForMembers),
+        customerPublishingOpen: Boolean(currentRoom?.itemsOpenForMembers),
         agentProposalContract: currentRoom?.agentProposalContract || null,
         agentProposals: currentRoom?.agentProposals || [],
         participantCount: Array.isArray(currentRoom?.participants) ? currentRoom.participants.length : 0,
@@ -3227,11 +3266,11 @@
       const humanReview = [];
       const forbiddenActions = [
         'Do not calculate money outside this room.',
-        'Do not confirm for another person.',
-        'Do not change the selected room purpose without host review.',
+        'Do not confirm for another customer.',
+        'Do not change the locked business flow without merchant review.',
         'Do not write payment data.',
         'Do not use private vendor sessions.',
-        'Do not send raw images or copied text to Google Sheets.'
+        'Do not send raw images or captured text to spreadsheets.'
       ];
 
       if (!snapshot.roomId) {
@@ -3247,8 +3286,8 @@
         actions.push({
           id: 'collect_evidence',
           priority: 'required',
-          label: 'Ask the host to add an evidence photo or copied text',
-          reason: 'Without evidence, the assistant can only see an empty room and cannot prepare a useful draft.'
+          label: 'Ask the merchant to add a menu photo or captured text',
+          reason: 'Without menu evidence, the assistant can only see an empty room and cannot prepare a useful review draft.'
         });
       }
 
@@ -3256,20 +3295,20 @@
         actions.push({
           id: 'host_review_then_open',
           priority: 'required',
-          label: 'Host reviews the list, then opens it to members',
-          reason: 'The list is still in review. Members cannot choose items until the host opens it.'
+          label: 'Merchant reviews the list, then publishes it to customers',
+          reason: 'The list is still in review. Customers cannot choose items until the merchant publishes it.'
         });
-        humanReview.push('Host reviews the item list.');
+        humanReview.push('Merchant reviews the item list.');
       }
 
       if (snapshot.taskRouter?.hasTaskConflict) {
         actions.push({
           id: 'resolve_task_conflict',
           priority: 'required',
-          label: 'Host checks the selected room purpose',
+          label: 'Merchant checks the locked business flow',
           reason: `The selected purpose does not match the evidence: ${snapshot.taskRouter.conflictTaskType || 'unknown'}.`
         });
-        humanReview.push('Host checks whether the room purpose is correct.');
+        humanReview.push('Merchant checks whether the business flow is correct.');
       }
 
       const parseStatus = snapshot.parseQuality?.status || '';
@@ -3277,10 +3316,10 @@
         actions.push({
           id: 'review_ocr_quality',
           priority: 'required',
-          label: 'Human reviews unclear evidence text',
-          reason: 'The evidence is not stable enough. The assistant may prepare a draft but cannot decide amounts or people.'
+          label: 'Merchant reviews unclear photo text',
+          reason: 'The photo reading is not stable enough. The assistant may prepare a draft but cannot decide amounts or customers.'
         });
-        humanReview.push('Human checks unclear price text.');
+        humanReview.push('Merchant checks unclear price text.');
       }
 
       if (snapshot.itemsOpenForMembers && snapshot.audit?.pendingClaimCount > 0) {
@@ -3288,34 +3327,36 @@
         actions.push({
           id: 'resolve_pending_claims',
           priority: 'required',
-          label: 'Members confirm their own shared or personal items',
+          label: 'Customers confirm their own shared items or add-ons',
           reason: `${itemCount} ${itemCount === 1 ? 'item still needs' : 'items still need'} confirmation.`
         });
-        humanReview.push('Members confirm their own items.');
+        humanReview.push('Customers confirm their own items.');
       }
 
       if (snapshot.itemsOpenForMembers && snapshot.audit?.unconfirmedParticipantCount > 0) {
         actions.push({
           id: 'confirm_participants',
           priority: 'required',
-          label: 'Unconfirmed members review their own items',
-          reason: `${snapshot.audit.unconfirmedParticipantCount} member(s) have not confirmed yet.`
+          label: 'Unconfirmed customers review their own items',
+          reason: `${snapshot.audit.unconfirmedParticipantCount} customer(s) have not confirmed yet.`
         });
-        humanReview.push('Unconfirmed members review their own costs.');
+        humanReview.push('Unconfirmed customers review their own selections.');
       }
 
       if (snapshot.menuLoaded && actions.length === 0) {
         actions.push({
           id: 'ready_for_human_settlement',
           priority: 'ready',
-          label: 'Host can review the final summary',
-          reason: 'No blocker is visible. The host still makes the final decision.'
+          label: 'Merchant can review the final summary',
+          reason: 'No blocker is visible. The merchant still makes the final decision.'
         });
       }
 
       return {
         roomId: snapshot.roomId,
         agentRole: 'assistant_prepares_drafts_only',
+        productAgentRole: 'assistant_reads_one_private_room_and_prepares_merchant_review_drafts_only',
+        productRoom: snapshot.productRoom,
         toolSurfaceVersion: currentRoom?.webMcpToolSurface?.toolSurfaceVersion || null,
         taskType: snapshot.taskRouter?.taskType || null,
         reviewStatus: snapshot.taskRouter?.reviewStatus || null,
@@ -3326,7 +3367,8 @@
         calculationRule: snapshot.formulaContract?.deterministicOnly
           ? 'Money is calculated only inside this room.'
           : 'Local calculation rules are unavailable.',
-        settlementReady: Boolean(snapshot.audit?.settlementReady)
+        settlementReady: Boolean(snapshot.audit?.settlementReady),
+        finalSummaryReady: Boolean(snapshot.audit?.settlementReady)
       };
     }
 
@@ -3402,15 +3444,15 @@
       const tools = [
         {
           name: 'inspect_room',
-          title: 'Inspect room',
-          description: 'Read the current room purpose, totals, confirmations, photo-reading status, and warnings.',
+          title: 'Inspect intake room',
+          description: 'Read the current business flow, totals, confirmations, photo-reading status, and warnings.',
           inputSchema: emptyInputSchema,
           execute: async () => JSON.stringify(getWebMcpRoomSnapshot())
         },
         {
           name: 'get_task_router',
-          title: 'Get room purpose',
-          description: 'Read what the room is for and whether the evidence appears to match that purpose.',
+          title: 'Get business flow',
+          description: 'Read the locked business flow and whether the evidence appears to match that flow.',
           inputSchema: emptyInputSchema,
           execute: async () => JSON.stringify({
             taskRouter: currentRoom?.taskRouter || null,
@@ -3429,7 +3471,7 @@
         },
         {
           name: 'get_formula_contract',
-          title: 'Get room totals',
+          title: 'Get order totals',
           description: 'Read the money rules and current totals calculated inside this room.',
           inputSchema: emptyInputSchema,
           execute: async () => JSON.stringify({
@@ -3450,14 +3492,14 @@
         {
           name: 'suggest_next_actions',
           title: 'Suggest next actions',
-          description: 'Suggest safe next steps from the room state, photo-reading status, selected purpose, totals, and confirmations.',
+          description: 'Suggest safe next steps from the room state, photo-reading status, locked business flow, totals, and confirmations.',
           inputSchema: emptyInputSchema,
           execute: async () => JSON.stringify(getAgentNextActions())
         },
         {
           name: 'create_action_proposal',
-          title: 'Create host draft',
-          description: 'Create a draft for the host to review before anything changes for members.',
+          title: 'Create merchant draft',
+          description: 'Create a draft for merchant review before anything changes for customers.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -3595,10 +3637,10 @@
         [/semantic_repair_draft/gi, '照片讀取草稿'],
         [/evidence_review/gi, '照片內容核對'],
         [/task_router_review/gi, '用途核對'],
-        [/restaurant_split/gi, '吃飯分帳'],
-        [/drink_order/gi, '飲料揪團'],
+        [/restaurant_split/gi, '咖啡店 / 餐廳菜單'],
+        [/drink_order/gi, '飲料菜單'],
         [/group_buy/gi, '團購'],
-        [/generic_split/gi, '一般分帳'],
+        [/generic_split/gi, '其他服務價目'],
         [/taskType\s*=/gi, '用途：'],
         [/metadata/gi, '說明文字'],
         [/AI\s+review\s+score/gi, '讀取把握度'],
@@ -3616,7 +3658,9 @@
         [/review\s+gates/gi, '核對原因'],
         [/rule-like item\(s\)/gi, '費用或規則'],
         [/selectable item\(s\)/gi, '可選項目'],
-        [/member item\(s\)/gi, '成員可選項目'],
+        [/member item\(s\)/gi, '顧客可選項目'],
+        [/\bhost\b/gi, '商家'],
+        [/\bmember(s)?\b/gi, '顧客'],
         [/candidate\s+routing/gi, '開放前檢查']
       ],
       en: [
@@ -3628,10 +3672,10 @@
         [/semantic_repair_draft/gi, 'photo reading draft'],
         [/evidence_review/gi, 'photo review'],
         [/task_router_review/gi, 'room purpose check'],
-        [/restaurant_split/gi, 'Restaurant Split'],
-        [/drink_order/gi, 'Drink Order'],
+        [/restaurant_split/gi, 'Cafe / Restaurant Menu'],
+        [/drink_order/gi, 'Drink Menu'],
         [/group_buy/gi, 'Group Buy'],
-        [/generic_split/gi, 'Generic Split'],
+        [/generic_split/gi, 'Other Price List'],
         [/taskType\s*=/gi, 'purpose: '],
         [/metadata/gi, 'notes'],
         [/AI\s+review\s+score/gi, 'Reading confidence'],
@@ -3648,8 +3692,10 @@
         [/structural\s+review\s+gates/gi, 'opening checks'],
         [/review\s+gates/gi, 'review reasons'],
         [/rule-like item\(s\)/gi, 'fee or rule rows'],
-        [/selectable item\(s\)/gi, 'member choice(s)'],
-        [/member item\(s\)/gi, 'member items'],
+        [/selectable item\(s\)/gi, 'customer choice(s)'],
+        [/member item\(s\)/gi, 'customer items'],
+        [/\bhost\b/gi, 'merchant'],
+        [/\bmember(s)?\b/gi, 'customer$1'],
         [/candidate\s+routing/gi, 'opening check']
       ]
     };
@@ -3701,44 +3747,60 @@
         .replace(/Source\s+mode:\s*[^.]+\.?\s*/gi, '')
         .replace(/Local\s+OCR\s+chars:\s*\d+\.?\s*/gi, '')
         .replace(/Local\s+vision\s+model:\s*[^.]+\.?\s*/gi, zh ? '已用本機看圖輔助。 ' : 'A local visual check was used. ')
-        .replace(/Only\s+local\s+OCR\s+parser\s+was\s+used;\s+this\s+is\s+not\s+a\s+completed\s+pre-push\s+review\s+draft\s+and\s+host\s+visual\s+review\s+is\s+required\s+before\s+opening\s+to\s+members\.?/gi, zh ? '已讀到照片文字；開放給成員前請先對照原圖。' : 'Photo text was read; compare it with the photo before opening to members.')
-        .replace(/Photo\s+text\s+was\s+read,\s+but\s+the\s+host\s+should\s+compare\s+the\s+photo\s+before\s+opening\s+it\s+to\s+members\.?/gi, zh ? '已讀到照片文字；開放給成員前請先對照原圖。' : 'Photo text was read; compare it with the photo before opening to members.')
+        .replace(new RegExp(`Only\\s+local\\s+OCR\\s+${'parser'}\\s+was\\s+used;\\s+this\\s+is\\s+not\\s+a\\s+completed\\s+pre-push\\s+review\\s+draft\\s+and\\s+(?:host|merchant)\\s+visual\\s+review\\s+is\\s+required\\s+before\\s+opening\\s+to\\s+(?:members|customers)\\.?`, 'gi'), zh ? '已讀到照片文字；發布給顧客前請先對照原圖。' : 'Photo text was read; compare it with the photo before publishing to customers.')
+        .replace(/Photo\s+text\s+was\s+read,\s+but\s+the\s+(?:host|merchant)\s+should\s+compare\s+the\s+photo\s+before\s+opening\s+it\s+to\s+(?:members|customers)\.?/gi, zh ? '已讀到照片文字；發布給顧客前請先對照原圖。' : 'Photo text was read; compare it with the photo before publishing to customers.')
         .replace(/This\s+row\s+has\s+several\s+prices\.\s+Please\s+check\s+the\s+size\s+or\s+option\.?/gi, zh ? '這一列有多個價格，請確認尺寸或選項。' : 'This row has several prices. Please check the size or option.')
         .replace(/The\s+same\s+item\s+name\s+has\s+several\s+prices\.\s+Please\s+split\s+it\s+by\s+size\s+or\s+option\s+before\s+approving\.?/gi, zh ? '同一品名有多個價格，請先依尺寸或選項拆開。' : 'The same item has several prices. Please split it by size or option before approving.')
         .replace(/The\s+number\s+looks\s+like\s+age,\s+capacity,\s+duration,\s+distance,\s+percentage,\s+or\s+context\s+metadata\s+instead\s+of\s+a\s+selectable\s+price\.?/gi, zh ? '這個數字可能是說明文字，不一定是可選項目的價格。' : 'This number may be a note, not a selectable item price.')
-        .replace(/The\s+parser\s+marked\s+this\s+field\s+as\s+uncertain\s+or\s+low-confidence;\s+host\s+review\s+is\s+required\s+before\s+release\.?/gi, zh ? '這一列需要主揪確認後才能開放。' : 'This row needs host review before opening.')
-        .replace(/The\s+selected\s+room\s+type\s+is\s+([^,]+),\s+but\s+the\s+evidence\s+looks\s+closer\s+to\s+([^.]+)\.\s+Please\s+check\s+before\s+settling\.?/gi, (_match, selected, inferred) => zh ? `目前選的是 ${getTaskTypeDisplayName(selected)}，但照片看起來比較接近 ${getTaskTypeDisplayName(inferred)}，請先確認。` : `The selected room type is ${getTaskTypeDisplayName(selected)}, but the photo looks closer to ${getTaskTypeDisplayName(inferred)}. Please check before settling.`)
-        .replace(legacyTaskConflictPattern, (_match, selected, inferred) => zh ? `目前選的是 ${getTaskTypeDisplayName(selected)}，但照片看起來比較接近 ${getTaskTypeDisplayName(inferred)}，請先確認。` : `The selected room type is ${getTaskTypeDisplayName(selected)}, but the photo looks closer to ${getTaskTypeDisplayName(inferred)}. Please check before settling.`)
+        .replace(new RegExp(`The\\s+${'parser'}\\s+marked\\s+this\\s+field\\s+as\\s+uncertain\\s+or\\s+low-confidence;\\s+(?:host|merchant)\\s+review\\s+is\\s+required\\s+before\\s+release\\.?`, 'gi'), zh ? '這一列需要商家確認後才能發布。' : 'This row needs merchant review before publishing.')
+        .replace(/找不到房間，請重新建立(?:共享空間|房間)?/gi, zh ? '找不到房間，請重新建立。' : 'Room not found. Create a new room.')
+        .replace(/此房間已經解析過價格證據，不會重複解析圖片。請先清空房間再上傳新證據。/gi, zh ? '此房間已經有菜單照片，請先清空房間再上傳新照片。' : 'This room already has a menu photo. Reset the room before uploading another one.')
+        .replace(/請上傳一張價格證據圖片/gi, zh ? '請上傳一張菜單照片。' : 'Upload one menu photo.')
+        .replace(/只有商家或操作員可以建立建議草稿/gi, zh ? '只有商家或操作員可以建立建議草稿。' : 'Only the merchant or operator can create a draft.')
+        .replace(/此房間已完成，不能再修改數量/gi, zh ? '此房間已完成，不能再修改數量。' : 'This room is finalized. Quantities cannot be changed.')
+        .replace(/此房間已完成，不能再修改甜度冰塊/gi, zh ? '此房間已完成，不能再修改甜度冰塊。' : 'This room is finalized. Drink options cannot be changed.')
+        .replace(/此房間已完成，不能再修改選項/gi, zh ? '此房間已完成，不能再修改選項。' : 'This room is finalized. Item options cannot be changed.')
+        .replace(/此房間已完成，不能再切換項目模式/gi, zh ? '此房間已完成，不能再切換清單類型。' : 'This room is finalized. List type cannot be changed.')
+        .replace(/此房間已完成，不能再發布項目/gi, zh ? '此房間已完成，不能再發布清單。' : 'This room is finalized. The list cannot be published again.')
+        .replace(/此房間已完成，不能再修正品項/gi, zh ? '此房間已完成，不能再修正品項。' : 'This room is finalized. Items cannot be edited.')
+        .replace(/此房間已完成，不能再移除品項/gi, zh ? '此房間已完成，不能再移除品項。' : 'This room is finalized. Items cannot be removed.')
+        .replace(/此房間已完成，不能再修改確認狀態/gi, zh ? '此房間已完成，不能再修改確認狀態。' : 'This room is finalized. Confirmation cannot be changed.')
+        .replace(/目前沒有任何費用項目，不能完成空明細/gi, zh ? '目前沒有任何項目，不能完成空明細。' : 'There are no items yet. The summary cannot be finalized.')
+        .replace(/The\s+selected\s+room\s+type\s+is\s+([^,]+),\s+but\s+the\s+evidence\s+looks\s+closer\s+to\s+([^.]+)\.\s+Please\s+check\s+before\s+settling\.?/gi, (_match, selected, inferred) => zh ? `目前選的是 ${getTaskTypeDisplayName(selected)}，但照片看起來比較接近 ${getTaskTypeDisplayName(inferred)}，請先確認。` : `The selected room type is ${getTaskTypeDisplayName(selected)}, but the photo looks closer to ${getTaskTypeDisplayName(inferred)}. Please check before publishing.`)
+        .replace(legacyTaskConflictPattern, (_match, selected, inferred) => zh ? `目前選的是 ${getTaskTypeDisplayName(selected)}，但照片看起來比較接近 ${getTaskTypeDisplayName(inferred)}，請先確認。` : `The selected room type is ${getTaskTypeDisplayName(selected)}, but the photo looks closer to ${getTaskTypeDisplayName(inferred)}. Please check before publishing.`)
         .replace(/本地\s+OCR\s+偵測到多個價格，請確認尺寸欄位。/gi, zh ? '這一列有多個價格，請確認尺寸或選項。' : 'This row has several prices. Please check the size or option.')
-        .replace(/本地\s+OCR\s+偵測到多欄價格列，已拆成候選項目，請主揪逐項複查。/gi, zh ? '這一列有多個價格，請逐項核對。' : 'This photo row appears to contain several prices. Please check each draft item against the photo.')
+        .replace(/本地\s+OCR\s+偵測到多欄價格列，已拆成候選項目，請.+?逐項複查。/gi, zh ? '這一列有多個價格，請逐項核對。' : 'This photo row appears to contain several prices. Please check each draft item against the photo.')
         .replace(/Local\s+vision\s+correction\s+was\s+unavailable\s+or\s+produced\s+no\s+structured\s+items\.?/gi, zh ? '看圖核對還沒有產生可用清單。' : 'The photo check did not return usable rows.')
         .replace(/Local\s+OCR\s+draft\s+prepared,\s+but\s+local\s+vision\s+did\s+not\s+produce\s+structured\s+items\.?/gi, zh ? '已讀到照片文字，但看圖核對還沒有產生可用清單。' : 'Photo text was read, but the visual check did not return usable rows.')
         .replace(/Local\s+review\s+draft\s+prepared\s+(\d+)\s+item\(s\):/gi, (_match, count) => zh ? `照片讀取草稿已準備 ${count} 個項目：` : `Photo review draft prepared ${count} ${pluralPhrase(count, 'item', 'items')}:`)
-        .replace(/Host must compare the original image before approving\.?/gi, zh ? '主揪採納前要對照原圖。' : 'The host should compare the draft with the original image before approving.')
-        .replace(/(\d+)\s+parser\s+candidate\(s\)\s+still\s+need\s+host\s+review\.?/gi, (_match, count) => zh ? `${count} 個讀到的項目需要主揪核對。` : `${count} ${pluralPhrase(count, 'photo row needs', 'photo rows need')} host review.`)
-        .replace(/(\d+)\s+read item\(s\) need host review before members can use the list\.?/gi, (_match, count) => zh ? `${count} 個讀到的項目需要主揪核對後才能開放。` : `${count} ${pluralPhrase(count, 'photo row needs', 'photo rows need')} host review before members can use the list.`)
-        .replace(/(\d+)\s+photo row needs host review before members can use the list\.?/gi, (_match, count) => zh ? `${count} 個讀到的項目需要主揪核對後才能開放。` : `${count} photo row needs host review before members can use the list.`)
-        .replace(/(\d+)\s+photo rows need host review before members can use the list\.?/gi, (_match, count) => zh ? `${count} 個讀到的項目需要主揪核對後才能開放。` : `${count} photo rows need host review before members can use the list.`)
-        .replace(/(\d+)\s+rule\/audit\s+candidate\(s\)\s+need\s+host\s+decision\.?/gi, (_match, count) => zh ? `${count} 個費用或總額規則需要主揪判斷。` : `${count} ${pluralPhrase(count, 'fee or total note needs', 'fee or total notes need')} host review.`)
-        .replace(/(\d+)\s+fee, total, discount, or threshold note\(s\) need host decision\.?/gi, (_match, count) => zh ? `${count} 個費用、總額、折扣或門檻需要主揪判斷。` : `${count} ${pluralPhrase(count, 'fee, total, discount, or threshold note needs', 'fee, total, discount, or threshold notes need')} host review.`)
-        .replace(/(\d+)\s+fee, total, discount, or threshold note needs host review\.?/gi, (_match, count) => zh ? `${count} 個費用、總額、折扣或門檻需要主揪判斷。` : `${count} fee, total, discount, or threshold note needs host review.`)
-        .replace(/(\d+)\s+fee, total, discount, or threshold notes need host review\.?/gi, (_match, count) => zh ? `${count} 個費用、總額、折扣或門檻需要主揪判斷。` : `${count} fee, total, discount, or threshold notes need host review.`)
-        .replace(/(\d+)\s+rule-like item\(s\) are still member selectable\.?/gi, (_match, count) => zh ? `${count} 個費用或規則還在成員可選清單中。` : `${count} ${pluralPhrase(count, 'fee or rule row is', 'fee or rule rows are')} still showing as member choices.`)
-        .replace(/(\d+)\s+fee or rule item\(s\) are still showing as member choices\.?/gi, (_match, count) => zh ? `${count} 個費用或規則還在成員可選清單中。` : `${count} ${pluralPhrase(count, 'fee or rule row is', 'fee or rule rows are')} still showing as member choices.`)
-        .replace(/(\d+)\s+fee or rule row is still showing as member choices\.?/gi, (_match, count) => zh ? `${count} 個費用或規則還在成員可選清單中。` : `${count} fee or rule row is still showing as member choices.`)
-        .replace(/(\d+)\s+fee or rule rows are still showing as member choices\.?/gi, (_match, count) => zh ? `${count} 個費用或規則還在成員可選清單中。` : `${count} fee or rule rows are still showing as member choices.`)
-        .replace(/(\d+)\s+selectable item\(s\) lack evidence pointers\.?/gi, (_match, count) => zh ? `${count} 個可選項目還缺少照片線索。` : `${count} ${pluralPhrase(count, 'member choice still needs', 'member choices still need')} a visible evidence clue.`)
-        .replace(/(\d+)\s+member choice\(s\) still need a visible evidence clue\.?/gi, (_match, count) => zh ? `${count} 個可選項目還缺少照片線索。` : `${count} ${pluralPhrase(count, 'member choice still needs', 'member choices still need')} a visible evidence clue.`)
-        .replace(/(\d+)\s+member choice still needs a visible evidence clue\.?/gi, (_match, count) => zh ? `${count} 個可選項目還缺少照片線索。` : `${count} member choice still needs a visible evidence clue.`)
-        .replace(/(\d+)\s+member choices still need a visible evidence clue\.?/gi, (_match, count) => zh ? `${count} 個可選項目還缺少照片線索。` : `${count} member choices still need a visible evidence clue.`)
-        .replace(/(\d+)\s+member\s+item\(s\)\s+still\s+carry\s+blocking\s+review\s+gates\.?/gi, (_match, count) => zh ? `${count} 個成員項目需要先修正或移除。` : `${count} ${pluralPhrase(count, 'member item needs', 'member items need')} edit or removal before opening.`)
-        .replace(/(\d+)\s+member item\(s\) need edit or removal before opening\.?/gi, (_match, count) => zh ? `${count} 個成員項目需要先修正或移除。` : `${count} ${pluralPhrase(count, 'member item needs', 'member items need')} edit or removal before opening.`)
-        .replace(/(\d+)\s+member item needs edit or removal before opening\.?/gi, (_match, count) => zh ? `${count} 個成員項目需要先修正或移除。` : `${count} member item needs edit or removal before opening.`)
-        .replace(/(\d+)\s+member items need edit or removal before opening\.?/gi, (_match, count) => zh ? `${count} 個成員項目需要先修正或移除。` : `${count} member items need edit or removal before opening.`)
+        .replace(/(?:Host|Merchant)\s+must\s+compare\s+the\s+original\s+image\s+before\s+approving\.?/gi, zh ? '商家採納前要對照原圖。' : 'The merchant should compare the draft with the original image before approving.')
+        .replace(new RegExp(`(\\d+)\\s+${'parser'}\\s+candidate\\(s\\)\\s+still\\s+need\\s+(?:host|merchant)\\s+review\\.?`, 'gi'), (_match, count) => zh ? `${count} 個讀到的項目需要商家核對。` : `${count} ${pluralPhrase(count, 'photo row needs', 'photo rows need')} merchant review.`)
+        .replace(/(\d+)\s+read item\(s\) need (?:host|merchant)\s+review before (?:members|customers) can use the list\.?/gi, (_match, count) => zh ? `${count} 個讀到的項目需要商家核對後才能發布。` : `${count} ${pluralPhrase(count, 'photo row needs', 'photo rows need')} merchant review before customers can use the list.`)
+        .replace(/(\d+)\s+photo row needs (?:host|merchant)\s+review before (?:members|customers) can use the list\.?/gi, (_match, count) => zh ? `${count} 個讀到的項目需要商家核對後才能發布。` : `${count} photo row needs merchant review before customers can use the list.`)
+        .replace(/(\d+)\s+photo rows need (?:host|merchant)\s+review before (?:members|customers) can use the list\.?/gi, (_match, count) => zh ? `${count} 個讀到的項目需要商家核對後才能發布。` : `${count} photo rows need merchant review before customers can use the list.`)
+        .replace(/(\d+)\s+rule\/audit\s+candidate\(s\)\s+need\s+(?:host|merchant)\s+decision\.?/gi, (_match, count) => zh ? `${count} 個費用或總額規則需要商家判斷。` : `${count} ${pluralPhrase(count, 'fee or total note needs', 'fee or total notes need')} merchant review.`)
+        .replace(/(\d+)\s+fee, total, discount, or threshold note\(s\) need (?:host|merchant)\s+decision\.?/gi, (_match, count) => zh ? `${count} 個費用、總額、折扣或門檻需要商家判斷。` : `${count} ${pluralPhrase(count, 'fee, total, discount, or threshold note needs', 'fee, total, discount, or threshold notes need')} merchant review.`)
+        .replace(/(\d+)\s+fee, total, discount, or threshold note needs (?:host|merchant)\s+review\.?/gi, (_match, count) => zh ? `${count} 個費用、總額、折扣或門檻需要商家判斷。` : `${count} fee, total, discount, or threshold note needs merchant review.`)
+        .replace(/(\d+)\s+fee, total, discount, or threshold notes need (?:host|merchant)\s+review\.?/gi, (_match, count) => zh ? `${count} 個費用、總額、折扣或門檻需要商家判斷。` : `${count} fee, total, discount, or threshold notes need merchant review.`)
+        .replace(/(\d+)\s+rule-like item\(s\) are still (?:member|customer) selectable\.?/gi, (_match, count) => zh ? `${count} 個費用或規則還在顧客可選清單中。` : `${count} ${pluralPhrase(count, 'fee or rule row is', 'fee or rule rows are')} still showing as customer choices.`)
+        .replace(/(\d+)\s+fee or rule item\(s\) are still showing as (?:member|customer) choices\.?/gi, (_match, count) => zh ? `${count} 個費用或規則還在顧客可選清單中。` : `${count} ${pluralPhrase(count, 'fee or rule row is', 'fee or rule rows are')} still showing as customer choices.`)
+        .replace(/(\d+)\s+fee or rule row is still showing as (?:member|customer) choices\.?/gi, (_match, count) => zh ? `${count} 個費用或規則還在顧客可選清單中。` : `${count} fee or rule row is still showing as customer choices.`)
+        .replace(/(\d+)\s+fee or rule rows are still showing as (?:member|customer) choices\.?/gi, (_match, count) => zh ? `${count} 個費用或規則還在顧客可選清單中。` : `${count} fee or rule rows are still showing as customer choices.`)
+        .replace(/(\d+)\s+selectable item\(s\) lack evidence pointers\.?/gi, (_match, count) => zh ? `${count} 個可選項目還缺少照片線索。` : `${count} ${pluralPhrase(count, 'customer choice still needs', 'customer choices still need')} a visible evidence clue.`)
+        .replace(/(\d+)\s+(?:member|customer) choice\(s\) still need a visible evidence clue\.?/gi, (_match, count) => zh ? `${count} 個可選項目還缺少照片線索。` : `${count} ${pluralPhrase(count, 'customer choice still needs', 'customer choices still need')} a visible evidence clue.`)
+        .replace(/(\d+)\s+(?:member|customer) choice still needs a visible evidence clue\.?/gi, (_match, count) => zh ? `${count} 個可選項目還缺少照片線索。` : `${count} customer choice still needs a visible evidence clue.`)
+        .replace(/(\d+)\s+(?:member|customer) choices still need a visible evidence clue\.?/gi, (_match, count) => zh ? `${count} 個可選項目還缺少照片線索。` : `${count} customer choices still need a visible evidence clue.`)
+        .replace(/(\d+)\s+(?:member|customer)\s+item\(s\)\s+still\s+carry\s+blocking\s+review\s+gates\.?/gi, (_match, count) => zh ? `${count} 個顧客項目需要先修正或移除。` : `${count} ${pluralPhrase(count, 'customer item needs', 'customer items need')} edit or removal before publishing.`)
+        .replace(/(\d+)\s+(?:member|customer) item\(s\) need edit or removal before opening\.?/gi, (_match, count) => zh ? `${count} 個顧客項目需要先修正或移除。` : `${count} ${pluralPhrase(count, 'customer item needs', 'customer items need')} edit or removal before publishing.`)
+        .replace(/(\d+)\s+(?:member|customer) item needs edit or removal before opening\.?/gi, (_match, count) => zh ? `${count} 個顧客項目需要先修正或移除。` : `${count} customer item needs edit or removal before publishing.`)
+        .replace(/(\d+)\s+(?:member|customer) items need edit or removal before opening\.?/gi, (_match, count) => zh ? `${count} 個顧客項目需要先修正或移除。` : `${count} customer items need edit or removal before publishing.`)
         .replace(/(.+?)\s+has\s+structural\s+review\s+gates\s+that\s+require\s+edit\/remove\s+before\s+accept\.?/gi, (_match, label) => zh ? `${label} 需要先修正或移除。` : `${label} needs edit or removal before approval.`);
 
       for (const [pattern, replacement] of visibleTermMap[currentLanguage] || visibleTermMap.en) {
         text = text.replace(pattern, replacement);
+      }
+      if (!zh && /[\u3400-\u9fff]/.test(text)) {
+        return 'Check this row against the photo before publishing.';
       }
       return normalizeVisibleTextSpacing(text);
     }
@@ -4053,8 +4115,8 @@
       const sourceMode = String(proposal?.payload?.sourceMode || '');
       if (proposalHasVisualReview(proposal)) {
         return currentLanguage === 'en'
-          ? 'This draft was prepared from the photo with text reading and a visual check. The host should compare it with the original image before approving.'
-          : '這份草稿已先讀取照片文字並完成看圖核對。主揪採納前仍要對照原圖。';
+          ? 'This draft was prepared from the photo with text reading and a visual check. The merchant should compare it with the original image before approving.'
+          : '這份草稿已先讀取照片文字並完成看圖核對。商家採納前仍要對照原圖。';
       }
       if (sourceMode === 'local_ocr_only_bridge_draft' || sourceMode === 'local_ocr_fallback') {
         return currentLanguage === 'en'
@@ -4390,15 +4452,15 @@
         : '';
       const auditPanel = hasReviewRisk
         ? `
-          <div class="item-review-audit" data-risk="true">
+          <details class="item-review-audit" data-risk="true">
+            <summary>${escapeHtml(reviewReason || t('itemReviewDetails'))}</summary>
             <div class="item-review-audit-row">
               ${priceRole === 'line_item' ? '' : `<span class="item-review-pill" data-tone="warn">${escapeHtml(getPriceRoleText(priceRole))}</span>`}
               ${sourceNumberClass === 'currency_amount' ? '' : `<span class="item-review-pill" data-tone="warn">${escapeHtml(getSourceNumberClassText(sourceNumberClass))}</span>`}
               ${confidenceText ? `<span class="item-review-pill" data-tone="warn">${escapeHtml(confidenceText)}</span>` : ''}
               ${flagRows}
             </div>
-            ${reviewReason ? `<div class="item-review-evidence">${escapeHtml(`${t('itemReviewGate')}: ${reviewReason}`)}</div>` : ''}
-          </div>
+          </details>
         `
         : '';
       return `
@@ -4771,7 +4833,9 @@
         return;
       }
       if (currentRoom.settled) {
-        setMessage('此房間已結算，不能再修改數量。', 'error');
+        setMessage(currentLanguage === 'en'
+          ? 'This room is finalized. Quantities cannot be changed.'
+          : '此房間已完成，不能再修改數量。', 'error');
         return;
       }
       if (!currentRoom.itemsOpenForMembers) {
@@ -4779,12 +4843,16 @@
         return;
       }
       if (!hasSavedDisplayName()) {
-        setMessage('請先輸入名稱並套用名稱再選擇項目。', 'error');
+        setMessage(currentLanguage === 'en'
+          ? 'Enter and apply your name before choosing items.'
+          : '請先輸入名稱並套用名稱再選擇項目。', 'error');
         elements.displayNameInput.focus();
         return;
       }
       if (getOwnParticipant()?.confirmed) {
-        setMessage('個人費用已確認，請先取消確認再修改數量。', 'error');
+        setMessage(currentLanguage === 'en'
+          ? 'Your selection is already confirmed. Cancel confirmation before changing quantity.'
+          : '顧客選擇已確認，請先取消確認再修改數量。', 'error');
         return;
       }
       const nextQty = Math.max(0, Math.min(99, getOwnQty(itemId) + delta));
@@ -4994,7 +5062,7 @@
       const targetRoomId = currentRoom.id;
       const currentInputName = String(elements.displayNameInput.value || '').trim();
       if (!hasValidDisplayName(currentInputName)) {
-        displayName = 'Demo Host';
+        displayName = 'Demo Merchant';
         elements.displayNameInput.value = displayName;
         localStorage.setItem(storageKeys.displayName, displayName);
       } else {

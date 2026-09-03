@@ -135,7 +135,7 @@ const roomTaskTypes = new Set([
 const defaultTaskRouter = Object.freeze({
   taskType: 'generic_split',
   confidenceScore: 0.42,
-  confidenceReason: '未提供任務類型，先用一般分帳房處理。',
+  confidenceReason: 'No business flow was selected yet, so the room stays in merchant review.',
   riskPolicy: 'conservative',
   thresholdKind: 'none',
   splitMode: 'individual_items',
@@ -933,8 +933,10 @@ function buildAgentProposalContract() {
     contractVersion: agentProposalContractVersion,
     toolName: 'create_action_proposal',
     targetRole: 'host',
+    productTargetRole: 'merchant',
     allowedEffect: 'draft_only',
     defaultStatus: 'pending_host_confirmation',
+    productDefaultStatus: 'pending_merchant_confirmation',
     allowedProposalTypes: Array.from(agentProposalTypes),
     forbiddenEffects: [
       'payment',
@@ -950,7 +952,9 @@ function buildAgentProposalContract() {
       'google_sheets_write'
     ],
     hostReviewRequired: true,
+    merchantReviewRequired: true,
     approveEffect: 'host_accepts_and_applies_reviewed_structured_draft_when_present',
+    productApproveEffect: 'merchant_accepts_and_applies_reviewed_structured_draft_when_present',
     rejectEffect: 'marks_proposal_as_rejected_only'
   };
 }
@@ -960,7 +964,7 @@ function normalizeAgentProposalInput(input = {}) {
   const proposalType = agentProposalTypes.has(requestedType) ? requestedType : 'generic_next_step';
   const requestedRisk = normalizeBoundedText(input.riskLevel, 64);
   const riskLevel = agentProposalRiskLevels.has(requestedRisk) ? requestedRisk : 'needs_human_review';
-  const summary = normalizeBoundedText(input.summary, 360) || 'Agent prepared a draft for host review.';
+  const summary = normalizeBoundedText(input.summary, 360) || 'Agent prepared a draft for merchant review.';
   const rationale = normalizeBoundedText(input.rationale, 700);
   const payload = sanitizeProposalPayload(input.payload && typeof input.payload === 'object' ? input.payload : {});
 
@@ -1038,7 +1042,10 @@ function serializeAgentProposal(proposal) {
     roomId: proposal.roomId,
     createdBy: proposal.createdBy || 'webmcp_agent',
     targetRole: 'host',
+    productTargetRole: 'merchant',
     status: agentProposalStatuses.has(proposal.status) ? proposal.status : 'pending_host_confirmation',
+    productStatus: (agentProposalStatuses.has(proposal.status) ? proposal.status : 'pending_host_confirmation')
+      .replace(/host/g, 'merchant'),
     proposalType: agentProposalTypes.has(proposal.proposalType) ? proposal.proposalType : 'generic_next_step',
     summary: normalizeBoundedText(proposal.summary, 360),
     rationale: normalizeBoundedText(proposal.rationale, 700),
@@ -1990,7 +1997,7 @@ const demoSampleScenarios = Object.freeze([
       '幼兒 1 歲～未滿 2 歲 NT$ 655 / 人（含保險、門票、車位，不佔餐）',
       '小童 2 歲～6 歲（含）NT$ 1170 / 人（含保險、門票、車位、餐費）'
     ],
-    summary: '中文旅遊票券示範已載入。請檢查行程、年齡區間與金額欄位，確認無誤後再開放成員選擇。',
+    summary: '中文旅遊票券示範已載入。請檢查行程、年齡區間與金額欄位，確認無誤後再發布給顧客選擇。',
     rationale: '這份 sample 用來展示頁面/情境辨識：中文頁面與票券用途必須載入中文票價證據，不可載入英文餐點資料。'
   },
   {
@@ -2001,8 +2008,8 @@ const demoSampleScenarios = Object.freeze([
     title: 'Restaurant lunch meal sample menu',
     menuType: 'mixed',
     textLines: sampleRoomOcrLines,
-    summary: 'Sample room is ready. Review the shared items, then ask members to claim their own costs.',
-    rationale: 'This draft shows the safe loop: the assistant prepares a review note, while the host keeps the final approval button.'
+    summary: 'Sample room is ready. Review the shared items, then publish the list for customers to choose.',
+    rationale: 'This draft shows the safe loop: the assistant prepares a review note, while the merchant keeps the final approval button.'
   }
 ]);
 
@@ -2113,14 +2120,14 @@ function buildSampleRoomItems() {
       category: 'service',
       sectionName: 'Shared review',
       tags: ['shareable', 'manual_review'],
-      note: 'Host should confirm whether this shared fee should stay in the room.',
+      note: 'The merchant should confirm whether this shared fee should stay in the room.',
       sourceImageIndex: 1
     }
   ], 1, null);
 }
 
 async function loadSampleRoom(room, input = {}) {
-  const participant = ensureParticipant(room, input.participantId, input.displayName || 'Demo Host');
+  const participant = ensureParticipant(room, input.participantId, input.displayName || 'Demo Merchant');
   if (!room.ownerParticipantId) {
     room.ownerParticipantId = participant.id;
   }
@@ -2154,8 +2161,8 @@ async function loadSampleRoom(room, input = {}) {
   });
   room.warnings = [
     scenario.language === 'zh'
-      ? '已依目前頁面語系與房間用途載入中文示範證據。請先檢查欄位，再開放給成員。'
-      : 'Sample room loaded for quick review. The assistant may draft suggestions, but the host keeps final approval.'
+      ? '已依目前頁面語系與商業流程載入中文示範證據。請先檢查欄位，再發布給顧客。'
+      : 'Sample room loaded for quick review. The assistant may draft suggestions, but the merchant keeps final approval.'
   ];
   room.evidenceReviewSource = 'sample_room_oracle';
   room.evidenceReviewModel = 'deterministic-sample-fixture';
@@ -2218,9 +2225,9 @@ async function loadSampleRoom(room, input = {}) {
       taskType: scenario.taskType,
       contractId: scenario.contractId,
       nextHumanAction: scenario.language === 'zh'
-        ? '發起者檢查 sample 圖片與欄位是否一致，確認或拒絕草稿。'
-        : 'Host reviews the sample items and confirms or rejects this draft.',
-      safeBoundary: 'No payment, booking, external form submission, formula change, or final settlement is performed by the assistant.'
+        ? '商家檢查示範圖片與欄位是否一致，確認或拒絕草稿。'
+        : 'Merchant reviews the sample items and confirms or rejects this draft.',
+      safeBoundary: 'No payment, booking, external form submission, formula change, or final summary is performed by the assistant.'
     }
   });
   return {
@@ -2711,7 +2718,7 @@ function normalizeReviewGates(gates) {
   return (Array.isArray(gates) ? gates : [])
     .map((gate) => makeReviewGate(
       gate?.id || 'review_gate',
-      gate?.reason || gate?.detail || 'Needs host review before release.',
+      gate?.reason || gate?.detail || 'Needs merchant review before release.',
       gate?.severity || 'warn',
       gate?.fields || [],
       gate?.resolvedByHost
@@ -2726,7 +2733,7 @@ function buildObservationReviewGates(detectedTypeHint, text) {
   if (['phone_number', 'date_time', 'time_range', 'address_number', 'tax_identifier'].includes(detectedTypeHint)) {
     gates.push(makeReviewGate(
       'forbidden_context_number',
-      'Identifier, address, date, time, tax, or contact-like numbers must not become member prices.',
+      'Identifier, address, date, time, tax, or contact-like numbers must not become customer item prices.',
       'block',
       ['price', 'sourceNumberClass']
     ));
@@ -2734,7 +2741,7 @@ function buildObservationReviewGates(detectedTypeHint, text) {
   if (detectedTypeHint === 'booking_or_invoice_identifier') {
     gates.push(makeReviewGate(
       'identifier_number_review',
-      'Booking, invoice, receipt, or order identifiers are context metadata and should not become member prices.',
+      'Booking, invoice, receipt, or order identifiers are context notes and should not become customer item prices.',
       'warn',
       ['price', 'sourceNumberClass']
     ));
@@ -2746,7 +2753,7 @@ function buildObservationReviewGates(detectedTypeHint, text) {
     if (thresholdAdvisoryOnly) {
       gates.push(makeReviewGate(
         'threshold_advisory_review',
-        'Threshold conditions are advisory context. AI flags them for host review but does not decide whether the group is committed.',
+        'Threshold conditions are review notes. AI flags them for merchant review but does not decide whether the order is committed.',
         'warn',
         ['displaySurface']
       ));
@@ -2757,7 +2764,7 @@ function buildObservationReviewGates(detectedTypeHint, text) {
       : 'complex_formula_or_rule_review';
     gates.push(makeReviewGate(
       formulaGateId,
-      'Deposits, prepayments, taxes, fees, discounts, and thresholds must route to host review before member release.',
+      'Deposits, prepayments, taxes, fees, discounts, and thresholds must route to merchant review before customer publishing.',
       'block',
       ['priceRole', 'displaySurface']
     ));
@@ -3180,7 +3187,7 @@ function buildCandidateReviewGates(candidate, observations = []) {
       candidate.reviewGates,
       makeReviewGate(
         'threshold_advisory_review',
-        'Threshold conditions are advisory context. AI flags them for host review but does not decide whether the group is committed.',
+        'Threshold conditions are review notes. AI flags them for merchant review but does not decide whether the order is committed.',
         'warn',
         ['displaySurface']
       )
@@ -3205,7 +3212,7 @@ function buildCandidateReviewGates(candidate, observations = []) {
   if (displaySurface !== 'member_selectable') {
     gates.push(makeReviewGate(
       'non_member_surface_requires_host_review',
-      'This candidate is a host rule, audit value, metadata, or review-only field and must not be released as a member option before host review.',
+      'This row is a rule, total, note, or review-only field and must not be published as a customer option before merchant review.',
       'block',
       ['displaySurface', 'priceRole']
     ));
@@ -3213,7 +3220,7 @@ function buildCandidateReviewGates(candidate, observations = []) {
   if (priceRole !== 'line_item') {
     gates.push(makeReviewGate(
       'non_line_item_price_role_requires_review',
-      'The extracted number is not a normal line-item price and needs host confirmation.',
+      'The extracted number is not a normal menu item price and needs merchant confirmation.',
       'block',
       ['priceRole']
     ));
@@ -3221,7 +3228,7 @@ function buildCandidateReviewGates(candidate, observations = []) {
   if (sourceNumberClass !== 'currency_amount' && displaySurface === 'member_selectable') {
     gates.push(makeReviewGate(
       'member_item_non_currency_number_review',
-      'A member-visible item must be backed by a currency amount, not age, quantity, date, duration, distance, or identifier text.',
+      'A customer item must be backed by a menu price, not age, quantity, date, duration, distance, or identifier text.',
       'block',
       ['sourceNumberClass']
     ));
@@ -3229,7 +3236,7 @@ function buildCandidateReviewGates(candidate, observations = []) {
   if (reviewFlags.length > 0 || Number(candidate?.confidence || 1) < 0.82) {
     gates.push(makeReviewGate(
       'low_confidence_or_flagged_candidate_review',
-      'The parser marked this field as uncertain or low-confidence; host review is required before release.',
+      'This row is uncertain; merchant review is required before publishing.',
       'warn',
       ['confidence', 'reviewFlags']
     ));
@@ -3252,7 +3259,7 @@ function resolveReviewGatesAfterHostDecision(gates, action = 'accept') {
       ...gate,
       severity: 'warn',
       resolvedByHost: true,
-      reason: normalizeShortText(`${gate.reason} Host reviewed this gate before member release.`, 180)
+      reason: normalizeShortText(`${gate.reason} Merchant reviewed this note before customer publishing.`, 180)
     };
   });
 }
@@ -3346,7 +3353,7 @@ function inferRuleCandidateFromObservation(room, observation, options = {}) {
       reviewGates: [
         makeReviewGate(
           'threshold_advisory_review',
-          'Threshold conditions are advisory context. AI flags them for host review but does not decide whether the group is committed.',
+          'Threshold conditions are review notes. AI flags them for merchant review but does not decide whether the order is committed.',
           'warn',
           ['displaySurface']
         )
@@ -3641,7 +3648,7 @@ function getAntiPollutionBlocks(room) {
     blocks.push({
       id: 'pending_candidates_block_member_open',
       severity: 'block',
-      detail: `${pendingCandidates.length} ${itemNoun} host review before members can use the list.`
+      detail: `${pendingCandidates.length} ${itemNoun} merchant review before customers can use the list.`
     });
   }
   const pollutedItems = selectableItems.filter((item) => inferDisplaySurface(item, room?.taskRouter?.taskType) !== 'member_selectable');
@@ -3650,12 +3657,12 @@ function getAntiPollutionBlocks(room) {
     blocks.push({
       id: 'rule_roles_not_member_selectable',
       severity: 'block',
-      detail: `${pollutedItems.length} ${itemNoun} still showing as member choices.`
+      detail: `${pollutedItems.length} ${itemNoun} still showing as customer choices.`
     });
   }
   const missingEvidenceItems = selectableItems.filter((item) => !item.sourceAssetId && (!Array.isArray(item.sourceObservationIds) || item.sourceObservationIds.length === 0));
   if (missingEvidenceItems.length > 0) {
-    const itemNoun = missingEvidenceItems.length === 1 ? 'member choice still needs' : 'member choices still need';
+    const itemNoun = missingEvidenceItems.length === 1 ? 'customer choice still needs' : 'customer choices still need';
     blocks.push({
       id: 'member_items_require_evidence_pointer',
       severity: 'block',
@@ -3686,14 +3693,14 @@ function getAntiPollutionBlocks(room) {
     blocks.push({
       id: 'unreviewed_rules_block_member_open',
       severity: 'block',
-      detail: `${unreviewedRules.length} ${noteNoun} host review.`
+      detail: `${unreviewedRules.length} ${noteNoun} merchant review.`
     });
   }
   const blockedReviewGateItems = selectableItems.filter((item) => {
     return normalizeReviewGates(item.reviewGates).some((gate) => gate.severity === 'block');
   });
   if (blockedReviewGateItems.length > 0) {
-    const itemNoun = blockedReviewGateItems.length === 1 ? 'member item needs' : 'member items need';
+    const itemNoun = blockedReviewGateItems.length === 1 ? 'customer item needs' : 'customer items need';
     blocks.push({
       id: 'review_gate_blocks_member_open',
       severity: 'block',
@@ -3720,7 +3727,7 @@ function recordReviewDecision(room, input = {}) {
   return decision;
 }
 
-function acceptPendingParserCandidates(room, reviewerId, reason = 'host accepted evidence review draft') {
+function acceptPendingParserCandidates(room, reviewerId, reason = 'merchant accepted evidence review draft') {
   const now = nowIso();
   let acceptedCount = 0;
   room.parserCandidates = (Array.isArray(room.parserCandidates) ? room.parserCandidates : []).map((candidate) => {
@@ -3811,7 +3818,7 @@ function applyAcceptedVisualReviewProposal(room, proposal, reviewerId) {
   room.warnings = Array.from(new Set([
     ...(Array.isArray(payload.warnings) ? payload.warnings.map(String).filter(Boolean) : []),
     ...(Array.isArray(room.warnings) ? room.warnings.map(String).filter((warning) => {
-      const localOcrWarningPattern = new RegExp(`Only local OCR ${'parser'}|Photo text was read, but the host should compare`, 'i');
+      const localOcrWarningPattern = new RegExp(`Only local OCR ${'parser'}|Photo text was read, but the merchant should compare|Photo text was read, but the host should compare`, 'i');
       return !localOcrWarningPattern.test(warning);
     }) : [])
   ])).slice(0, 12);
@@ -3827,7 +3834,7 @@ function applyAcceptedVisualReviewProposal(room, proposal, reviewerId) {
       parseQualityStatus: room.parseQuality?.status || null
     },
     reviewerId,
-    reason: 'host accepted OCR plus LLM visual review draft'
+    reason: 'merchant accepted OCR plus LLM visual review draft'
   });
 
   return structuredItems.length;
@@ -3848,7 +3855,7 @@ function getStructuralReviewBlocks(room) {
       candidateId: entry.candidate.id || null,
       label: entry.candidate.label || entry.candidate.name || '',
       gateIds: entry.gates.map((gate) => gate.id),
-      detail: `${entry.candidate.label || entry.candidate.name || 'Item'} needs host edit or removal before approval.`
+      detail: `${entry.candidate.label || entry.candidate.name || 'Item'} needs merchant edit or removal before approval.`
     }));
 }
 
@@ -4045,8 +4052,8 @@ function buildRoomTaskRouter(input = {}) {
     taskType,
     confidenceScore,
     confidenceReason: selectedTaskType === 'auto'
-      ? `依 OCR 與品項訊號判別為 ${taskType}。`
-      : `依房主選擇鎖定為 ${taskType}。`,
+      ? 'The business flow was inferred from photo text and item signals.'
+      : 'The business flow is locked by the merchant or operator.',
     inferredTaskType,
     selectedTaskType,
     routeHintTaskType,
@@ -4411,7 +4418,7 @@ function getEvidenceReviewReleaseBlock(room) {
     return {
       id: localOcrOnlyReviewIssueId,
       severity: 'high',
-      message: 'This photo was read as text only and still needs visual review before members can use it.'
+      message: 'This photo was read as text only and still needs visual review before customers can use it.'
     };
   }
   return null;
@@ -4439,7 +4446,7 @@ function evaluateMenuParseQuality(input) {
     issues.push({
       type: 'task_conflict',
       severity: 'high',
-      detail: `The selected room type is ${taskRouter.selectedTaskType || taskRouter.taskType || 'unknown'}, but the evidence looks closer to ${taskRouter.conflictTaskType || taskRouter.inferredTaskType || 'unknown'}. Please check before settling.`
+      detail: 'The locked business flow may not match the photo. Please check before publishing to customers.'
     });
   }
 
@@ -5736,6 +5743,14 @@ function buildWebMcpToolSurface(room) {
     toolSurfaceVersion: webMcpToolSurfaceVersion,
     implementation: webMcpImplementationName,
     source: webMcpStateSource,
+    commercialFlow: {
+      roomKind: 'private_merchant_customer_room',
+      syncLayer: 'web_runtime',
+      assistantLayer: 'webmcp_scoped_room_tools',
+      merchantCan: ['review_drafts', 'publish_to_customers', 'finalize_order_summary', 'export_details'],
+      customerCan: ['join_private_room', 'choose_items', 'confirm_own_selection'],
+      assistantCannot: ['cross_room_access', 'payment', 'external_order_submit', 'finalize_without_merchant']
+    },
     readOnlyTools: [
       'inspect_room',
       'get_task_router',
@@ -6020,7 +6035,7 @@ function buildRoomExportText(room, language = 'en') {
   const state = serializeRoom(room);
   const zh = language === 'zh';
   const lines = [
-    zh ? '行動審核摘要' : 'Action Review Summary',
+    zh ? '點餐摘要' : 'Order Summary',
     `${zh ? '房間' : 'Room'} ${state.id}`,
     `${zh ? '狀態' : 'Status'} ${state.settled ? (zh ? '已完成' : 'finalized') : (zh ? '未完成' : 'not finalized')}`,
     ''
@@ -6037,7 +6052,7 @@ function buildRoomExportText(room, language = 'en') {
   }
 
   lines.push('');
-  lines.push(zh ? '每人明細' : 'People');
+  lines.push(zh ? '顧客明細' : 'Customers');
   const activeParticipants = Array.isArray(state.participants)
     ? state.participants.filter((participant) => Number(participant.total || 0) > 0 || participant.confirmed)
     : [];
@@ -6058,19 +6073,19 @@ function buildRoomExportText(room, language = 'en') {
       }
     }
   } else {
-    lines.push(zh ? '尚無成員費用' : 'No member costs');
+    lines.push(zh ? '尚無顧客金額' : 'No customer totals');
   }
 
   lines.push('');
   lines.push(`${zh ? '總金額' : 'Total'} ${serverMoney(state.totals?.grandTotal || 0)}`);
-  lines.push(`${zh ? '可一起分' : 'Shared candidate'} ${serverMoney(state.totals?.sharedCandidateTotal || 0)}`);
-  lines.push(`${zh ? '個人加點' : 'Personal add-ons'} ${serverMoney(state.totals?.personalClaimTotal || 0)}`);
-  lines.push(`${zh ? '確認狀態' : 'Claim audit'} ${state.audit?.settlementReady ? (zh ? '可完成' : 'ready') : `${zh ? '未確認' : 'unconfirmed'} ${Number(state.audit?.unconfirmedParticipantCount || 0)}`}`);
+  lines.push(`${zh ? '共同項目' : 'Shared items'} ${serverMoney(state.totals?.sharedCandidateTotal || 0)}`);
+  lines.push(`${zh ? '顧客加點' : 'Customer extras'} ${serverMoney(state.totals?.personalClaimTotal || 0)}`);
+  lines.push(`${zh ? '確認狀態' : 'Confirmation status'} ${state.audit?.settlementReady ? (zh ? '可完成' : 'ready to finalize') : `${zh ? '未確認' : 'unconfirmed'} ${Number(state.audit?.unconfirmedParticipantCount || 0)}`}`);
   return lines.join('\n');
 }
 
 function buildRoomExportHtml(room, language = 'en') {
-  const title = language === 'zh' ? '行動審核摘要' : 'Action Review Summary';
+  const title = language === 'zh' ? '點餐摘要' : 'Order Summary';
   const text = buildRoomExportText(room, language);
   const generatedAt = new Date().toISOString();
   return `<!doctype html>
@@ -6192,7 +6207,7 @@ function estimatePdfRunWidth(run, fontSize) {
 }
 
 function buildRoomExportPdf(room, language = 'en') {
-  const title = language === 'zh' ? '行動審核摘要' : 'Action Review Summary';
+  const title = language === 'zh' ? '點餐摘要' : 'Order Summary';
   const lines = [
     `${title} - ${room.id}`,
     new Date().toISOString(),
@@ -6271,7 +6286,7 @@ function buildMenuParsePrompt(options = {}) {
     taskRouter
   });
   const promptLines = [
-    '你正在處理 host 發起的私密任務房價格證據圖片，不限餐飲、票券、預約、租借或現場費用。',
+    '你正在處理商家或操作員建立的私密任務房價格證據圖片，不限餐飲、票券、預約、租借或現場費用。',
     `任務判別模組已鎖定 taskType=${taskRouter.taskType || 'generic_split'}，thresholdKind=${taskRouter.thresholdKind || 'custom'}，splitMode=${taskRouter.splitMode || 'individual_items'}，riskPolicy=${taskRouter.riskPolicy || 'conservative'}。`,
     '你只能在這個任務邊界內修補 evidence 欄位，不要把任務重新發散成其他產品；若圖片訊號與 taskType 衝突，請用 manual_review 與 note 標記，不要自行改任務。',
     '本次只會有一張圖片。每個項目的 sourceImageIndex 一律輸出 1。',
@@ -6292,7 +6307,7 @@ function buildMenuParsePrompt(options = {}) {
     '模糊規則 4：「加料、加購、加價升級、免費升級、珍珠、波霸、椰果、仙草、布丁、蘆薈」這類加料或升級選項不是主品項，除非它在菜單上明確是可單點商品。',
     '模糊規則 5：優惠券、套餐、多人組合、包廂方案、場地方案、活動方案以可見邊界為一個項目；同一個邊界內的內容要合併寫在同一個 name，price 使用該邊界最醒目的價格。',
     '模糊規則 6：同一品項有不同冷熱、尺寸或規格造成不同價格時，若它是固定欄位或可選規格，請用 optionGroups；若它是完全不同商品，才拆成多列並把差異寫進 name。英文尺寸同義：S/Small/Short=小杯，M/Medium/Med/Regular/Reg=中杯，L/Large=大杯，XL/Extra Large/X-Large=特大杯，瓶=瓶裝。',
-    '複雜計費 hard-stop：稅率、服務費、押金、訂金、滿額門檻、滿件門檻、階梯折扣、運費分攤、人數門檻或需要公式的規則，不得輸出為 member_selectable line_item；請改用非 line_item 的 priceRole、reviewFlags 加 manual_review，並放入 host review / calculation rule 脈絡。',
+    '複雜計費停止規則：稅率、服務費、押金、訂金、滿額門檻、滿件門檻、階梯折扣、運費分攤、人數門檻或需要公式的規則，不得當作顧客可選商品輸出；請改用非 line_item 的 priceRole、reviewFlags 加 manual_review，並放入商家審核或費用規則脈絡。',
     'price 必須是整數新台幣價格，不含 NT$、元、逗號或其他符號。',
     'supportsDrinkOptions 只給飲料店品項或可調甜度冰塊的飲品 true；一般餐點、便當、麵飯、小菜、甜點都給 false。',
     '若整張是飲料店菜單，所有飲料品項的 supportsDrinkOptions 應為 true。',
@@ -6708,7 +6723,7 @@ async function parseMenuImagesWithLocalVision(imageFiles, options = {}) {
 }
 
 function buildLocalOcrFallbackWarnings(warnings = []) {
-  const fallbackWarning = 'Photo text was read, but the host should compare the photo before opening it to members.';
+  const fallbackWarning = 'Photo text was read, but the merchant should compare the photo before publishing it to customers.';
   return Array.from(new Set([...(Array.isArray(warnings) ? warnings : []), fallbackWarning].map(String).filter(Boolean)));
 }
 
@@ -6717,7 +6732,7 @@ function forceLocalOcrFallbackReviewQuality(parseQuality) {
   const fallbackIssue = {
     type: localOcrOnlyReviewIssueId,
     severity: 'high',
-    detail: 'Photo text was read, but the host should compare the photo before opening it to members.'
+    detail: 'Photo text was read, but the merchant should compare the photo before publishing it to customers.'
   };
   const currentIssues = Array.isArray(quality.issues) ? quality.issues : [];
   const issues = [
@@ -7100,7 +7115,7 @@ app.post('/api/rooms/:roomId/agent-proposals', (req, res) => {
   }
   const requesterId = String(req.body?.participantId || '');
   if (!requesterId || room.ownerParticipantId !== requesterId) {
-    res.status(403).json({ error: '只有發起者可以建立建議草稿' });
+    res.status(403).json({ error: '只有商家或操作員可以建立建議草稿' });
     return;
   }
 
@@ -7130,17 +7145,17 @@ app.post('/api/rooms/:roomId/agent-proposals', (req, res) => {
 app.post('/api/rooms/:roomId/sample', createRateLimitMiddleware('room_sample', roomCreateRateLimitMax), async (req, res) => {
   const room = getRoom(req.params.roomId);
   if (!room) {
-    res.status(404).json({ error: 'Room not found. Create a new shared room first.' });
+    res.status(404).json({ error: 'Room not found. Create a new intake room first.' });
     return;
   }
 
   const requesterId = String(req.body?.participantId || '');
   if (!requesterId || requesterId.length > 80) {
-    res.status(400).json({ error: 'A valid participant is required before loading the sample room.' });
+    res.status(400).json({ error: 'A valid user is required before loading the sample room.' });
     return;
   }
   if (room.ownerParticipantId && room.ownerParticipantId !== requesterId) {
-    res.status(403).json({ error: 'Only the room owner can load the sample room.' });
+    res.status(403).json({ error: 'Only the merchant or operator can load the sample room.' });
     return;
   }
   if (room.menuLoaded || room.items.length > 0 || room.agentProposals.length > 0) {
@@ -7151,7 +7166,7 @@ app.post('/api/rooms/:roomId/sample', createRateLimitMiddleware('room_sample', r
   try {
     const { proposal } = await loadSampleRoom(room, {
       participantId: requesterId,
-      displayName: req.body?.displayName || 'Demo Host',
+      displayName: req.body?.displayName || 'Demo Merchant',
       language: req.body?.language,
       taskType: req.body?.taskType
     });
@@ -7413,11 +7428,11 @@ io.on('connection', (socket) => {
       return;
     }
     if (room.settled) {
-      ack?.({ ok: false, error: '此房間已結算，不能再修改數量' });
+      ack?.({ ok: false, error: '此房間已完成，不能再修改數量' });
       return;
     }
     if (!room.itemsOpenForMembers) {
-      ack?.({ ok: false, error: '發起者尚未開放清單，請先等待確認' });
+      ack?.({ ok: false, error: '商家尚未發布清單，請先等待確認' });
       return;
     }
 
@@ -7432,7 +7447,7 @@ io.on('connection', (socket) => {
       return;
     }
     if (participant.confirmed) {
-      ack?.({ ok: false, error: '個人費用已確認，請先取消確認再修改數量' });
+      ack?.({ ok: false, error: '顧客選擇已確認，請先取消確認再修改數量' });
       return;
     }
 
@@ -7472,11 +7487,11 @@ io.on('connection', (socket) => {
       return;
     }
     if (room.settled) {
-      ack?.({ ok: false, error: '此房間已結算，不能再修改甜度冰塊' });
+      ack?.({ ok: false, error: '此房間已完成，不能再修改甜度冰塊' });
       return;
     }
     if (!room.itemsOpenForMembers) {
-      ack?.({ ok: false, error: '發起者尚未開放清單，請先等待確認' });
+      ack?.({ ok: false, error: '商家尚未發布清單，請先等待確認' });
       return;
     }
 
@@ -7491,7 +7506,7 @@ io.on('connection', (socket) => {
       return;
     }
     if (participant.confirmed) {
-      ack?.({ ok: false, error: '個人費用已確認，請先取消確認再修改甜度冰塊' });
+      ack?.({ ok: false, error: '顧客選擇已確認，請先取消確認再修改甜度冰塊' });
       return;
     }
 
@@ -7537,11 +7552,11 @@ io.on('connection', (socket) => {
       return;
     }
     if (room.settled) {
-      ack?.({ ok: false, error: '此房間已結算，不能再修改選項' });
+      ack?.({ ok: false, error: '此房間已完成，不能再修改選項' });
       return;
     }
     if (!room.itemsOpenForMembers) {
-      ack?.({ ok: false, error: '發起者尚未開放清單，請先等待確認' });
+      ack?.({ ok: false, error: '商家尚未發布清單，請先等待確認' });
       return;
     }
 
@@ -7556,7 +7571,7 @@ io.on('connection', (socket) => {
       return;
     }
     if (participant.confirmed) {
-      ack?.({ ok: false, error: '個人費用已確認，請先取消確認再修改選項' });
+      ack?.({ ok: false, error: '顧客選擇已確認，請先取消確認再修改選項' });
       return;
     }
 
@@ -7617,13 +7632,13 @@ io.on('connection', (socket) => {
       return;
     }
     if (room.settled) {
-      ack?.({ ok: false, error: '此房間已結算，不能再切換項目模式' });
+      ack?.({ ok: false, error: '此房間已完成，不能再切換項目模式' });
       return;
     }
 
     const participantId = String(payload?.participantId || '');
     if (!participantId || room.ownerParticipantId !== participantId) {
-      ack?.({ ok: false, error: '只有發起者可以切換項目模式' });
+      ack?.({ ok: false, error: '只有商家或操作員可以切換清單類型' });
       return;
     }
 
@@ -7646,17 +7661,17 @@ io.on('connection', (socket) => {
       return;
     }
     if (room.settled) {
-      ack?.({ ok: false, error: '此房間已結算，不能再開放項目' });
+      ack?.({ ok: false, error: '此房間已完成，不能再發布項目' });
       return;
     }
 
     const participantId = String(payload?.participantId || '');
     if (!participantId || room.ownerParticipantId !== participantId) {
-      ack?.({ ok: false, error: '只有發起者可以開放清單' });
+      ack?.({ ok: false, error: '只有商家或操作員可以發布清單' });
       return;
     }
     if (!Array.isArray(room.items) || room.items.length === 0) {
-      ack?.({ ok: false, error: '沒有可開放的品項' });
+      ack?.({ ok: false, error: '沒有可發布的品項' });
       return;
     }
     const evidenceReviewBlock = getEvidenceReviewReleaseBlock(room);
@@ -7669,7 +7684,7 @@ io.on('connection', (socket) => {
         blockingReasons: [evidenceReviewBlock.id],
         issueTypes: [evidenceReviewBlock.id]
       });
-      ack?.({ ok: false, error: '照片草稿還沒有完成看圖核對，不能開放給成員。' });
+      ack?.({ ok: false, error: '照片草稿還沒有完成看圖核對，不能發布給顧客。' });
       return;
     }
     const antiPollutionBlocks = getAntiPollutionBlocks(room);
@@ -7682,7 +7697,7 @@ io.on('connection', (socket) => {
         blockingReasons: antiPollutionBlocks.map((block) => block.id),
         issueTypes: antiPollutionBlocks.map((block) => block.id)
       });
-      ack?.({ ok: false, error: `清單仍有 ${antiPollutionBlocks.length} 個項目或費用規則需要核對，請先處理後再開放給成員。` });
+      ack?.({ ok: false, error: `清單仍有 ${antiPollutionBlocks.length} 個項目或費用規則需要核對，請先處理後再發布給顧客。` });
       return;
     }
     room.parseQuality = evaluateMenuParseQuality({
@@ -7701,7 +7716,7 @@ io.on('connection', (socket) => {
         blockingReasons: [recomputedEvidenceReviewBlock.id],
         issueTypes: [recomputedEvidenceReviewBlock.id]
       });
-      ack?.({ ok: false, error: '照片草稿還沒有完成看圖核對，不能開放給成員。' });
+      ack?.({ ok: false, error: '照片草稿還沒有完成看圖核對，不能發布給顧客。' });
       return;
     }
     if (hasBlockingParseQuality(room)) {
@@ -7715,7 +7730,7 @@ io.on('connection', (socket) => {
           ? room.parseQuality.issues.map((issue) => issue.type).filter(Boolean)
           : []
       });
-      ack?.({ ok: false, error: 'AI 複查發現高風險解析問題，請先修正清單後再開放給成員。' });
+      ack?.({ ok: false, error: 'AI 複查發現高風險讀取問題，請先修正清單後再發布給顧客。' });
       return;
     }
 
@@ -7739,21 +7754,21 @@ io.on('connection', (socket) => {
       return;
     }
     if (room.settled) {
-      ack?.({ ok: false, error: '此房間已結算，不能再修正品項' });
+      ack?.({ ok: false, error: '此房間已完成，不能再修正品項' });
       return;
     }
     if (room.itemsOpenForMembers) {
-      ack?.({ ok: false, error: '清單已開放給成員，不能再修正品項' });
+      ack?.({ ok: false, error: '清單已發布給顧客，不能再修正品項' });
       return;
     }
 
     const participantId = String(payload?.participantId || '');
     if (!participantId || room.ownerParticipantId !== participantId) {
-      ack?.({ ok: false, error: '只有發起者可以修正解析結果' });
+      ack?.({ ok: false, error: '只有商家或操作員可以修正讀取結果' });
       return;
     }
     if (roomHasConfirmedParticipant(room)) {
-      ack?.({ ok: false, error: '已有成員確認費用，請先取消確認再修正品項' });
+      ack?.({ ok: false, error: '已有顧客確認選擇，請先取消確認再修正品項' });
       return;
     }
 
@@ -7833,7 +7848,7 @@ io.on('connection', (socket) => {
         previousPayload: previousCandidate,
         nextPayload: { ...linkedCandidate },
         reviewerId: participantId,
-        reason: 'host edited parsed item before member open'
+        reason: 'merchant edited parsed item before customer publishing'
       });
       room.calculationRules = buildCalculationRulesFromCandidates(room.parserCandidates);
     }
@@ -7885,21 +7900,21 @@ io.on('connection', (socket) => {
       return;
     }
     if (room.settled) {
-      ack?.({ ok: false, error: '此房間已結算，不能再移除品項' });
+      ack?.({ ok: false, error: '此房間已完成，不能再移除品項' });
       return;
     }
     if (room.itemsOpenForMembers) {
-      ack?.({ ok: false, error: '清單已開放給成員，不能再移除品項' });
+      ack?.({ ok: false, error: '清單已發布給顧客，不能再移除品項' });
       return;
     }
 
     const participantId = String(payload?.participantId || '');
     if (!participantId || room.ownerParticipantId !== participantId) {
-      ack?.({ ok: false, error: '只有發起者可以移除解析結果' });
+      ack?.({ ok: false, error: '只有商家或操作員可以移除讀取結果' });
       return;
     }
     if (roomHasConfirmedParticipant(room)) {
-      ack?.({ ok: false, error: '已有成員確認費用，請先取消確認再移除品項' });
+      ack?.({ ok: false, error: '已有顧客確認選擇，請先取消確認再移除品項' });
       return;
     }
 
@@ -7932,7 +7947,7 @@ io.on('connection', (socket) => {
           previousPayload: candidate,
           nextPayload: nextCandidate,
           reviewerId: participantId,
-          reason: 'host removed parsed item before member open'
+          reason: 'merchant removed parsed item before customer publishing'
         });
         return nextCandidate;
       });
@@ -7979,11 +7994,11 @@ io.on('connection', (socket) => {
       return;
     }
     if (room.settled) {
-      ack?.({ ok: false, error: '此房間已結算，不能再修改確認狀態' });
+      ack?.({ ok: false, error: '此房間已完成，不能再修改確認狀態' });
       return;
     }
     if (!room.itemsOpenForMembers) {
-      ack?.({ ok: false, error: '發起者尚未開放清單，請先等待確認' });
+      ack?.({ ok: false, error: '商家尚未發布清單，請先等待確認' });
       return;
     }
 
@@ -7994,7 +8009,7 @@ io.on('connection', (socket) => {
       return;
     }
     if (!hasUsableDisplayName(participant.displayName)) {
-      ack?.({ ok: false, error: '請先輸入名稱再確認個人費用' });
+      ack?.({ ok: false, error: '請先輸入名稱再確認顧客選擇' });
       return;
     }
 
@@ -8022,25 +8037,25 @@ io.on('connection', (socket) => {
       return;
     }
     if (!room.itemsOpenForMembers) {
-      ack?.({ ok: false, error: '清單尚未開放給成員，不能結算' });
+      ack?.({ ok: false, error: '清單尚未發布給顧客，不能完成摘要' });
       return;
     }
 
     const participantId = String(payload?.participantId || '');
     if (!participantId || room.ownerParticipantId !== participantId) {
-      ack?.({ ok: false, error: '只有發起者可以結算此房間' });
+      ack?.({ ok: false, error: '只有商家或操作員可以完成此房間摘要' });
       return;
     }
 
     const participant = room.participants.get(participantId);
     if (!participant || !hasUsableDisplayName(participant.displayName)) {
-      ack?.({ ok: false, error: '發起者請先輸入名稱再結算' });
+      ack?.({ ok: false, error: '商家或操作員請先輸入名稱再完成摘要' });
       return;
     }
 
     const stateBeforeSettle = serializeRoom(room);
     if (Number(stateBeforeSettle.totals?.grandTotal || 0) <= 0) {
-      ack?.({ ok: false, error: '目前沒有任何費用項目，不能結算空明細' });
+      ack?.({ ok: false, error: '目前沒有任何費用項目，不能完成空明細' });
       return;
     }
 
@@ -8068,7 +8083,7 @@ io.on('connection', (socket) => {
 
     const reviewerId = String(payload?.participantId || '');
     if (!reviewerId || room.ownerParticipantId !== reviewerId) {
-      ack?.({ ok: false, error: '只有發起者可以決定建議草稿' });
+      ack?.({ ok: false, error: '只有商家或操作員可以決定建議草稿' });
       return;
     }
 
@@ -8139,7 +8154,7 @@ io.on('connection', (socket) => {
       appliedStructuredDraftCount = applyAcceptedVisualReviewProposal(room, proposal, reviewerId);
       acceptedCandidateCount = appliedStructuredDraftCount > 0
         ? appliedStructuredDraftCount
-        : acceptPendingParserCandidates(room, reviewerId, `proposal ${proposalId} accepted by host`);
+        : acceptPendingParserCandidates(room, reviewerId, `proposal ${proposalId} accepted by merchant`);
     }
     if (clearsLocalOcrOnlyBlock && appliedStructuredDraftCount === 0) {
       room.evidenceReviewSource = 'local_vision_bridge';
@@ -8174,7 +8189,7 @@ io.on('connection', (socket) => {
     }
     const participantId = String(payload?.participantId || '');
     if (!participantId || room.ownerParticipantId !== participantId) {
-      ack?.({ ok: false, error: '只有發起者可以清空此房間' });
+      ack?.({ ok: false, error: '只有商家或操作員可以清空此房間' });
       return;
     }
 

@@ -5,11 +5,11 @@
 This repository is a hackathon MVP and open-source WebMCP reference app powered by Adaptive Contract MCP. The supported security boundary is:
 
 - browser-side WebMCP tools are read-only or proposal-only;
-- parsed item review is host-only and only allowed before Member-Visibility Release and member confirmation;
-- structural ReviewGate findings must be edited or removed before member visibility;
-- humans keep final control over claims, settlement, payment, bookings, and external submissions;
+- parsed item review is merchant-only and only allowed before Customer Publishing and customer confirmation;
+- structural ReviewGate findings must be edited or removed before customer publishing;
+- humans keep final control over customer choices, final order summaries, payment, bookings, and external submissions;
 - provider adapters are extension-only deployment-owner features and are never required for the no-key WebMCP demo;
-- room persistence is local JSON for a single demo instance, or a host-mounted volume when deployed.
+- room persistence is local JSON for a single demo instance, or a platform-mounted volume when deployed.
 
 ## Secret Handling
 
