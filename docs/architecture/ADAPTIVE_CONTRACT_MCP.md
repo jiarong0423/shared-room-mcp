@@ -8,7 +8,7 @@ The product boundary is a form-based async commercial intake room. It is not a c
 
 Local OCR produces candidate text. Codex occupies the LLM/visual-review node, checks the image against the OCR text, and prepares a structured draft. WebMCP scopes that draft to the current room. The human edits, confirms, overrides advisory warnings, and releases the commitment. Threshold conditions such as group size or minimum spend are warnings until a merchant decides; AI never commits a booking, group formation, payment, or final summary.
 
-Zeabur is the hosted state storage, MCP protocol host, HITL approval gate, guardrail runtime, customer publishing surface, and export surface. Zero required ML/OCR workload is processed on the Zeabur server in the default WebMCP Challenge path.
+Coolify is the hosted state storage, MCP protocol host, HITL approval gate, guardrail runtime, customer publishing surface, and export surface. Zero required ML/OCR workload is processed on the Coolify server in the default WebMCP Challenge path.
 
 WebMCP is the assistant-facing tool boundary, not the customer synchronization layer. The web runtime owns room creation, customer joins, selection updates, and totals. WebMCP exposes only the current room scope to the assistant for inspection and draft creation.
 
@@ -68,7 +68,7 @@ sequenceDiagram
 | Codex LLM visual review | Evidence image, OCR text, current room state when authorized | Structured draft and review notes only | Final approval, payment, booking, customer confirmation, or hidden item mutation |
 | Authorized local bridge | Local OCR output, LLM review JSON, target room id, merchant participant id | One review draft proposal | Create final commitments, bypass merchant review, or expose private OCR reports in the repo |
 | WebMCP page tools | Current browser room state | Proposal-only draft creation | Edit parsed items, approve drafts, publish items to customers, finalize, or export on behalf of the user |
-| Zeabur room runtime | Uploaded evidence details, proposals, room state | Stores room state and applies an approved structured draft after merchant review | Run local OCR/LLM by default, charge payments, submit bookings, or auto-approve |
+| Coolify room runtime | Uploaded evidence details, proposals, room state | Stores room state and applies an approved structured draft after merchant review | Run local OCR/LLM by default, charge payments, submit bookings, or auto-approve |
 | Route role lock | The role implied by the current URL: owner token, named customer, or guest | Scoped participant identity for that room and role | Reuse merchant identity from another tab, promote customers to merchant, or leak merchant draft panels |
 | Merchant | Evidence, draft, customers, totals | Review decisions, item edits, customer publishing, final summary | Confirm another customer's selection |
 | Customer | Published selectable items and own selection | Own quantity/options and own confirmation | Edit evidence, approve AI drafts, publish the list, or finalize |
@@ -83,10 +83,10 @@ flowchart TD
   OCR --> OcrStop[OCR-only Stop]
   OcrStop --> Codex
   Codex --> Draft[Structured Review Draft]
-  Draft --> Zeabur[Zeabur Private Room Runtime]
-  Zeabur --> WebMCP[WebMCP Scoped Room Tools]
+  Draft --> Coolify[Coolify Private Room Runtime]
+  Coolify --> WebMCP[WebMCP Scoped Room Tools]
   WebMCP --> Codex
-  Zeabur --> RoleLock[Route Role Lock]
+  Coolify --> RoleLock[Route Role Lock]
   RoleLock --> Owner[Merchant Owner Tab]
   RoleLock --> Customer[Customer Link]
   Owner --> Gate[Merchant Approval Gate]
@@ -144,4 +144,4 @@ The first form prevents repeated known error patterns without poisoning future r
 
 The image matrix is a deterministic contract-driven integration benchmark. It verifies artifact integrity, scenario routing, schema adherence, customer-visible masks, anti-pollution gates, and HITL state transitions under paired image and evidence text.
 
-It is not a provider accuracy benchmark and not a claim that arbitrary real-world images always parse correctly. The release claim is limited to deterministic image-plus-oracle integration, authorized local OCR canaries, and the WebMCP plus local OCR plus Codex plus human-review loop. Zeabur is the hosted room/runtime/HITL surface; it is not the OCR engine unless a deployment owner explicitly installs and configures such an extension.
+It is not a provider accuracy benchmark and not a claim that arbitrary real-world images always parse correctly. The release claim is limited to deterministic image-plus-oracle integration, authorized local OCR canaries, and the WebMCP plus local OCR plus Codex plus human-review loop. Coolify is the hosted room/runtime/HITL surface; it is not the OCR engine unless a deployment owner explicitly installs and configures such an extension.

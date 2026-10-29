@@ -1,5 +1,7 @@
 # Security Scan Evidence
 
+> Note: Zeabur references below (and in superseded rows) are historical; hosting moved to Coolify on 2026-10-29 (https://sharedroom-new.jace0423.com).
+
 Evidence date: 2026-09-04 Asia/Taipei
 
 ## Scope
@@ -105,7 +107,7 @@ Checked against visible Devpost requirements and discussion topics on 2026-09-01
 
 | weak point | local mitigation | evidence state |
 |---|---|---|
-| Hosted room state can reset after a platform restart | JSON persistence supports a mounted room store; the current Zeabur service mounts `/data` | Zeabur health reports the mounted store path; earlier retired deployment checks are superseded historical evidence only |
+| Hosted room state can reset after a platform restart | JSON persistence supports a mounted room store; the current Coolify service mounts `/data` | Coolify health reports the mounted store path; earlier retired deployment checks are superseded historical evidence only |
 | Judges may test in ChatGPT in-app browser or Chrome WebMCP mode | UI remains usable without WebMCP; WebMCP registration is progressive through `document.modelContext` when available | Local in-app browser detected all 7 tools; ordinary UI smoke passed |
 | Repository license must be visible in GitHub About | Root `LICENSE` file is MIT; README and submission packet state MIT | GitHub repository page shows `MIT license` |
 | First 30 seconds of demo needs immediate visible value | `Load Sample Room` creates structured sample data and a pending draft without API keys or uploads | Local API stress and browser smoke passed |

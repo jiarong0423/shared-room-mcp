@@ -1,5 +1,7 @@
 # WebMCP Local Review Bridge
 
+> 註記：本文件內的 Zeabur 與 shared-room-mcp-next.zeabur.app 為歷史紀錄，已於 2026-10-29 遷至 Coolify（https://sharedroom-new.jace0423.com）。
+
 Completion timestamp: 2026-09-04 00:48 Asia/Taipei
 
 ## Scope

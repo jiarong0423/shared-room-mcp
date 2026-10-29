@@ -2,7 +2,7 @@
 
 Project name: Shared Room MCP, powered by Adaptive Contract MCP
 
-Live URL: https://shared-room-mcp-next.zeabur.app/
+Live URL: https://sharedroom-new.jace0423.com/
 
 Public repository URL: https://github.com/jiarong0423/shared-room-mcp
 
@@ -64,7 +64,7 @@ The core loop is: local OCR produces candidate text; Codex checks the image and 
 
 Chinese wording for review: 圖片 -> 本地 OCR -> Codex 看圖校正 -> 結構化草稿 -> 人工審核 -> 通過。
 
-Zeabur is the hosted state storage, MCP protocol host, HITL approval gate, guardrail runtime, customer publishing surface, and export surface. Zero required ML/OCR workload is processed on the Zeabur server in the default WebMCP Challenge path; local OCR and Codex visual review run through the authorized local bridge before a draft proposal is pushed.
+Coolify is the hosted state storage, MCP protocol host, HITL approval gate, guardrail runtime, customer publishing surface, and export surface. Zero required ML/OCR workload is processed on the Coolify server in the default WebMCP Challenge path; local OCR and Codex visual review run through the authorized local bridge before a draft proposal is pushed.
 
 Threshold conditions such as minimum headcount, minimum spend, and free-shipping thresholds are review context. The assistant may flag a mismatch between the evidence and the current room state, but it cannot decide that the group is formed, the booking is valid, payment is complete, or the final summary is complete. The merchant can edit, override, and publish the customer-facing task after review.
 
@@ -76,7 +76,7 @@ Checked against the WebMCP Challenge page on 2026-09-01.
 
 | Requirement | Local status |
 |---|---|
-| Working live URL accessible in ChatGPT in-app browser or Chrome with WebMCP enabled | Ready: https://shared-room-mcp-next.zeabur.app/ |
+| Working live URL accessible in ChatGPT in-app browser or Chrome with WebMCP enabled | Ready: https://sharedroom-new.jace0423.com/ |
 | Text description explaining WebMCP fit and user experience | Ready in `README.md` and this packet |
 | Public YouTube demo under 3 minutes with audio | Pending final demo upload |
 | Public code repository | Ready: https://github.com/jiarong0423/shared-room-mcp |
@@ -142,7 +142,7 @@ Do not commit API keys. Set secrets in the hosting provider's secret manager onl
 
 Runtime requires Node.js `>=20.9.0`. Leave `CORS_ORIGIN` empty for a same-origin deployment; set it only when the browser frontend is served from a separate trusted origin.
 
-For a hosted demo, attach a persistent volume before using `/data/rooms.json`. Without a volume, room data can still work during one runtime session, but a platform restart can clear it. The current Zeabur service mounts `/data` and uses this path.
+For a hosted demo, attach a persistent volume before using `/data/rooms.json`. Without a volume, room data can still work during one runtime session, but a platform restart can clear it. The current Coolify service mounts `/data` and uses this path.
 
 The current save layer is a hackathon MVP choice for one running service instance. It smooths short write bursts by merging nearby room changes and adding a small millisecond delay before saving, but a hard crash can still lose the latest tiny write window. Production traffic should still use Redis or PostgreSQL.
 
@@ -156,7 +156,7 @@ npm run check
 npm run audit:tasks
 IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run build:image-fixture-manifest
 IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run stress:image-matrix -- --base-url http://127.0.0.1:3000 --mode image-plus-oracle-text --output-dir logs/runtime/image-matrix
-IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run stress:image-matrix -- --base-url https://shared-room-mcp-next.zeabur.app --mode image-plus-local-ocr --tesseract-bin /opt/homebrew/bin/tesseract --delay-ms 5000 --limit 3 --continue-on-failure --output-dir logs/runtime/image-matrix-local-ocr-canary
+IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run stress:image-matrix -- --base-url https://sharedroom-new.jace0423.com --mode image-plus-local-ocr --tesseract-bin /opt/homebrew/bin/tesseract --delay-ms 5000 --limit 3 --continue-on-failure --output-dir logs/runtime/image-matrix-local-ocr-canary
 npm run stress:contracts -- --base-url http://127.0.0.1:3000 --rounds 20 --concurrency 4 --output-dir logs/runtime
 npm start
 ```
@@ -167,7 +167,7 @@ For repeated local stress runs, run `npm start` with test-only rate limits:
 ROOM_CREATE_RATE_LIMIT_MAX=500 MENU_PARSE_RATE_LIMIT_MAX=500 API_RATE_LIMIT_MAX=1000 npm start
 ```
 
-The Zeabur public demo keeps the lower public-demo throttle. A local 429 during rapid repeated tests means the runner is measuring the throttle, not the HITL state machine.
+The Coolify public demo keeps the lower public-demo throttle. A local 429 during rapid repeated tests means the runner is measuring the throttle, not the HITL state machine.
 
 The repeated room-flow check covers 20 non-duplicate Traditional Chinese and English scenarios, with 20 rounds per scenario. It checks room creation, candidate evidence parsing, stable room-type selection, draft creation, and the final human approval rule.
 
@@ -176,10 +176,10 @@ The image-matrix command is a deterministic contract-driven integration benchmar
 There are three separate image-test modes:
 
 - `image-only`: uploads only the image. It is a negative canary unless the deployment owner configured an image-reading provider.
-- `image-plus-local-ocr`: runs OCR through the authorized local bridge first, then writes OCR details and a draft proposal into the hosted room. Zeabur remains the room/runtime/HITL surface, not the OCR engine. This mode is a canary for field isolation, evidence pointers, forbidden-number leakage, and advisory threshold handling; completed image review still requires Codex visual review or merchant repair before customer publishing.
+- `image-plus-local-ocr`: runs OCR through the authorized local bridge first, then writes OCR details and a draft proposal into the hosted room. Coolify remains the room/runtime/HITL surface, not the OCR engine. This mode is a canary for field isolation, evidence pointers, forbidden-number leakage, and advisory threshold handling; completed image review still requires Codex visual review or merchant repair before customer publishing.
 - `image-plus-oracle-text`: uploads the image plus locked oracle text and verifies checksum-backed image-oracle artifacts, contract routing, customer-visible masks, and HITL state behavior.
 
-None of these modes should be described as provider accuracy, zero-shot extraction, unconstrained vision accuracy, or Zeabur-hosted OCR.
+None of these modes should be described as provider accuracy, zero-shot extraction, unconstrained vision accuracy, or Coolify-hosted OCR.
 
 Semantic Visual Anchor Notice: the current protocol records logical `boundingZone` values and contextual `auditAnchor` snippets for merchant review. Pixel-level `bbox` crop overlays are reserved roadmap fields and are not part of the current release claim.
 
@@ -211,7 +211,7 @@ Spoken line:
 
 0:05-0:18: **Presenter setup.** Create or reuse the live room. Keep the evidence image and draft area visible so the source and the pending review card are both clear.
 
-0:18-0:35: **WebMCP/Codex action.** Run `npm run demo:codex-ocr-llm -- --base-url https://shared-room-mcp-next.zeabur.app`. The guided bridge performs local OCR, puts Codex in the LLM/visual-review node for the image, and writes one review draft proposal into the Zeabur room. Call `inspect_room` and `suggest_next_actions`, then pause with one draft card visible under `AI Review Draft`.
+0:18-0:35: **WebMCP/Codex action.** Run `npm run demo:codex-ocr-llm -- --base-url https://sharedroom-new.jace0423.com`. The guided bridge performs local OCR, puts Codex in the LLM/visual-review node for the image, and writes one review draft proposal into the Coolify room. Call `inspect_room` and `suggest_next_actions`, then pause with one draft card visible under `AI Review Draft`.
 
 Agent cue:
 
@@ -285,7 +285,7 @@ Operator rule for recording:
 
 - Public repository URL is set to `https://github.com/jiarong0423/shared-room-mcp`.
 - Add the final public YouTube demo URL after uploading the video.
-- Live URL `https://shared-room-mcp-next.zeabur.app/` must be rechecked after the next successful Zeabur production deployment; the latest local fixes should not be represented as deployed until `/healthz` reports the new Adaptive Contract MCP versions.
-- Confirm the Zeabur `/data` volume remains mounted when `ROOM_STORE_PATH=/data/rooms.json` is configured.
+- Live URL `https://sharedroom-new.jace0423.com/` must be rechecked after the next successful Coolify production deployment; the latest local fixes should not be represented as deployed until `/healthz` reports the new Adaptive Contract MCP versions.
+- Confirm the Coolify `/data` volume remains mounted when `ROOM_STORE_PATH=/data/rooms.json` is configured.
 - Disclose that the current room authority model is demo-grade; production deployments should add signed sessions or a real login system.
 - Confirm Devpost description uses the same WebMCP safety rule stated here.

@@ -6,7 +6,7 @@ Practical commercial MCP workflow: a merchant uploads an electronic menu, custom
 
 Shared Room MCP is the reference application for Adaptive Contract MCP, an open-source trust boundary layer for menu and service intake on the agent-native web. It is not a chatroom, messaging app, payment gateway, or auto-booking agent. In the demo script, a merchant uploads an electronic menu, opens a private booth link, customers enter the booth on their own devices, choose items, and the merchant reviews the merged order details before downloading the summary. Payments and formal external orders stay outside this project.
 
-Live demo: https://shared-room-mcp-next.zeabur.app/
+Live demo: https://sharedroom-new.jace0423.com/
 
 The app is English-first for judging and demo review. A Chinese UI dictionary remains available for local use, but the default page language, initial HTML, README, and submission packet are English.
 
@@ -36,7 +36,7 @@ WebMCP is a good fit because the assistant can enter the same private intake roo
 
 The demo is not only a single happy-path recording. Before submission, the room flow was checked in two layers:
 
-- Current live smoke checks against the Zeabur URL after deployment.
+- Current live smoke checks against the Coolify URL after deployment.
 - Repeatable local regression scripts with higher test-only rate limits.
 
 Large repeat counts are local regression evidence, not claims of live production capacity.
@@ -45,8 +45,8 @@ The full check summary is in [`docs/testing/VALIDATION_EVIDENCE.md`](docs/testin
 
 | check | current claim | verification method |
 |---|---|---|
-| Zeabur post-deploy health | Pending recheck after this commit deploys | live `/healthz` must show the mounted `/data/rooms.json` store, no active external/local image provider, `localVisionConfigured=false`, and `allowRemoteVisionFallback=false` |
-| Zeabur room/customer/export smoke | Pending recheck after this commit deploys | `npm run stress:customer-publishing -- --base-url https://shared-room-mcp-next.zeabur.app --rounds 1 --fail-fast` against generated test rooms |
+| Coolify post-deploy health | Pending recheck after this commit deploys | live `/healthz` must show the mounted `/data/rooms.json` store, no active external/local image provider, `localVisionConfigured=false`, and `allowRemoteVisionFallback=false` |
+| Coolify room/customer/export smoke | Pending recheck after this commit deploys | `npm run stress:customer-publishing -- --base-url https://sharedroom-new.jace0423.com --rounds 1 --fail-fast` against generated test rooms |
 | Local OCR + Codex LLM proposal apply smoke | PASS on 2026-09-04 | `npm run demo:codex-ocr-llm -- --base-url http://127.0.0.1:3224 --accept-for-test`; OCR read 767 characters from the synthetic merchant menu image, `reviewProvider=codex_guided`, `codexNodeCompleted=true`, accepted draft applied 18 rows, and customer publishing stayed closed |
 | Local contract regression | 40/40 current fast run; older 60/60 and 400/400 runs retained as regression evidence | `npm run stress:contracts` with test-only local rate limits; raw runtime logs stay ignored and are summarized in validation evidence |
 | Local HITL Customer Publishing regression | 4/4 current fast run; older 8/8, 12/12, and 80/80 runs retained as regression evidence | `npm run stress:customer-publishing`; verifies draft gate, merchant publishing, customer confirmation, merchant finalization, language-locked HTML export, and PDF export |
@@ -72,18 +72,18 @@ Threshold conditions such as "minimum 12 people" are review notes. The assistant
 AI provider adapters are extension-only:
 
 - Pasted text and local rule-based parsing seed draft evidence only; they are not a completed image review by themselves.
-- For the hosted Zeabur demo, local OCR runs first, Codex handles visual review, and the authorized local bridge writes a draft-only WebMCP proposal back to the cloud room for merchant review.
+- For the hosted Coolify demo, local OCR runs first, Codex handles visual review, and the authorized local bridge writes a draft-only WebMCP proposal back to the cloud room for merchant review.
 - The core WebMCP workflow must work without any paid API key.
 - Codex and the browser sidebar provide the intended LLM collaboration layer: visual review, evidence comparison, field-fix suggestions, and state guidance.
 - WebMCP is the primary agent integration; external model APIs are not required for the agent workflow.
 - Server-side Gemini/OpenAI/local-model adapters exist only as replaceable examples for deployment owners who explicitly choose a different image-reading or schema-repair implementation outside the core Codex demo path.
-- Zeabur is not the OCR engine. In the hosted demo, Zeabur is the state storage, MCP protocol host, HITL approval gate, guardrail runtime, customer publishing surface, and export surface. It receives uploaded evidence details and merchant-reviewed draft proposals, then runs the room state machine, guardrails, customer publishing, and exports.
+- Coolify is not the OCR engine. In the hosted demo, Coolify is the state storage, MCP protocol host, HITL approval gate, guardrail runtime, customer publishing surface, and export surface. It receives uploaded evidence details and merchant-reviewed draft proposals, then runs the room state machine, guardrails, customer publishing, and exports.
 
 ## System Boundary Standard
 
 This project is an AI-assisted commercial intake room, not an autonomous agent. Evidence ingestion and text extraction can happen through copied text, browser-side helpers, local OCR, or optional deployment-owner adapters. Those sources only seed draft rows. WebMCP and Codex review the current room state and evidence, then prepare draft suggestions. Human clicks are required for parsed-item approval, customer publishing, customer confirmation, overrides, and final summary export.
 
-Zeabur hosts the room state and approval workflow. Zero required ML/OCR workload is processed on the Zeabur server in the default WebMCP Challenge path.
+Coolify hosts the room state and approval workflow. Zero required ML/OCR workload is processed on the Coolify server in the default WebMCP Challenge path.
 
 ## Open Source Tool-Layer Positioning
 
@@ -259,10 +259,10 @@ flowchart TD
   OCR --> OcrStop[OCR-only Stop]
   OcrStop --> Codex
   Codex --> Draft[Structured Review Draft]
-  Draft --> Zeabur[Zeabur Private Room Runtime]
-  Zeabur --> WebMCP[WebMCP Scoped Room Tools]
+  Draft --> Coolify[Coolify Private Room Runtime]
+  Coolify --> WebMCP[WebMCP Scoped Room Tools]
   WebMCP --> Codex
-  Zeabur --> RoleLock[Route Role Lock]
+  Coolify --> RoleLock[Route Role Lock]
   RoleLock --> Owner[Merchant Owner Tab]
   RoleLock --> Customer[Customer Link]
   Owner --> Gate[Merchant Approval Gate]
@@ -410,7 +410,7 @@ The app does not automatically load `.env`. The default demo uses the authorized
 
 ## Hosted Deployment
 
-1. Connect the public GitHub repository to a Node.js hosting service. The live demo currently runs on Zeabur.
+1. Connect the public GitHub repository to a Node.js hosting service. The live demo currently runs on Coolify.
 2. Create a Node.js service.
 3. Set the required environment variables listed above.
 4. Keep AI provider keys empty for the clean WebMCP tool-layer demo.
@@ -437,7 +437,7 @@ npm run audit:tasks
 npm run stress:contracts -- --base-url http://127.0.0.1:3000 --rounds 20 --concurrency 4 --output-dir logs/runtime
 IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run build:image-fixture-manifest
 IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run stress:image-matrix -- --base-url http://127.0.0.1:3000 --mode image-plus-oracle-text --output-dir logs/runtime/image-matrix
-IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run stress:image-matrix -- --base-url https://shared-room-mcp-next.zeabur.app --mode image-plus-local-ocr --tesseract-bin /opt/homebrew/bin/tesseract --delay-ms 5000 --limit 3 --continue-on-failure --output-dir logs/runtime/image-matrix-local-ocr-canary
+IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run stress:image-matrix -- --base-url https://sharedroom-new.jace0423.com --mode image-plus-local-ocr --tesseract-bin /opt/homebrew/bin/tesseract --delay-ms 5000 --limit 3 --continue-on-failure --output-dir logs/runtime/image-matrix-local-ocr-canary
 ```
 
 For repeated local stress runs, start the local server with test-only rate limits so the test measures state-machine behavior instead of the public-demo throttle:
@@ -454,8 +454,8 @@ The image-matrix runner is a deterministic contract-driven integration benchmark
 
 The runner has three modes with different claims:
 
-- `image-only`: uploads only the image. This is a negative canary unless the deployment owner has configured an explicit image-reading provider. It must not be used to claim the default Zeabur demo performs OCR.
-- `image-plus-local-ocr`: runs OCR through the authorized local bridge first, then writes OCR details and a draft proposal into the hosted room. Zeabur still acts as the room/runtime/HITL surface, not as the OCR engine. This mode is a canary for field isolation, evidence pointers, forbidden-number leakage, and advisory threshold handling; completed image review still requires Codex visual review or merchant repair before customer publishing.
+- `image-only`: uploads only the image. This is a negative canary unless the deployment owner has configured an explicit image-reading provider. It must not be used to claim the default Coolify demo performs OCR.
+- `image-plus-local-ocr`: runs OCR through the authorized local bridge first, then writes OCR details and a draft proposal into the hosted room. Coolify still acts as the room/runtime/HITL surface, not as the OCR engine. This mode is a canary for field isolation, evidence pointers, forbidden-number leakage, and advisory threshold handling; completed image review still requires Codex visual review or merchant repair before customer publishing.
 - `image-plus-oracle-text`: uploads the image plus the locked oracle text. This validates contract routing, guardrails, customer-visible masks, and HITL state transitions. It is not proof of visual OCR accuracy.
 
 These checks must not be described as provider accuracy, zero-shot extraction accuracy, unconstrained vision accuracy, or a hosted image-recognition benchmark. The intended evidence-review loop is WebMCP plus local OCR plus Codex LLM visual review plus human approval.
@@ -475,7 +475,7 @@ Expected audit state:
 The locked recording flow is:
 
 1. Start on the live Merchant Menu Intake page with the agent side panel visible.
-2. Run `npm run demo:codex-ocr-llm -- --base-url https://shared-room-mcp-next.zeabur.app` from the local repo. If no image is supplied, the script generates a fictional English menu image under the local temp folder, runs Tesseract OCR, lets Codex occupy the LLM/visual-review node, and sends a Codex-reviewed structured draft into a new Zeabur room.
+2. Run `npm run demo:codex-ocr-llm -- --base-url https://sharedroom-new.jace0423.com` from the local repo. If no image is supplied, the script generates a fictional English menu image under the local temp folder, runs Tesseract OCR, lets Codex occupy the LLM/visual-review node, and sends a Codex-reviewed structured draft into a new Coolify room.
 3. The authorized local review bridge treats OCR as noisy text, records the Codex-guided visual review result, writes one review draft proposal, and leaves the draft pending for the merchant.
 4. The presenter moves the pointer to the single draft card and the agent tells the merchant when to click. The merchant clicks the same card twice: first to mark it reviewed, then to confirm the green approval state.
 5. The agent opens the same room in a second tab as `Jamie`, selects one item, and pauses. Jamie clicks the selection confirmation button once.

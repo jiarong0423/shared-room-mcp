@@ -1,5 +1,7 @@
 # How We Checked It
 
+> Note: Zeabur references below (and in superseded rows) are historical; hosting moved to Coolify on 2026-10-29 (https://sharedroom-new.jace0423.com).
+
 Evidence date: 2026-09-04 Asia/Taipei
 
 This file summarizes checks that were actually run before submission. The goal is simple: show that the demo flow was repeated, not only recorded once.
@@ -8,7 +10,7 @@ Raw runtime logs stay out of the public repository because `logs/runtime/` is ig
 
 Verification levels:
 
-- `current_live_smoke`: low-rate checks run against the public Zeabur URL after the latest deployment.
+- `current_live_smoke`: low-rate checks run against the public Coolify URL after the latest deployment.
 - `current_local_regression`: repeatable local scripts run after the local review bridge gate was added.
 - `historical_local_regression`: earlier local stress evidence retained for continuity; it is not a current live-capacity claim.
 - `deterministic_oracle`: checksum-backed fixtures validate contract wiring and HITL behavior, not OCR or provider accuracy.
@@ -17,8 +19,8 @@ Verification levels:
 
 | area | result | source | what was checked |
 |---|---:|---|---|
-| Current Zeabur post-deploy health | PENDING RECHECK | deploy this commit, then recheck live `/healthz` | must show the mounted `/data/rooms.json` store, no active external/local image provider, `localVisionConfigured=false`, `allowRemoteVisionFallback=false`, and no provider key flags |
-| Current Zeabur room/customer/export smoke | PENDING RECHECK | deploy this commit, then run `npm run stress:customer-publishing -- --base-url https://shared-room-mcp-next.zeabur.app --rounds 1 --fail-fast` | must pass merchant proposal review, customer publishing, customer confirmation, merchant finalization, language-locked HTML export, and PDF export |
+| Current Coolify post-deploy health | PENDING RECHECK | deploy this commit, then recheck live `/healthz` | must show the mounted `/data/rooms.json` store, no active external/local image provider, `localVisionConfigured=false`, `allowRemoteVisionFallback=false`, and no provider key flags |
+| Current Coolify room/customer/export smoke | PENDING RECHECK | deploy this commit, then run `npm run stress:customer-publishing -- --base-url https://sharedroom-new.jace0423.com --rounds 1 --fail-fast` | must pass merchant proposal review, customer publishing, customer confirmation, merchant finalization, language-locked HTML export, and PDF export |
 | Current local OCR + Codex LLM proposal apply smoke | PASS | `/private/tmp/webmcp-commercial-ui-final2-codex-anchor-accepted/codex-ocr-llm-demo-2026-09-03T21-32-30-177Z.json` | Tesseract OCR read 767 characters from the synthetic merchant menu image; `reviewProvider=codex_guided`, `reviewExecution.mode=codex_guided_visual_review`, `codexNodeCompleted=true`; the test-only accept flag applied 18 rows and kept customer publishing closed |
 | Current local OCR + Codex LLM pending demo room | PASS | `/private/tmp/webmcp-commercial-ui-final2-codex-anchor-pending/codex-ocr-llm-demo-2026-09-03T21-32-30-174Z.json` | same generated evidence and OCR path, but left the 18-row Codex visual-review draft pending for the merchant to approve |
 | Current local contract stress after local-review bridge gate | 40/40 passed | `/private/tmp/webmcp-commercial-ui-contracts-v2/local-contract-stress-2026-09-03T20-37-09-634Z.md` | 20 Chinese and English scenarios, two fast rounds each, no provider keys; OCR-only parser output remains review-required |
@@ -56,7 +58,7 @@ Verification levels:
 
 ## What This Means
 
-- The demo does not depend on Zeabur-hosted OCR, a paid OCR API, or a paid model API.
+- The demo does not depend on Coolify-hosted OCR, a paid OCR API, or a paid model API.
 - The assistant can inspect the room and create drafts, but cannot publish the customer-visible list, confirm for customers, finalize the room, pay, or submit bookings.
 - OCR-only output is draft evidence. A cloud review draft requires local OCR plus Codex visual-review structured items before merchant review can clear the OCR-only stop.
 - The merchant can review and fix parsed rows before customers enter the claim step.
@@ -69,7 +71,7 @@ Verification levels:
 - The default JSON save layer is suitable for a single demo service and short write bursts, not production-scale traffic.
 - The recording runbook now fixes the human/agent handoff: the presenter handles page navigation and file selection; WebMCP and Codex handle room-state reading, local OCR review draft preparation, visual correction, and publishing-gate checks; the human performs the same-card two-click review, customer confirmation, merchant finalization, and final downloads.
 - The image fixture runner now keeps large generated PNGs outside the main repository while preserving a checksum-backed oracle and quarantine output path.
-- The image fixture manifest build no longer blocks Zeabur deployment when the external PNG artifact is absent; it validates the checked-in 115-test manifest and only rebuilds when `IMAGE_MATRIX_ROOT` or `--matrix-root` is supplied.
+- The image fixture manifest build no longer blocks Coolify deployment when the external PNG artifact is absent; it validates the checked-in 115-test manifest and only rebuilds when `IMAGE_MATRIX_ROOT` or `--matrix-root` is supplied.
 
 ## What This Does Not Claim
 
