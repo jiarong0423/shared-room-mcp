@@ -1,6 +1,6 @@
 # How We Checked It
 
-> Note: Zeabur references below (and in superseded rows) are historical; hosting moved to Coolify on 2026-10-29 (https://sharedroom-new.jace0423.com).
+> Note: Zeabur references below (and in superseded rows) are historical; hosting moved to Coolify on 2026-10-29 and the hosted demo was retired the same day after judging ended.
 
 Evidence date: 2026-09-04 Asia/Taipei
 
@@ -20,7 +20,7 @@ Verification levels:
 | area | result | source | what was checked |
 |---|---:|---|---|
 | Current Coolify post-deploy health | PENDING RECHECK | deploy this commit, then recheck live `/healthz` | must show the mounted `/data/rooms.json` store, no active external/local image provider, `localVisionConfigured=false`, `allowRemoteVisionFallback=false`, and no provider key flags |
-| Current Coolify room/customer/export smoke | PENDING RECHECK | deploy this commit, then run `npm run stress:customer-publishing -- --base-url https://sharedroom-new.jace0423.com --rounds 1 --fail-fast` | must pass merchant proposal review, customer publishing, customer confirmation, merchant finalization, language-locked HTML export, and PDF export |
+| Hosted room/customer/export smoke | NOT APPLICABLE | Hosted demo retired 2026-10-29 after judging ended; the same smoke runs locally against http://127.0.0.1:3000 |
 | Current local OCR + Codex LLM proposal apply smoke | PASS | `/private/tmp/webmcp-commercial-ui-final2-codex-anchor-accepted/codex-ocr-llm-demo-2026-09-03T21-32-30-177Z.json` | Tesseract OCR read 767 characters from the synthetic merchant menu image; `reviewProvider=codex_guided`, `reviewExecution.mode=codex_guided_visual_review`, `codexNodeCompleted=true`; the test-only accept flag applied 18 rows and kept customer publishing closed |
 | Current local OCR + Codex LLM pending demo room | PASS | `/private/tmp/webmcp-commercial-ui-final2-codex-anchor-pending/codex-ocr-llm-demo-2026-09-03T21-32-30-174Z.json` | same generated evidence and OCR path, but left the 18-row Codex visual-review draft pending for the merchant to approve |
 | Current local contract stress after local-review bridge gate | 40/40 passed | `/private/tmp/webmcp-commercial-ui-contracts-v2/local-contract-stress-2026-09-03T20-37-09-634Z.md` | 20 Chinese and English scenarios, two fast rounds each, no provider keys; OCR-only parser output remains review-required |

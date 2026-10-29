@@ -9,7 +9,7 @@ import sharp from 'sharp';
 
 const execFileAsync = promisify(execFile);
 
-const defaultBaseUrl = 'https://sharedroom-new.jace0423.com';
+const defaultBaseUrl = 'http://127.0.0.1:3000';
 const safeOutputRoots = [
   path.resolve(os.tmpdir()),
   '/private/tmp',

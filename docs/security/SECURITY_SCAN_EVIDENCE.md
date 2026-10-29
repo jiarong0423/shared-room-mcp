@@ -1,6 +1,6 @@
 # Security Scan Evidence
 
-> Note: Zeabur references below (and in superseded rows) are historical; hosting moved to Coolify on 2026-10-29 (https://sharedroom-new.jace0423.com).
+> Note: Zeabur references below (and in superseded rows) are historical; hosting moved to Coolify on 2026-10-29 and the hosted demo was retired the same day after judging ended.
 
 Evidence date: 2026-09-04 Asia/Taipei
 

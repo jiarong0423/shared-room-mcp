@@ -2,7 +2,7 @@
 
 Project name: Shared Room MCP, powered by Adaptive Contract MCP
 
-Live URL: https://sharedroom-new.jace0423.com/
+Live URL: retired on 2026-10-29 after judging ended (the submission pointed here while judging was open).
 
 Public repository URL: https://github.com/jiarong0423/shared-room-mcp
 
@@ -76,7 +76,7 @@ Checked against the WebMCP Challenge page on 2026-09-01.
 
 | Requirement | Local status |
 |---|---|
-| Working live URL accessible in ChatGPT in-app browser or Chrome with WebMCP enabled | Ready: https://sharedroom-new.jace0423.com/ |
+| Working live URL accessible in ChatGPT in-app browser or Chrome with WebMCP enabled | Ready: http://127.0.0.1:3000/ |
 | Text description explaining WebMCP fit and user experience | Ready in `README.md` and this packet |
 | Public YouTube demo under 3 minutes with audio | Pending final demo upload |
 | Public code repository | Ready: https://github.com/jiarong0423/shared-room-mcp |
@@ -156,7 +156,7 @@ npm run check
 npm run audit:tasks
 IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run build:image-fixture-manifest
 IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run stress:image-matrix -- --base-url http://127.0.0.1:3000 --mode image-plus-oracle-text --output-dir logs/runtime/image-matrix
-IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run stress:image-matrix -- --base-url https://sharedroom-new.jace0423.com --mode image-plus-local-ocr --tesseract-bin /opt/homebrew/bin/tesseract --delay-ms 5000 --limit 3 --continue-on-failure --output-dir logs/runtime/image-matrix-local-ocr-canary
+IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run stress:image-matrix -- --base-url http://127.0.0.1:3000 --mode image-plus-local-ocr --tesseract-bin /opt/homebrew/bin/tesseract --delay-ms 5000 --limit 3 --continue-on-failure --output-dir logs/runtime/image-matrix-local-ocr-canary
 npm run stress:contracts -- --base-url http://127.0.0.1:3000 --rounds 20 --concurrency 4 --output-dir logs/runtime
 npm start
 ```
@@ -211,7 +211,7 @@ Spoken line:
 
 0:05-0:18: **Presenter setup.** Create or reuse the live room. Keep the evidence image and draft area visible so the source and the pending review card are both clear.
 
-0:18-0:35: **WebMCP/Codex action.** Run `npm run demo:codex-ocr-llm -- --base-url https://sharedroom-new.jace0423.com`. The guided bridge performs local OCR, puts Codex in the LLM/visual-review node for the image, and writes one review draft proposal into the Coolify room. Call `inspect_room` and `suggest_next_actions`, then pause with one draft card visible under `AI Review Draft`.
+0:18-0:35: **WebMCP/Codex action.** Run `npm run demo:codex-ocr-llm -- --base-url http://127.0.0.1:3000`. The guided bridge performs local OCR, puts Codex in the LLM/visual-review node for the image, and writes one review draft proposal into the Coolify room. Call `inspect_room` and `suggest_next_actions`, then pause with one draft card visible under `AI Review Draft`.
 
 Agent cue:
 
@@ -285,7 +285,7 @@ Operator rule for recording:
 
 - Public repository URL is set to `https://github.com/jiarong0423/shared-room-mcp`.
 - Add the final public YouTube demo URL after uploading the video.
-- Live URL `https://sharedroom-new.jace0423.com/` must be rechecked after the next successful Coolify production deployment; the latest local fixes should not be represented as deployed until `/healthz` reports the new Adaptive Contract MCP versions.
+- Live URL `http://127.0.0.1:3000/` must be rechecked after the next successful Coolify production deployment; the latest local fixes should not be represented as deployed until `/healthz` reports the new Adaptive Contract MCP versions.
 - Confirm the Coolify `/data` volume remains mounted when `ROOM_STORE_PATH=/data/rooms.json` is configured.
 - Disclose that the current room authority model is demo-grade; production deployments should add signed sessions or a real login system.
 - Confirm Devpost description uses the same WebMCP safety rule stated here.

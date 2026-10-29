@@ -6,7 +6,7 @@ Practical commercial MCP workflow: a merchant uploads an electronic menu, custom
 
 Shared Room MCP is the reference application for Adaptive Contract MCP, an open-source trust boundary layer for menu and service intake on the agent-native web. It is not a chatroom, messaging app, payment gateway, or auto-booking agent. In the demo script, a merchant uploads an electronic menu, opens a private booth link, customers enter the booth on their own devices, choose items, and the merchant reviews the merged order details before downloading the summary. Payments and formal external orders stay outside this project.
 
-Live demo: https://sharedroom-new.jace0423.com/
+Hosted demo: retired on 2026-10-29 after judging ended. Run it locally with `npm start` (see below).
 
 The app is English-first for judging and demo review. A Chinese UI dictionary remains available for local use, but the default page language, initial HTML, README, and submission packet are English.
 
@@ -46,7 +46,7 @@ The full check summary is in [`docs/testing/VALIDATION_EVIDENCE.md`](docs/testin
 | check | current claim | verification method |
 |---|---|---|
 | Coolify post-deploy health | Pending recheck after this commit deploys | live `/healthz` must show the mounted `/data/rooms.json` store, no active external/local image provider, `localVisionConfigured=false`, and `allowRemoteVisionFallback=false` |
-| Coolify room/customer/export smoke | Pending recheck after this commit deploys | `npm run stress:customer-publishing -- --base-url https://sharedroom-new.jace0423.com --rounds 1 --fail-fast` against generated test rooms |
+| Hosted room/customer/export smoke | Not applicable: hosted demo retired 2026-10-29; run `npm run stress:customer-publishing -- --base-url http://127.0.0.1:3000` locally | See `docs/testing/VALIDATION_EVIDENCE.md` |
 | Local OCR + Codex LLM proposal apply smoke | PASS on 2026-09-04 | `npm run demo:codex-ocr-llm -- --base-url http://127.0.0.1:3224 --accept-for-test`; OCR read 767 characters from the synthetic merchant menu image, `reviewProvider=codex_guided`, `codexNodeCompleted=true`, accepted draft applied 18 rows, and customer publishing stayed closed |
 | Local contract regression | 40/40 current fast run; older 60/60 and 400/400 runs retained as regression evidence | `npm run stress:contracts` with test-only local rate limits; raw runtime logs stay ignored and are summarized in validation evidence |
 | Local HITL Customer Publishing regression | 4/4 current fast run; older 8/8, 12/12, and 80/80 runs retained as regression evidence | `npm run stress:customer-publishing`; verifies draft gate, merchant publishing, customer confirmation, merchant finalization, language-locked HTML export, and PDF export |
@@ -437,7 +437,7 @@ npm run audit:tasks
 npm run stress:contracts -- --base-url http://127.0.0.1:3000 --rounds 20 --concurrency 4 --output-dir logs/runtime
 IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run build:image-fixture-manifest
 IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run stress:image-matrix -- --base-url http://127.0.0.1:3000 --mode image-plus-oracle-text --output-dir logs/runtime/image-matrix
-IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run stress:image-matrix -- --base-url https://sharedroom-new.jace0423.com --mode image-plus-local-ocr --tesseract-bin /opt/homebrew/bin/tesseract --delay-ms 5000 --limit 3 --continue-on-failure --output-dir logs/runtime/image-matrix-local-ocr-canary
+IMAGE_MATRIX_ROOT=/path/to/downloaded/image-matrix npm run stress:image-matrix -- --base-url http://127.0.0.1:3000 --mode image-plus-local-ocr --tesseract-bin /opt/homebrew/bin/tesseract --delay-ms 5000 --limit 3 --continue-on-failure --output-dir logs/runtime/image-matrix-local-ocr-canary
 ```
 
 For repeated local stress runs, start the local server with test-only rate limits so the test measures state-machine behavior instead of the public-demo throttle:
@@ -475,7 +475,7 @@ Expected audit state:
 The locked recording flow is:
 
 1. Start on the live Merchant Menu Intake page with the agent side panel visible.
-2. Run `npm run demo:codex-ocr-llm -- --base-url https://sharedroom-new.jace0423.com` from the local repo. If no image is supplied, the script generates a fictional English menu image under the local temp folder, runs Tesseract OCR, lets Codex occupy the LLM/visual-review node, and sends a Codex-reviewed structured draft into a new Coolify room.
+2. Run `npm run demo:codex-ocr-llm -- --base-url http://127.0.0.1:3000` from the local repo. If no image is supplied, the script generates a fictional English menu image under the local temp folder, runs Tesseract OCR, lets Codex occupy the LLM/visual-review node, and sends a Codex-reviewed structured draft into a new Coolify room.
 3. The authorized local review bridge treats OCR as noisy text, records the Codex-guided visual review result, writes one review draft proposal, and leaves the draft pending for the merchant.
 4. The presenter moves the pointer to the single draft card and the agent tells the merchant when to click. The merchant clicks the same card twice: first to mark it reviewed, then to confirm the green approval state.
 5. The agent opens the same room in a second tab as `Jamie`, selects one item, and pauses. Jamie clicks the selection confirmation button once.
